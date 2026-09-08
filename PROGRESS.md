@@ -1252,3 +1252,98 @@ Cumulative C coverage after Batch 2: **98/250** (72 + 26).
   reconstruction — none started.
 
 Batch 3 not started; waiting on explicit approval.
+
+## Phase 6 — Language Expansion, Plan 012 Batch 3: C starter-code backfill, long tail (this session)
+
+Third batch of the one-batch-per-session sequence. Scope: the
+~93-problem long tail flagged in the original scoping doc — not
+template-able by the coarse JS-testcase-value shape buckets Batches 1–2
+used, so this batch classified every remaining non-design,
+not-yet-backfilled problem (135 candidates) directly against its real
+cpp signature and the C driver's actual capability, per-problem, per the
+approved long-tail strategy ("best engineering judgment... document
+reasoning for non-obvious signatures... flag rather than guess").
+
+**Two capabilities used for the first time this batch**, both already
+present in `languageDrivers/c.js`/`languageTypes/c.js` but unexercised
+by Batches 1–2's shapes: `char*` return (string output — `generate()`
+has a dedicated branch, no `returnSize` needed) and `char**` parameters
+(array-of-strings input — `cDeclaration()` already handles a 1D array
+whose elements are strings via its existing `char*[]` branch; confirmed
+`generate()`'s call-arg builder appends `${key}Size` correctly for it
+since it's structurally 1D, not the 2D `Rows`/`Cols` case). Neither
+required any driver change — just recognizing the catalog had type
+shapes worth mapping to them that the first two batches' input/output
+buckets didn't surface.
+
+### Real numbers
+
+135 candidates (non-design, not yet backfilled) → **53 accepted**, 82
+skipped. Skip reasons, grouped:
+
+| Reason | Count |
+|---|---:|
+| 2D return (`vector<vector<int>>` / `vector<vector<string>>`) | 18 |
+| `void` return (in-place mutation — same known bug class as `rotate-array`) | 9 |
+| Array param is genuinely 2D in the actual testcase data | 32* |
+| `ListNode*`/`TreeNode*`/`Node*` params or returns | 8 |
+| `vector<string>` **return** (array-of-string return has no driver branch — `char**` param is fine, `char**` return is not) | 4 |
+| `vector<char>&` param (`task-scheduler` — not in the supported-type map) | 1 |
+| `uint32_t` param/return | 2 |
+| Param-count / signature-parse mismatches | 3 |
+| Empty/unparseable return type | 2 |
+
+\* Includes the 26 already known-excluded from Batch 2's `arr2d->*`
+shapes — Batch 3's classifier re-derives them independently by checking
+actual testcase data shape against the cpp signature (not by name),
+which is why this number doesn't simply equal "82 minus Batch 1/2's
+carried-forward exclusions."
+
+One data-quality note surfaced, not fixed (not this batch's job):
+`binary-search-tree-iterator` has real constructor+method+testcase
+structure (`ops`/`vals` arrays) identical in shape to the 17
+`operationSequence`-tagged design problems, but is **not** itself
+flagged `operationSequence.enabled: true` — it was correctly excluded
+here (no single free-function signature to derive a C prototype from),
+but whoever owns the design-problem tagging should know it's
+mis-classified.
+
+Cumulative C coverage after Batch 3: **151/250** (72 + 26 + 53).
+
+### Verification
+
+- Backend `npx vitest run`: **103/103 files, 1175/1175 tests** (1173
+  baseline + 2 new: one `char*`-return case, one `char**`-param case).
+- `node backend/scripts/checkProblemsFolderDrift.js`: zero drift,
+  151/250 problems now carry `starter/c.c`.
+- `node backend/scripts/validateProblemContracts.js`: 250 problems + 8
+  Code Club Edition missions, no contract mismatches.
+- Compiled and executed 3 representative generated drivers via `gcc`
+  with real implementations (not stubs): `reverse-string` (`char*`
+  return), `longest-common-prefix` (`char**` param + `char*` return),
+  `word-break` (`char*` + `char**` params, `bool` return) — all 3
+  produced correct output.
+
+### What Batch 3 does NOT include (unchanged, deliberately)
+
+- 2D-array shapes (input or output) — still blocked by the
+  `${key}Size`-vs-`${key}Rows`/`${key}Cols` driver bug flagged in
+  Batch 2's report, unfixed.
+- `vector<string>` **return** (array-of-string return) — no driver
+  branch exists; `char**` as a param is now supported, as a return type
+  is not.
+- `ListNode*`/`TreeNode*` problems — need real C struct definitions,
+  driver-level work.
+- The known `void`-return in-place-mutation bug (9 more instances of the
+  same class already documented for `rotate-array`/`sort-colors`/
+  `next-permutation`) — still just documented.
+- The 17 `operationSequence`/design problems (Batch 4) — still not
+  started, including the mis-tagged `binary-search-tree-iterator` noted
+  above.
+- Any driver extension (possible Batch 5), Plan 011 reconstruction —
+  still not started.
+
+After three batches, **99/250 problems remain without `starterCode.c`**:
+17 design problems (Batch 4) + 82 driver-blocked or otherwise-excluded
+(2D shapes, `void`-return bug, pointer-struct params, array-of-string
+return — real remaining work, not oversights).

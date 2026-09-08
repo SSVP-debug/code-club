@@ -470,4 +470,30 @@ describe("validateProblemContracts — C contract checks (Plan 012)", () => {
 
     expect(validateProblems([strToInt])).toHaveLength(0);
   });
+
+  it("Plan 012 Batch 3: a char* return (string output) problem validates cleanly", () => {
+    const strReturn = {
+      slug: "fake-c-reverse-string",
+      functionName: "reverseString",
+      starterCode: {
+        c: `char* reverseString(char* s) {\n  return "";\n}`,
+      },
+      testcases: [{ input: { s: "hello" }, expectedOutput: "olleh" }],
+    };
+
+    expect(validateProblems([strReturn])).toHaveLength(0);
+  });
+
+  it("Plan 012 Batch 3: a char** param (array-of-strings input) problem validates cleanly", () => {
+    const strArrayParam = {
+      slug: "fake-c-longest-common-prefix",
+      functionName: "longestCommonPrefix",
+      starterCode: {
+        c: `char* longestCommonPrefix(char** strs, int strsSize) {\n  return "";\n}`,
+      },
+      testcases: [{ input: { strs: ["flower", "flow", "flight"] }, expectedOutput: "fl" }],
+    };
+
+    expect(validateProblems([strArrayParam])).toHaveLength(0);
+  });
 });
