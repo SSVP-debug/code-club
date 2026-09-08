@@ -443,4 +443,31 @@ describe("validateProblemContracts — C contract checks (Plan 012)", () => {
 
     expect(validateProblems([ordinary])).toHaveLength(0);
   });
+
+  it("Plan 012 Batch 2: a single-array-param int*-return problem (arr1d->arr1d) validates cleanly", () => {
+    const arrayToArray = {
+      slug: "fake-c-move-zeroes",
+      functionName: "moveZeroes",
+      returnType: { c: "int*" },
+      starterCode: {
+        c: `int* moveZeroes(int* nums, int numsSize, int* returnSize) {\n  *returnSize = 0;\n  return NULL;\n}`,
+      },
+      testcases: [{ input: { nums: [0, 1, 0, 3, 12] }, expectedOutput: [1, 3, 12, 0, 0] }],
+    };
+
+    expect(validateProblems([arrayToArray])).toHaveLength(0);
+  });
+
+  it("Plan 012 Batch 2: a plain string-param int-return problem (str->int) validates cleanly", () => {
+    const strToInt = {
+      slug: "fake-c-decode-ways",
+      functionName: "numDecodings",
+      starterCode: {
+        c: `int numDecodings(char* s) {\n  return 0;\n}`,
+      },
+      testcases: [{ input: { s: "226" }, expectedOutput: 2 }],
+    };
+
+    expect(validateProblems([strToInt])).toHaveLength(0);
+  });
 });

@@ -43,6 +43,7 @@ const rawProblems = [
       typescript: `function twoSum(nums: number[], target: number): number[] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        return new int[]{};\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        return {};\n    }\n};`,
+      c: `int* twoSum(int* nums, int numsSize, int target, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
     testcases: [
       { input: { nums: [2, 7, 11, 15], target: 9 }, expectedOutput: [0, 1] },
@@ -218,6 +219,7 @@ const rawProblems = [
       typescript: `function moveZeroes(nums: number[]): number[] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int[] moveZeroes(int[] nums) {\n        return new int[]{};\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<int> moveZeroes(vector<int>& nums) {\n        return {};\n    }\n};`,
+      c: `int* moveZeroes(int* nums, int numsSize, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
     testcases: [
       { input: { nums: [0, 1, 0, 3, 12] }, expectedOutput: [1, 3, 12, 0, 0] },
@@ -322,6 +324,7 @@ const rawProblems = [
       typescript: `function dailyTemperatures(temperatures: number[]): number[] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int[] dailyTemperatures(int[] temperatures) {\n        return new int[]{};\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<int> dailyTemperatures(vector<int>& temperatures) {\n        return {};\n    }\n};`,
+      c: `int* dailyTemperatures(int* temperatures, int temperaturesSize, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
     testcases: [
       { input: { temperatures: [73, 74, 75, 71, 69, 72, 76, 73] }, expectedOutput: [1, 1, 4, 2, 1, 1, 0, 0] },
@@ -358,6 +361,7 @@ const rawProblems = [
       typescript: `function reverseList(head: number[]): number[] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int[] reverseList(int[] head) {\n        return new int[]{};\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<int> reverseList(vector<int>& head) {\n        return {};\n    }\n};`,
+      c: `int* reverseList(int* head, int headSize, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
     testcases: [
       { input: { head: [1, 2, 3, 4, 5] }, expectedOutput: [5, 4, 3, 2, 1] },
@@ -463,6 +467,7 @@ const rawProblems = [
       typescript: `function removeNthFromEnd(head: number[], n: number): number[] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int[] removeNthFromEnd(int[] head, int n) {\n        return new int[]{};\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<int> removeNthFromEnd(vector<int>& head, int n) {\n        return {};\n    }\n};`,
+      c: `int* removeNthFromEnd(int* head, int headSize, int n, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
     testcases: [
       { input: { head: [1, 2, 3, 4, 5], n: 2 }, expectedOutput: [1, 2, 3, 5] },
@@ -570,6 +575,7 @@ const rawProblems = [
       typescript: `function twoSumSorted(numbers: number[], target: number): number[] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int[] twoSumSorted(int[] numbers, int target) {\n        return new int[]{};\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<int> twoSumSorted(vector<int>& numbers, int target) {\n        return {};\n    }\n};`,
+      c: `int* twoSumSorted(int* numbers, int numbersSize, int target, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
     testcases: [
       { input: { numbers: [2, 7, 11, 15], target: 9 }, expectedOutput: [1, 2] },
@@ -643,6 +649,7 @@ const rawProblems = [
       typescript: `function lengthOfLongestSubstring(s: string): number {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int lengthOfLongestSubstring(String s) {\n        return 0;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    int lengthOfLongestSubstring(string s) {\n        return 0;\n    }\n};`,
+      c: `int lengthOfLongestSubstring(char* s) {\n    return 0;\n}`,
     },
     testcases: [
       { input: { s: "abcabcbb" }, expectedOutput: 3 },
@@ -1297,6 +1304,7 @@ const rawProblems = [
       typescript: `function numDecodings(s: string): number {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int numDecodings(String s) {\n        return 0;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    int numDecodings(string s) {\n        return 0;\n    }\n};`,
+      c: `int numDecodings(char* s) {\n    return 0;\n}`,
     },
     testcases: [
       { input: { s: "12" }, expectedOutput: 2 },
@@ -1514,6 +1522,7 @@ const rawProblems = [
       typescript: `function letterCasePermutation(s: string): number {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int letterCasePermutation(String s) {\n        return 0;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    int letterCasePermutation(string s) {\n        return 0;\n    }\n};`,
+      c: `int letterCasePermutation(char* s) {\n    return 0;\n}`,
     },
     testcases: [
       { input: { s: "a1b2" }, expectedOutput: 4 },
@@ -1587,6 +1596,7 @@ const rawProblems = [
       typescript: `function invertTree(root: number[]): number[] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int[] invertTree(int[] root) {\n        return new int[]{};\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<int> invertTree(vector<int>& root) {\n        return {};\n    }\n};`,
+      c: `int* invertTree(int* root, int rootSize, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
     testcases: [
       { input: { root: [4, 2, 7, 1, 3, 6, 9] }, expectedOutput: [4, 7, 2, 9, 6, 3, 1] },
@@ -1835,6 +1845,7 @@ const rawProblems = [
       typescript: `function productExceptSelf(nums: number[]): number[] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int[] productExceptSelf(int[] nums) {\n        return new int[]{};\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<int> productExceptSelf(vector<int>& nums) {\n        return {};\n    }\n};`,
+      c: `int* productExceptSelf(int* nums, int numsSize, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
     testcases: [
       { input: { nums: [1,2,3,4] }, expectedOutput: [24,12,8,6] },
@@ -1870,6 +1881,7 @@ const rawProblems = [
       typescript: `function findDuplicates(nums: number[]): number[] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public List<Integer> findDuplicates(int[] nums) {\n        return new ArrayList<>();\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<int> findDuplicates(vector<int>& nums) {\n        return {};\n    }\n};`,
+      c: `int* findDuplicates(int* nums, int numsSize, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
     testcases: [
       { input: { nums: [4,3,2,7,8,2,3,1] }, expectedOutput: [2,3] },
@@ -2045,6 +2057,7 @@ const rawProblems = [
       typescript: `function myAtoi(s: string): number {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int myAtoi(String s) {\n        return 0;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    int myAtoi(string s) {\n        return 0;\n    }\n};`,
+      c: `int myAtoi(char* s) {\n    return 0;\n}`,
     },
     testcases: [
       { input: { s: "42" }, expectedOutput: 42 },
@@ -2872,6 +2885,7 @@ const rawProblems = [
       typescript: `function topKFrequent(nums: number[], k: number): number[] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int[] topKFrequent(int[] nums, int k) {\n        return new int[]{};\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<int> topKFrequent(vector<int>& nums, int k) {\n        return {};\n    }\n};`,
+      c: `int* topKFrequent(int* nums, int numsSize, int k, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
     testcases: [
       { input: { nums: [1,1,1,2,2,3], k: 2 }, expectedOutput: [1,2] },
@@ -4353,6 +4367,7 @@ const rawProblems = [
       typescript: `function calculate(s: string): number {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int calculate(String s) {\n        return 0;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    int calculate(string s) {\n        return 0;\n    }\n};`,
+      c: `int calculate(char* s) {\n    return 0;\n}`,
     },
     testcases: [
       { input: { s: "3+2*2" }, expectedOutput: 7 },
@@ -4970,6 +4985,7 @@ const rawProblems = [
       typescript: `function titleToNumber(columnTitle: string): number {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int titleToNumber(String columnTitle) {\n        return 0;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    int titleToNumber(string columnTitle) {\n        return 0;\n    }\n};`,
+      c: `int titleToNumber(char* columnTitle) {\n    return 0;\n}`,
     },
     testcases: [
       { input: { columnTitle: "A" }, expectedOutput: 1 },
@@ -5076,6 +5092,7 @@ const rawProblems = [
       typescript: `function romanToInt(s: string): number {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int romanToInt(String s) {\n        return 0;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    int romanToInt(string s) {\n        return 0;\n    }\n};`,
+      c: `int romanToInt(char* s) {\n    return 0;\n}`,
     },
     testcases: [
       { input: { s: "III" }, expectedOutput: 3 },
@@ -5420,6 +5437,7 @@ const rawProblems = [
       typescript: `function maxSlidingWindow(nums: number[], k: number): number[] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int[] maxSlidingWindow(int[] nums, int k) {\n        return new int[]{};\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<int> maxSlidingWindow(vector<int>& nums, int k) {\n        return {};\n    }\n};`,
+      c: `int* maxSlidingWindow(int* nums, int numsSize, int k, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
     testcases: [
       { input: { nums: [1,3,-1,-3,5,3,6,7], k: 3 }, expectedOutput: [3,3,5,5,6,7] },
@@ -5493,6 +5511,7 @@ const rawProblems = [
       typescript: `function longestValidParentheses(s: string): number {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int longestValidParentheses(String s) {\n        return 0;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    int longestValidParentheses(string s) {\n        return 0;\n    }\n};`,
+      c: `int longestValidParentheses(char* s) {\n    return 0;\n}`,
     },
     testcases: [
       { input: { s: "(()" }, expectedOutput: 2 },
@@ -6039,7 +6058,7 @@ const rawProblems = [
     ],
   },
 
-  { id: 190, title: "Count of Smaller Numbers After Self", slug: "count-smaller-numbers-after-self", functionName: "countSmaller", difficulty: "Hard", topic: "Binary Search", pattern: "BIT / merge sort", companies: ["Google","Amazon","Facebook"], description: "Given an integer array nums, return an integer array counts where counts[i] is the number of elements to the right of nums[i] that are smaller than nums[i].", examples: [{ input: "nums = [5,2,6,1]", output: "[2,1,1,0]" }, { input: "nums = [-1]", output: "[0]" }, { input: "nums = [-1,-1]", output: "[0,0]" }], constraints: ["1 <= nums.length <= 10^5", "-10^4 <= nums[i] <= 10^4"], starterCode: { python: `class Solution:\n    def countSmaller(self, nums):\n        pass`, javascript: `function countSmaller(nums) {\n\n}`, typescript: `function countSmaller(nums: number[]): number[] {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public List<Integer> countSmaller(int[] nums) { return new ArrayList<>(); }\n}`, cpp: `class Solution {\npublic:\n    vector<int> countSmaller(vector<int>& nums) { return {}; }\n};` }, testcases: [{ input: { nums: [5,2,6,1] }, expectedOutput: [2,1,1,0] }, { input: { nums: [-1] }, expectedOutput: [0] }, { input: { nums: [-1,-1] }, expectedOutput: [0,0] }], hiddentestcases: [{ input: { nums: [1,9,7,8,5] }, expectedOutput: [0,3,1,1,0] }] },
+  { id: 190, title: "Count of Smaller Numbers After Self", slug: "count-smaller-numbers-after-self", functionName: "countSmaller", difficulty: "Hard", topic: "Binary Search", pattern: "BIT / merge sort", companies: ["Google","Amazon","Facebook"], description: "Given an integer array nums, return an integer array counts where counts[i] is the number of elements to the right of nums[i] that are smaller than nums[i].", examples: [{ input: "nums = [5,2,6,1]", output: "[2,1,1,0]" }, { input: "nums = [-1]", output: "[0]" }, { input: "nums = [-1,-1]", output: "[0,0]" }], constraints: ["1 <= nums.length <= 10^5", "-10^4 <= nums[i] <= 10^4"], starterCode: { python: `class Solution:\n    def countSmaller(self, nums):\n        pass`, javascript: `function countSmaller(nums) {\n\n}`, typescript: `function countSmaller(nums: number[]): number[] {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public List<Integer> countSmaller(int[] nums) { return new ArrayList<>(); }\n}`, cpp: `class Solution {\npublic:\n    vector<int> countSmaller(vector<int>& nums) { return {}; }\n};`, c: `int* countSmaller(int* nums, int numsSize, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}` }, testcases: [{ input: { nums: [5,2,6,1] }, expectedOutput: [2,1,1,0] }, { input: { nums: [-1] }, expectedOutput: [0] }, { input: { nums: [-1,-1] }, expectedOutput: [0,0] }], hiddentestcases: [{ input: { nums: [1,9,7,8,5] }, expectedOutput: [0,3,1,1,0] }] },
 
   // ── BATCH 045: Hash Maps + Heap II (IDs 191-200) ──────────────────────────
 
@@ -6047,7 +6066,7 @@ const rawProblems = [
 
   { id: 192, title: "Top K Frequent Words", slug: "top-k-frequent-words", functionName: "topKFrequent", difficulty: "Medium", topic: "Hash Maps", pattern: "frequency map + heap", companies: ["Amazon","Facebook","Bloomberg"], description: "Given an array of strings words and an integer k, return the k most frequent strings. Return the answer sorted by frequency (highest first). For ties, sort lexicographically.", examples: [{ input: 'words = ["i","love","leetcode","i","love","coding"], k = 2', output: '["i","love"]' }, { input: 'words = ["the","day","is","sunny","the","the","the","sunny","is","is"], k = 4', output: '["the","is","sunny","day"]' }], constraints: ["1 <= words.length <= 500", "1 <= words[i].length <= 10", "k is in [1, unique word count]"], starterCode: { python: `class Solution:\n    def topKFrequent(self, words, k):\n        pass`, javascript: `function topKFrequent(words, k) {\n\n}`, typescript: `function topKFrequent(words: string[], k: number): string[] {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public List<String> topKFrequent(String[] words, int k) { return new ArrayList<>(); }\n}`, cpp: `class Solution {\npublic:\n    vector<string> topKFrequent(vector<string>& words, int k) { return {}; }\n};` }, testcases: [{ input: { words: ["i","love","leetcode","i","love","coding"], k: 2 }, expectedOutput: ["i","love"] }, { input: { words: ["the","day","is","sunny","the","the","the","sunny","is","is"], k: 4 }, expectedOutput: ["the","is","sunny","day"] }], hiddentestcases: [{ input: { words: ["a","aa","aaa"], k: 1 }, expectedOutput: ["a"] }, { input: { words: ["a","b","a"], k: 2 }, expectedOutput: ["a","b"] }] },
 
-  { id: 193, title: "Longest Substring with At Most Two Distinct Characters", slug: "longest-substring-two-distinct", functionName: "lengthOfLongestSubstringTwoDistinct", difficulty: "Medium", topic: "Sliding Window", pattern: "variable window frequency map", companies: ["Amazon","Facebook"], description: "Given a string s, return the length of the longest substring that contains at most two distinct characters.", examples: [{ input: 's = "eceba"', output: "3", explanation: '"ece"' }, { input: 's = "ccaabbb"', output: "5", explanation: '"aabbb"' }], constraints: ["1 <= s.length <= 10^5", "s consists of English letters."], starterCode: { python: `class Solution:\n    def lengthOfLongestSubstringTwoDistinct(self, s):\n        pass`, javascript: `function lengthOfLongestSubstringTwoDistinct(s) {\n\n}`, typescript: `function lengthOfLongestSubstringTwoDistinct(s: string): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int lengthOfLongestSubstringTwoDistinct(String s) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int lengthOfLongestSubstringTwoDistinct(string s) { return 0; }\n};` }, testcases: [{ input: { s: "eceba" }, expectedOutput: 3 }, { input: { s: "ccaabbb" }, expectedOutput: 5 }], hiddentestcases: [{ input: { s: "a" }, expectedOutput: 1 }, { input: { s: "abcabcabc" }, expectedOutput: 2 }] },
+  { id: 193, title: "Longest Substring with At Most Two Distinct Characters", slug: "longest-substring-two-distinct", functionName: "lengthOfLongestSubstringTwoDistinct", difficulty: "Medium", topic: "Sliding Window", pattern: "variable window frequency map", companies: ["Amazon","Facebook"], description: "Given a string s, return the length of the longest substring that contains at most two distinct characters.", examples: [{ input: 's = "eceba"', output: "3", explanation: '"ece"' }, { input: 's = "ccaabbb"', output: "5", explanation: '"aabbb"' }], constraints: ["1 <= s.length <= 10^5", "s consists of English letters."], starterCode: { python: `class Solution:\n    def lengthOfLongestSubstringTwoDistinct(self, s):\n        pass`, javascript: `function lengthOfLongestSubstringTwoDistinct(s) {\n\n}`, typescript: `function lengthOfLongestSubstringTwoDistinct(s: string): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int lengthOfLongestSubstringTwoDistinct(String s) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int lengthOfLongestSubstringTwoDistinct(string s) { return 0; }\n};`, c: `int lengthOfLongestSubstringTwoDistinct(char* s) {\n    return 0;\n}` }, testcases: [{ input: { s: "eceba" }, expectedOutput: 3 }, { input: { s: "ccaabbb" }, expectedOutput: 5 }], hiddentestcases: [{ input: { s: "a" }, expectedOutput: 1 }, { input: { s: "abcabcabc" }, expectedOutput: 2 }] },
 
   {
     id: 194,
@@ -6287,7 +6306,7 @@ const rawProblems = [
 
   // ── BATCH 046: Trie II + More Strings (IDs 201-210) ───────────────────────
 
-  { id: 201, title: "Palindromic Substrings", slug: "palindromic-substrings", functionName: "countSubstrings", difficulty: "Medium", topic: "Dynamic Programming", pattern: "expand around center", companies: ["Facebook","Amazon"], description: "Given a string s, return the number of palindromic substrings in it. A string is a palindrome when it reads the same backward as forward.", examples: [{ input: 's = "abc"', output: "3", explanation: "a, b, c" }, { input: 's = "aaa"', output: "6", explanation: "a, a, a, aa, aa, aaa" }], constraints: ["1 <= s.length <= 1000", "s consists of lowercase English letters."], starterCode: { python: `class Solution:\n    def countSubstrings(self, s):\n        pass`, javascript: `function countSubstrings(s) {\n\n}`, typescript: `function countSubstrings(s: string): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int countSubstrings(String s) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int countSubstrings(string s) { return 0; }\n};` }, testcases: [{ input: { s: "abc" }, expectedOutput: 3 }, { input: { s: "aaa" }, expectedOutput: 6 }, { input: { s: "a" }, expectedOutput: 1 }], hiddentestcases: [{ input: { s: "aba" }, expectedOutput: 4 }, { input: { s: "abba" }, expectedOutput: 6 }] },
+  { id: 201, title: "Palindromic Substrings", slug: "palindromic-substrings", functionName: "countSubstrings", difficulty: "Medium", topic: "Dynamic Programming", pattern: "expand around center", companies: ["Facebook","Amazon"], description: "Given a string s, return the number of palindromic substrings in it. A string is a palindrome when it reads the same backward as forward.", examples: [{ input: 's = "abc"', output: "3", explanation: "a, b, c" }, { input: 's = "aaa"', output: "6", explanation: "a, a, a, aa, aa, aaa" }], constraints: ["1 <= s.length <= 1000", "s consists of lowercase English letters."], starterCode: { python: `class Solution:\n    def countSubstrings(self, s):\n        pass`, javascript: `function countSubstrings(s) {\n\n}`, typescript: `function countSubstrings(s: string): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int countSubstrings(String s) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int countSubstrings(string s) { return 0; }\n};`, c: `int countSubstrings(char* s) {\n    return 0;\n}` }, testcases: [{ input: { s: "abc" }, expectedOutput: 3 }, { input: { s: "aaa" }, expectedOutput: 6 }, { input: { s: "a" }, expectedOutput: 1 }], hiddentestcases: [{ input: { s: "aba" }, expectedOutput: 4 }, { input: { s: "abba" }, expectedOutput: 6 }] },
 
   {
     id: 202,
@@ -6510,7 +6529,7 @@ const rawProblems = [
 
   { id: 215, title: "Stone Game", slug: "stone-game", functionName: "stoneGame", difficulty: "Medium", topic: "Dynamic Programming", pattern: "game theory DP", companies: ["Amazon","Facebook"], description: "Alice and Bob play a game with piles of stones. Each turn, a player takes the entire leftmost or rightmost pile. Scores accumulate. Alice always goes first. Both play optimally. Return true if Alice wins (her score > Bob's score). Alice always wins — but prove it with DP.", examples: [{ input: "piles = [5,3,4,5]", output: "true" }, { input: "piles = [3,7,2,3]", output: "true" }], constraints: ["2 <= piles.length <= 500", "piles.length is even.", "1 <= piles[i] <= 500", "sum of piles is odd."], starterCode: { python: `class Solution:\n    def stoneGame(self, piles):\n        pass`, javascript: `function stoneGame(piles) {\n\n}`, typescript: `function stoneGame(piles: number[]): boolean {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public boolean stoneGame(int[] piles) { return false; }\n}`, cpp: `class Solution {\npublic:\n    bool stoneGame(vector<int>& piles) { return false; }\n};`, c: `bool stoneGame(int* piles, int pilesSize) {\n    return false;\n}` }, testcases: [{ input: { piles: [5,3,4,5] }, expectedOutput: true }, { input: { piles: [3,7,2,3] }, expectedOutput: true }], hiddentestcases: [{ input: { piles: [1,2] }, expectedOutput: true }, { input: { piles: [1,100,3,5] }, expectedOutput: true }] },
 
-  { id: 216, title: "Single Number III", slug: "single-number-iii", functionName: "singleNumber", difficulty: "Medium", topic: "Bit Manipulation", pattern: "XOR split on differing bit", companies: ["Amazon","Facebook"], description: "Given an integer array nums in which exactly two elements appear only once and all others appear exactly twice, return the two elements that appear only once. You must use O(1) extra space.", examples: [{ input: "nums = [1,2,1,3,2,5]", output: "[3,5]" }, { input: "nums = [-1,0]", output: "[-1,0]" }, { input: "nums = [0,1]", output: "[1,0]" }], constraints: ["2 <= nums.length <= 3 * 10^4", "-2^31 <= nums[i] <= 2^31 - 1", "Each integer appears exactly twice except for two."], starterCode: { python: `class Solution:\n    def singleNumber(self, nums):\n        pass`, javascript: `function singleNumber(nums) {\n\n}`, typescript: `function singleNumber(nums: number[]): number[] {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int[] singleNumber(int[] nums) { return new int[]{}; }\n}`, cpp: `class Solution {\npublic:\n    vector<int> singleNumber(vector<int>& nums) { return {}; }\n};` }, testcases: [{ input: { nums: [1,2,1,3,2,5] }, expectedOutput: [3,5] }, { input: { nums: [-1,0] }, expectedOutput: [-1,0] }, { input: { nums: [0,1] }, expectedOutput: [1,0] }], hiddentestcases: [{ input: { nums: [2,4,2,5,5,6] }, expectedOutput: [4,6] }] },
+  { id: 216, title: "Single Number III", slug: "single-number-iii", functionName: "singleNumber", difficulty: "Medium", topic: "Bit Manipulation", pattern: "XOR split on differing bit", companies: ["Amazon","Facebook"], description: "Given an integer array nums in which exactly two elements appear only once and all others appear exactly twice, return the two elements that appear only once. You must use O(1) extra space.", examples: [{ input: "nums = [1,2,1,3,2,5]", output: "[3,5]" }, { input: "nums = [-1,0]", output: "[-1,0]" }, { input: "nums = [0,1]", output: "[1,0]" }], constraints: ["2 <= nums.length <= 3 * 10^4", "-2^31 <= nums[i] <= 2^31 - 1", "Each integer appears exactly twice except for two."], starterCode: { python: `class Solution:\n    def singleNumber(self, nums):\n        pass`, javascript: `function singleNumber(nums) {\n\n}`, typescript: `function singleNumber(nums: number[]): number[] {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int[] singleNumber(int[] nums) { return new int[]{}; }\n}`, cpp: `class Solution {\npublic:\n    vector<int> singleNumber(vector<int>& nums) { return {}; }\n};`, c: `int* singleNumber(int* nums, int numsSize, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}` }, testcases: [{ input: { nums: [1,2,1,3,2,5] }, expectedOutput: [3,5] }, { input: { nums: [-1,0] }, expectedOutput: [-1,0] }, { input: { nums: [0,1] }, expectedOutput: [1,0] }], hiddentestcases: [{ input: { nums: [2,4,2,5,5,6] }, expectedOutput: [4,6] }] },
 
   { id: 217, title: "Total Hamming Distance", slug: "total-hamming-distance", functionName: "totalHammingDistance", difficulty: "Medium", topic: "Bit Manipulation", pattern: "count set bits per position", companies: ["Facebook","Amazon"], description: "The Hamming distance between two integers is the number of positions at which the corresponding bits are different. Given an integer array nums, return the sum of Hamming distances between all pairs of integers in nums.", examples: [{ input: "nums = [4,14,2]", output: "6" }, { input: "nums = [4,14,4]", output: "4" }], constraints: ["1 <= nums.length <= 10^4", "0 <= nums[i] <= 10^9"], starterCode: { python: `class Solution:\n    def totalHammingDistance(self, nums):\n        pass`, javascript: `function totalHammingDistance(nums) {\n\n}`, typescript: `function totalHammingDistance(nums: number[]): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int totalHammingDistance(int[] nums) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int totalHammingDistance(vector<int>& nums) { return 0; }\n};`, c: `int totalHammingDistance(int* nums, int numsSize) {\n    return 0;\n}` }, testcases: [{ input: { nums: [4,14,2] }, expectedOutput: 6 }, { input: { nums: [4,14,4] }, expectedOutput: 4 }], hiddentestcases: [{ input: { nums: [0,0] }, expectedOutput: 0 }, { input: { nums: [1,2,3] }, expectedOutput: 4 }] },
 
@@ -6556,7 +6575,7 @@ const rawProblems = [
 
   { id: 221, title: "Next Greater Element I", slug: "next-greater-element-i", functionName: "nextGreaterElement", difficulty: "Easy", topic: "Stacks", pattern: "monotonic stack with hash map", companies: ["Amazon","Microsoft"], description: "The next greater element of some element x in an array is the first greater element to the right. Given two arrays nums1 and nums2 (nums1 is a subset of nums2), return an array of the next greater element for each element in nums1. Return -1 if no greater element exists.", examples: [{ input: "nums1 = [4,1,2], nums2 = [1,3,4,2]", output: "[-1,3,-1]" }, { input: "nums1 = [2,4], nums2 = [1,2,3,4]", output: "[3,-1]" }], constraints: ["1 <= nums1.length <= nums2.length <= 1000", "0 <= nums1[i], nums2[i] <= 10^4", "All integers in nums2 are unique."], starterCode: { python: `class Solution:\n    def nextGreaterElement(self, nums1, nums2):\n        pass`, javascript: `function nextGreaterElement(nums1, nums2) {\n\n}`, typescript: `function nextGreaterElement(nums1: number[], nums2: number[]): number[] {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int[] nextGreaterElement(int[] nums1, int[] nums2) { return new int[]{}; }\n}`, cpp: `class Solution {\npublic:\n    vector<int> nextGreaterElement(vector<int>& nums1, vector<int>& nums2) { return {}; }\n};` }, testcases: [{ input: { nums1: [4,1,2], nums2: [1,3,4,2] }, expectedOutput: [-1,3,-1] }, { input: { nums1: [2,4], nums2: [1,2,3,4] }, expectedOutput: [3,-1] }], hiddentestcases: [{ input: { nums1: [1,3,5,2,4], nums2: [6,5,4,3,2,1,7] }, expectedOutput: [7,7,7,7,7] }] },
 
-  { id: 222, title: "Next Greater Element II", slug: "next-greater-element-ii", functionName: "nextGreaterElements", difficulty: "Medium", topic: "Stacks", pattern: "circular monotonic stack", companies: ["Amazon","Facebook"], description: "Given a circular integer array nums, return the next greater number for every element. The next greater number of a number x is the first greater number to its traversal order next in the circular array.", examples: [{ input: "nums = [1,2,1]", output: "[2,-1,2]" }, { input: "nums = [1,2,3,4,3]", output: "[2,3,4,-1,4]" }], constraints: ["1 <= nums.length <= 10^4", "-10^9 <= nums[i] <= 10^9"], starterCode: { python: `class Solution:\n    def nextGreaterElements(self, nums):\n        pass`, javascript: `function nextGreaterElements(nums) {\n\n}`, typescript: `function nextGreaterElements(nums: number[]): number[] {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int[] nextGreaterElements(int[] nums) { return new int[]{}; }\n}`, cpp: `class Solution {\npublic:\n    vector<int> nextGreaterElements(vector<int>& nums) { return {}; }\n};` }, testcases: [{ input: { nums: [1,2,1] }, expectedOutput: [2,-1,2] }, { input: { nums: [1,2,3,4,3] }, expectedOutput: [2,3,4,-1,4] }], hiddentestcases: [{ input: { nums: [5,4,3,2,1] }, expectedOutput: [-1,5,5,5,5] }, { input: { nums: [1] }, expectedOutput: [-1] }] },
+  { id: 222, title: "Next Greater Element II", slug: "next-greater-element-ii", functionName: "nextGreaterElements", difficulty: "Medium", topic: "Stacks", pattern: "circular monotonic stack", companies: ["Amazon","Facebook"], description: "Given a circular integer array nums, return the next greater number for every element. The next greater number of a number x is the first greater number to its traversal order next in the circular array.", examples: [{ input: "nums = [1,2,1]", output: "[2,-1,2]" }, { input: "nums = [1,2,3,4,3]", output: "[2,3,4,-1,4]" }], constraints: ["1 <= nums.length <= 10^4", "-10^9 <= nums[i] <= 10^9"], starterCode: { python: `class Solution:\n    def nextGreaterElements(self, nums):\n        pass`, javascript: `function nextGreaterElements(nums) {\n\n}`, typescript: `function nextGreaterElements(nums: number[]): number[] {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int[] nextGreaterElements(int[] nums) { return new int[]{}; }\n}`, cpp: `class Solution {\npublic:\n    vector<int> nextGreaterElements(vector<int>& nums) { return {}; }\n};`, c: `int* nextGreaterElements(int* nums, int numsSize, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}` }, testcases: [{ input: { nums: [1,2,1] }, expectedOutput: [2,-1,2] }, { input: { nums: [1,2,3,4,3] }, expectedOutput: [2,3,4,-1,4] }], hiddentestcases: [{ input: { nums: [5,4,3,2,1] }, expectedOutput: [-1,5,5,5,5] }, { input: { nums: [1] }, expectedOutput: [-1] }] },
 
   { id: 223, title: "Trapping Rain Water II", slug: "trapping-rain-water-ii", functionName: "trapRainWater", difficulty: "Hard", topic: "Heap", pattern: "min heap BFS from border", companies: ["Amazon","Google"], description: "Given an m x n matrix of non-negative integers representing heights, compute how much water it can trap after raining (3D version).", examples: [{ input: "heightMap = [[1,4,3,1,3,2],[3,2,1,3,2,4],[2,3,3,2,3,1]]", output: "4" }, { input: "heightMap = [[3,3,3,3,3],[3,2,2,2,3],[3,2,1,2,3],[3,2,2,2,3],[3,3,3,3,3]]", output: "10" }], constraints: ["m == heightMap.length", "n == heightMap[i].length", "1 <= m, n <= 200", "0 <= heightMap[i][j] <= 2 * 10^4"], starterCode: { python: `class Solution:\n    def trapRainWater(self, heightMap):\n        pass`, javascript: `function trapRainWater(heightMap) {\n\n}`, typescript: `function trapRainWater(heightMap: number[][]): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int trapRainWater(int[][] heightMap) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int trapRainWater(vector<vector<int>>& heightMap) { return 0; }\n};` }, testcases: [{ input: { heightMap: [[1,4,3,1,3,2],[3,2,1,3,2,4],[2,3,3,2,3,1]] }, expectedOutput: 4 }, { input: { heightMap: [[3,3,3,3,3],[3,2,2,2,3],[3,2,1,2,3],[3,2,2,2,3],[3,3,3,3,3]] }, expectedOutput: 10 }], hiddentestcases: [{ input: { heightMap: [[1,1],[1,1]] }, expectedOutput: 0 }] },
 
@@ -6656,6 +6675,7 @@ const rawProblems = [
       typescript: `function asteroidCollision(asteroids: number[]): number[] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int[] asteroidCollision(int[] asteroids) {\n        return new int[]{};\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<int> asteroidCollision(vector<int>& asteroids) {\n        return {};\n    }\n};`,
+      c: `int* asteroidCollision(int* asteroids, int asteroidsSize, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
     testcases: [
       { input: { asteroids: [5,10,-5] }, expectedOutput: [5,10] },
@@ -7024,7 +7044,7 @@ const rawProblems = [
 
   // ── BATCH 050: Final 10 — Hard + Company Specials (IDs 241-250) ───────────
 
-  { id: 241, title: "Squares of a Sorted Array", slug: "squares-of-sorted-array", functionName: "sortedSquares", difficulty: "Easy", topic: "Two Pointers", pattern: "two pointer merge from ends", companies: ["Google","Amazon","Facebook"], description: "Given an integer array nums sorted in non-decreasing order, return an array of the squares of each number sorted in non-decreasing order.", examples: [{ input: "nums = [-4,-1,0,3,10]", output: "[0,1,9,16,100]" }, { input: "nums = [-7,-3,2,3,11]", output: "[4,9,9,49,121]" }], constraints: ["1 <= nums.length <= 10^4", "-10^4 <= nums[i] <= 10^4", "nums is sorted in non-decreasing order."], starterCode: { python: `class Solution:\n    def sortedSquares(self, nums):\n        pass`, javascript: `function sortedSquares(nums) {\n\n}`, typescript: `function sortedSquares(nums: number[]): number[] {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int[] sortedSquares(int[] nums) { return new int[]{}; }\n}`, cpp: `class Solution {\npublic:\n    vector<int> sortedSquares(vector<int>& nums) { return {}; }\n};` }, testcases: [{ input: { nums: [-4,-1,0,3,10] }, expectedOutput: [0,1,9,16,100] }, { input: { nums: [-7,-3,2,3,11] }, expectedOutput: [4,9,9,49,121] }], hiddentestcases: [{ input: { nums: [-3,-1,0,1,3] }, expectedOutput: [0,1,1,9,9] }, { input: { nums: [1] }, expectedOutput: [1] }] },
+  { id: 241, title: "Squares of a Sorted Array", slug: "squares-of-sorted-array", functionName: "sortedSquares", difficulty: "Easy", topic: "Two Pointers", pattern: "two pointer merge from ends", companies: ["Google","Amazon","Facebook"], description: "Given an integer array nums sorted in non-decreasing order, return an array of the squares of each number sorted in non-decreasing order.", examples: [{ input: "nums = [-4,-1,0,3,10]", output: "[0,1,9,16,100]" }, { input: "nums = [-7,-3,2,3,11]", output: "[4,9,9,49,121]" }], constraints: ["1 <= nums.length <= 10^4", "-10^4 <= nums[i] <= 10^4", "nums is sorted in non-decreasing order."], starterCode: { python: `class Solution:\n    def sortedSquares(self, nums):\n        pass`, javascript: `function sortedSquares(nums) {\n\n}`, typescript: `function sortedSquares(nums: number[]): number[] {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int[] sortedSquares(int[] nums) { return new int[]{}; }\n}`, cpp: `class Solution {\npublic:\n    vector<int> sortedSquares(vector<int>& nums) { return {}; }\n};`, c: `int* sortedSquares(int* nums, int numsSize, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}` }, testcases: [{ input: { nums: [-4,-1,0,3,10] }, expectedOutput: [0,1,9,16,100] }, { input: { nums: [-7,-3,2,3,11] }, expectedOutput: [4,9,9,49,121] }], hiddentestcases: [{ input: { nums: [-3,-1,0,1,3] }, expectedOutput: [0,1,1,9,9] }, { input: { nums: [1] }, expectedOutput: [1] }] },
 
   { id: 242, title: "Subarray Product Less Than K", slug: "subarray-product-less-than-k", functionName: "numSubarrayProductLessThanK", difficulty: "Medium", topic: "Sliding Window", pattern: "variable window with running product", companies: ["Amazon","Facebook","Google"], description: "Given an array of positive integers nums and an integer k, return the number of contiguous subarrays where the product of all the elements in the subarray is strictly less than k.", examples: [{ input: "nums = [10,5,2,6], k = 100", output: "8", explanation: "The 8 subarrays with product less than 100 are [10], [5], [2], [6], [10,5], [5,2], [2,6], [5,2,6]. Note that [10,5,2] is not included because its product is 100, which is not strictly less than 100." }, { input: "nums = [1,2,3], k = 0", output: "0", explanation: "No product of positive integers can be less than 0, so there are no valid subarrays." }, { input: "nums = [1], k = 2", output: "1", explanation: "The only subarray is [1], with product 1, which is less than 2." }], constraints: ["1 <= nums.length <= 3 * 10^4", "1 <= nums[i] <= 1000", "0 <= k <= 10^6"], starterCode: { python: `class Solution:\n    def numSubarrayProductLessThanK(self, nums, k):\n        pass`, javascript: `function numSubarrayProductLessThanK(nums, k) {\n\n}`, typescript: `function numSubarrayProductLessThanK(nums: number[], k: number): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int numSubarrayProductLessThanK(int[] nums, int k) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int numSubarrayProductLessThanK(vector<int>& nums, int k) { return 0; }\n};`, c: `int numSubarrayProductLessThanK(int* nums, int numsSize, int k) {\n    return 0;\n}` }, testcases: [{ input: { nums: [10,5,2,6], k: 100 }, expectedOutput: 8 }, { input: { nums: [1,2,3], k: 0 }, expectedOutput: 0 }, { input: { nums: [1], k: 2 }, expectedOutput: 1 }], hiddentestcases: [{ input: { nums: [1,1,1], k: 1 }, expectedOutput: 0 }, { input: { nums: [100], k: 100 }, expectedOutput: 0 }] },
 

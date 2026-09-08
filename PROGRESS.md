@@ -1184,3 +1184,71 @@ here per the explicit "do not extend the driver" instruction.
 
 Batch 2 not started; waiting on explicit approval per the scoping doc's
 one-batch-per-session agreement.
+
+## Phase 6 — Language Expansion, Plan 012 Batch 2: C starter-code backfill, cont'd (this session)
+
+Second of the one-batch-per-session sequence from
+`plans/012-c-starter-backfill-scoping.md`. Target: the remaining
+templatable shapes from the top-10 table not yet covered by Batch 1 —
+`arr1d->arr1d`, `arr1d,num->arr1d`, `str->int`.
+
+**Scope correction made before starting, not after:** re-checked
+`languageDrivers/c.js` against `languageTypes/c.js` before generating
+anything and confirmed the 2D-array-input bug flagged (but not fixed) in
+Batch 1's report is more severe than first described — `generate()`'s
+call-arg builder appends `${key}Size` for *any* array regardless of
+dimension, but `cDeclaration()` names a 2D array's companions
+`${key}Rows`/`${key}Cols`. This blocks **any** shape with a 2D array
+input, not just 2D-array output. Excluded `arr2d->int` (15 candidates)
+and `arr2d->arr2d` (11) from this batch entirely — consistent with the
+already-approved "don't extend the driver" decision, just applied to a
+wider set than the scoping doc's table implied. Flagged to Bunny before
+implementing, not after.
+
+### Real numbers
+
+| Shape | Candidates | Backfilled | Skipped | Reason |
+|---|---:|---:|---:|---|
+| `arr1d -> arr1d` | 17 | 11 | 6 | 3× `void` return (the known `rotate-array`/`sort-colors`/`next-permutation` in-place-mutation bug — independently rediscovered by this batch's own analysis, not just carried over from memory), 2× `string` return, 1× `TreeNode*` param |
+| `arr1d, num -> arr1d` | 8 | 5 | 3 | 1× `void` return, 1× `ListNode*` return, 1× `vector<string>` return |
+| `str -> int` | 10 | 10 | 0 | — |
+| **Total** | **35** | **26** | **9** | |
+
+Every accepted array-return problem uses the one shape
+`languageDrivers/c.js` actually supports: `int*` return + trailing
+`int* returnSize` out-param, `*returnSize = 0; return NULL;` as the
+unimplemented-stub body (same "return empty" convention the cpp stub
+already uses for these problems). No `paramTypes.c` overrides were
+needed this batch (no double arrays or ambiguous scalars turned up among
+the 26, same cross-check-against-real-cpp-signature method as Batch 1).
+
+Cumulative C coverage after Batch 2: **98/250** (72 + 26).
+
+### Verification
+
+- Backend `npx vitest run`: **103/103 files, 1173/1173 tests** (1171
+  baseline + 2 new: one `arr1d->arr1d` regression case, one `str->int`
+  case — kept minimal since the underlying `int*`-return and `char*`-
+  param validation paths were already exercised by Batch 1's tests).
+- `node backend/scripts/checkProblemsFolderDrift.js`: zero drift,
+  98/250 problems now carry `starter/c.c` (run correctly from `backend/`
+  this time, no repeat of Batch 1's cwd mistake).
+- `node backend/scripts/validateProblemContracts.js`: 250 problems + 8
+  Code Club Edition missions, no contract mismatches.
+- Compiled and executed 3 representative generated drivers via `gcc`
+  (real `malloc`-based array-return implementations for `two-sum` and
+  `move-zeroes`, a real DP implementation for `decode-ways`) — all 3
+  produced correct output.
+
+### What Batch 2 does NOT include (unchanged, deliberately)
+
+- `arr2d->int` / `arr2d->arr2d` (26 combined candidates) — blocked by
+  the 2D-array-input driver bug above, not attempted.
+- The known `rotate-array`/`sort-colors`/`next-permutation` void-return
+  bug — still just documented, not fixed (pre-existing, Java/C++-wide,
+  out of C-onboarding scope).
+- The ~93-problem long tail (Batch 3), the 17 `operationSequence`
+  problems (Batch 4), any driver extension (possible Batch 5), Plan 011
+  reconstruction — none started.
+
+Batch 3 not started; waiting on explicit approval.
