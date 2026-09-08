@@ -1092,3 +1092,95 @@ calls it and the test wasn't wrapped in a provider.
   (`zinc-9/8|gray-9/8|slate-9/8|neutral-9/8|black` and `ink-`) — if a
   third hardcoded-color convention exists somewhere in the codebase
   under a different naming scheme, it wasn't caught by this pass.
+
+## Phase 6 — Language Expansion, Plan 012 Batch 1: C starter-code backfill (this session)
+
+C's registry entry, `languageTypes/c.js`, and `languageDrivers/c.js` were
+already wired in from a prior session (`enabled: false`, `judge0Id: 50`
+unverified) — this session's job was actual `starterCode.c` content, per
+`plans/012-c-starter-backfill-scoping.md`. Scoping doc approved with
+three explicit decisions: (Finding 2) do NOT extend the driver yet, only
+backfill shapes it already supports; one batch per session; long-tail
+problems get best-judgment signatures with reasoning documented, not
+per-problem sign-off.
+
+Audited the real catalog rather than trusting the scoping doc's
+projected ~90-problem estimate: 80 problems actually matched the five
+target shapes (`arr1d->int`, `arr1d,num->int`, `num->int`, `arr1d->bool`,
+`str,str->bool`); **72 backfilled**, 8 correctly excluded (`ListNode*`/
+`TreeNode*` params, `vector<string>&`/`vector<char>&` params, `uint32_t`
+return/param) rather than forced. Every accepted problem's C signature
+was cross-checked against its *actual* declared C++ signature, not
+guessed from a testcase value's structural shape alone — this is what
+caught `two-sum-count-pairs` needing `long long` (extended its existing
+`returnType: { java, cpp }` to add `c: "long long"`) and kept the
+`paramTypes.c` override count at zero rather than missing a case.
+
+### New validation infrastructure
+
+`validateProblemContracts.js` gained C-specific checks with no java/cpp
+equivalent, because `languageDrivers/c.js`'s `generate()` has no generic
+fallback for an unrecognized type — unlike Java/C++, it silently
+mis-prints rather than erroring:
+
+- `checkCReturnTypeSupported` — resolves the real return-type token off
+  the function signature first (not the driver's own lossy
+  infer-with-default-to-"int" fallback) and rejects anything outside
+  `{int, long long, double, bool, int*, char*}`.
+- `checkCArrayParamTypeSafety` — flags a numeric array param containing
+  non-integer values with no explicit `paramTypes.c` override (`
+  inferCType()` would silently type it `int[]` and truncate every value).
+- `checkC` — declared-vs-actual return type mismatch, mirrors
+  `checkJava`/`checkCpp`.
+- `checkArgumentGeneration` extended with a C branch.
+
+7 new unit tests added to `generateDriverCode.test.js` covering all of
+the above, including the specific "unsupported return type resolved via
+inference alone would have passed" regression this check exists to
+prevent.
+
+### Verification
+
+- Backend `npx vitest run`: **103/103 files, 1171/1171 tests** (1145
+  baseline + 26 new: 7 C validation unit tests, rest incidental to the
+  catalog data change).
+- `node backend/scripts/checkProblemsFolderDrift.js`: zero drift,
+  72/250 problems now carry a `starter/c.c` file matching
+  `src/data/problems.js`. (Caught and corrected an own operational
+  mistake mid-session: `exportProblemsToFolders.js`/
+  `checkProblemsFolderDrift.js` resolve `problems/` relative to
+  `process.cwd()` and must be run from `backend/` — ran them from the
+  repo root once, which silently created a stray top-level `problems/`
+  instead of updating `backend/problems/`; caught via a 0-count sanity
+  check, deleted, redone correctly.)
+- `node backend/scripts/validateProblemContracts.js`: 250 problems + 8
+  Code Club Edition missions, no contract mismatches.
+- `npm run lint` (full repo): same single pre-existing
+  `CollegeDetailDrawer.jsx` finding, zero new lint debt.
+- `npm run build`: succeeds.
+- Beyond static checks: compiled and executed 5 representative generated
+  drivers (one per shape, real implementations, not just stubs) through
+  actual `gcc`, including the `long long` overflow case — all 5 produced
+  correct output against real testcase data.
+
+### Real driver bug found, not fixed (out of Batch 1 scope)
+
+`languageDrivers/c.js`'s `generate()` builds call-args as
+`Array.isArray(value) ? \`${key}, ${key}Size\` : key`, but `cDeclaration()`
+declares `${key}Rows`/`${key}Cols` (not `${key}Size`) for a 2D array —
+any future 2D-array **input** shape would generate a call to an
+undeclared variable. Relevant to whoever picks up Batch 3/5, not fixed
+here per the explicit "do not extend the driver" instruction.
+
+### What Batch 1 does NOT include (unchanged, deliberately)
+
+- `enabled: false` still stands; `judge0Id: 50` still unverified.
+- The 8 skipped Batch-1-shape problems, the ~93-problem long tail
+  (Batch 3), the 17 `operationSequence`/design problems (Batch 4), and
+  any 2D-array/string-array driver extension (possible Batch 5) — none
+  started.
+- `plans/011-language-and-problem-extensibility.md` reconstruction —
+  still missing from the repo, still not this session's task.
+
+Batch 2 not started; waiting on explicit approval per the scoping doc's
+one-batch-per-session agreement.

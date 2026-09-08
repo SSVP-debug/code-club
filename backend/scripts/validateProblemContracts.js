@@ -39,6 +39,7 @@ import { generateDriverCode } from "../utils/generateDriverCode.js";
 import { generateOperationSequenceDriver } from "../utils/operationSequenceDriver.js";
 import { identifyOperationSequence } from "../utils/operationSequenceShape.js";
 import { SUPPORTED_LANGUAGE_KEYS } from "../config/languages.js";
+import { inferReturnType as inferCReturnType } from "../utils/languageDrivers/c.js";
 
 const JAVA_RETURN_RE = /public\s+([\w<>[\],]+(?:\s*<[\w<>[\],\s]*>)?)\s+\w+\s*\(/;
 
@@ -100,6 +101,126 @@ function checkCpp(problem) {
     return `${problem.slug}: returnType.cpp is "${declared}" but no method signature could be matched in the C++ starter code`;
   }
   return null;
+}
+
+// C free functions have no access specifier (unlike Java's `public`) and
+// no class scope to disambiguate a line (unlike C++'s `public:` block) —
+// closer to Java's shape than C++'s, but Java's regex hardcodes the
+// `public` keyword, which doesn't exist in C. Built per-functionName the
+// same way checkCpp's line regex is, since that's the only reliable
+// anchor for where the return type ends and the function name begins
+// (a bare structural regex over `\w+\s*\(` alone can't tell "int*
+// twoSum(" apart from a call expression inside the function body).
+function cReturnTypeLineRegex(fnName) {
+  return new RegExp(`^\\s*([\\w*]+(?:\\s+[\\w*]+)*)\\s+${fnName}\\s*\\(`);
+}
+
+function checkC(problem) {
+  const code = problem.starterCode?.c;
+  const declared = problem.returnType?.c;
+  if (!code || !declared) return null;
+
+  const fnName = problem.functionName;
+  const lineRe = cReturnTypeLineRegex(fnName);
+  const line = code.split("\n").find((l) => lineRe.test(l));
+  const actual = line?.match(lineRe)?.[1]?.trim();
+
+  if (actual && actual !== declared) {
+    return `${problem.slug}: C starter code declares return type "${actual}" but returnType.c says "${declared}"`;
+  }
+  if (!actual) {
+    return `${problem.slug}: returnType.c is "${declared}" but no function signature could be matched in the C starter code`;
+  }
+  return null;
+}
+
+// The specific bug class Plan 012 (C language onboarding) exists to catch:
+// languageDrivers/c.js's generate() has exactly one branch per return type
+// in SUPPORTED_C_RETURN_TYPES below (int*, bool, char*, and a final
+// scalar-else branch for int/long long/double). Anything NOT in that list
+// — a 2D array, a string-array, any other pointer/struct shape — falls
+// through to the final scalar-else branch silently: it still generates
+// code that COMPILES (`${returnType} result = fn(...)`, printed with
+// `%d`/`%lld`/`%f`), it just prints the wrong thing. Unlike Java/C++,
+// where an unrecognized type still round-trips through `auto`/`Object`
+// generically, C's driver has no generic fallback — so this check has no
+// java/cpp equivalent and needs its own list here, kept in sync with
+// generate()'s own branches by hand (there's no single shared export of
+// "which return types this driver's generate() branches on" to derive it
+// from — see languageDrivers/c.js if that stops being true).
+const SUPPORTED_C_RETURN_TYPES = new Set(["int", "long long", "double", "bool", "int*", "char*"]);
+
+function checkCReturnTypeSupported(problem) {
+  const code = problem.starterCode?.c;
+  if (!code) return null;
+
+  // Resolution order: declared contract first; otherwise try to read the
+  // REAL return-type token straight off the function signature (anchored
+  // on functionName, same as checkC's mismatch check) rather than going
+  // straight to the driver's own inferReturnType(). That distinction
+  // matters here specifically: inferReturnType's regex is a short
+  // whitelist that silently defaults to "int" for anything it doesn't
+  // recognize (e.g. "int**") — trusting that default would make this
+  // check pass for exactly the unsupported-shape case it exists to
+  // catch. Reading the actual token first, and only falling back to
+  // inferReturnType() if the signature itself can't be found, closes
+  // that gap.
+  const fnName = problem.functionName;
+  const lineRe = fnName ? cReturnTypeLineRegex(fnName) : null;
+  const line = lineRe ? code.split("\n").find((l) => lineRe.test(l)) : null;
+  const actualToken = line?.match(lineRe)?.[1]?.trim();
+
+  const effective = problem.returnType?.c || actualToken || inferCReturnType(code);
+
+  if (!SUPPORTED_C_RETURN_TYPES.has(effective)) {
+    return (
+      `${problem.slug}: C return type "${effective}" is not one of languageDrivers/c.js's ` +
+      `supported return shapes (${[...SUPPORTED_C_RETURN_TYPES].join(", ")}) — generate() would ` +
+      `silently fall through to its scalar-else branch and print the wrong result. Either declare ` +
+      `a returnType.c the driver DOES support, extend the driver first, or remove starterCode.c ` +
+      `for this problem until it can be supported correctly.`
+    );
+  }
+  return null;
+}
+
+// languageTypes/c.js's inferCType() only detects array element type from
+// the FIRST element's structural shape (string → char*[], boolean →
+// bool[], anything else → int[]) — it has no branch for a non-integer
+// number, so an array of doubles is silently typed `int[]`, truncating
+// every value in the generated C literal. This has no Java/C++ analog
+// (both languages' own inference already special-cases non-integer
+// numeric arrays) — Plan 012 flagged this exact class of "compiles but
+// wrong" risk, so it gets checked explicitly here rather than relying on
+// paramTypes.c being remembered by hand for every problem that needs it.
+function checkCArrayParamTypeSafety(problem) {
+  const code = problem.starterCode?.c;
+  if (!code) return [];
+
+  const declaredParamTypes = problem.paramTypes?.c || {};
+  const testcases = [...(problem.testcases || []), ...(problem.hiddentestcases || [])];
+  const errors = [];
+  const flaggedKeys = new Set();
+
+  for (const testcase of testcases) {
+    for (const [key, value] of Object.entries(testcase.input || {})) {
+      if (flaggedKeys.has(key)) continue;
+      const isNumericArray =
+        Array.isArray(value) && value.length > 0 && !Array.isArray(value[0]) && typeof value[0] === "number";
+      if (!isNumericArray) continue;
+
+      const hasNonInteger = value.some((v) => !Number.isInteger(v));
+      if (hasNonInteger && !declaredParamTypes[key]) {
+        flaggedKeys.add(key);
+        errors.push(
+          `${problem.slug}: parameter "${key}" contains non-integer values in at least one testcase ` +
+            `but paramTypes.c has no explicit entry for it — inferCType() will type it "int[]" and ` +
+            `truncate every value. Declare paramTypes.c.${key} = "double[]" explicitly.`
+        );
+      }
+    }
+  }
+  return errors;
 }
 
 // "Design" problems (constructor + operation-sequence contract, e.g.
@@ -176,6 +297,30 @@ function checkArgumentGeneration(problem) {
     }
   }
 
+  // C's generate() has no try/catch-based exception path of its own (see
+  // languageDrivers/c.js's header comment — a bad generation here means a
+  // real compile failure or crash at Judge0 time, not a caught runtime
+  // error), so actually invoking it against the problem's own testcase
+  // is the only way this script catches a cDeclaration()/generate()
+  // throw before a student does. The return-type-whitelist check
+  // (checkCReturnTypeSupported) and the array-param-safety check
+  // (checkCArrayParamTypeSafety) above catch the "compiles but wrong"
+  // class; this generation call just catches outright throws.
+  if (problem.starterCode?.c) {
+    try {
+      generateDriverCode(
+        "c",
+        problem.starterCode.c,
+        testcase.input,
+        problem.functionName,
+        problem.returnType?.c,
+        problem.paramTypes?.c
+      );
+    } catch (err) {
+      errors.push(`${problem.slug}: generateDriverCode threw for C — ${err.message}`);
+    }
+  }
+
   return errors;
 }
 
@@ -230,6 +375,9 @@ export function validateProblems(problemList) {
     checkFunctionName(p),
     checkJava(p),
     checkCpp(p),
+    checkC(p),
+    checkCReturnTypeSupported(p),
+    ...checkCArrayParamTypeSafety(p),
     ...checkArgumentGeneration(p),
     ...checkOperationSequenceGeneration(p),
   ].filter(Boolean));

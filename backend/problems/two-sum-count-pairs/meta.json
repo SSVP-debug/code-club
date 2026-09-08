@@ -19,7 +19,8 @@
   ],
   "returnType": {
     "java": "long",
-    "cpp": "long long"
+    "cpp": "long long",
+    "c": "long long"
   },
   "paramTypes": {},
   "comparisonMode": "exact",

@@ -324,3 +324,123 @@ describe("validateProblemContracts — mismatch detection", () => {
     expect(validateProblems(missions)).toHaveLength(0);
   });
 });
+
+// Plan 012 (C language onboarding), Batch 1 — validateProblemContracts.js's
+// new C-specific checks. No java/cpp equivalent exists for the "unsupported
+// return type" and "unsafe array param" checks below because both bug
+// classes are specific to languageDrivers/c.js's narrower, non-generic
+// fallback behavior — see that file and validateProblemContracts.js's own
+// comments on checkCReturnTypeSupported/checkCArrayParamTypeSafety.
+describe("validateProblemContracts — C contract checks (Plan 012)", () => {
+  it("flags a problem whose C starter code disagrees with its declared returnType.c", () => {
+    const mismatched = {
+      slug: "fake-c-mismatch",
+      functionName: "countPairs",
+      returnType: { c: "long long" },
+      starterCode: {
+        c: `int countPairs(int* nums, int numsSize, int target) {\n  return 0;\n}`,
+      },
+    };
+
+    const errors = validateProblems([mismatched]);
+
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatch(/C starter code declares return type "int" but returnType\.c says "long long"/);
+  });
+
+  it("passes a consistent C problem definition", () => {
+    const consistent = {
+      slug: "fake-c-ok",
+      functionName: "countPairs",
+      returnType: { c: "long long" },
+      starterCode: {
+        c: `long long countPairs(int* nums, int numsSize, int target) {\n  return 0;\n}`,
+      },
+      testcases: [{ input: { nums: [1, 1], target: 2 }, expectedOutput: 1 }],
+    };
+
+    expect(validateProblems([consistent])).toHaveLength(0);
+  });
+
+  it("flags an inferred C return type that generate() does not actually support (silent-fallthrough bug class)", () => {
+    // No `class Solution` idea applies to C, so an unsupported shape like
+    // a 2D-array return can't be spelled with a real return-type token
+    // the driver recognizes — this is exactly the case that used to slip
+    // through to generate()'s scalar-else branch undetected.
+    const unsupported = {
+      slug: "fake-c-unsupported-return",
+      functionName: "solve",
+      starterCode: {
+        c: `int** solve(int* nums, int numsSize, int* returnSize) {\n  return NULL;\n}`,
+      },
+      testcases: [{ input: { nums: [1, 2] }, expectedOutput: [[1], [2]] }],
+    };
+
+    const errors = validateProblems([unsupported]);
+    const returnTypeError = errors.find((e) => e.includes("not one of languageDrivers/c.js's"));
+    expect(returnTypeError).toBeDefined();
+    // The signature-line regex reads the real "int**" token directly off
+    // the function definition rather than trusting inferReturnType()'s
+    // own lossy whitelist-with-default-to-"int" fallback — see
+    // checkCReturnTypeSupported's comment for why that distinction
+    // matters here.
+    expect(returnTypeError).toMatch(/C return type "int\*\*" is not one of/);
+  });
+
+  it("an explicitly declared but unsupported returnType.c is caught too, not just a bad inference", () => {
+    const declaredUnsupported = {
+      slug: "fake-c-declared-unsupported",
+      functionName: "solve",
+      returnType: { c: "int**" },
+      starterCode: {
+        c: `int** solve(int* nums, int numsSize, int* returnSize) {\n  return NULL;\n}`,
+      },
+    };
+
+    const errors = validateProblems([declaredUnsupported]);
+    expect(errors.some((e) => e.includes('C return type "int**" is not one of'))).toBe(true);
+  });
+
+  it("flags a numeric array parameter containing non-integer values with no explicit paramTypes.c override", () => {
+    const unsafeDoubleArray = {
+      slug: "fake-c-double-array",
+      functionName: "average",
+      starterCode: {
+        c: `double average(double* nums, int numsSize) {\n  return 0.0;\n}`,
+      },
+      testcases: [{ input: { nums: [1.5, 2.5, 3.0] }, expectedOutput: 2.33 }],
+    };
+
+    const errors = validateProblems([unsafeDoubleArray]);
+    expect(errors.some((e) => e.includes('paramTypes.c.nums = "double[]"'))).toBe(true);
+  });
+
+  it("an explicit paramTypes.c override silences the non-integer-array warning", () => {
+    const declaredDoubleArray = {
+      slug: "fake-c-double-array-declared",
+      functionName: "average",
+      paramTypes: { c: { nums: "double[]" } },
+      returnType: { c: "double" },
+      starterCode: {
+        c: `double average(double* nums, int numsSize) {\n  return 0.0;\n}`,
+      },
+      testcases: [{ input: { nums: [1.5, 2.5, 3.0] }, expectedOutput: 2.33 }],
+    };
+
+    expect(validateProblems([declaredDoubleArray])).toHaveLength(0);
+  });
+
+  it("checkArgumentGeneration's C branch runs generateDriverCode without throwing for an ordinary problem (regression guard, not a positive throw test — see languageDrivers/c.js's header: generate() has no exception path of its own, so this only guards against a future generation-time crash, not today's permissive-but-silent behavior)", () => {
+    const ordinary = {
+      slug: "fake-c-ordinary",
+      functionName: "twoSum",
+      returnType: { c: "int*" },
+      starterCode: {
+        c: `int* twoSum(int* nums, int numsSize, int target, int* returnSize) {\n  *returnSize = 0;\n  return NULL;\n}`,
+      },
+      testcases: [{ input: { nums: [2, 7, 11, 15], target: 9 }, expectedOutput: [0, 1] }],
+    };
+
+    expect(validateProblems([ordinary])).toHaveLength(0);
+  });
+});
