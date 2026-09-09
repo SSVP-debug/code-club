@@ -370,6 +370,53 @@ function checkOperationSequenceGeneration(problem) {
   return errors;
 }
 
+// languageDrivers/c.js's generateOperationSequence() has two real gaps,
+// both discovered by hand while scoping Plan 012 Batch 4 rather than
+// being documented anywhere beforehand:
+//   1. It unconditionally does `_results[i] = (long) ClassName_method(...)`
+//      for EVERY call — casting a `void` expression to `long` is a hard
+//      C compile error (verified against a real gcc-compiled struct-
+//      based implementation, not just read from the template).
+//   2. Results are always printed with `%ld` — a `bool`-returning
+//      method prints `1`/`0`, but `expectedOutput` for these problems is
+//      authored as JSON `true`/`false`, and judgeController.js's
+//      `outputsMatch()` does an exact `JSON.parse`-based comparison —
+//      `[1,1,0]` never equals `[true,true,false]`, so this is a real
+//      grading failure, not a formatting nitpick (verified with the
+//      actual comparison function's own logic, not assumed).
+// Neither is fixed here (fixing either is real driver work, out of a
+// single onboarding batch's scope) — this check exists so a future
+// session can't accidentally re-introduce `starterCode.c` for a
+// void/bool-returning operation-sequence problem without the exact same
+// failure mode being caught before it reaches a real submission.
+function checkOperationSequenceCSupported(problem) {
+  if (!problem.operationSequence?.enabled) return null;
+  const cCode = problem.starterCode?.c;
+  if (!cCode) return null;
+
+  const cppCode = problem.starterCode?.cpp;
+  if (!cppCode) return null;
+
+  const methodRe = /(\w[\w<>,\s&*]*)\s+(\w+)\s*\([^)]*\)\s*\{/g;
+  let m;
+  const badMethods = [];
+  while ((m = methodRe.exec(cppCode))) {
+    const [, ret, name] = m;
+    if (name === problem.functionName) continue; // constructor
+    const returnType = ret.trim();
+    if (returnType === "void") badMethods.push(`${name}() returns void — casting to long is a compile error`);
+    else if (returnType === "bool") badMethods.push(`${name}() returns bool — prints as 1/0, not true/false, and will fail exact-match grading`);
+    else if (!["int", "long", "long long", "double"].includes(returnType)) {
+      badMethods.push(`${name}() returns "${returnType}" — not a long-representable scalar`);
+    }
+  }
+
+  if (badMethods.length > 0) {
+    return `${problem.slug}: has starterCode.c for an operation-sequence problem with unsupported method return type(s): ${badMethods.join("; ")}`;
+  }
+  return null;
+}
+
 export function validateProblems(problemList) {
   return problemList.flatMap((p) => [
     checkFunctionName(p),
@@ -377,6 +424,7 @@ export function validateProblems(problemList) {
     checkCpp(p),
     checkC(p),
     checkCReturnTypeSupported(p),
+    checkOperationSequenceCSupported(p),
     ...checkCArrayParamTypeSafety(p),
     ...checkArgumentGeneration(p),
     ...checkOperationSequenceGeneration(p),

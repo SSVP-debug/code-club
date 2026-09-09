@@ -496,4 +496,48 @@ describe("validateProblemContracts — C contract checks (Plan 012)", () => {
 
     expect(validateProblems([strArrayParam])).toHaveLength(0);
   });
+
+  it("Plan 012 Batch 4: flags an operation-sequence C starter for a class with a void-returning method (compile-error class)", () => {
+    const voidMethodDesign = {
+      slug: "fake-c-void-design",
+      functionName: "LRUCache",
+      operationSequence: { enabled: true, resultMode: "all" },
+      starterCode: {
+        cpp: `class LRUCache {\npublic:\n    LRUCache(int capacity) {}\n    int get(int key) { return -1; }\n    void put(int key, int value) {}\n};`,
+        c: `typedef struct { int _unused; } LRUCache;\nLRUCache* LRUCache_create(int capacity) { return NULL; }\nint LRUCache_get(LRUCache* self, int key) { return -1; }\nvoid LRUCache_put(LRUCache* self, int key, int value) {}`,
+      },
+    };
+
+    const errors = validateProblems([voidMethodDesign]);
+    expect(errors.some((e) => e.includes("put() returns void — casting to long is a compile error"))).toBe(true);
+  });
+
+  it("Plan 012 Batch 4: flags an operation-sequence C starter for a class with a bool-returning method (grading-mismatch class)", () => {
+    const boolMethodDesign = {
+      slug: "fake-c-bool-design",
+      functionName: "MyCalendarTwo",
+      operationSequence: { enabled: true, resultMode: "all" },
+      starterCode: {
+        cpp: `class MyCalendarTwo {\npublic:\n    MyCalendarTwo() {}\n    bool book(int start, int end) { return false; }\n};`,
+        c: `typedef struct { int _unused; } MyCalendarTwo;\nMyCalendarTwo* MyCalendarTwo_create() { return NULL; }\nbool MyCalendarTwo_book(MyCalendarTwo* self, int start, int end) { return false; }`,
+      },
+    };
+
+    const errors = validateProblems([boolMethodDesign]);
+    expect(errors.some((e) => e.includes("book() returns bool — prints as 1/0"))).toBe(true);
+  });
+
+  it("Plan 012 Batch 4: an operation-sequence C starter where every method returns int validates cleanly", () => {
+    const allIntDesign = {
+      slug: "fake-c-int-design",
+      functionName: "StockSpanner",
+      operationSequence: { enabled: true, resultMode: "all" },
+      starterCode: {
+        cpp: `class StockSpanner {\npublic:\n    StockSpanner() {}\n    int next(int price) { return 0; }\n};`,
+        c: `typedef struct { int _unused; } StockSpanner;\nStockSpanner* StockSpanner_create() { return NULL; }\nint StockSpanner_next(StockSpanner* self, int price) { return 0; }`,
+      },
+    };
+
+    expect(validateProblems([allIntDesign])).toHaveLength(0);
+  });
 });

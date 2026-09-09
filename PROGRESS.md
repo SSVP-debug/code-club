@@ -1347,3 +1347,97 @@ After three batches, **99/250 problems remain without `starterCode.c`**:
 17 design problems (Batch 4) + 82 driver-blocked or otherwise-excluded
 (2D shapes, `void`-return bug, pointer-struct params, array-of-string
 return — real remaining work, not oversights).
+
+## Phase 6 — Language Expansion, Plan 012 Batch 4: C starter-code backfill, design/operationSequence problems (this session)
+
+Fourth batch — the 17 `operationSequence` (design) problems this whole
+sequence has deferred since Batch 1. Result is smaller than any prior
+batch, for a real reason discovered mid-batch, not a shortfall in effort.
+
+### Two driver bugs found before writing any starter code, both confirmed against real compiled/run C, not just read from source
+
+1. **`void`-return compile failure.** `generateOperationSequence()`
+   unconditionally emits `_results[i] = (long) ClassName_method(...)`
+   for every call in the sequence, with no void-detection (documented
+   as a known gap in the driver's own header comment, but its actual
+   blast radius hadn't been measured until now). Casting a `void`
+   expression to `long` is a hard C compile error — confirmed with a
+   minimal repro (`gcc`: "invalid use of void expression") and then
+   again with a full, correct `LRUCache` struct-based implementation to
+   rule out "maybe a real implementation avoids it" — it doesn't; the
+   bug is in the driver template itself, unrelated to what the student
+   writes. **14 of the 17 design problems have at least one void method
+   actually invoked in their op sequence** (`put`, `addNum`, `insert`,
+   `push`, `follow`, `set`, etc.) and are blocked by this.
+
+2. **`bool`-return grading failure — found only after compiling and
+   running a real implementation, not from reading the code.** Results
+   are always printed with `%ld`, so a `bool`-returning method prints
+   `1`/`0`. `expectedOutput` for these problems is authored as JSON
+   `true`/`false`, and `judgeController.js`'s `outputsMatch()` does an
+   exact `JSON.parse`-based array comparison — confirmed directly
+   (`JSON.stringify(JSON.parse("[1,1,0]")) !== JSON.stringify([true,true,false])`)
+   that this fails grading outright, not just formatting. This blocked 2
+   of the 3 problems that were otherwise clear of bug #1
+   (`my-calendar-ii`, `design-circular-queue` — both have `bool`
+   methods) — their `starterCode.c` was written, verified compiling, and
+   then **removed again** once this second issue surfaced, rather than
+   shipped with a known grading defect. `design-twitter` was excluded
+   for a third, independent reason: `getNewsFeed` returns `vector<int>`,
+   not a scalar at all.
+
+Net: **1 of 17 backfilled** (`online-stock-span` — the only one of the
+17 whose every method returns a plain `int`, clear of both bugs).
+
+### New validation infrastructure
+
+`validateProblemContracts.js` gained `checkOperationSequenceCSupported`
+— for any `operationSequence` problem carrying a C starter, parses the
+cpp signature's method return types and rejects `void` (bug #1) and
+`bool` (bug #2) explicitly, with a message naming which method and
+which failure class. This exists specifically so a future session can't
+accidentally re-add `starterCode.c` for a void/bool-method design
+problem without hitting the exact same wall immediately, in the
+validator, rather than after a real submission fails. 3 new unit tests
+added (void-method rejection, bool-method rejection, all-int-method
+pass) — `generateDriverCode.test.js` now at 42 tests total.
+
+Cumulative C coverage after Batch 4: **152/250** (72 + 26 + 53 + 1).
+
+### Verification
+
+- Backend `npx vitest run`: **103/103 files, 1178/1178 tests**.
+- `node backend/scripts/checkProblemsFolderDrift.js`: zero drift
+  (caught and fixed one real gap in this session's own process — the
+  folder mirror wasn't regenerated between adding all 3 candidates and
+  reverting 2 of them, which the drift-check test file itself caught).
+- `node backend/scripts/validateProblemContracts.js`: 250 problems + 8
+  Code Club Edition missions, no contract mismatches.
+- Compiled and ran real (non-stub) implementations of all 3 originally-
+  attempted problems through the actual
+  `generateOperationSequenceDriver` — this is what surfaced bug #2 in
+  the first place; `online-stock-span`'s real implementation produces
+  byte-correct output, the other two's real implementations compile and
+  run but print `1`/`0` where `true`/`false` is expected, confirming the
+  revert decision rather than assuming it.
+
+### What Batch 4 does NOT include (unchanged, deliberately)
+
+- The `void`-cast bug — affects 14 of 17 design problems, not fixed
+  (real driver-template work, same "don't extend the driver" boundary
+  every prior batch has held to).
+- The `bool`-print-format bug — affects `my-calendar-ii` and
+  `design-circular-queue` specifically among the otherwise-clear
+  problems, not fixed.
+- `design-twitter`'s `vector<int>`-returning method — a third,
+  independent blocker, not fixed.
+- Any driver extension (possible Batch 5), Plan 011 reconstruction —
+  still not started.
+
+After four batches: **152/250 problems have `starterCode.c`.** 98
+remain: 16 design problems (blocked by bug #1 and/or #2 above) + 82
+from Batch 3's driver-blocked/excluded set (2D shapes, void-return
+mutation bug, pointer-struct problems, array-of-string returns). Fixing
+either design-problem bug would very likely unlock most of the
+remaining 16 — worth scoping as a real Batch 5 (driver work), not
+another content-authoring batch.
