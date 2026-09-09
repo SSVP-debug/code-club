@@ -370,25 +370,19 @@ function checkOperationSequenceGeneration(problem) {
   return errors;
 }
 
-// languageDrivers/c.js's generateOperationSequence() has two real gaps,
-// both discovered by hand while scoping Plan 012 Batch 4 rather than
-// being documented anywhere beforehand:
-//   1. It unconditionally does `_results[i] = (long) ClassName_method(...)`
-//      for EVERY call — casting a `void` expression to `long` is a hard
-//      C compile error (verified against a real gcc-compiled struct-
-//      based implementation, not just read from the template).
-//   2. Results are always printed with `%ld` — a `bool`-returning
-//      method prints `1`/`0`, but `expectedOutput` for these problems is
-//      authored as JSON `true`/`false`, and judgeController.js's
-//      `outputsMatch()` does an exact `JSON.parse`-based comparison —
-//      `[1,1,0]` never equals `[true,true,false]`, so this is a real
-//      grading failure, not a formatting nitpick (verified with the
-//      actual comparison function's own logic, not assumed).
-// Neither is fixed here (fixing either is real driver work, out of a
-// single onboarding batch's scope) — this check exists so a future
-// session can't accidentally re-introduce `starterCode.c` for a
-// void/bool-returning operation-sequence problem without the exact same
-// failure mode being caught before it reaches a real submission.
+// languageDrivers/c.js's generateOperationSequence() (Plan 012 Batch 5)
+// now correctly supports void, bool, int, long/long long, double, and
+// char* method results — it derives each method's real return type from
+// the starter code at generation time and throws there for anything
+// else, rather than silently mishandling it (see that function's own
+// comment for the full history: void used to be a hard compile error,
+// bool used to print 1/0 and fail exact-match grading against JSON
+// true/false — both fixed). This check now only needs to catch what the
+// driver genuinely still can't represent: an array, string-array, or
+// struct-pointer (ListNode*/TreeNode*) method result. Kept as a static
+// pre-check (rather than relying solely on checkOperationSequenceGeneration's
+// runtime throw) so a bad problem is caught by a fast source-text scan,
+// not only by actually invoking code generation.
 function checkOperationSequenceCSupported(problem) {
   if (!problem.operationSequence?.enabled) return null;
   const cCode = problem.starterCode?.c;
@@ -397,6 +391,7 @@ function checkOperationSequenceCSupported(problem) {
   const cppCode = problem.starterCode?.cpp;
   if (!cppCode) return null;
 
+  const SUPPORTED = new Set(["void", "bool", "int", "long", "long long", "double", "char*", "string"]);
   const methodRe = /(\w[\w<>,\s&*]*)\s+(\w+)\s*\([^)]*\)\s*\{/g;
   let m;
   const badMethods = [];
@@ -404,10 +399,8 @@ function checkOperationSequenceCSupported(problem) {
     const [, ret, name] = m;
     if (name === problem.functionName) continue; // constructor
     const returnType = ret.trim();
-    if (returnType === "void") badMethods.push(`${name}() returns void — casting to long is a compile error`);
-    else if (returnType === "bool") badMethods.push(`${name}() returns bool — prints as 1/0, not true/false, and will fail exact-match grading`);
-    else if (!["int", "long", "long long", "double"].includes(returnType)) {
-      badMethods.push(`${name}() returns "${returnType}" — not a long-representable scalar`);
+    if (!SUPPORTED.has(returnType)) {
+      badMethods.push(`${name}() returns "${returnType}", which generateOperationSequence() cannot represent`);
     }
   }
 

@@ -26,12 +26,12 @@
  *      separately rather than assuming errors always show up as a
  *      RUNTIME_ERROR-prefixed stdout line.
  *   3. generateOperationSequence() supports scalar (long-representable:
- *      int/long/bool) return values ONLY. C has no reflection (unlike
- *      Java) and no template/decltype mechanism (unlike C++'s SFINAE) to
- *      generically detect a method's return type or whether it's void —
- *      see that function's own comment for the convention this requires
- *      from C design-problem starter code, which does not exist yet
- *      anywhere in the catalog.
+ *      int/long/bool/double) and `char*` (string) return values — see
+ *      that function's own comment for how it derives each method's
+ *      real return type from the starter code at generation time
+ *      (Plan 012 Batch 5). An array, string-array, or struct-pointer
+ *      method result is still unsupported and throws at generation time
+ *      rather than being silently mishandled.
  */
 import { cDeclaration } from "../languageTypes/c.js";
 
@@ -147,30 +147,59 @@ int main() {
  * `ClassName* ClassName_create(...)` and `<ReturnType>
  * ClassName_<method>(ClassName* self, ...)` functions.
  *
- * SCALAR RESULTS ONLY — every method's result is stored as a `long` (an
- * int/long/bool result fits; a string, array, or struct result does not
- * and is unsupported). This is a real constraint, not an oversight: Java
- * detects void-vs-value at call time via reflection; C++ detects it at
- * compile time via SFINAE/decltype; C has neither mechanism available
- * without either GNU-specific extensions or requiring every method to be
- * written against a fixed, tagged-union result type. Given there is no
- * real C content for design problems yet, the pragmatic choice here is a
- * documented, working subset rather than either implementing a fragile
- * GNU-extension-dependent version or leaving generateOperationSequence()
- * unimplemented (which languageDrivers/index.js would refuse to allow
- * "c" into the registry at all without).
+ * Plan 012 Batch 5: previously SCALAR-CAST-TO-`long` ONLY, which had two
+ * real bugs discovered while backfilling Batch 4's design problems (see
+ * PROGRESS.md's Batch 4 entry for how each was confirmed against real
+ * compiled/run C, not just read from source):
+ *   1. `(long) voidMethod(...)` is a hard C compile error — blocked 14
+ *      of 17 design problems outright.
+ *   2. `bool` results were cast to `long` and printed with `%ld`,
+ *      producing `1`/`0` where `expectedOutput` (and every other
+ *      language's driver) uses JSON `true`/`false` — a real grading
+ *      failure for `bool`-returning methods, not cosmetic.
  *
- * `resultMode` ("all" vs "returningOnly") is NOT enforceable for C today:
- * because there is no void-detection mechanism, every call's result is
- * always recorded, matching "all" semantics regardless of what the
- * problem declares. Extend this the day real C design-problem content
- * needs `returningOnly` to actually exclude something.
+ * C has neither Java's reflection nor C++'s SFINAE/decltype to detect a
+ * method's return type generically at compile time — but unlike a truly
+ * dynamic-dispatch problem, EVERY op call's target method is already
+ * known BY NAME at driver-GENERATION time (this function runs in
+ * Node, with the full `userCode` string available), so the fix doesn't
+ * need a runtime mechanism at all: read the method's real return type
+ * straight off its own signature line in `userCode` (same anchored
+ * per-function-name regex approach `checkC`/`checkCReturnTypeSupported`
+ * already use in validateProblemContracts.js), and generate different
+ * code per call depending on what that type actually is.
+ *
+ * Supports: `void`, `bool`, `int`, `long`/`long long`, `double`, `char*`
+ * — the same whitelist `generate()`'s single-call driver supports,
+ * applied per-method instead of once. Anything else THROWS at
+ * generation time rather than silently falling back to the old
+ * cast-to-long behavior — the exact "compiles but wrong" failure mode
+ * this batch exists to close, not reopen with a different default.
+ *
+ * `resultMode` ("all" vs "returningOnly") now actually does something
+ * for C: a `void` call contributes a `null` entry only when `"all"`,
+ * matching every other language's driver.
  */
-export function generateOperationSequence({ userCode, className, constructorArgs, opNames, opArgsList }) {
+function operationMethodReturnType(userCode, className, methodName) {
+  const fnName = `${className}_${methodName}`;
+  const lineRe = new RegExp(`^\\s*([\\w*]+(?:\\s+[\\w*]+)*)\\s+${fnName}\\s*\\(`);
+  const line = userCode.split("\n").find((l) => lineRe.test(l));
+  const token = line?.match(lineRe)?.[1]?.trim();
+  if (!token) {
+    throw new Error(
+      `generateOperationSequence: could not find a "${fnName}(" function signature in the C starter code to determine ${methodName}()'s return type`
+    );
+  }
+  return token;
+}
+
+export function generateOperationSequence({ userCode, className, constructorArgs, opNames, opArgsList, resultMode }) {
   const ctorDecls = constructorArgs.map(([k, v]) => cDeclaration(k, v)).join("\n  ");
   const ctorCallArgs = constructorArgs
     .map(([k, v]) => (Array.isArray(v) ? `${k}, ${k}Size` : k))
     .join(", ");
+
+  const includeVoid = resultMode === "all";
 
   const opBlocks = opNames
     .map((name, i) => {
@@ -182,7 +211,41 @@ export function generateOperationSequence({ userCode, className, constructorArgs
         .map((v, j) => (Array.isArray(v) ? `_op${i}_arg${j}, _op${i}_arg${j}Size` : `_op${i}_arg${j}`))
         .join(", ");
       const fullCallArgs = `_instance${callArgs ? ", " + callArgs : ""}`;
-      return `  {\n    ${argDecls}\n    _results[${i}] = (long) ${className}_${name}(${fullCallArgs});\n  }`;
+      const call = `${className}_${name}(${fullCallArgs})`;
+
+      const returnType = operationMethodReturnType(userCode, className, name);
+      const emitSeparator = `if (!_first) printf(","); _first = 0;`;
+
+      if (returnType === "void") {
+        if (!includeVoid) {
+          return `  {\n    ${argDecls}\n    ${call};\n  }`;
+        }
+        return `  {\n    ${argDecls}\n    ${call};\n    ${emitSeparator} printf("null");\n  }`;
+      }
+      if (returnType === "bool") {
+        return `  {\n    ${argDecls}\n    bool _r = ${call};\n    ${emitSeparator} printf(_r ? "true" : "false");\n  }`;
+      }
+      if (returnType === "char*") {
+        return `  {\n    ${argDecls}\n    char* _r = ${call};\n    ${emitSeparator} printf("\\"%s\\"", _r);\n  }`;
+      }
+      if (returnType === "int" || returnType === "long" || returnType === "long long" || returnType === "double") {
+        // Matches generate()'s own print-format mapping exactly, applied
+        // per-call instead of once — same whitelist, same formatting
+        // convention, just now scoped to a single method's real type
+        // rather than the whole driver's one return value.
+        const printFormat = returnType === "double" ? "%g" : returnType.includes("long") ? "%lld" : "%d";
+        const castType = returnType === "double" ? "double" : returnType.includes("long") ? "long long" : "int";
+        return `  {\n    ${argDecls}\n    ${castType} _r = (${castType}) ${call};\n    ${emitSeparator} printf("${printFormat}", _r);\n  }`;
+      }
+
+      // Anything else (an array, a string-array, a struct pointer) is
+      // simply not representable in this JSON-array-of-scalars output
+      // format — throw now, at generation time, rather than let it
+      // silently fall through the way the pre-Batch-5 driver did for
+      // bool/void.
+      throw new Error(
+        `generateOperationSequence: ${className}.${name}() returns "${returnType}", which is not a supported operation-sequence result type (void, bool, int, long long, double, char*)`
+      );
     })
     .join("\n");
 
@@ -197,13 +260,9 @@ ${userCode}
 int main() {
   ${ctorDecls}
   ${className}* _instance = ${className}_create(${ctorCallArgs});
-  long _results[${opNames.length || 1}];
-${opBlocks}
   printf("[");
-  for (int i = 0; i < ${opNames.length}; i++) {
-    if (i) printf(",");
-    printf("%ld", _results[i]);
-  }
+  int _first = 1;
+${opBlocks}
   printf("]\\n");
   return 0;
 }

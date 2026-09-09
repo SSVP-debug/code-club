@@ -497,7 +497,7 @@ describe("validateProblemContracts — C contract checks (Plan 012)", () => {
     expect(validateProblems([strArrayParam])).toHaveLength(0);
   });
 
-  it("Plan 012 Batch 4: flags an operation-sequence C starter for a class with a void-returning method (compile-error class)", () => {
+  it("Plan 012 Batch 5: an operation-sequence C starter for a class with a void-returning method now validates cleanly (driver fix)", () => {
     const voidMethodDesign = {
       slug: "fake-c-void-design",
       functionName: "LRUCache",
@@ -508,11 +508,10 @@ describe("validateProblemContracts — C contract checks (Plan 012)", () => {
       },
     };
 
-    const errors = validateProblems([voidMethodDesign]);
-    expect(errors.some((e) => e.includes("put() returns void — casting to long is a compile error"))).toBe(true);
+    expect(validateProblems([voidMethodDesign])).toHaveLength(0);
   });
 
-  it("Plan 012 Batch 4: flags an operation-sequence C starter for a class with a bool-returning method (grading-mismatch class)", () => {
+  it("Plan 012 Batch 5: an operation-sequence C starter for a class with a bool-returning method now validates cleanly (driver fix)", () => {
     const boolMethodDesign = {
       slug: "fake-c-bool-design",
       functionName: "MyCalendarTwo",
@@ -523,11 +522,25 @@ describe("validateProblemContracts — C contract checks (Plan 012)", () => {
       },
     };
 
-    const errors = validateProblems([boolMethodDesign]);
-    expect(errors.some((e) => e.includes("book() returns bool — prints as 1/0"))).toBe(true);
+    expect(validateProblems([boolMethodDesign])).toHaveLength(0);
   });
 
-  it("Plan 012 Batch 4: an operation-sequence C starter where every method returns int validates cleanly", () => {
+  it("Plan 012 Batch 5: still flags an operation-sequence C starter for a class with a non-scalar (vector<int>) method return — the one real blocker left (design-twitter's actual case)", () => {
+    const vectorMethodDesign = {
+      slug: "fake-c-vector-design",
+      functionName: "Twitter",
+      operationSequence: { enabled: true, resultMode: "all" },
+      starterCode: {
+        cpp: `class Twitter {\npublic:\n    Twitter() {}\n    void postTweet(int userId, int tweetId) {}\n    vector<int> getNewsFeed(int userId) { return {}; }\n    void follow(int followerId, int followeeId) {}\n    void unfollow(int followerId, int followeeId) {}\n};`,
+        c: `typedef struct { int _unused; } Twitter;\nTwitter* Twitter_create() { return NULL; }\nvoid Twitter_postTweet(Twitter* self, int userId, int tweetId) {}\nvoid Twitter_getNewsFeed(Twitter* self, int userId) {}\nvoid Twitter_follow(Twitter* self, int followerId, int followeeId) {}\nvoid Twitter_unfollow(Twitter* self, int followerId, int followeeId) {}`,
+      },
+    };
+
+    const errors = validateProblems([vectorMethodDesign]);
+    expect(errors.some((e) => e.includes('getNewsFeed() returns "vector<int>", which generateOperationSequence() cannot represent'))).toBe(true);
+  });
+
+  it("Plan 012 Batch 5: an operation-sequence C starter where every method returns int validates cleanly", () => {
     const allIntDesign = {
       slug: "fake-c-int-design",
       functionName: "StockSpanner",

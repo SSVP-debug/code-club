@@ -92,13 +92,62 @@ describe("generateOperationSequenceDriver — structural checks", () => {
   // return, so results are always collected as `long` regardless of
   // resultMode. See languageDrivers/c.js's own header comment for why —
   // this is a real, documented gap, not an oversight.
-  it("c: uses a struct + prefixed-function convention and collects scalar (long) results only", () => {
+  it("c: uses a struct + prefixed-function convention, derives each op's real return type from the starter code, and prints void as null / bool as true-or-false / numeric scalars directly (Plan 012 Batch 5)", () => {
     const code = generateOperationSequenceDriver(
-      "c", "typedef struct { int top; } MinStack;", minStackShape, "MinStack", "all"
+      "c",
+      `typedef struct { int top; } MinStack;
+void MinStack_push(MinStack* self, int val) {}
+void MinStack_pop(MinStack* self) {}
+int MinStack_top(MinStack* self) { return 0; }
+int MinStack_getMin(MinStack* self) { return 0; }`,
+      minStackShape,
+      "MinStack",
+      "all"
     );
     expect(code).toContain("MinStack* _instance = MinStack_create();");
-    expect(code).toContain("_results[0] = (long) MinStack_push(_instance, _op0_arg0);");
-    expect(code).toContain("_results[3] = (long) MinStack_getMin(_instance);");
+    // void op (push) — called, no result variable, contributes "null"
+    // because resultMode is "all".
+    expect(code).toContain('MinStack_push(_instance, _op0_arg0);');
+    expect(code).toContain('printf("null");');
+    // int op (getMin) — real per-call cast + printf, not a homogeneous
+    // `_results[i] = (long) ...` buffer.
+    expect(code).toContain("int _r = (int) MinStack_getMin(_instance);");
+    expect(code).toContain('printf("%d", _r);');
+  });
+
+  it("c: a void op is silently omitted from output (not printed as null) when resultMode is \"returningOnly\"", () => {
+    const code = generateOperationSequenceDriver(
+      "c",
+      `typedef struct { int top; } MinStack;
+void MinStack_push(MinStack* self, int val) {}
+void MinStack_pop(MinStack* self) {}
+int MinStack_top(MinStack* self) { return 0; }
+int MinStack_getMin(MinStack* self) { return 0; }`,
+      minStackShape,
+      "MinStack",
+      "returningOnly"
+    );
+    // The push/pop call sites should exist without any surrounding
+    // separator/printf("null") logic attached to them.
+    const pushBlockMatch = code.match(/\{\s*\n\s*int _op0_arg0[\s\S]*?MinStack_push\(_instance, _op0_arg0\);\s*\n\s*\}/);
+    expect(pushBlockMatch).not.toBeNull();
+    expect(pushBlockMatch[0]).not.toContain("null");
+  });
+
+  it("c: throws at generation time (rather than silently mishandling) when an op returns an unsupported type", () => {
+    expect(() =>
+      generateOperationSequenceDriver(
+        "c",
+        `typedef struct { int top; } MinStack;
+int* MinStack_push(MinStack* self, int val) { return NULL; }
+void MinStack_pop(MinStack* self) {}
+int MinStack_top(MinStack* self) { return 0; }
+int MinStack_getMin(MinStack* self) { return 0; }`,
+        minStackShape,
+        "MinStack",
+        "all"
+      )
+    ).toThrow(/not a supported operation-sequence result type/);
   });
 });
 
@@ -180,11 +229,16 @@ private:
   );
 
   // Same MinStack sequence as the C++ case above, but using C's struct +
-  // prefixed-function convention (see languageDrivers/c.js) and its
-  // documented "scalar results only, no void detection" limitation — void
-  // calls (push/pop) come back as a dummy 0, not null. This is the direct,
-  // real proof that generateOperationSequence()'s output actually compiles
-  // and runs correctly for C, not just that it string-matches an expected
+  // prefixed-function convention (see languageDrivers/c.js). Plan 012
+  // Batch 5: previously void calls (push/pop) came back as a dummy 0
+  // because C had no return-type awareness at all; the driver now reads
+  // each method's REAL return type off its own signature in userCode at
+  // generation time, so a genuinely void push/pop correctly contributes
+  // `null` (matching Python/TypeScript's real semantics above) and
+  // top/getMin's real int results print directly, not through a
+  // homogeneous long-cast buffer. This is the direct, real proof that
+  // generateOperationSequence()'s output actually compiles and runs
+  // correctly for C, not just that it string-matches an expected
   // template.
   it.skipIf(!HAS_GCC)(
     "c: a correct MinStack implementation (struct + prefixed functions) compiles and runs correctly",
@@ -200,19 +254,17 @@ MinStack* MinStack_create() {
   s->size = 0;
   return s;
 }
-long MinStack_push(MinStack* self, int val) {
+void MinStack_push(MinStack* self, int val) {
   self->data[self->size++] = val;
-  return 0;
 }
-long MinStack_pop(MinStack* self) {
+void MinStack_pop(MinStack* self) {
   self->size--;
-  return 0;
 }
-long MinStack_top(MinStack* self) {
+int MinStack_top(MinStack* self) {
   return self->data[self->size - 1];
 }
-long MinStack_getMin(MinStack* self) {
-  long min = self->data[0];
+int MinStack_getMin(MinStack* self) {
+  int min = self->data[0];
   for (int i = 1; i < self->size; i++) if (self->data[i] < min) min = self->data[i];
   return min;
 }
@@ -229,10 +281,10 @@ long MinStack_getMin(MinStack* self) {
 
       const out = execFileSync(binFile, { encoding: "utf-8" }).trim();
 
-      // Same real sequence as the C++/Python cases above, but with 0 in
-      // place of null at every void-call slot (push, pop) — the
-      // documented consequence of C having no void-detection mechanism.
-      expect(JSON.parse(out)).toEqual([0, 0, 0, -3, 0, 0, -2]);
+      // Same real sequence and real expected values as the Python/
+      // TypeScript cases above — C now matches them exactly instead of
+      // substituting 0 for every void call.
+      expect(JSON.parse(out)).toEqual([null, null, null, -3, null, 0, -2]);
     },
     15_000
   );

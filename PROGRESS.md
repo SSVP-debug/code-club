@@ -1441,3 +1441,105 @@ mutation bug, pointer-struct problems, array-of-string returns). Fixing
 either design-problem bug would very likely unlock most of the
 remaining 16 — worth scoping as a real Batch 5 (driver work), not
 another content-authoring batch.
+
+## Phase 6 — Language Expansion, Plan 012 Batch 5: C operationSequence driver fix (this session)
+
+Real driver work, not content authoring — the two bugs Batch 4 found and
+documented (`void`-cast compile failure, `bool`-print grading failure)
+are fixed in `languageDrivers/c.js`'s `generateOperationSequence()`.
+
+### The fix
+
+C has neither Java's reflection nor C++'s SFINAE/`decltype` to detect a
+method's return type generically — but every op call's target method is
+already known BY NAME at driver-**generation** time (this function runs
+in Node with the full starter-code string available), so the fix reads
+each method's real return type straight off its own signature line in
+the starter code (same anchored-regex approach `checkC`/
+`checkCReturnTypeSupported` already use), then generates different code
+per call depending on what that type actually is:
+
+- `void` → called with no result variable; contributes a `null` entry
+  only when `resultMode === "all"` (previously `resultMode` wasn't even
+  destructured from the function's parameters — silently ignored).
+- `bool` → prints `true`/`false` directly, not cast through `long`.
+- `int` / `long` / `long long` / `double` → each cast and printed with
+  its own correct format specifier (mirrors `generate()`'s existing
+  single-call print-format mapping, applied per-method instead of once).
+- `char*` → prints as a quoted JSON string (new capability — no
+  operation-sequence problem in the catalog used this before).
+- Anything else (array, struct pointer) → **throws at generation time**,
+  replacing the old unconditional-cast-to-`long` fallback that silently
+  produced wrong output for exactly this case. Closes the bug class
+  Batch 4 found, doesn't just patch the two specific instances of it.
+
+Structurally this also simplifies the generated driver: the old
+homogeneous `long _results[]` buffer + uniform `%ld` print loop is gone,
+replaced by direct incremental `printf` at each call site (mirrors how
+`generate()`'s single-call driver already prints directly rather than
+buffering) — there was never a real need for a results array once
+results can be heterogeneous types.
+
+### Re-attempted the 16 problems Batch 4 couldn't touch
+
+15 of 16 were unlocked by the fix and backfilled:
+`lru-cache`, `find-median-from-data-stream` (first `double`-returning
+design problem), `time-based-key-value-store` (first `char*`-returning
+design problem — proves the new string-return path), `implement-trie`,
+`design-add-search-words`, `implement-queue-using-stacks`,
+`my-calendar-ii`, `implement-stack-using-queues`, `design-hashmap`,
+`design-circular-queue`, `maximum-frequency-stack`,
+`two-sum-iii-data-structure`, `implement-trie-ii`, `map-sum-pairs`,
+`minimum-stack`.
+
+`design-twitter` remains excluded — `getNewsFeed()` returns
+`vector<int>`, a genuinely non-scalar/non-string type this fix doesn't
+address (never was a void/bool problem; a different, still-real gap).
+
+`validateProblemContracts.js`'s `checkOperationSequenceCSupported` was
+updated to match — it no longer rejects `void`/`bool`, only what the
+driver genuinely still can't represent (array/struct-pointer method
+results). 2 stale Batch 4 tests (asserting the now-fixed rejection
+behavior) were updated to assert the new, correct pass-through instead;
+1 new test added covering the real remaining blocker
+(`vector<int>`, matching `design-twitter`'s actual case) — net change
+to `generateDriverCode.test.js` is +1 test. `operationSequenceDriver.test.js`'s
+structural C tests and its real-`gcc`-compiled end-to-end test were
+rewritten to match the new generated-code shape and correct expected
+output (`[null, null, null, -3, null, 0, -2]`, matching Python's and
+TypeScript's own real semantics for the same `MinStack` sequence —
+previously asserted `[0, 0, 0, -3, 0, 0, -2]`, the old bug's signature).
+
+Cumulative C coverage after Batch 5: **167/250** (72 + 26 + 53 + 1 + 15).
+
+### Verification
+
+- Backend `npx vitest run`: **103/103 files, 1181/1181 tests**.
+- `node backend/scripts/checkProblemsFolderDrift.js`: zero drift,
+  167/250 problems now carry `starter/c.c`.
+- `node backend/scripts/validateProblemContracts.js`: 250 problems + 8
+  Code Club Edition missions, no contract mismatches.
+- Compiled and ran real (non-stub, non-synthetic) implementations
+  through the actual fixed driver for 4 of the 15: `lru-cache`
+  (`resultMode: "returningOnly"` — confirms void `put()` calls are
+  correctly omitted, not just null-padded), `time-based-key-value-store`
+  (`char*` return), `find-median-from-data-stream` (`double` return),
+  and the pre-existing `minimum-stack` end-to-end test (`resultMode:
+  "all"` — confirms void calls correctly print `null`). All correct.
+
+### What Batch 5 does NOT include (unchanged, deliberately)
+
+- `design-twitter`'s `vector<int>` return — different, still-real gap,
+  not this fix's job.
+- The 2D-array-input bug (`${key}Size` vs `${key}Rows`/`${key}Cols`)
+  flagged in Batch 2 — separate from the operationSequence driver
+  entirely (that's the single-call `generate()` path), still open.
+- The ~93→82-problem-and-shrinking long-tail exclusions from Batch 3
+  (array-of-string returns, `ListNode*`/`TreeNode*`, the known
+  `void`-return in-place-mutation bug for regular (non-design)
+  problems) — unrelated to this batch's fix, still open.
+- Plan 011 reconstruction — still not started.
+
+After five batches: **167/250 problems have `starterCode.c`.** 83
+remain, all previously-documented and still real: `design-twitter` (1),
+82 from Batch 3's driver-blocked/excluded set.
