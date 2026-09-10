@@ -218,12 +218,15 @@ describe("config/languages.js — registry", () => {
     expect(mod.getEnabledLanguagesForApi().map((l) => l.id)).not.toContain("cpp");
   }, 15000);
 
-  it("formatEnabledLanguageKeysMessage produces the historical message text when all five are enabled", async () => {
+  it("formatEnabledLanguageKeysMessage produces the historical message text when all six are enabled", async () => {
     const { formatEnabledLanguageKeysMessage } = await import("./languages.js");
-    // Was "...java, or cpp" (four languages) — updated now that
-    // TypeScript is enabled too (plan 010, confirmed against the real
-    // Judge0 instance via verifyLanguageRegistry.js).
-    expect(formatEnabledLanguageKeysMessage()).toBe("python, javascript, java, cpp, or typescript");
+    // Was "...java, or cpp" (four languages), then "...cpp, or typescript"
+    // (five, plan 010) — updated again now that C is enabled too (plan
+    // 012, confirmed against the real Judge0 instance via
+    // verifyLanguageRegistry.js). C sits between cpp and typescript in
+    // registry iteration order, matching LANGUAGES' declaration order in
+    // config/languages.js.
+    expect(formatEnabledLanguageKeysMessage()).toBe("python, javascript, java, cpp, c, or typescript");
   });
 });
 
@@ -240,6 +243,7 @@ describe("GET /api/languages — languageController.getLanguages", () => {
         { id: "javascript", name: "JavaScript", extension: "js", editorIndentSize: 2 },
         { id: "java", name: "Java", extension: "java", editorIndentSize: 4 },
         { id: "cpp", name: "C++", extension: "cpp", editorIndentSize: 4 },
+        { id: "c", name: "C", extension: "c", editorIndentSize: 4 },
         { id: "typescript", name: "TypeScript", extension: "ts", editorIndentSize: 2 },
       ],
     });

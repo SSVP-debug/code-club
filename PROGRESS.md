@@ -1765,3 +1765,37 @@ finalizing this entry):
   `number-of-1-bits` (`uint32_t`), `random-pick-with-weight` (known
   non-gradeable, pre-existing), `first-bad-version` (hidden-API-based
   signature).
+
+## Phase 6 — Language Expansion, Plan 012: C enabled (follow-up, this session)
+
+Bunny ran `node backend/scripts/verifyLanguageRegistry.js` against the
+real Judge0 instance himself (this session's sandbox couldn't reach it
+— see Batch 6's entry) and flipped `backend/config/languages.js`'s
+`c.enabled` to `true`. That surfaced 3 pre-existing test failures — the
+same mechanical update every prior language enablement has needed
+(their own comments: "Was '...java, or cpp' — updated now that
+TypeScript is enabled too"), now C's turn:
+
+- `config/languages.test.js`'s `formatEnabledLanguageKeysMessage`
+  message-text assertion
+- `config/languages.test.js`'s `GET /api/languages` response shape
+  assertion (C inserted between `cpp` and `typescript`, matching
+  `LANGUAGES`' declaration order)
+- `routes/judge.contract.test.js`'s "rejects an unsupported language"
+  error-message assertion
+
+All three updated to include `c` in the expected list/message, same
+position and phrasing pattern as the existing TypeScript-enablement
+precedent. Searched the rest of the codebase for other hardcoded
+enabled-language-list assertions before considering this done — found
+none (a couple of unrelated hits: fixture data using a language subset
+for unrelated reasons, one generic comment).
+
+**Full suite re-verified with `c.enabled: true`**: 103/103 files,
+1198/1198 tests. `validateProblemContracts.js` and
+`checkProblemsFolderDrift.js` both unaffected (neither gates on
+`enabled`, by design — see Plan 011 Batch 1's note on
+`SUPPORTED_LANGUAGE_KEYS` vs `ENABLED_LANGUAGE_KEYS`).
+
+**C is now live**: `enabled: true`, `judge0Id: 50` confirmed by Bunny
+against the real instance, 223/250 problems have real `starterCode.c`.
