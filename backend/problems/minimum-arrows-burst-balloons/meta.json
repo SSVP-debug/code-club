@@ -11,7 +11,11 @@
   "companies": [],
   "relatedProblems": [],
   "returnType": {},
-  "paramTypes": {},
+  "paramTypes": {
+    "c": {
+      "points": "int[][]"
+    }
+  },
   "comparisonMode": "exact",
   "operationSequence": {
     "enabled": false,

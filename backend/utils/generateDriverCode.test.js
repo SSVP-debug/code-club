@@ -38,6 +38,41 @@ describe("generateDriverCode — Java return type", () => {
 
     expect(driver).toContain("Arrays.toString(result)");
   });
+
+  it("Plan 012 Batch 6: int[][] return uses Arrays.deepToString, not a broken generic println (was previously wrong, not just unsupported)", () => {
+    const code = `class Solution {\n  public int[][] solve(int[][] matrix) {\n    return matrix;\n  }\n}`;
+    const driver = generateDriverCode("java", code, { matrix: [[1, 2], [3, 4]] }, "solve", "int[][]");
+
+    expect(driver).toContain("Arrays.deepToString(result)");
+  });
+
+  it("Plan 012 Batch 6: void return (in-place array mutation) prints the mutated argument instead of a nonexistent return value — previously a compile error (\"void result = ...\")", () => {
+    const code = `class Solution {\n  public void rotate(int[] nums, int k) {\n  }\n}`;
+    const driver = generateDriverCode("java", code, { nums: [1, 2, 3, 4, 5, 6, 7], k: 3 }, "rotate", "void");
+
+    expect(driver).not.toContain("void result");
+    expect(driver).toContain("solution.rotate(nums, k);");
+    expect(driver).toContain("System.out.println(Arrays.toString(nums));");
+  });
+
+  it("Plan 012 Batch 6: void return with a 2D array argument uses Arrays.deepToString", () => {
+    const code = `class Solution {\n  public void rotate(int[][] matrix) {\n  }\n}`;
+    const driver = generateDriverCode("java", code, { matrix: [[1, 2], [3, 4]] }, "rotate", "void");
+
+    expect(driver).toContain("System.out.println(Arrays.deepToString(matrix));");
+  });
+
+  it("Plan 012 Batch 6: void return throws at generation time when the mutated argument is ambiguous (0 or 2+ array args), rather than guessing", () => {
+    const noArrayCode = `class Solution {\n  public void solve(int n) {\n  }\n}`;
+    expect(() => generateDriverCode("java", noArrayCode, { n: 5 }, "solve", "void")).toThrow(
+      /expected exactly 1/
+    );
+
+    const twoArrayCode = `class Solution {\n  public void solve(int[] a, int[] b) {\n  }\n}`;
+    expect(() => generateDriverCode("java", twoArrayCode, { a: [1], b: [2] }, "solve", "void")).toThrow(
+      /expected exactly 1/
+    );
+  });
 });
 
 describe("generateDriverCode — C++ return type", () => {
@@ -65,6 +100,29 @@ describe("generateDriverCode — C++ return type", () => {
     expect(driver).toContain("auto result = solution.countPairs(nums, target);");
     expect(driver).not.toContain("int result");
     expect(driver).toContain("void printResult(long long x)");
+  });
+
+  it("Plan 012 Batch 6: void return (in-place array mutation) prints the mutated argument via the existing generic printResult template — previously a compile error (\"auto result = <void expr>\")", () => {
+    const code = `class Solution {\npublic:\n  void rotate(vector<int>& nums, int k) {\n  }\n};`;
+    const driver = generateDriverCode("cpp", code, { nums: [1, 2, 3, 4, 5, 6, 7], k: 3 }, "rotate", "void");
+
+    expect(driver).not.toContain("auto result");
+    expect(driver).toContain("solution.rotate(nums, k);");
+    expect(driver).toContain("printResult(nums);");
+  });
+
+  it("Plan 012 Batch 6: void return with a 2D array argument reuses the same generic printResult template (vector<vector<T>> works for free via recursive instantiation)", () => {
+    const code = `class Solution {\npublic:\n  void rotate(vector<vector<int>>& matrix) {\n  }\n};`;
+    const driver = generateDriverCode("cpp", code, { matrix: [[1, 2], [3, 4]] }, "rotate", "void");
+
+    expect(driver).toContain("printResult(matrix);");
+  });
+
+  it("Plan 012 Batch 6: void return throws at generation time when the mutated argument is ambiguous, rather than guessing", () => {
+    const noArrayCode = `class Solution {\npublic:\n  void solve(int n) {\n  }\n};`;
+    expect(() => generateDriverCode("cpp", noArrayCode, { n: 5 }, "solve", "void")).toThrow(
+      /expected exactly 1/
+    );
   });
 });
 
@@ -99,6 +157,82 @@ describe("generateDriverCode — C (structural addition, not yet backfilled — 
     const driver = generateDriverCode("c", code, { nums: [1, 1], target: 2 }, "countPairs");
 
     expect(driver).toContain('printf("%lld\\n", result);');
+  });
+
+  it("Plan 012 Batch 6: 2D array argument uses the real int**/Rows/ColSize LeetCode-C convention, not a fixed-width array type (a fixed width breaks across testcases with different column counts — confirmed against this catalog's own data, see cDeclaration's comment)", () => {
+    const code = `int sumMatrix(int** matrix, int matrixRows, int* matrixColSize) {\n  return 0;\n}`;
+    const driver = generateDriverCode("c", code, { matrix: [[1, 2, 3], [4, 5, 6], [7, 8, 9]] }, "sumMatrix", "int");
+
+    expect(driver).toContain("int matrixRows = 3;");
+    expect(driver).toContain("int matrixColSize[] = {3, 3, 3};");
+    expect(driver).toContain("int* matrix[] = {_matrixRow0, _matrixRow1, _matrixRow2};");
+    expect(driver).toContain("sumMatrix(matrix, matrixRows, matrixColSize)");
+    expect(driver).not.toContain("matrixSize");
+    expect(driver).not.toContain("matrixCols");
+  });
+
+  it("Plan 012 Batch 6: the row-pointer convention correctly handles DIFFERENT column counts across testcases for the SAME starter code — the exact bug the fixed-width version had", () => {
+    const code = `int sumMatrix(int** matrix, int matrixRows, int* matrixColSize) {\n  return 0;\n}`;
+    // A 2-row, 4-column matrix — different shape from the 3x3 test above,
+    // same starter code text. The old `int matrix[3][3]` convention would
+    // have baked in a column width of 3 regardless of the actual data;
+    // this convention has no fixed width to get wrong.
+    const driver = generateDriverCode("c", code, { matrix: [[1, 2, 3, 4], [5, 6, 7, 8]] }, "sumMatrix", "int");
+
+    expect(driver).toContain("int matrixRows = 2;");
+    expect(driver).toContain("int matrixColSize[] = {4, 4};");
+  });
+
+  it("Plan 012 Batch 6: int** return uses the standard returnSize/returnColumnSizes convention", () => {
+    const code = `int** transpose(int** matrix, int matrixRows, int* matrixColSize, int* returnSize, int** returnColumnSizes) {\n  *returnSize = 0;\n  return NULL;\n}`;
+    const driver = generateDriverCode("c", code, { matrix: [[1, 2], [3, 4]] }, "transpose", "int**");
+
+    expect(driver).toContain("int* returnColumnSizes;");
+    expect(driver).toContain("transpose(matrix, matrixRows, matrixColSize, &returnSize, &returnColumnSizes)");
+    expect(driver).toContain("returnColumnSizes[i]");
+  });
+
+  it("Plan 012 Batch 6: char** return (array of strings) uses the returnSize convention and quotes each entry", () => {
+    const code = `char** upper(char** words, int wordsSize, int* returnSize) {\n  *returnSize = 0;\n  return NULL;\n}`;
+    const driver = generateDriverCode("c", code, { words: ["ab", "cd"] }, "upper", "char**");
+
+    expect(driver).toContain("char** result = upper(words, wordsSize, &returnSize);");
+    expect(driver).toContain('printf("\\"%s\\"", result[i]);');
+  });
+
+  it("Plan 012 Batch 6: void return (in-place 1D array mutation) prints the mutated argument, not a cast-to-void compile error", () => {
+    const code = `void rotate(int* nums, int numsSize, int k) {\n}`;
+    const driver = generateDriverCode("c", code, { nums: [1, 2, 3, 4, 5, 6, 7], k: 3 }, "rotate", "void");
+
+    expect(driver).toContain("rotate(nums, numsSize, k);");
+    expect(driver).toContain("for (int _i = 0; _i < numsSize; _i++)");
+    expect(driver).not.toContain("void result");
+  });
+
+  it("Plan 012 Batch 6: void return with a 2D array argument prints using the per-row ColSize convention, not a shared column count", () => {
+    const code = `void rotateImage(int** matrix, int matrixRows, int* matrixColSize) {\n}`;
+    const driver = generateDriverCode("c", code, { matrix: [[1, 2, 3], [4, 5, 6], [7, 8, 9]] }, "rotateImage", "void");
+
+    expect(driver).toContain("for (int _i = 0; _i < matrixRows; _i++)");
+    expect(driver).toContain("for (int _j = 0; _j < matrixColSize[_i]; _j++)");
+  });
+
+  it("Plan 012 Batch 6: void return throws at generation time for an ambiguous mutation target, rather than guessing", () => {
+    const code = `void solve(int n) {\n}`;
+    expect(() => generateDriverCode("c", code, { n: 5 }, "solve", "void")).toThrow(/expected exactly 1/);
+  });
+
+  it("Plan 012 Batch 6: a 2D array of STRINGS uses one MORE level of pointer indirection than a 2D array of ints (char*** not char**) — a real pointer-depth bug, not a naming nitpick: char** compiled with only a warning and happened to still run, confirmed by hand with -Wall -Wextra before writing this", () => {
+    const code = `void fillGrid(char*** grid, int gridRows, int* gridColSize) {\n}`;
+    const driver = generateDriverCode("c", code, { grid: [[".", "."], [".", "."]] }, "fillGrid", "void");
+
+    // The row is `char* _gridRow0[]` (array of char*), which decays to
+    // `char**` as a value; the array-of-rows is therefore `char**
+    // grid[]` (array of char**), which itself decays to `char***` when
+    // passed to a function. Anything declaring the parameter as `char**`
+    // is one level short.
+    expect(driver).toContain("char** grid[] = {_gridRow0, _gridRow1};");
+    expect(driver).toContain('printf("\\"%s\\"", grid[_i][_j]);');
   });
 });
 
@@ -364,41 +498,44 @@ describe("validateProblemContracts — C contract checks (Plan 012)", () => {
 
   it("flags an inferred C return type that generate() does not actually support (silent-fallthrough bug class)", () => {
     // No `class Solution` idea applies to C, so an unsupported shape like
-    // a 2D-array return can't be spelled with a real return-type token
-    // the driver recognizes — this is exactly the case that used to slip
-    // through to generate()'s scalar-else branch undetected.
+    // a struct-pointer return can't be spelled with a real return-type
+    // token the driver recognizes — this is exactly the case that used
+    // to slip through to generate()'s scalar-else branch undetected.
+    // (int**/char** were exactly this case through Batch 5 — now
+    // supported as of Batch 6, so this test uses ListNode*, which is
+    // still genuinely unsupported — see languageDrivers/c.js's header.)
     const unsupported = {
       slug: "fake-c-unsupported-return",
       functionName: "solve",
       starterCode: {
-        c: `int** solve(int* nums, int numsSize, int* returnSize) {\n  return NULL;\n}`,
+        c: `ListNode* solve(int* nums, int numsSize) {\n  return NULL;\n}`,
       },
-      testcases: [{ input: { nums: [1, 2] }, expectedOutput: [[1], [2]] }],
+      testcases: [{ input: { nums: [1, 2] }, expectedOutput: [1, 2] }],
     };
 
     const errors = validateProblems([unsupported]);
     const returnTypeError = errors.find((e) => e.includes("not one of languageDrivers/c.js's"));
     expect(returnTypeError).toBeDefined();
-    // The signature-line regex reads the real "int**" token directly off
-    // the function definition rather than trusting inferReturnType()'s
-    // own lossy whitelist-with-default-to-"int" fallback — see
-    // checkCReturnTypeSupported's comment for why that distinction
-    // matters here.
-    expect(returnTypeError).toMatch(/C return type "int\*\*" is not one of/);
+    // The signature-line regex reads the real "ListNode*" token directly
+    // off the function definition rather than trusting
+    // inferReturnType()'s own lossy whitelist-with-default-to-"int"
+    // fallback — see checkCReturnTypeSupported's comment for why that
+    // distinction matters here.
+    expect(returnTypeError).toMatch(/C return type "ListNode\*" is not one of/);
   });
 
   it("an explicitly declared but unsupported returnType.c is caught too, not just a bad inference", () => {
     const declaredUnsupported = {
       slug: "fake-c-declared-unsupported",
       functionName: "solve",
-      returnType: { c: "int**" },
+      returnType: { c: "ListNode*" },
       starterCode: {
-        c: `int** solve(int* nums, int numsSize, int* returnSize) {\n  return NULL;\n}`,
+        c: `ListNode* solve(int* nums, int numsSize) {\n  return NULL;\n}`,
       },
     };
 
     const errors = validateProblems([declaredUnsupported]);
-    expect(errors.some((e) => e.includes('C return type "int**" is not one of'))).toBe(true);
+    expect(errors.some((e) => e.includes('C return type "ListNode*" is not one of'))).toBe(true);
   });
 
   it("flags a numeric array parameter containing non-integer values with no explicit paramTypes.c override", () => {

@@ -11,7 +11,11 @@
   "companies": [],
   "relatedProblems": [],
   "returnType": {},
-  "paramTypes": {},
+  "paramTypes": {
+    "c": {
+      "board": "char*[][]"
+    }
+  },
   "comparisonMode": "exact",
   "operationSequence": {
     "enabled": false,

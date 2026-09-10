@@ -11,7 +11,11 @@
   "companies": [],
   "relatedProblems": [],
   "returnType": {},
-  "paramTypes": {},
+  "paramTypes": {
+    "c": {
+      "graph": "int[][]"
+    }
+  },
   "comparisonMode": "unordered",
   "operationSequence": {
     "enabled": false,

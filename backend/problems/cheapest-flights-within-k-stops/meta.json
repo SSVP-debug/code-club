@@ -11,7 +11,11 @@
   "companies": [],
   "relatedProblems": [],
   "returnType": {},
-  "paramTypes": {},
+  "paramTypes": {
+    "c": {
+      "flights": "int[][]"
+    }
+  },
   "comparisonMode": "exact",
   "operationSequence": {
     "enabled": false,

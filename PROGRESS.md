@@ -1543,3 +1543,225 @@ Cumulative C coverage after Batch 5: **167/250** (72 + 26 + 53 + 1 + 15).
 After five batches: **167/250 problems have `starterCode.c`.** 83
 remain, all previously-documented and still real: `design-twitter` (1),
 82 from Batch 3's driver-blocked/excluded set.
+
+## Phase 6 — Language Expansion, Plan 012 Batch 6: real driver fixes (2D arrays, void-mutation, array-of-string return) + comprehensive backfill (this session)
+
+Approved scope: "complete all those" — every item flagged as
+outstanding at the end of Batch 5. Turned into real driver work across
+Java, C++, and C (not just C), plus the largest single content batch
+of this whole sequence. Two genuine correctness bugs were found and
+fixed *during* this batch's own work, not carried in from before — both
+documented below rather than silently patched.
+
+### Fix 1 — void-return, in-place-mutation problems (cross-language, not C-specific)
+
+`rotate-array`, `sort-colors`, `next-permutation`,
+`set-matrix-zeroes`, `rotate-image`, `game-of-life`, `walls-and-gates`,
+`sudoku-solver` (8 of the 9 originally flagged — `reorder-list` needs
+`ListNode*`, see Plan 013) were **broken for actual submission in every
+language**, not just missing from C: Java's `${returnType} result =
+solution.${fn}(...)` and C++'s `auto result = solution.${fn}(...)` both
+cannot capture a `void` call — confirmed by generating the real code
+each driver produced for these problems' actual signatures, not
+assumed. Fixed in `languageDrivers/java.js`, `cpp.js`, and `c.js`
+identically: detect `void`, find the single array-typed argument
+(throws at generation time if there isn't exactly one — no guessing),
+and print that argument's post-call state instead of a nonexistent
+return value. Also fixed in the same pass: Java's `int[][]` return fell
+through to a generic `println` that prints Java's default
+`Object.toString()` (`[[I@1b6d3586`, not the array contents) — silently
+wrong, not a compile error, so easy to miss without actually running
+it. Now uses `Arrays.deepToString`.
+
+**Verification:** C and C++ compiled and run for real (1D and 2D cases,
+`g++`/`gcc` both installed in this session's sandbox). **Java could not
+be compiled** — no `javac` available, and `apt-get install
+openjdk-*-jdk-headless` 404'd on every version tried against this
+sandbox's mirror. Verified by careful static generation + manual
+inspection of the produced source only (confirmed syntactically valid
+Java matching known-correct patterns; confirmed `Arrays.toString`/
+`Arrays.deepToString`'s space-after-comma output format is still valid
+JSON via direct `JSON.parse` test). **This is a real gap in this
+session's verification, not a false claim of confidence** — flagging it
+explicitly rather than letting "tests pass" imply more than it does.
+
+### Fix 2 — 2D array parameter convention was wrong (found and corrected within this same batch, not shipped)
+
+The `Rows`/`Cols` convention Batch 2 introduced used a genuinely
+fixed-size C array type (`int matrix[R][C]`) for 2D parameters. This
+catalog's own testcase data disproved that convention directly:
+`rotate-image` alone has testcases shaped 3×3, 4×4, 1×1, and 2×2 — a
+fixed-column-width parameter type only matches ONE of those shapes, and
+silently produces wrong pointer arithmetic (not a compile error) for
+the others. Corrected to the real, standard LeetCode-C convention
+(`int** matrix, int matrixRows, int* matrixColSize` — independently
+allocated row pointers + a per-row column-count array) before any
+starter code using the old convention was ever shipped or delivered.
+
+A second, related bug surfaced while fixing the first: an **empty**
+array (`prerequisites: []` for a genuinely 2D `course-schedule`
+parameter) is structurally indistinguishable from an empty 1D array —
+`Array.isArray(value[0])` is `false` either way. `cDeclaration()` and
+the call-site arg builder each independently re-derived dimensionality
+from the raw value, so even after declaring `paramTypes.c:
+{ prerequisites: "int[][]" }` explicitly, the call site still generated
+a 1D-style call — confirmed with a real compile failure against
+`course-schedule`'s actual third testcase before this was caught. Fixed
+by introducing one shared `resolveCDimensionality(value, declaredType)`
+helper that both the declaration and the call-site consult identically,
+declared type first.
+
+A third bug, same root cause (checked by hand with `gcc -Wall -Wextra`,
+not assumed): a 2D array whose element type is itself a pointer
+(`char*`, for a grid of strings like `sudoku-solver`'s board) needs
+**one more level of indirection** than a 2D array of `int` —
+`char*** board`, not `char** board`. The latter compiled with only an
+"incompatible pointer type" warning and happened to still run correctly
+for a simple write, which is exactly the kind of "looks fine, isn't"
+result this project has been built to catch — caught here before
+shipping, not after.
+
+**Verification:** all three fixes compiled and ran correctly against
+the *same starter code* used with multiple different-shaped real
+testcases (square, non-square, 1×1), the real empty-array
+`course-schedule` case, and the `char***` sudoku-style case — plus a
+232-testcase compile-only sweep across every one of this batch's 56
+backfilled problems' real catalog testcases (see below), zero failures.
+
+### Fix 3 — array-of-string return (`char**`) and 2D-int return (`int**`) — new capabilities, not bug fixes
+
+Neither existed before this batch. Added following the standard
+LeetCode-C `returnSize`/`returnColumnSizes` conventions. Also added
+`void` to `SUPPORTED_C_RETURN_TYPES` and to `inferReturnType`'s
+whitelist (with the same "exactly one array argument" ambiguity guard
+enforced at generation time, not just for backfilled content).
+
+### Content: 56 problems backfilled (comprehensive re-scan, not just the 9 void-mutation candidates)
+
+Re-scanned every remaining non-design problem against the *actual*
+newly-expanded driver capability (not the old shape buckets) — found
+far more than the 8 void-mutation problems: many previously-blocked
+`arr2d->int`/`arr2d->arr2d`/array-of-string-return problems from
+Batches 2–3's skip lists were unlocked by the same fixes. Real numbers:
+135 non-design, not-yet-backfilled candidates checked (same pool Batch
+3 worked from, now re-checked against the expanded driver) → **56
+accepted**, 26 still correctly excluded (`ListNode*`/`TreeNode*` — see
+Plan 013; `vector<char>&`; `uint32_t`; 2D-array-of-string *return*,
+which still has no driver branch even though `char**` as a *param* now
+does; two mis-tagged design problems, `binary-search-tree-iterator` and
+a newly-found second one, `min-stack` — flagged, not fixed, ownership
+belongs to whoever curates `operationSequence` tagging).
+
+Return-kind breakdown of the 56: 20 plain `int`, 13 `int**`, 8 `void`,
+6 `bool`, 5 `int*`, 4 `char**`. 44 of the 56 needed an explicit
+`paramTypes.c` declaration (every 2D-array param, declared
+unconditionally rather than only when a specific testcase happened to
+be empty — a hidden testcase added later could easily be the first one
+to hit that ambiguity).
+
+**A real placement bug was caught and fixed mid-batch, not shipped**:
+the first version of this batch's apply script inserted the new
+`paramTypes` field as a sibling *inside* `starterCode` instead of at
+the top level of the problem object (the one existing precedent,
+`two-sum-count-pairs`' `returnType` field, has it correctly at the top
+level — this batch's own script got it wrong on the first pass). Caught
+by the exact same `course-schedule` empty-array compile failure that
+motivated Fix 2 above — reverted the whole batch, fixed the script,
+re-verified the fix in isolation on 2 test cases (one multi-line, one
+single-line source format) before re-running against all 56.
+
+Cumulative C coverage after Batch 6: **223/250** (167 + 56).
+
+### Verification
+
+- Backend `npx vitest run`: **103/103 files, 1197/1197 tests** (11 new:
+  2D-parameter-convention tests, the `char***` pointer-depth regression
+  test, void-mutation tests for Java and C++ mirroring the existing C
+  ones).
+- `node backend/scripts/checkProblemsFolderDrift.js`: zero drift,
+  223/250 problems now carry `starter/c.c`.
+- `node backend/scripts/validateProblemContracts.js`: 250 problems + 8
+  Code Club Edition missions, no contract mismatches.
+- A 232-testcase compile-only sweep (every real testcase, for every one
+  of the 56 backfilled problems' actual stub starter code, not just one
+  sample per problem) — zero compile failures.
+- Representative real (non-stub) implementations compiled and run via
+  `gcc`/`g++` for: 1D mutation, 2D mutation (square/non-square/1×1),
+  `int**` return, `char**` return, `char**`/`char***` params, and
+  `course-schedule`'s real empty-array testcase specifically — all
+  correct.
+
+### Activation — attempted, correctly NOT completed
+
+Attempted `node backend/scripts/verifyLanguageRegistry.js` per its own
+documented prerequisite for flipping `enabled: true`. Confirmed the
+script's own header warning still holds: this sandbox cannot reach
+`ce.judge0.com` (403 Forbidden — the request never got a real answer
+from Judge0 itself). **`enabled` stays `false`.** This is a deliberate
+choice, not an oversight — flipping it without verification would be
+exactly the "ships without verification" failure mode this whole
+project has been built to avoid. Bunny needs to run
+`node backend/scripts/verifyLanguageRegistry.js` himself, from an
+environment with real network access to the actual configured Judge0
+instance, before flipping this flag.
+
+### Documentation
+
+- **`plans/011-language-and-problem-extensibility.md` reconstructed** —
+  cited by name in a dozen files since before Plan 012 began, never
+  present in this checkout. Rebuilt from those citations plus reading
+  the actual code each one describes (three batches: Mongoose Map
+  schema fields, registry-driven folder-file generation, per-language
+  driver modules with load-time contract enforcement) — not from memory
+  of an original planning conversation. Flagged where the
+  reconstruction is necessarily incomplete (a separately-referenced
+  `docs/execution-audit` is *also* missing from this checkout and was
+  NOT chased down — out of this session's scope).
+- **`plans/013-linked-list-tree-support-scoping.md` written, not
+  implemented** — `ListNode*`/`TreeNode*` support doesn't exist for
+  Java or C++ either (checked directly, not assumed just because it was
+  missing for C). 15 problems currently unimplementable for actual
+  submission in *any* language on this platform. Genuinely new,
+  cross-cutting driver work (real construction/serialization for a
+  recursive pointer type, not an extension of the existing
+  scalar/array/string universe) — scoped and flagged rather than
+  attempted as a rider on an already-large session, per the project's
+  own "get sign-off before implementing new features" convention.
+
+### What Batch 6 does NOT include (unchanged, deliberately)
+
+- `ListNode*`/`TreeNode*` support (15 problems) — see Plan 013.
+- 2D-array-of-string *return* (only `char**` as a *param* is
+  supported; no driver branch exists for a 2D string-grid return).
+- `vector<char>&`/`uint32_t` — 3 problems, genuinely ambiguous type
+  mappings, flagged rather than guessed.
+- `C`'s `enabled` flag — still `false`, pending live Judge0
+  verification Bunny needs to run himself.
+- Fixing the two mis-tagged design problems'
+  (`binary-search-tree-iterator`, `min-stack`) `operationSequence`
+  tagging — flagged, ownership question, not this session's call.
+
+After six batches: **223/250 problems have `starterCode.c`.** Precisely
+reconciled (programmatically, not hand-counted — hand-counting this
+exact breakdown got it wrong on the first attempt, corrected before
+finalizing this entry):
+
+- **1 design problem**: `design-twitter` (`vector<int>`-returning
+  method, Batch 5's one remaining design-problem gap).
+- **17 `ListNode*`/`TreeNode*`-related problems** (Plan 013) —
+  includes `linked-list-cycle`/`intersection-of-two-linked-lists`
+  (need a real `ListNode*`, not just a param-count mismatch as
+  initially mis-labeled in an earlier batch's skip reason) and
+  `binary-search-tree-iterator` (real tree-traversal state, on top of
+  being mis-tagged as a plain function rather than a design problem).
+- **1 additional mis-tagged design problem**: `min-stack` (a second,
+  worse duplicate representation of the already-correctly-handled
+  `minimum-stack` — real constructor/method/testcase structure jammed
+  into one function signature, not tagged `operationSequence.enabled`
+  either).
+- **8 individually-flagged**: `task-scheduler` (`vector<char>&`),
+  `n-queens`, `palindrome-partitioning`, `accounts-merge` (all three:
+  2D-array-of-string *return*, no driver branch exists), `reverse-bits`,
+  `number-of-1-bits` (`uint32_t`), `random-pick-with-weight` (known
+  non-gradeable, pre-existing), `first-bad-version` (hidden-API-based
+  signature).

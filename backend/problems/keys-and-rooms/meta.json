@@ -11,7 +11,11 @@
   "companies": [],
   "relatedProblems": [],
   "returnType": {},
-  "paramTypes": {},
+  "paramTypes": {
+    "c": {
+      "rooms": "int[][]"
+    }
+  },
   "comparisonMode": "exact",
   "operationSequence": {
     "enabled": false,

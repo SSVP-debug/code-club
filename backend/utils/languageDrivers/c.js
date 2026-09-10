@@ -2,19 +2,13 @@
  * languageDrivers/c.js
  *
  * Plan 011 follow-up: adding C. Structurally wired in (registered in
- * backend/config/languages.js with `enabled: false`, both required
- * functions present so languageDrivers/index.js's contract check passes),
- * but NOT a drop-in the way TypeScript was — read this header fully
- * before writing the first real C starter code, and see
- * backend/utils/languageTypes/c.js's header for the type-system side of
- * the same story.
+ * backend/config/languages.js with `enabled: true` as of Plan 012 Batch
+ * 6), with real, documented gaps vs. the other four languages:
  *
- * Real, documented gaps vs. the other four languages:
- *
- *   1. Array-return support covers exactly one shape: a function
- *      returning `int*` with a trailing `int* returnSize` out-parameter
- *      (the standard LeetCode-C convention). Any other returned shape
- *      (char**, a struct, 2D array) is unsupported — see generate().
+ *   1. Array-return support covers `int*` (1D), `int**` (2D, standard
+ *      `returnSize`/`returnColumnSizes` convention), and `char**`
+ *      (array of strings, `returnSize` convention). A returned struct
+ *      or array of a type other than int/string is still unsupported.
  *   2. No exception handling. Every other language's driver wraps the
  *      call in try/catch and prints "RUNTIME_ERROR:<message>" on the
  *      stdout stream that submissionController/judgeController compares
@@ -32,8 +26,16 @@
  *      (Plan 012 Batch 5). An array, string-array, or struct-pointer
  *      method result is still unsupported and throws at generation time
  *      rather than being silently mishandled.
+ *   4. `ListNode*`/`TreeNode*` params and returns are NOT supported —
+ *      this is a pre-existing, cross-language gap (confirmed neither
+ *      java.js nor cpp.js has any struct-construction/serialization
+ *      logic either — every ListNode/TreeNode problem in the catalog is
+ *      currently unimplementable for actual submission in ANY language,
+ *      not a C-specific shortfall). Real, cross-cutting driver work,
+ *      deliberately out of Plan 012's scope — see
+ *      plans/013-linked-list-tree-support-scoping.md.
  */
-import { cDeclaration } from "../languageTypes/c.js";
+import { cDeclaration, resolveCDimensionality } from "../languageTypes/c.js";
 
 /**
  * inferReturnType — regex-based FALLBACK ONLY, for problems that don't
@@ -44,7 +46,7 @@ import { cDeclaration } from "../languageTypes/c.js";
  */
 export function inferReturnType(userCode) {
   const match = userCode.match(
-    /(int\*|char\*|long long|double|bool|int)\s+\w+\s*\(/
+    /(int\*\*|char\*\*|int\*|char\*|long long|double|bool|void|int)\s+\w+\s*\(/
   );
   return match?.[1] || "int";
 }
@@ -59,18 +61,181 @@ export function generate({ userCode, fn, returnType, args, paramTypes }) {
 
   // C's array parameters don't carry their own length — the standard
   // LeetCode-C convention passes an explicit `<key>Size` right after each
-  // array argument (`int* nums, int numsSize, ...`). cDeclaration()
-  // always declares that companion variable for an array arg (see
-  // languageTypes/c.js); this is where it gets threaded into the call.
+  // 1D array argument, or `<key>Rows, <key>ColSize` for a 2D array.
+  // cDeclaration() always declares the matching companion variable(s)
+  // (see languageTypes/c.js); this is where they get threaded into the
+  // call.
+  //
+  // Plan 012 Batch 6: dimensionality is resolved via the SAME
+  // `resolveCDimensionality` helper cDeclaration itself uses (declared
+  // type first, raw value shape only as a fallback) — not by
+  // independently re-inspecting the raw value here. Two real bugs, both
+  // found by actually testing this catalog's own edge cases rather than
+  // just the happy path: (1) previously this always appended `${key}Size`
+  // regardless of dimension, which for any 2D array argument referenced
+  // an undeclared variable (a real, gcc-confirmed compile error); (2) an
+  // EMPTY array argument (`prerequisites: []` for a genuinely 2D
+  // parameter — course-schedule, graph-valid-tree, etc. all have this)
+  // is structurally indistinguishable from an empty 1D array by
+  // `Array.isArray(value[0])` alone, so re-deriving dimensionality from
+  // the raw value here — even after cDeclaration had already been fixed
+  // to consult paramTypes.c — would still generate a call site that
+  // disagreed with the declaration for that one testcase. Both call site
+  // and declaration now consult the same declared-type-aware resolution.
   const callArgs = args
-    .map(({ key, value }) => (Array.isArray(value) ? `${key}, ${key}Size` : key))
+    .map(({ key, value }) => {
+      const dim = resolveCDimensionality(value, paramTypes[key]);
+      if (dim === "2d") return `${key}, ${key}Rows, ${key}ColSize`;
+      if (dim === "1d") return `${key}, ${key}Size`;
+      return key;
+    })
     .join(", ");
 
   const commonIncludes = `#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <stdbool.h>`;
 
-  // The one supported array-return shape: `int*` with a trailing
-  // `int* returnSize` out-parameter. See this file's header comment for
-  // why nothing else is supported.
+  // Element-level print expression for one entry of a declared array
+  // variable, used by both the void-mutation branch below and reused in
+  // spirit (though not code, since return values use dynamically-sized
+  // pointers rather than a compile-time-known declared array) by the
+  // int**/char** return branches. `int`/`bool`/`char*` are the only
+  // element types cDeclaration ever produces (see languageTypes/c.js).
+  function elementPrintStatement(elementType, expr) {
+    if (elementType === "bool") return `printf(${expr} ? "true" : "false")`;
+    if (elementType === "char*") return `printf("\\"%s\\"", ${expr})`;
+    return `printf("%d", ${expr})`; // int
+  }
+
+  // Plan 012 Batch 6: void-return, in-place-mutation problems (rotate-
+  // array, sort-colors, sudoku-solver, etc.) — pre-existing across every
+  // language's generate(), not C-specific. Java's `${returnType} result
+  // = solution.${fn}(...)` and C++'s `auto result = solution.${fn}(...)`
+  // are BOTH invalid when the call is genuinely void (can't declare a
+  // variable of type void, can't deduce auto from a void expression);
+  // C's old default branch had the identical problem. The actual
+  // expected output for these problems was never the return value at
+  // all — it's the post-call state of whichever argument the function
+  // mutates in place, so the fix is to print THAT instead of attempting
+  // to capture a (nonexistent) return value.
+  //
+  // Convention: exactly one array-typed argument is required for this
+  // to be unambiguous — every void-mutation problem in this catalog
+  // mutates a single array/matrix parameter. Zero or more than one
+  // array argument throws at generation time rather than guessing which
+  // one to print.
+  if (returnType === "void") {
+    const arrayArgs = args.filter(({ value }) => Array.isArray(value));
+    if (arrayArgs.length !== 1) {
+      throw new Error(
+        `generate(): "${fn}" returns void (an in-place-mutation problem) but has ${arrayArgs.length} array arguments — expected exactly 1 to know which one to print as the result`
+      );
+    }
+    const { key, value } = arrayArgs[0];
+    const declaredType = paramTypes[key];
+    const dim = resolveCDimensionality(value, declaredType);
+    const type =
+      declaredType ||
+      (dim === "2d"
+        ? typeof value[0][0] === "string"
+          ? "char*[][]"
+          : "int[][]"
+        : typeof value[0] === "string"
+        ? "char*[]"
+        : typeof value[0] === "boolean"
+        ? "bool[]"
+        : "int[]");
+
+    const is2d = dim === "2d";
+    const elementType = type.replace(/\[\]\[\]$|\[\]$/, "");
+
+    const printLoop = is2d
+      ? `printf("[");
+  for (int _i = 0; _i < ${key}Rows; _i++) {
+    if (_i) printf(",");
+    printf("[");
+    for (int _j = 0; _j < ${key}ColSize[_i]; _j++) {
+      if (_j) printf(",");
+      ${elementPrintStatement(elementType, `${key}[_i][_j]`)};
+    }
+    printf("]");
+  }
+  printf("]\\n");`
+      : `printf("[");
+  for (int _i = 0; _i < ${key}Size; _i++) {
+    if (_i) printf(",");
+    ${elementPrintStatement(elementType, `${key}[_i]`)};
+  }
+  printf("]\\n");`;
+
+    return `
+${commonIncludes}
+
+${userCode}
+
+int main() {
+  ${declarations}
+  ${fn}(${callArgs});
+  ${printLoop}
+  return 0;
+}
+`;
+  }
+
+  // 2D array return — the standard LeetCode-C convention:
+  // `int** fn(..., int* returnSize, int** returnColumnSizes)`. Rows may
+  // be ragged in general (hence a per-row returnColumnSizes array rather
+  // than one shared column count), even though every current 2D-return
+  // testcase in this catalog happens to be rectangular.
+  if (returnType === "int**") {
+    return `
+${commonIncludes}
+
+${userCode}
+
+int main() {
+  ${declarations}
+  int returnSize;
+  int* returnColumnSizes;
+  int** result = ${fn}(${callArgs}${callArgs ? ", " : ""}&returnSize, &returnColumnSizes);
+  printf("[");
+  for (int i = 0; i < returnSize; i++) {
+    if (i) printf(",");
+    printf("[");
+    for (int j = 0; j < returnColumnSizes[i]; j++) {
+      if (j) printf(",");
+      printf("%d", result[i][j]);
+    }
+    printf("]");
+  }
+  printf("]\\n");
+  return 0;
+}
+`;
+  }
+
+  // Array-of-strings return: `char** fn(..., int* returnSize)`.
+  if (returnType === "char**") {
+    return `
+${commonIncludes}
+
+${userCode}
+
+int main() {
+  ${declarations}
+  int returnSize;
+  char** result = ${fn}(${callArgs}${callArgs ? ", " : ""}&returnSize);
+  printf("[");
+  for (int i = 0; i < returnSize; i++) {
+    if (i) printf(",");
+    printf("\\"%s\\"", result[i]);
+  }
+  printf("]\\n");
+  return 0;
+}
+`;
+  }
+
+  // The one supported 1D array-return shape: `int*` with a trailing
+  // `int* returnSize` out-parameter.
   if (returnType === "int*") {
     return `
 ${commonIncludes}
@@ -196,7 +361,11 @@ function operationMethodReturnType(userCode, className, methodName) {
 export function generateOperationSequence({ userCode, className, constructorArgs, opNames, opArgsList, resultMode }) {
   const ctorDecls = constructorArgs.map(([k, v]) => cDeclaration(k, v)).join("\n  ");
   const ctorCallArgs = constructorArgs
-    .map(([k, v]) => (Array.isArray(v) ? `${k}, ${k}Size` : k))
+    .map(([k, v]) => {
+      if (Array.isArray(v) && Array.isArray(v[0])) return `${k}, ${k}Rows, ${k}ColSize`;
+      if (Array.isArray(v)) return `${k}, ${k}Size`;
+      return k;
+    })
     .join(", ");
 
   const includeVoid = resultMode === "all";
@@ -208,7 +377,11 @@ export function generateOperationSequence({ userCode, className, constructorArgs
         .map((v, j) => cDeclaration(`_op${i}_arg${j}`, v))
         .join("\n    ");
       const callArgs = opArgs
-        .map((v, j) => (Array.isArray(v) ? `_op${i}_arg${j}, _op${i}_arg${j}Size` : `_op${i}_arg${j}`))
+        .map((v, j) => {
+          if (Array.isArray(v) && Array.isArray(v[0])) return `_op${i}_arg${j}, _op${i}_arg${j}Rows, _op${i}_arg${j}ColSize`;
+          if (Array.isArray(v)) return `_op${i}_arg${j}, _op${i}_arg${j}Size`;
+          return `_op${i}_arg${j}`;
+        })
         .join(", ");
       const fullCallArgs = `_instance${callArgs ? ", " + callArgs : ""}`;
       const call = `${className}_${name}(${fullCallArgs})`;

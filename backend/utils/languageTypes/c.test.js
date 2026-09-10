@@ -60,9 +60,15 @@ describe("cDeclaration", () => {
     );
   });
 
-  it("declares a 2D array argument with companion Rows/Cols variables", () => {
+  it("declares a 2D array argument using the row-pointer + per-row ColSize convention (Plan 012 Batch 6 — see cDeclaration's comment for why a fixed-width 2D array type isn't safe here)", () => {
     expect(cDeclaration("grid", [[1, 2], [3, 4]], "int[][]")).toBe(
-      "int grid[2][2] = {{1, 2}, {3, 4}};\n  int gridRows = 2;\n  int gridCols = 2;"
+      "int _gridRow0[] = {1, 2};\n  int _gridRow1[] = {3, 4};\n  int* grid[] = {_gridRow0, _gridRow1};\n  int gridRows = 2;\n  int gridColSize[] = {2, 2};"
+    );
+  });
+
+  it("the row-pointer convention correctly represents a RAGGED 2D array (different row lengths) — the fixed-width version had no representation for this at all", () => {
+    expect(cDeclaration("grid", [[1, 2, 3], [4]], "int[][]")).toBe(
+      "int _gridRow0[] = {1, 2, 3};\n  int _gridRow1[] = {4};\n  int* grid[] = {_gridRow0, _gridRow1};\n  int gridRows = 2;\n  int gridColSize[] = {3, 1};"
     );
   });
 });

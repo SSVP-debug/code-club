@@ -136,19 +136,30 @@ function checkC(problem) {
 
 // The specific bug class Plan 012 (C language onboarding) exists to catch:
 // languageDrivers/c.js's generate() has exactly one branch per return type
-// in SUPPORTED_C_RETURN_TYPES below (int*, bool, char*, and a final
-// scalar-else branch for int/long long/double). Anything NOT in that list
-// — a 2D array, a string-array, any other pointer/struct shape — falls
-// through to the final scalar-else branch silently: it still generates
-// code that COMPILES (`${returnType} result = fn(...)`, printed with
-// `%d`/`%lld`/`%f`), it just prints the wrong thing. Unlike Java/C++,
-// where an unrecognized type still round-trips through `auto`/`Object`
-// generically, C's driver has no generic fallback — so this check has no
-// java/cpp equivalent and needs its own list here, kept in sync with
-// generate()'s own branches by hand (there's no single shared export of
-// "which return types this driver's generate() branches on" to derive it
-// from — see languageDrivers/c.js if that stops being true).
-const SUPPORTED_C_RETURN_TYPES = new Set(["int", "long long", "double", "bool", "int*", "char*"]);
+// in SUPPORTED_C_RETURN_TYPES below (int*, int**, char*, char**, bool,
+// void, and a final scalar-else branch for int/long long/double).
+// Anything NOT in that list — a struct pointer, an array of a type other
+// than int/string — falls through to the final scalar-else branch
+// silently: it still generates code that COMPILES (`${returnType} result
+// = fn(...)`, printed with `%d`/`%lld`/`%f`), it just prints the wrong
+// thing. Unlike Java/C++, where an unrecognized type still round-trips
+// through `auto`/`Object` generically, C's driver has no generic
+// fallback — so this check has no java/cpp equivalent and needs its own
+// list here, kept in sync with generate()'s own branches by hand
+// (there's no single shared export of "which return types this driver's
+// generate() branches on" to derive it from — see languageDrivers/c.js
+// if that stops being true).
+const SUPPORTED_C_RETURN_TYPES = new Set([
+  "int",
+  "long long",
+  "double",
+  "bool",
+  "int*",
+  "char*",
+  "int**",
+  "char**",
+  "void",
+]);
 
 function checkCReturnTypeSupported(problem) {
   const code = problem.starterCode?.c;

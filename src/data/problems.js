@@ -1927,6 +1927,7 @@ const rawProblems = [
       typescript: `function rotate(nums: number[], k: number): void {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public void rotate(int[] nums, int k) {\n        \n    }\n}`,
       cpp: `class Solution {\npublic:\n    void rotate(vector<int>& nums, int k) {\n        \n    }\n};`,
+      c: `void rotate(int* nums, int numsSize, int k) {\n}`,
     },
     testcases: [
       { input: { nums: [1,2,3,4,5,6,7], k: 3 }, expectedOutput: [5,6,7,1,2,3,4] },
@@ -1961,6 +1962,7 @@ const rawProblems = [
       typescript: `function sortColors(nums: number[]): void {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public void sortColors(int[] nums) {\n        \n    }\n}`,
       cpp: `class Solution {\npublic:\n    void sortColors(vector<int>& nums) {\n        \n    }\n};`,
+      c: `void sortColors(int* nums, int numsSize) {\n}`,
     },
     testcases: [
       { input: { nums: [2,0,2,1,1,0] }, expectedOutput: [0,0,1,1,2,2] },
@@ -1996,6 +1998,7 @@ const rawProblems = [
       typescript: `function nextPermutation(nums: number[]): void {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public void nextPermutation(int[] nums) {\n        \n    }\n}`,
       cpp: `class Solution {\npublic:\n    void nextPermutation(vector<int>& nums) {\n        \n    }\n};`,
+      c: `void nextPermutation(int* nums, int numsSize) {\n}`,
     },
     testcases: [
       { input: { nums: [1,2,3] }, expectedOutput: [1,3,2] },
@@ -2589,7 +2592,9 @@ const rawProblems = [
       typescript: `function canFinish(numCourses: number, prerequisites: number[][]): boolean {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public boolean canFinish(int numCourses, int[][] prerequisites) {\n        return false;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    bool canFinish(int numCourses, vector<vector<int>>& prerequisites) {\n        return false;\n    }\n};`,
+      c: `bool canFinish(int numCourses, int** prerequisites, int prerequisitesRows, int* prerequisitesColSize) {\n    return false;\n}`,
     },
+    paramTypes: { c: { prerequisites: "int[][]" } },
     testcases: [
       { input: { numCourses: 2, prerequisites: [[1,0]] }, expectedOutput: true },
       { input: { numCourses: 2, prerequisites: [[1,0],[0,1]] }, expectedOutput: false },
@@ -2623,7 +2628,9 @@ const rawProblems = [
       typescript: `function pacificAtlantic(heights: number[][]): number[][] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public List<List<Integer>> pacificAtlantic(int[][] heights) {\n        return new ArrayList<>();\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<vector<int>> pacificAtlantic(vector<vector<int>>& heights) {\n        return {};\n    }\n};`,
+      c: `int** pacificAtlantic(int** heights, int heightsRows, int* heightsColSize, int* returnSize, int** returnColumnSizes) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
+    paramTypes: { c: { heights: "int[][]" } },
     testcases: [
       { input: { heights: [[1,2,2,3,5],[3,2,3,4,4],[2,4,5,3,1],[6,7,1,4,5],[5,1,1,2,4]] }, expectedOutput: [[0,4],[1,3],[1,4],[2,2],[3,0],[3,1],[4,0]] },
       { input: { heights: [[1]] }, expectedOutput: [[0,0]] },
@@ -2656,7 +2663,9 @@ const rawProblems = [
       typescript: `function orangesRotting(grid: number[][]): number {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int orangesRotting(int[][] grid) {\n        return 0;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    int orangesRotting(vector<vector<int>>& grid) {\n        return 0;\n    }\n};`,
+      c: `int orangesRotting(int** grid, int gridRows, int* gridColSize) {\n    return 0;\n}`,
     },
+    paramTypes: { c: { grid: "int[][]" } },
     testcases: [
       { input: { grid: [[2,1,1],[1,1,0],[0,1,1]] }, expectedOutput: 4 },
       { input: { grid: [[2,1,1],[0,1,1],[1,0,1]] }, expectedOutput: -1 },
@@ -2975,7 +2984,9 @@ const rawProblems = [
       typescript: `function kClosest(points: number[][], k: number): number[][] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int[][] kClosest(int[][] points, int k) {\n        return new int[][]{};\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<vector<int>> kClosest(vector<vector<int>>& points, int k) {\n        return {};\n    }\n};`,
+      c: `int** kClosest(int** points, int pointsRows, int* pointsColSize, int k, int* returnSize, int** returnColumnSizes) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
+    paramTypes: { c: { points: "int[][]" } },
     testcases: [
       { input: { points: [[1,3],[-2,2]], k: 1 }, expectedOutput: [[-2,2]] },
       { input: { points: [[3,3],[5,-1],[-2,4]], k: 2 }, expectedOutput: [[3,3],[-2,4]] },
@@ -3080,7 +3091,9 @@ const rawProblems = [
       typescript: `function searchMatrix(matrix: number[][], target: number): boolean {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public boolean searchMatrix(int[][] matrix, int target) {\n        return false;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    bool searchMatrix(vector<vector<int>>& matrix, int target) {\n        return false;\n    }\n};`,
+      c: `bool searchMatrix(int** matrix, int matrixRows, int* matrixColSize, int target) {\n    return false;\n}`,
     },
+    paramTypes: { c: { matrix: "int[][]" } },
     testcases: [
       { input: { matrix: [[1,3,5,7],[10,11,16,20],[23,30,34,60]], target: 3 }, expectedOutput: true },
       { input: { matrix: [[1,3,5,7],[10,11,16,20],[23,30,34,60]], target: 13 }, expectedOutput: false },
@@ -3258,6 +3271,7 @@ const rawProblems = [
       typescript: `function permute(nums: number[]): number[][] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public List<List<Integer>> permute(int[] nums) {\n        return new ArrayList<>();\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<vector<int>> permute(vector<int>& nums) {\n        return {};\n    }\n};`,
+      c: `int** permute(int* nums, int numsSize, int* returnSize, int** returnColumnSizes) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
     testcases: [
       { input: { nums: [1,2,3] }, expectedOutput: [[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]] },
@@ -3290,7 +3304,9 @@ const rawProblems = [
       typescript: `function solveSudoku(board: string[][]): void {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public void solveSudoku(char[][] board) {\n        \n    }\n}`,
       cpp: `class Solution {\npublic:\n    void solveSudoku(vector<vector<char>>& board) {\n        \n    }\n};`,
+      c: `void solveSudoku(char*** board, int boardRows, int* boardColSize) {\n}`,
     },
+    paramTypes: { c: { board: "char*[][]" } },
     testcases: [
       { input: { board: [["5","3",".",".","7",".",".",".","."],["6",".",".","1","9","5",".",".","."],[".","9","8",".",".",".",".","6","."],["8",".",".",".","6",".",".",".","3"],["4",".",".","8",".","3",".",".","1"],["7",".",".",".","2",".",".",".","6"],[".","6",".",".",".",".","2","8","."],[".",".",".","4","1","9",".",".","5"],[".",".",".",".","8",".",".","7","9"]] }, expectedOutput: [["5","3","4","6","7","8","9","1","2"],["6","7","2","1","9","5","3","4","8"],["1","9","8","3","4","2","5","6","7"],["8","5","9","7","6","1","4","2","3"],["4","2","6","8","5","3","7","9","1"],["7","1","3","9","2","4","8","5","6"],["9","6","1","5","3","7","2","8","4"],["2","8","7","4","1","9","6","3","5"],["3","4","5","2","8","6","1","7","9"]] },
     ],
@@ -3319,6 +3335,7 @@ const rawProblems = [
       typescript: `function generateParenthesis(n: number): string[] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public List<String> generateParenthesis(int n) {\n        return new ArrayList<>();\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<string> generateParenthesis(int n) {\n        return {};\n    }\n};`,
+      c: `char** generateParenthesis(int n, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
     testcases: [
       { input: { n: 3 }, expectedOutput: ["((()))","(()())","(())()","()(())","()()()"] },
@@ -3353,7 +3370,9 @@ const rawProblems = [
       typescript: `function exist(board: string[][], word: string): boolean {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public boolean exist(char[][] board, String word) {\n        return false;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    bool exist(vector<vector<char>>& board, string word) {\n        return false;\n    }\n};`,
+      c: `bool exist(char*** board, int boardRows, int* boardColSize, char* word) {\n    return false;\n}`,
     },
+    paramTypes: { c: { board: "char*[][]" } },
     testcases: [
       { input: { board: [["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]], word: "ABCCED" }, expectedOutput: true },
       { input: { board: [["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]], word: "SEE" }, expectedOutput: true },
@@ -3454,7 +3473,9 @@ const rawProblems = [
       typescript: `function findWords(board: string[][], words: string[]): string[] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public List<String> findWords(char[][] board, String[] words) {\n        return new ArrayList<>();\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<string> findWords(vector<vector<char>>& board, vector<string>& words) {\n        return {};\n    }\n};`,
+      c: `char** findWords(char*** board, int boardRows, int* boardColSize, char** words, int wordsSize, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
+    paramTypes: { c: { board: "char*[][]" } },
     testcases: [
       { input: { board: [["o","a","a","n"],["e","t","a","e"],["i","h","k","r"],["i","f","l","v"]], words: ["oath","pea","eat","rain"] }, expectedOutput: ["eat","oath"] },
       { input: { board: [["a","b"],["c","d"]], words: ["abdc","abcd"] }, expectedOutput: ["abdc"] },
@@ -3588,6 +3609,7 @@ const rawProblems = [
       typescript: `function fourSum(nums: number[], target: number): number[][] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public List<List<Integer>> fourSum(int[] nums, int target) {\n        return new ArrayList<>();\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<vector<int>> fourSum(vector<int>& nums, int target) {\n        return {};\n    }\n};`,
+      c: `int** fourSum(int* nums, int numsSize, int target, int* returnSize, int** returnColumnSizes) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
     testcases: [
       { input: { nums: [1,0,-1,0,-2,2], target: 0 }, expectedOutput: [[-2,-1,1,2],[-2,0,0,2],[-1,0,0,1]] },
@@ -3869,7 +3891,9 @@ const rawProblems = [
       typescript: `function merge(intervals: number[][]): number[][] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int[][] merge(int[][] intervals) {\n        return new int[][]{};\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<vector<int>> merge(vector<vector<int>>& intervals) {\n        return {};\n    }\n};`,
+      c: `int** merge(int** intervals, int intervalsRows, int* intervalsColSize, int* returnSize, int** returnColumnSizes) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
+    paramTypes: { c: { intervals: "int[][]" } },
     testcases: [
       { input: { intervals: [[1,3],[2,6],[8,10],[15,18]] }, expectedOutput: [[1,6],[8,10],[15,18]] },
       { input: { intervals: [[1,4],[4,5]] }, expectedOutput: [[1,5]] },
@@ -3904,7 +3928,9 @@ const rawProblems = [
       typescript: `function eraseOverlapIntervals(intervals: number[][]): number {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int eraseOverlapIntervals(int[][] intervals) {\n        return 0;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    int eraseOverlapIntervals(vector<vector<int>>& intervals) {\n        return 0;\n    }\n};`,
+      c: `int eraseOverlapIntervals(int** intervals, int intervalsRows, int* intervalsColSize) {\n    return 0;\n}`,
     },
+    paramTypes: { c: { intervals: "int[][]" } },
     testcases: [
       { input: { intervals: [[1,2],[2,3],[3,4],[1,3]] }, expectedOutput: 1 },
       { input: { intervals: [[1,2],[1,2],[1,2]] }, expectedOutput: 2 },
@@ -4471,7 +4497,9 @@ const rawProblems = [
       typescript: `function networkDelayTime(times: number[][], n: number, k: number): number {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int networkDelayTime(int[][] times, int n, int k) {\n        return -1;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    int networkDelayTime(vector<vector<int>>& times, int n, int k) {\n        return -1;\n    }\n};`,
+      c: `int networkDelayTime(int** times, int timesRows, int* timesColSize, int n, int k) {\n    return 0;\n}`,
     },
+    paramTypes: { c: { times: "int[][]" } },
     testcases: [
       { input: { times: [[2,1,1],[2,3,1],[3,4,1]], n: 4, k: 2 }, expectedOutput: 2 },
       { input: { times: [[1,2,1]], n: 2, k: 1 }, expectedOutput: 1 },
@@ -4504,7 +4532,9 @@ const rawProblems = [
       typescript: `function findCheapestPrice(n: number, flights: number[][], src: number, dst: number, k: number): number {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int findCheapestPrice(int n, int[][] flights, int src, int dst, int k) {\n        return -1;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    int findCheapestPrice(int n, vector<vector<int>>& flights, int src, int dst, int k) {\n        return -1;\n    }\n};`,
+      c: `int findCheapestPrice(int n, int** flights, int flightsRows, int* flightsColSize, int src, int dst, int k) {\n    return 0;\n}`,
     },
+    paramTypes: { c: { flights: "int[][]" } },
     testcases: [
       { input: { n: 4, flights: [[0,1,100],[1,2,100],[2,0,100],[1,3,600],[2,3,200]], src: 0, dst: 3, k: 1 }, expectedOutput: 700 },
       { input: { n: 3, flights: [[0,1,100],[1,2,100],[0,2,500]], src: 0, dst: 2, k: 1 }, expectedOutput: 200 },
@@ -4536,7 +4566,9 @@ const rawProblems = [
       typescript: `function minCostConnectPoints(points: number[][]): number {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int minCostConnectPoints(int[][] points) {\n        return 0;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    int minCostConnectPoints(vector<vector<int>>& points) {\n        return 0;\n    }\n};`,
+      c: `int minCostConnectPoints(int** points, int pointsRows, int* pointsColSize) {\n    return 0;\n}`,
     },
+    paramTypes: { c: { points: "int[][]" } },
     testcases: [
       { input: { points: [[0,0],[2,2],[3,10],[5,2],[7,0]] }, expectedOutput: 20 },
       { input: { points: [[3,12],[-2,5],[-4,1]] }, expectedOutput: 18 },
@@ -4569,7 +4601,9 @@ const rawProblems = [
       typescript: `function countComponents(n: number, edges: number[][]): number {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int countComponents(int n, int[][] edges) {\n        return 0;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    int countComponents(int n, vector<vector<int>>& edges) {\n        return 0;\n    }\n};`,
+      c: `int countComponents(int n, int** edges, int edgesRows, int* edgesColSize) {\n    return 0;\n}`,
     },
+    paramTypes: { c: { edges: "int[][]" } },
     testcases: [
       { input: { n: 5, edges: [[0,1],[1,2],[3,4]] }, expectedOutput: 2 },
       { input: { n: 5, edges: [[0,1],[1,2],[2,3],[3,4]] }, expectedOutput: 1 },
@@ -4603,7 +4637,9 @@ const rawProblems = [
       typescript: `function findRedundantConnection(edges: number[][]): number[] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int[] findRedundantConnection(int[][] edges) {\n        return new int[]{};\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<int> findRedundantConnection(vector<vector<int>>& edges) {\n        return {};\n    }\n};`,
+      c: `int* findRedundantConnection(int** edges, int edgesRows, int* edgesColSize, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
+    paramTypes: { c: { edges: "int[][]" } },
     testcases: [
       { input: { edges: [[1,2],[1,3],[2,3]] }, expectedOutput: [2,3] },
       { input: { edges: [[1,2],[2,3],[3,4],[1,4],[1,5]] }, expectedOutput: [1,4] },
@@ -4615,7 +4651,7 @@ const rawProblems = [
 
   // ── BATCH 039: Intervals + Matrix (IDs 131-140) ────────────────────────────
 
-  { id: 131, title: "Minimum Number of Meeting Rooms", slug: "minimum-meeting-rooms", functionName: "minMeetingRooms", difficulty: "Medium", topic: "Intervals", pattern: "min heap sweep", companies: ["Amazon","Facebook","Google"], description: "Given an array of meeting time intervals, return the minimum number of conference rooms required.", examples: [{ input: "intervals = [[0,30],[5,10],[15,20]]", output: "2" }], constraints: ["1 <= intervals.length <= 10^4", "0 <= start < end <= 10^6"], starterCode: { python: `class Solution:\n    def minMeetingRooms(self, intervals):\n        pass`, javascript: `function minMeetingRooms(intervals) {\n\n}`, typescript: `function minMeetingRooms(intervals: number[][]): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int minMeetingRooms(int[][] intervals) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int minMeetingRooms(vector<vector<int>>& intervals) { return 0; }\n};` }, testcases: [{ input: { intervals: [[0,30],[5,10],[15,20]] }, expectedOutput: 2 }, { input: { intervals: [[7,10],[2,4]] }, expectedOutput: 1 }], hiddentestcases: [{ input: { intervals: [[1,5],[5,10],[10,14]] }, expectedOutput: 1 }, { input: { intervals: [[1,4],[2,5],[7,9]] }, expectedOutput: 2 }] },
+  { id: 131, title: "Minimum Number of Meeting Rooms", slug: "minimum-meeting-rooms", functionName: "minMeetingRooms", difficulty: "Medium", topic: "Intervals", pattern: "min heap sweep", companies: ["Amazon","Facebook","Google"], description: "Given an array of meeting time intervals, return the minimum number of conference rooms required.", examples: [{ input: "intervals = [[0,30],[5,10],[15,20]]", output: "2" }], constraints: ["1 <= intervals.length <= 10^4", "0 <= start < end <= 10^6"], starterCode: { python: `class Solution:\n    def minMeetingRooms(self, intervals):\n        pass`, javascript: `function minMeetingRooms(intervals) {\n\n}`, typescript: `function minMeetingRooms(intervals: number[][]): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int minMeetingRooms(int[][] intervals) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int minMeetingRooms(vector<vector<int>>& intervals) { return 0; }\n};`, c: `int minMeetingRooms(int** intervals, int intervalsRows, int* intervalsColSize) {\n    return 0;\n}` }, paramTypes: { c: { intervals: "int[][]" } }, testcases: [{ input: { intervals: [[0,30],[5,10],[15,20]] }, expectedOutput: 2 }, { input: { intervals: [[7,10],[2,4]] }, expectedOutput: 1 }], hiddentestcases: [{ input: { intervals: [[1,5],[5,10],[10,14]] }, expectedOutput: 1 }, { input: { intervals: [[1,4],[2,5],[7,9]] }, expectedOutput: 2 }] },
 
   {
     id: 132,
@@ -4639,7 +4675,9 @@ const rawProblems = [
       typescript: `function insert(intervals: number[][], newInterval: number[]): number[][] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int[][] insert(int[][] intervals, int[] newInterval) {\n        return new int[][]{};\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<vector<int>> insert(vector<vector<int>>& intervals, vector<int>& newInterval) {\n        return {};\n    }\n};`,
+      c: `int** insert(int** intervals, int intervalsRows, int* intervalsColSize, int* newInterval, int newIntervalSize, int* returnSize, int** returnColumnSizes) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
+    paramTypes: { c: { intervals: "int[][]" } },
     testcases: [
       { input: { intervals: [[1,3],[6,9]], newInterval: [2,5] }, expectedOutput: [[1,5],[6,9]] },
       { input: { intervals: [[1,2],[3,5],[6,7],[8,10],[12,16]], newInterval: [4,8] }, expectedOutput: [[1,2],[3,10],[12,16]] },
@@ -4651,7 +4689,7 @@ const rawProblems = [
     ],
   },
 
-  { id: 133, title: "Interval List Intersections", slug: "interval-list-intersections", functionName: "intervalIntersection", difficulty: "Medium", topic: "Intervals", pattern: "two pointer merge", companies: ["Facebook","Amazon"], description: "Given two lists of closed intervals, each list of intervals is pairwise disjoint and in sorted order. Return the intersection of these two interval lists.", examples: [{ input: "firstList = [[0,2],[5,10],[13,23],[24,25]], secondList = [[1,5],[8,12],[15,24],[25,26]]", output: "[[1,2],[5,5],[8,10],[15,23],[24,24],[25,25]]" }], constraints: ["0 <= firstList.length, secondList.length <= 1000"], starterCode: { python: `class Solution:\n    def intervalIntersection(self, firstList, secondList):\n        pass`, javascript: `function intervalIntersection(firstList, secondList) {\n\n}`, typescript: `function intervalIntersection(firstList: number[][], secondList: number[][]): number[][] {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int[][] intervalIntersection(int[][] firstList, int[][] secondList) { return new int[][]{}; }\n}`, cpp: `class Solution {\npublic:\n    vector<vector<int>> intervalIntersection(vector<vector<int>>& firstList, vector<vector<int>>& secondList) { return {}; }\n};` }, testcases: [{ input: { firstList: [[0,2],[5,10],[13,23],[24,25]], secondList: [[1,5],[8,12],[15,24],[25,26]] }, expectedOutput: [[1,2],[5,5],[8,10],[15,23],[24,24],[25,25]] }, { input: { firstList: [], secondList: [] }, expectedOutput: [] }], hiddentestcases: [{ input: { firstList: [[1,3],[5,9]], secondList: [] }, expectedOutput: [] }, { input: { firstList: [[1,7]], secondList: [[3,10]] }, expectedOutput: [[3,7]] }] },
+  { id: 133, title: "Interval List Intersections", slug: "interval-list-intersections", functionName: "intervalIntersection", difficulty: "Medium", topic: "Intervals", pattern: "two pointer merge", companies: ["Facebook","Amazon"], description: "Given two lists of closed intervals, each list of intervals is pairwise disjoint and in sorted order. Return the intersection of these two interval lists.", examples: [{ input: "firstList = [[0,2],[5,10],[13,23],[24,25]], secondList = [[1,5],[8,12],[15,24],[25,26]]", output: "[[1,2],[5,5],[8,10],[15,23],[24,24],[25,25]]" }], constraints: ["0 <= firstList.length, secondList.length <= 1000"], starterCode: { python: `class Solution:\n    def intervalIntersection(self, firstList, secondList):\n        pass`, javascript: `function intervalIntersection(firstList, secondList) {\n\n}`, typescript: `function intervalIntersection(firstList: number[][], secondList: number[][]): number[][] {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int[][] intervalIntersection(int[][] firstList, int[][] secondList) { return new int[][]{}; }\n}`, cpp: `class Solution {\npublic:\n    vector<vector<int>> intervalIntersection(vector<vector<int>>& firstList, vector<vector<int>>& secondList) { return {}; }\n};`, c: `int** intervalIntersection(int** firstList, int firstListRows, int* firstListColSize, int** secondList, int secondListRows, int* secondListColSize, int* returnSize, int** returnColumnSizes) {\n    *returnSize = 0;\n    return NULL;\n}` }, paramTypes: { c: { firstList: "int[][]", secondList: "int[][]" } }, testcases: [{ input: { firstList: [[0,2],[5,10],[13,23],[24,25]], secondList: [[1,5],[8,12],[15,24],[25,26]] }, expectedOutput: [[1,2],[5,5],[8,10],[15,23],[24,24],[25,25]] }, { input: { firstList: [], secondList: [] }, expectedOutput: [] }], hiddentestcases: [{ input: { firstList: [[1,3],[5,9]], secondList: [] }, expectedOutput: [] }, { input: { firstList: [[1,7]], secondList: [[3,10]] }, expectedOutput: [[3,7]] }] },
 
   {
     id: 134,
@@ -4675,7 +4713,9 @@ const rawProblems = [
       typescript: `function canAttendMeetings(intervals: number[][]): boolean {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public boolean canAttendMeetings(int[][] intervals) {\n        return false;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    bool canAttendMeetings(vector<vector<int>>& intervals) {\n        return false;\n    }\n};`,
+      c: `bool canAttendMeetings(int** intervals, int intervalsRows, int* intervalsColSize) {\n    return false;\n}`,
     },
+    paramTypes: { c: { intervals: "int[][]" } },
     testcases: [
       { input: { intervals: [[0,30],[5,10],[15,20]] }, expectedOutput: false },
       { input: { intervals: [[7,10],[2,4]] }, expectedOutput: true },
@@ -4742,7 +4782,9 @@ const rawProblems = [
       typescript: `function setZeroes(matrix: number[][]): void {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public void setZeroes(int[][] matrix) {\n        \n    }\n}`,
       cpp: `class Solution {\npublic:\n    void setZeroes(vector<vector<int>>& matrix) {\n        \n    }\n};`,
+      c: `void setZeroes(int** matrix, int matrixRows, int* matrixColSize) {\n}`,
     },
+    paramTypes: { c: { matrix: "int[][]" } },
     testcases: [
       { input: { matrix: [[1,1,1],[1,0,1],[1,1,1]] }, expectedOutput: [[1,0,1],[0,0,0],[1,0,1]] },
       { input: { matrix: [[0,1,2,0],[3,4,5,2],[1,3,1,5]] }, expectedOutput: [[0,0,0,0],[0,4,5,0],[0,3,1,0]] },
@@ -4775,7 +4817,9 @@ const rawProblems = [
       typescript: `function spiralOrder(matrix: number[][]): number[] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public List<Integer> spiralOrder(int[][] matrix) {\n        return new ArrayList<>();\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<int> spiralOrder(vector<vector<int>>& matrix) {\n        return {};\n    }\n};`,
+      c: `int* spiralOrder(int** matrix, int matrixRows, int* matrixColSize, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
+    paramTypes: { c: { matrix: "int[][]" } },
     testcases: [
       { input: { matrix: [[1,2,3],[4,5,6],[7,8,9]] }, expectedOutput: [1,2,3,6,9,8,7,4,5] },
       { input: { matrix: [[1,2,3,4],[5,6,7,8],[9,10,11,12]] }, expectedOutput: [1,2,3,4,8,12,11,10,9,5,6,7] },
@@ -4809,7 +4853,9 @@ const rawProblems = [
       typescript: `function rotate(matrix: number[][]): void {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public void rotate(int[][] matrix) {\n        \n    }\n}`,
       cpp: `class Solution {\npublic:\n    void rotate(vector<vector<int>>& matrix) {\n        \n    }\n};`,
+      c: `void rotate(int** matrix, int matrixRows, int* matrixColSize) {\n}`,
     },
+    paramTypes: { c: { matrix: "int[][]" } },
     testcases: [
       { input: { matrix: [[1,2,3],[4,5,6],[7,8,9]] }, expectedOutput: [[7,4,1],[8,5,2],[9,6,3]] },
       { input: { matrix: [[5,1,9,11],[2,4,8,10],[13,3,6,7],[15,14,12,16]] }, expectedOutput: [[15,13,2,5],[14,3,4,1],[12,6,8,9],[16,7,10,11]] },
@@ -4844,7 +4890,9 @@ const rawProblems = [
       typescript: `function gameOfLife(board: number[][]): void {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public void gameOfLife(int[][] board) {\n        \n    }\n}`,
       cpp: `class Solution {\npublic:\n    void gameOfLife(vector<vector<int>>& board) {\n        \n    }\n};`,
+      c: `void gameOfLife(int** board, int boardRows, int* boardColSize) {\n}`,
     },
+    paramTypes: { c: { board: "int[][]" } },
     testcases: [
       { input: { board: [[0,1,0],[0,0,1],[1,1,1],[0,0,0]] }, expectedOutput: [[0,0,0],[1,0,1],[0,1,1],[0,1,0]] },
       { input: { board: [[1,1],[1,0]] }, expectedOutput: [[1,1],[1,1]] },
@@ -5495,7 +5543,7 @@ const rawProblems = [
 
   // ── BATCH 042: Mixed Hard + Company-Specific (IDs 161-170) ───────────────
 
-  { id: 161, title: "Path With Minimum Effort", slug: "path-with-minimum-effort", functionName: "minimumEffortPath", difficulty: "Medium", topic: "Graphs", pattern: "union find", companies: ["LinkedIn","Amazon"], description: "You are given a rows x columns matrix heights, where heights[row][col] represents the height of cell (row, col). You start at (0, 0) and want to travel to (rows-1, columns-1). You can move up, down, left, or right, and you want to find a route that minimizes the maximum absolute difference in heights between two consecutive cells of the route. Return the minimum effort required to travel from the top-left cell to the bottom-right cell.", examples: [{ input: "heights = [[1,2,2],[3,8,2],[5,3,5]]", output: "2", explanation: "The route [1,3,5,3,5] down the left column then right along the bottom has a maximum absolute difference of 2." }, { input: "heights = [[1,2,3],[3,8,4],[5,3,5]]", output: "1", explanation: "The route [1,2,3,4,5] along the top row then down the right column has a maximum absolute difference of 1." }, { input: "heights = [[1]]", output: "0", explanation: "Start and end are the same single cell, so no movement is required." }], constraints: ["rows == heights.length", "columns == heights[i].length", "1 <= rows, columns <= 100", "1 <= heights[i][j] <= 10^6"], starterCode: { python: `class Solution:\n    def minimumEffortPath(self, heights):\n        pass`, javascript: `function minimumEffortPath(heights) {\n\n}`, typescript: `function minimumEffortPath(heights: number[][]): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int minimumEffortPath(int[][] heights) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int minimumEffortPath(vector<vector<int>>& heights) { return 0; }\n};` }, testcases: [{ input: { heights: [[1,2,2],[3,8,2],[5,3,5]] }, expectedOutput: 2 }, { input: { heights: [[1,2,3],[3,8,4],[5,3,5]] }, expectedOutput: 1 }, { input: { heights: [[1]] }, expectedOutput: 0 }], hiddentestcases: [{ input: { heights: [[1,10,6,7,9,10,4,9]] }, expectedOutput: 9 }, { input: { heights: [[1,2,1,1,1],[1,2,1,2,1],[1,2,1,2,1],[1,2,1,2,1],[1,1,1,2,1]] }, expectedOutput: 0 }] },
+  { id: 161, title: "Path With Minimum Effort", slug: "path-with-minimum-effort", functionName: "minimumEffortPath", difficulty: "Medium", topic: "Graphs", pattern: "union find", companies: ["LinkedIn","Amazon"], description: "You are given a rows x columns matrix heights, where heights[row][col] represents the height of cell (row, col). You start at (0, 0) and want to travel to (rows-1, columns-1). You can move up, down, left, or right, and you want to find a route that minimizes the maximum absolute difference in heights between two consecutive cells of the route. Return the minimum effort required to travel from the top-left cell to the bottom-right cell.", examples: [{ input: "heights = [[1,2,2],[3,8,2],[5,3,5]]", output: "2", explanation: "The route [1,3,5,3,5] down the left column then right along the bottom has a maximum absolute difference of 2." }, { input: "heights = [[1,2,3],[3,8,4],[5,3,5]]", output: "1", explanation: "The route [1,2,3,4,5] along the top row then down the right column has a maximum absolute difference of 1." }, { input: "heights = [[1]]", output: "0", explanation: "Start and end are the same single cell, so no movement is required." }], constraints: ["rows == heights.length", "columns == heights[i].length", "1 <= rows, columns <= 100", "1 <= heights[i][j] <= 10^6"], starterCode: { python: `class Solution:\n    def minimumEffortPath(self, heights):\n        pass`, javascript: `function minimumEffortPath(heights) {\n\n}`, typescript: `function minimumEffortPath(heights: number[][]): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int minimumEffortPath(int[][] heights) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int minimumEffortPath(vector<vector<int>>& heights) { return 0; }\n};`, c: `int minimumEffortPath(int** heights, int heightsRows, int* heightsColSize) {\n    return 0;\n}` }, paramTypes: { c: { heights: "int[][]" } }, testcases: [{ input: { heights: [[1,2,2],[3,8,2],[5,3,5]] }, expectedOutput: 2 }, { input: { heights: [[1,2,3],[3,8,4],[5,3,5]] }, expectedOutput: 1 }, { input: { heights: [[1]] }, expectedOutput: 0 }], hiddentestcases: [{ input: { heights: [[1,10,6,7,9,10,4,9]] }, expectedOutput: 9 }, { input: { heights: [[1,2,1,1,1],[1,2,1,2,1],[1,2,1,2,1],[1,2,1,2,1],[1,1,1,2,1]] }, expectedOutput: 0 }] },
 
   {
     id: 162,
@@ -5567,9 +5615,9 @@ const rawProblems = [
     ],
   },
 
-  { id: 164, title: "Shortest Bridge", slug: "shortest-bridge", functionName: "shortestBridge", difficulty: "Medium", topic: "Graphs", pattern: "DFS island marking + multi-source BFS", companies: ["Amazon","Google"], description: "You are given an n x n binary matrix grid where 1 represents land and 0 represents water. An island is a group of 1's connected 4-directionally. The grid contains exactly two islands. You may change any 0 to a 1 to connect the two islands into one. Return the smallest number of 0's you must flip to connect the two islands.", examples: [{ input: "grid = [[0,1],[1,0]]", output: "1", explanation: "The two single-cell islands at (0,1) and (1,0) are 2 apart (Manhattan distance), so 1 flip connects them." }, { input: "grid = [[0,1,0],[0,0,0],[0,0,1]]", output: "2", explanation: "The islands at (0,1) and (2,2) are 3 apart, so 2 flips connect them." }, { input: "grid = [[1,1,1,1,1],[1,0,0,0,1],[1,0,1,0,1],[1,0,0,0,1],[1,1,1,1,1]]", output: "1", explanation: "The outer ring and the single center cell are separated by a ring of water only 1 cell thick at the closest point." }], constraints: ["n == grid.length == grid[i].length", "2 <= n <= 100", "grid[i][j] is either 0 or 1", "There are exactly two islands in grid"], starterCode: { python: `class Solution:\n    def shortestBridge(self, grid):\n        pass`, javascript: `function shortestBridge(grid) {\n\n}`, typescript: `function shortestBridge(grid: number[][]): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int shortestBridge(int[][] grid) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int shortestBridge(vector<vector<int>>& grid) { return 0; }\n};` }, testcases: [{ input: { grid: [[0,1],[1,0]] }, expectedOutput: 1 }, { input: { grid: [[0,1,0],[0,0,0],[0,0,1]] }, expectedOutput: 2 }, { input: { grid: [[1,1,1,1,1],[1,0,0,0,1],[1,0,1,0,1],[1,0,0,0,1],[1,1,1,1,1]] }, expectedOutput: 1 }], hiddentestcases: [{ input: { grid: [[1,0],[0,1]] }, expectedOutput: 1 }, { input: { grid: [[1,1,0],[0,0,0],[0,1,1]] }, expectedOutput: 1 }] },
+  { id: 164, title: "Shortest Bridge", slug: "shortest-bridge", functionName: "shortestBridge", difficulty: "Medium", topic: "Graphs", pattern: "DFS island marking + multi-source BFS", companies: ["Amazon","Google"], description: "You are given an n x n binary matrix grid where 1 represents land and 0 represents water. An island is a group of 1's connected 4-directionally. The grid contains exactly two islands. You may change any 0 to a 1 to connect the two islands into one. Return the smallest number of 0's you must flip to connect the two islands.", examples: [{ input: "grid = [[0,1],[1,0]]", output: "1", explanation: "The two single-cell islands at (0,1) and (1,0) are 2 apart (Manhattan distance), so 1 flip connects them." }, { input: "grid = [[0,1,0],[0,0,0],[0,0,1]]", output: "2", explanation: "The islands at (0,1) and (2,2) are 3 apart, so 2 flips connect them." }, { input: "grid = [[1,1,1,1,1],[1,0,0,0,1],[1,0,1,0,1],[1,0,0,0,1],[1,1,1,1,1]]", output: "1", explanation: "The outer ring and the single center cell are separated by a ring of water only 1 cell thick at the closest point." }], constraints: ["n == grid.length == grid[i].length", "2 <= n <= 100", "grid[i][j] is either 0 or 1", "There are exactly two islands in grid"], starterCode: { python: `class Solution:\n    def shortestBridge(self, grid):\n        pass`, javascript: `function shortestBridge(grid) {\n\n}`, typescript: `function shortestBridge(grid: number[][]): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int shortestBridge(int[][] grid) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int shortestBridge(vector<vector<int>>& grid) { return 0; }\n};`, c: `int shortestBridge(int** grid, int gridRows, int* gridColSize) {\n    return 0;\n}` }, paramTypes: { c: { grid: "int[][]" } }, testcases: [{ input: { grid: [[0,1],[1,0]] }, expectedOutput: 1 }, { input: { grid: [[0,1,0],[0,0,0],[0,0,1]] }, expectedOutput: 2 }, { input: { grid: [[1,1,1,1,1],[1,0,0,0,1],[1,0,1,0,1],[1,0,0,0,1],[1,1,1,1,1]] }, expectedOutput: 1 }], hiddentestcases: [{ input: { grid: [[1,0],[0,1]] }, expectedOutput: 1 }, { input: { grid: [[1,1,0],[0,0,0],[0,1,1]] }, expectedOutput: 1 }] },
 
-  { id: 165, title: "Optimize Water Distribution in a Village", slug: "optimize-water-distribution", functionName: "minCostToSupplyWater", difficulty: "Hard", topic: "Graphs", pattern: "MST with a virtual source node", companies: ["Amazon","Google"], description: "There are n houses in a village, numbered 1 to n. For each house i, you can either build a well directly in that house at cost wells[i-1], or connect it to another house via a pipe. pipes[j] = [house1, house2, cost] represents a bidirectional pipe between house1 and house2 with the given cost. Return the minimum total cost to supply water to all houses (every house must end up with water, either from its own well or via a chain of pipes to a house that has a well).", examples: [{ input: "n = 3, wells = [1,2,2], pipes = [[1,2,1],[2,3,1]]", output: "3", explanation: "Build a well at house 1 (cost 1), then pipe 1-2 (cost 1) and pipe 2-3 (cost 1), total 3 — cheaper than any other combination." }, { input: "n = 2, wells = [1,1], pipes = [[1,2,1]]", output: "2", explanation: "Build a well at house 1 (cost 1) and a pipe to house 2 (cost 1), total 2." }], constraints: ["1 <= n <= 10^4", "wells.length == n", "0 <= wells[i] <= 10^5", "1 <= pipes.length <= 10^4", "pipes[j].length == 3", "1 <= house1_j, house2_j <= n", "0 <= cost_j <= 10^5", "house1_j != house2_j"], starterCode: { python: `class Solution:\n    def minCostToSupplyWater(self, n, wells, pipes):\n        pass`, javascript: `function minCostToSupplyWater(n, wells, pipes) {\n\n}`, typescript: `function minCostToSupplyWater(n: number, wells: number[], pipes: number[][]): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int minCostToSupplyWater(int n, int[] wells, int[][] pipes) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int minCostToSupplyWater(int n, vector<int>& wells, vector<vector<int>>& pipes) { return 0; }\n};` }, testcases: [{ input: { n: 3, wells: [1,2,2], pipes: [[1,2,1],[2,3,1]] }, expectedOutput: 3 }, { input: { n: 2, wells: [1,1], pipes: [[1,2,1]] }, expectedOutput: 2 }], hiddentestcases: [{ input: { n: 1, wells: [5], pipes: [] }, expectedOutput: 5 }, { input: { n: 3, wells: [10,10,10], pipes: [[1,2,1],[1,3,1]] }, expectedOutput: 12 }] },
+  { id: 165, title: "Optimize Water Distribution in a Village", slug: "optimize-water-distribution", functionName: "minCostToSupplyWater", difficulty: "Hard", topic: "Graphs", pattern: "MST with a virtual source node", companies: ["Amazon","Google"], description: "There are n houses in a village, numbered 1 to n. For each house i, you can either build a well directly in that house at cost wells[i-1], or connect it to another house via a pipe. pipes[j] = [house1, house2, cost] represents a bidirectional pipe between house1 and house2 with the given cost. Return the minimum total cost to supply water to all houses (every house must end up with water, either from its own well or via a chain of pipes to a house that has a well).", examples: [{ input: "n = 3, wells = [1,2,2], pipes = [[1,2,1],[2,3,1]]", output: "3", explanation: "Build a well at house 1 (cost 1), then pipe 1-2 (cost 1) and pipe 2-3 (cost 1), total 3 — cheaper than any other combination." }, { input: "n = 2, wells = [1,1], pipes = [[1,2,1]]", output: "2", explanation: "Build a well at house 1 (cost 1) and a pipe to house 2 (cost 1), total 2." }], constraints: ["1 <= n <= 10^4", "wells.length == n", "0 <= wells[i] <= 10^5", "1 <= pipes.length <= 10^4", "pipes[j].length == 3", "1 <= house1_j, house2_j <= n", "0 <= cost_j <= 10^5", "house1_j != house2_j"], starterCode: { python: `class Solution:\n    def minCostToSupplyWater(self, n, wells, pipes):\n        pass`, javascript: `function minCostToSupplyWater(n, wells, pipes) {\n\n}`, typescript: `function minCostToSupplyWater(n: number, wells: number[], pipes: number[][]): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int minCostToSupplyWater(int n, int[] wells, int[][] pipes) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int minCostToSupplyWater(int n, vector<int>& wells, vector<vector<int>>& pipes) { return 0; }\n};`, c: `int minCostToSupplyWater(int n, int* wells, int wellsSize, int** pipes, int pipesRows, int* pipesColSize) {\n    return 0;\n}` }, paramTypes: { c: { pipes: "int[][]" } }, testcases: [{ input: { n: 3, wells: [1,2,2], pipes: [[1,2,1],[2,3,1]] }, expectedOutput: 3 }, { input: { n: 2, wells: [1,1], pipes: [[1,2,1]] }, expectedOutput: 2 }], hiddentestcases: [{ input: { n: 1, wells: [5], pipes: [] }, expectedOutput: 5 }, { input: { n: 3, wells: [10,10,10], pipes: [[1,2,1],[1,3,1]] }, expectedOutput: 12 }] },
 
   { id: 166, title: "Minimum Genetic Mutation", slug: "minimum-genetic-mutation", functionName: "minMutation", difficulty: "Medium", topic: "Graphs", pattern: "BFS shortest path over strings", companies: ["Amazon","Facebook","Google"], description: "A gene string is an 8-character string made only of the characters 'A', 'C', 'G', and 'T'. A single mutation changes exactly one character in the gene string. There is also a bank of valid gene strings — every gene the string mutates into (including the final endGene) must appear in bank. Given startGene, endGene, and bank, return the minimum number of mutations needed to mutate startGene into endGene. If there is no such path, return -1. Note that startGene itself does not need to be in bank.", examples: [{ input: "startGene = \"AACCGGTT\", endGene = \"AACCGGTA\", bank = [\"AACCGGTA\"]", output: "1", explanation: "Changing the last character T to A produces endGene directly, and \"AACCGGTA\" is in bank." }, { input: "startGene = \"AACCGGTT\", endGene = \"AAACGGTA\", bank = [\"AACCGGTA\",\"AACCGCTA\",\"AAACGGTA\"]", output: "2", explanation: "AACCGGTT -> AACCGGTA -> AAACGGTA, both intermediate/final genes are in bank, so 2 mutations suffice." }, { input: "startGene = \"AAAAACCC\", endGene = \"AACCCCCC\", bank = [\"AAAACCCC\",\"AAACCCCC\",\"AACCCCCC\"]", output: "3", explanation: "AAAAACCC -> AAAACCCC -> AAACCCCC -> AACCCCCC, one character changes at a time and every step is in bank." }], constraints: ["0 <= bank.length <= 10", "startGene.length == endGene.length == bank[i].length == 8", "startGene, endGene, and bank[i] consist of only the characters 'A', 'C', 'G', and 'T'"], starterCode: { python: `class Solution:\n    def minMutation(self, startGene, endGene, bank):\n        pass`, javascript: `function minMutation(startGene, endGene, bank) {\n\n}`, typescript: `function minMutation(startGene: string, endGene: string, bank: string[]): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int minMutation(String startGene, String endGene, String[] bank) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int minMutation(string startGene, string endGene, vector<string>& bank) { return 0; }\n};`, c: `int minMutation(char* startGene, char* endGene, char** bank, int bankSize) {\n    return 0;\n}` }, testcases: [{ input: { startGene: "AACCGGTT", endGene: "AACCGGTA", bank: ["AACCGGTA"] }, expectedOutput: 1 }, { input: { startGene: "AACCGGTT", endGene: "AAACGGTA", bank: ["AACCGGTA","AACCGCTA","AAACGGTA"] }, expectedOutput: 2 }, { input: { startGene: "AAAAACCC", endGene: "AACCCCCC", bank: ["AAAACCCC","AAACCCCC","AACCCCCC"] }, expectedOutput: 3 }], hiddentestcases: [{ input: { startGene: "AACCGGTT", endGene: "AACCGGTA", bank: [] }, expectedOutput: -1 }, { input: { startGene: "AAAAAAAA", endGene: "AAAAAAAA", bank: [] }, expectedOutput: 0 }] },
 
@@ -5774,7 +5822,9 @@ const rawProblems = [
       typescript: `function minimumTotal(triangle: number[][]): number {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int minimumTotal(List<List<Integer>> triangle) {\n        return 0;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    int minimumTotal(vector<vector<int>>& triangle) {\n        return 0;\n    }\n};`,
+      c: `int minimumTotal(int** triangle, int triangleRows, int* triangleColSize) {\n    return 0;\n}`,
     },
+    paramTypes: { c: { triangle: "int[][]" } },
     testcases: [
       { input: { triangle: [[2],[3,4],[6,5,7],[4,1,8,3]] }, expectedOutput: 11 },
       { input: { triangle: [[-10]] }, expectedOutput: -10 },
@@ -5841,7 +5891,9 @@ const rawProblems = [
       typescript: `function validTree(n: number, edges: number[][]): boolean {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public boolean validTree(int n, int[][] edges) {\n        return false;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    bool validTree(int n, vector<vector<int>>& edges) {\n        return false;\n    }\n};`,
+      c: `bool validTree(int n, int** edges, int edgesRows, int* edgesColSize) {\n    return false;\n}`,
     },
+    paramTypes: { c: { edges: "int[][]" } },
     testcases: [
       { input: { n: 5, edges: [[0,1],[0,2],[0,3],[1,4]] }, expectedOutput: true },
       { input: { n: 5, edges: [[0,1],[1,2],[2,3],[1,3],[1,4]] }, expectedOutput: false },
@@ -5905,7 +5957,9 @@ const rawProblems = [
       typescript: `function canVisitAllRooms(rooms: number[][]): boolean {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public boolean canVisitAllRooms(List<List<Integer>> rooms) {\n        return false;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    bool canVisitAllRooms(vector<vector<int>>& rooms) {\n        return false;\n    }\n};`,
+      c: `bool canVisitAllRooms(int** rooms, int roomsRows, int* roomsColSize) {\n    return false;\n}`,
     },
+    paramTypes: { c: { rooms: "int[][]" } },
     testcases: [
       { input: { rooms: [[1],[2],[3],[]] }, expectedOutput: true },
       { input: { rooms: [[1,3],[3,0,1],[2],[0]] }, expectedOutput: false },
@@ -5939,7 +5993,9 @@ const rawProblems = [
       typescript: `function findJudge(n: number, trust: number[][]): number {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int findJudge(int n, int[][] trust) {\n        return -1;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    int findJudge(int n, vector<vector<int>>& trust) {\n        return -1;\n    }\n};`,
+      c: `int findJudge(int n, int** trust, int trustRows, int* trustColSize) {\n    return 0;\n}`,
     },
+    paramTypes: { c: { trust: "int[][]" } },
     testcases: [
       { input: { n: 2, trust: [[1,2]] }, expectedOutput: 2 },
       { input: { n: 3, trust: [[1,3],[2,3]] }, expectedOutput: 3 },
@@ -5976,7 +6032,9 @@ const rawProblems = [
       typescript: `function allPathsSourceTarget(graph: number[][]): number[][] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public List<List<Integer>> allPathsSourceTarget(int[][] graph) {\n        return new ArrayList<>();\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<vector<int>> allPathsSourceTarget(vector<vector<int>>& graph) {\n        return {};\n    }\n};`,
+      c: `int** allPathsSourceTarget(int** graph, int graphRows, int* graphColSize, int* returnSize, int** returnColumnSizes) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
+    paramTypes: { c: { graph: "int[][]" } },
     testcases: [
       { input: { graph: [[1,2],[3],[3],[]] }, expectedOutput: [[0,1,3],[0,2,3]] },
       { input: { graph: [[4,3,1],[3,2,4],[3],[4],[]] }, expectedOutput: [[0,4],[0,3,4],[0,1,3,4],[0,1,2,3,4],[0,1,4]] },
@@ -5989,7 +6047,7 @@ const rawProblems = [
 
   // ── BATCH 044: Backtracking II + Binary Search II (IDs 181-190) ───────────
 
-  { id: 181, title: "Subsets II", slug: "subsets-ii", functionName: "subsetsWithDup", difficulty: "Medium", topic: "Backtracking", pattern: "DFS with dedup sort", companies: ["Amazon","Facebook"], description: "Given an integer array nums that may contain duplicates, return all possible subsets (the power set). The solution must not contain duplicate subsets.", examples: [{ input: "nums = [1,2,2]", output: "[[],[1],[1,2],[1,2,2],[2],[2,2]]" }, { input: "nums = [0]", output: "[[],[0]]" }], constraints: ["1 <= nums.length <= 10", "-10 <= nums[i] <= 10"], starterCode: { python: `class Solution:\n    def subsetsWithDup(self, nums):\n        pass`, javascript: `function subsetsWithDup(nums) {\n\n}`, typescript: `function subsetsWithDup(nums: number[]): number[][] {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public List<List<Integer>> subsetsWithDup(int[] nums) { return new ArrayList<>(); }\n}`, cpp: `class Solution {\npublic:\n    vector<vector<int>> subsetsWithDup(vector<int>& nums) { return {}; }\n};` }, testcases: [{ input: { nums: [1,2,2] }, expectedOutput: [[],[1],[1,2],[1,2,2],[2],[2,2]] }, { input: { nums: [0] }, expectedOutput: [[],[0]] }], hiddentestcases: [{ input: { nums: [1,1] }, expectedOutput: [[],[1],[1,1]] }, { input: { nums: [4,4,4,1,4] }, expectedOutput: [[],[1],[1,4],[1,4,4],[1,4,4,4],[1,4,4,4,4],[4],[4,4],[4,4,4],[4,4,4,4]] }] },
+  { id: 181, title: "Subsets II", slug: "subsets-ii", functionName: "subsetsWithDup", difficulty: "Medium", topic: "Backtracking", pattern: "DFS with dedup sort", companies: ["Amazon","Facebook"], description: "Given an integer array nums that may contain duplicates, return all possible subsets (the power set). The solution must not contain duplicate subsets.", examples: [{ input: "nums = [1,2,2]", output: "[[],[1],[1,2],[1,2,2],[2],[2,2]]" }, { input: "nums = [0]", output: "[[],[0]]" }], constraints: ["1 <= nums.length <= 10", "-10 <= nums[i] <= 10"], starterCode: { python: `class Solution:\n    def subsetsWithDup(self, nums):\n        pass`, javascript: `function subsetsWithDup(nums) {\n\n}`, typescript: `function subsetsWithDup(nums: number[]): number[][] {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public List<List<Integer>> subsetsWithDup(int[] nums) { return new ArrayList<>(); }\n}`, cpp: `class Solution {\npublic:\n    vector<vector<int>> subsetsWithDup(vector<int>& nums) { return {}; }\n};`, c: `int** subsetsWithDup(int* nums, int numsSize, int* returnSize, int** returnColumnSizes) {\n    *returnSize = 0;\n    return NULL;\n}` }, testcases: [{ input: { nums: [1,2,2] }, expectedOutput: [[],[1],[1,2],[1,2,2],[2],[2,2]] }, { input: { nums: [0] }, expectedOutput: [[],[0]] }], hiddentestcases: [{ input: { nums: [1,1] }, expectedOutput: [[],[1],[1,1]] }, { input: { nums: [4,4,4,1,4] }, expectedOutput: [[],[1],[1,4],[1,4,4],[1,4,4,4],[1,4,4,4,4],[4],[4,4],[4,4,4],[4,4,4,4]] }] },
 
   {
     id: 182,
@@ -6013,6 +6071,7 @@ const rawProblems = [
       typescript: `function combinationSum2(candidates: number[], target: number): number[][] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public List<List<Integer>> combinationSum2(int[] candidates, int target) {\n        return new ArrayList<>();\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<vector<int>> combinationSum2(vector<int>& candidates, int target) {\n        return {};\n    }\n};`,
+      c: `int** combinationSum2(int* candidates, int candidatesSize, int target, int* returnSize, int** returnColumnSizes) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
     testcases: [
       { input: { candidates: [10,1,2,7,6,1,5], target: 8 }, expectedOutput: [[1,1,6],[1,2,5],[1,7],[2,6]] },
@@ -6026,9 +6085,9 @@ const rawProblems = [
 
   { id: 183, title: "N-Queens II", slug: "n-queens-ii", functionName: "totalNQueens", difficulty: "Hard", topic: "Backtracking", pattern: "constraint backtracking count-only", companies: ["Amazon","Microsoft"], description: "The n-queens puzzle is the problem of placing n queens on an n x n chessboard such that no two queens attack each other (no two queens share the same row, column, or diagonal). Given an integer n, return the number of distinct solutions to the n-queens puzzle.", examples: [{ input: "n = 4", output: "2", explanation: "There are exactly 2 distinct ways to place 4 non-attacking queens on a 4x4 board." }, { input: "n = 1", output: "1", explanation: "A single queen on a 1x1 board trivially doesn't attack anything." }, { input: "n = 2", output: "0", explanation: "No arrangement of 2 non-attacking queens exists on a 2x2 board." }], constraints: ["1 <= n <= 9"], starterCode: { python: `class Solution:\n    def totalNQueens(self, n):\n        pass`, javascript: `function totalNQueens(n) {\n\n}`, typescript: `function totalNQueens(n: number): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int totalNQueens(int n) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int totalNQueens(int n) { return 0; }\n};`, c: `int totalNQueens(int n) {\n    return 0;\n}` }, testcases: [{ input: { n: 4 }, expectedOutput: 2 }, { input: { n: 1 }, expectedOutput: 1 }, { input: { n: 2 }, expectedOutput: 0 }], hiddentestcases: [{ input: { n: 3 }, expectedOutput: 0 }, { input: { n: 5 }, expectedOutput: 10 }] },
 
-  { id: 184, title: "Letter Combinations of a Phone Number", slug: "letter-combinations-phone-number", functionName: "letterCombinations", difficulty: "Medium", topic: "Backtracking", pattern: "DFS digit mapping", companies: ["Amazon","Facebook","Google","Microsoft"], description: "Given a string containing digits 2-9, return all possible letter combinations that the number could represent (phone keypad mapping). Return an empty list for empty input.", examples: [{ input: 'digits = "23"', output: '["ad","ae","af","bd","be","bf","cd","ce","cf"]' }, { input: 'digits = ""', output: "[]" }, { input: 'digits = "2"', output: '["a","b","c"]' }], constraints: ["0 <= digits.length <= 4", "digits[i] is a digit in ['2','9']."], starterCode: { python: `class Solution:\n    def letterCombinations(self, digits):\n        pass`, javascript: `function letterCombinations(digits) {\n\n}`, typescript: `function letterCombinations(digits: string): string[] {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public List<String> letterCombinations(String digits) { return new ArrayList<>(); }\n}`, cpp: `class Solution {\npublic:\n    vector<string> letterCombinations(string digits) { return {}; }\n};` }, testcases: [{ input: { digits: "23" }, expectedOutput: ["ad","ae","af","bd","be","bf","cd","ce","cf"] }, { input: { digits: "" }, expectedOutput: [] }, { input: { digits: "2" }, expectedOutput: ["a","b","c"] }], hiddentestcases: [{ input: { digits: "9" }, expectedOutput: ["w","x","y","z"] }, { input: { digits: "29" }, expectedOutput: ["aw","ax","ay","az","bw","bx","by","bz","cw","cx","cy","cz"] }] },
+  { id: 184, title: "Letter Combinations of a Phone Number", slug: "letter-combinations-phone-number", functionName: "letterCombinations", difficulty: "Medium", topic: "Backtracking", pattern: "DFS digit mapping", companies: ["Amazon","Facebook","Google","Microsoft"], description: "Given a string containing digits 2-9, return all possible letter combinations that the number could represent (phone keypad mapping). Return an empty list for empty input.", examples: [{ input: 'digits = "23"', output: '["ad","ae","af","bd","be","bf","cd","ce","cf"]' }, { input: 'digits = ""', output: "[]" }, { input: 'digits = "2"', output: '["a","b","c"]' }], constraints: ["0 <= digits.length <= 4", "digits[i] is a digit in ['2','9']."], starterCode: { python: `class Solution:\n    def letterCombinations(self, digits):\n        pass`, javascript: `function letterCombinations(digits) {\n\n}`, typescript: `function letterCombinations(digits: string): string[] {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public List<String> letterCombinations(String digits) { return new ArrayList<>(); }\n}`, cpp: `class Solution {\npublic:\n    vector<string> letterCombinations(string digits) { return {}; }\n};`, c: `char** letterCombinations(char* digits, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}` }, testcases: [{ input: { digits: "23" }, expectedOutput: ["ad","ae","af","bd","be","bf","cd","ce","cf"] }, { input: { digits: "" }, expectedOutput: [] }, { input: { digits: "2" }, expectedOutput: ["a","b","c"] }], hiddentestcases: [{ input: { digits: "9" }, expectedOutput: ["w","x","y","z"] }, { input: { digits: "29" }, expectedOutput: ["aw","ax","ay","az","bw","bx","by","bz","cw","cx","cy","cz"] }] },
 
-  { id: 185, title: "Permutations II", slug: "permutations-ii", comparisonMode: "unordered", functionName: "permuteUnique", difficulty: "Medium", topic: "Backtracking", pattern: "DFS with used array + dedup", companies: ["Amazon","Microsoft"], description: "Given a collection of numbers that might contain duplicates, return all possible unique permutations in any order.", examples: [{ input: "nums = [1,1,2]", output: "[[1,1,2],[1,2,1],[2,1,1]]" }, { input: "nums = [1,2,3]", output: "[[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]" }], constraints: ["1 <= nums.length <= 8", "-10 <= nums[i] <= 10"], starterCode: { python: `class Solution:\n    def permuteUnique(self, nums):\n        pass`, javascript: `function permuteUnique(nums) {\n\n}`, typescript: `function permuteUnique(nums: number[]): number[][] {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public List<List<Integer>> permuteUnique(int[] nums) { return new ArrayList<>(); }\n}`, cpp: `class Solution {\npublic:\n    vector<vector<int>> permuteUnique(vector<int>& nums) { return {}; }\n};` }, testcases: [{ input: { nums: [1,1,2] }, expectedOutput: [[1,1,2],[1,2,1],[2,1,1]] }, { input: { nums: [1,2,3] }, expectedOutput: [[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]] }], hiddentestcases: [{ input: { nums: [0,1] }, expectedOutput: [[0,1],[1,0]] }, { input: { nums: [1,1,1] }, expectedOutput: [[1,1,1]] }] },
+  { id: 185, title: "Permutations II", slug: "permutations-ii", comparisonMode: "unordered", functionName: "permuteUnique", difficulty: "Medium", topic: "Backtracking", pattern: "DFS with used array + dedup", companies: ["Amazon","Microsoft"], description: "Given a collection of numbers that might contain duplicates, return all possible unique permutations in any order.", examples: [{ input: "nums = [1,1,2]", output: "[[1,1,2],[1,2,1],[2,1,1]]" }, { input: "nums = [1,2,3]", output: "[[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]" }], constraints: ["1 <= nums.length <= 8", "-10 <= nums[i] <= 10"], starterCode: { python: `class Solution:\n    def permuteUnique(self, nums):\n        pass`, javascript: `function permuteUnique(nums) {\n\n}`, typescript: `function permuteUnique(nums: number[]): number[][] {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public List<List<Integer>> permuteUnique(int[] nums) { return new ArrayList<>(); }\n}`, cpp: `class Solution {\npublic:\n    vector<vector<int>> permuteUnique(vector<int>& nums) { return {}; }\n};`, c: `int** permuteUnique(int* nums, int numsSize, int* returnSize, int** returnColumnSizes) {\n    *returnSize = 0;\n    return NULL;\n}` }, testcases: [{ input: { nums: [1,1,2] }, expectedOutput: [[1,1,2],[1,2,1],[2,1,1]] }, { input: { nums: [1,2,3] }, expectedOutput: [[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]] }], hiddentestcases: [{ input: { nums: [0,1] }, expectedOutput: [[0,1],[1,0]] }, { input: { nums: [1,1,1] }, expectedOutput: [[1,1,1]] }] },
 
   { id: 186, title: "First Bad Version", slug: "first-bad-version", functionName: "firstBadVersion", difficulty: "Easy", topic: "Binary Search", pattern: "leftmost binary search", companies: ["Facebook","Amazon"], description: "You are a product manager with n versions. isBadVersion(version) returns whether a version is bad. All versions after the first bad one are also bad. Find the first bad version using minimum API calls.", examples: [{ input: "n = 5, bad = 4", output: "4" }, { input: "n = 1, bad = 1", output: "1" }], constraints: ["1 <= bad <= n <= 2^31 - 1"], starterCode: { python: `class Solution:\n    def firstBadVersion(self, n):\n        pass`, javascript: `function solution(isBadVersion) {\n    return function(n) {\n\n    };\n}`, typescript: `function solution(isBadVersion: any): any {\n    throw new Error("Not implemented");\n}`, java: `class Solution extends VersionControl {\n    public int firstBadVersion(int n) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int firstBadVersion(int n) { return 0; }\n};` }, testcases: [{ input: { n: 5, bad: 4 }, expectedOutput: 4 }, { input: { n: 1, bad: 1 }, expectedOutput: 1 }], hiddentestcases: [{ input: { n: 2126753390, bad: 1702766719 }, expectedOutput: 1702766719 }, { input: { n: 100, bad: 1 }, expectedOutput: 1 }] },
 
@@ -6110,7 +6169,7 @@ const rawProblems = [
 
   { id: 191, title: "Two Sum III — Data Structure Design", slug: "two-sum-iii-data-structure", functionName: "TwoSum", operationSequence: { enabled: true, resultMode: "all" }, difficulty: "Easy", topic: "Hash Maps", pattern: "frequency map", companies: ["LinkedIn"], description: "Design a TwoSum class that supports add(number) and find(value). find(value) returns true if there exist any two numbers whose sum equals value.", examples: [{ input: '["TwoSum","add","add","add","find","find"]\n[[],[1],[3],[5],[4],[7]]', output: "[null,null,null,null,true,false]" }], constraints: ["At most 10^4 calls to add and find.", "-2^31 <= number <= 2^31 - 1", "-2^63 <= value <= 2^63 - 1"], starterCode: { python: `class TwoSum:\n    def __init__(self):\n        pass\n    def add(self, number):\n        pass\n    def find(self, value):\n        pass`, javascript: `class TwoSum {\n  constructor() {}\n  add(number) {}\n  find(value) { return false; }\n}`, typescript: `class TwoSum {\n  constructor() {\n    throw new Error("Not implemented");\n  }\n  add(number: number): void {\n    throw new Error("Not implemented");\n  }\n  find(value: number): boolean {\n    throw new Error("Not implemented");\n  }\n}`, java: `class TwoSum {\n    public TwoSum() {}\n    public void add(int number) {}\n    public boolean find(int value) { return false; }\n}`, cpp: `class TwoSum {\npublic:\n    TwoSum() {}\n    void add(int number) {}\n    bool find(int value) { return false; }\n};`, c: `typedef struct {\n    int _unused;\n} TwoSum;\n\nTwoSum* TwoSum_create() {\n    TwoSum* obj = malloc(sizeof(TwoSum));\n    return obj;\n}\n\nvoid TwoSum_add(TwoSum* self, int number) {\n}\n\nbool TwoSum_find(TwoSum* self, int value) {\n    return false;\n}` }, testcases: [{ input: { ops: ["add","add","add","find","find"], vals: [[1],[3],[5],[4],[7]] }, expectedOutput: [null,null,null,true,false] }], hiddentestcases: [{ input: { ops: ["add","find"], vals: [[0],[0]] }, expectedOutput: [null,false] }, { input: { ops: ["add","add","find"], vals: [[3],[3],[6]] }, expectedOutput: [null,null,true] }] },
 
-  { id: 192, title: "Top K Frequent Words", slug: "top-k-frequent-words", functionName: "topKFrequent", difficulty: "Medium", topic: "Hash Maps", pattern: "frequency map + heap", companies: ["Amazon","Facebook","Bloomberg"], description: "Given an array of strings words and an integer k, return the k most frequent strings. Return the answer sorted by frequency (highest first). For ties, sort lexicographically.", examples: [{ input: 'words = ["i","love","leetcode","i","love","coding"], k = 2', output: '["i","love"]' }, { input: 'words = ["the","day","is","sunny","the","the","the","sunny","is","is"], k = 4', output: '["the","is","sunny","day"]' }], constraints: ["1 <= words.length <= 500", "1 <= words[i].length <= 10", "k is in [1, unique word count]"], starterCode: { python: `class Solution:\n    def topKFrequent(self, words, k):\n        pass`, javascript: `function topKFrequent(words, k) {\n\n}`, typescript: `function topKFrequent(words: string[], k: number): string[] {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public List<String> topKFrequent(String[] words, int k) { return new ArrayList<>(); }\n}`, cpp: `class Solution {\npublic:\n    vector<string> topKFrequent(vector<string>& words, int k) { return {}; }\n};` }, testcases: [{ input: { words: ["i","love","leetcode","i","love","coding"], k: 2 }, expectedOutput: ["i","love"] }, { input: { words: ["the","day","is","sunny","the","the","the","sunny","is","is"], k: 4 }, expectedOutput: ["the","is","sunny","day"] }], hiddentestcases: [{ input: { words: ["a","aa","aaa"], k: 1 }, expectedOutput: ["a"] }, { input: { words: ["a","b","a"], k: 2 }, expectedOutput: ["a","b"] }] },
+  { id: 192, title: "Top K Frequent Words", slug: "top-k-frequent-words", functionName: "topKFrequent", difficulty: "Medium", topic: "Hash Maps", pattern: "frequency map + heap", companies: ["Amazon","Facebook","Bloomberg"], description: "Given an array of strings words and an integer k, return the k most frequent strings. Return the answer sorted by frequency (highest first). For ties, sort lexicographically.", examples: [{ input: 'words = ["i","love","leetcode","i","love","coding"], k = 2', output: '["i","love"]' }, { input: 'words = ["the","day","is","sunny","the","the","the","sunny","is","is"], k = 4', output: '["the","is","sunny","day"]' }], constraints: ["1 <= words.length <= 500", "1 <= words[i].length <= 10", "k is in [1, unique word count]"], starterCode: { python: `class Solution:\n    def topKFrequent(self, words, k):\n        pass`, javascript: `function topKFrequent(words, k) {\n\n}`, typescript: `function topKFrequent(words: string[], k: number): string[] {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public List<String> topKFrequent(String[] words, int k) { return new ArrayList<>(); }\n}`, cpp: `class Solution {\npublic:\n    vector<string> topKFrequent(vector<string>& words, int k) { return {}; }\n};`, c: `char** topKFrequent(char** words, int wordsSize, int k, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}` }, testcases: [{ input: { words: ["i","love","leetcode","i","love","coding"], k: 2 }, expectedOutput: ["i","love"] }, { input: { words: ["the","day","is","sunny","the","the","the","sunny","is","is"], k: 4 }, expectedOutput: ["the","is","sunny","day"] }], hiddentestcases: [{ input: { words: ["a","aa","aaa"], k: 1 }, expectedOutput: ["a"] }, { input: { words: ["a","b","a"], k: 2 }, expectedOutput: ["a","b"] }] },
 
   { id: 193, title: "Longest Substring with At Most Two Distinct Characters", slug: "longest-substring-two-distinct", functionName: "lengthOfLongestSubstringTwoDistinct", difficulty: "Medium", topic: "Sliding Window", pattern: "variable window frequency map", companies: ["Amazon","Facebook"], description: "Given a string s, return the length of the longest substring that contains at most two distinct characters.", examples: [{ input: 's = "eceba"', output: "3", explanation: '"ece"' }, { input: 's = "ccaabbb"', output: "5", explanation: '"aabbb"' }], constraints: ["1 <= s.length <= 10^5", "s consists of English letters."], starterCode: { python: `class Solution:\n    def lengthOfLongestSubstringTwoDistinct(self, s):\n        pass`, javascript: `function lengthOfLongestSubstringTwoDistinct(s) {\n\n}`, typescript: `function lengthOfLongestSubstringTwoDistinct(s: string): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int lengthOfLongestSubstringTwoDistinct(String s) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int lengthOfLongestSubstringTwoDistinct(string s) { return 0; }\n};`, c: `int lengthOfLongestSubstringTwoDistinct(char* s) {\n    return 0;\n}` }, testcases: [{ input: { s: "eceba" }, expectedOutput: 3 }, { input: { s: "ccaabbb" }, expectedOutput: 5 }], hiddentestcases: [{ input: { s: "a" }, expectedOutput: 1 }, { input: { s: "abcabcabc" }, expectedOutput: 2 }] },
 
@@ -6207,6 +6266,7 @@ const rawProblems = [
       typescript: `function kSmallestPairs(nums1: number[], nums2: number[], k: number): number[][] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public List<List<Integer>> kSmallestPairs(int[] nums1, int[] nums2, int k) {\n        return new ArrayList<>();\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<vector<int>> kSmallestPairs(vector<int>& nums1, vector<int>& nums2, int k) {\n        return {};\n    }\n};`,
+      c: `int** kSmallestPairs(int* nums1, int nums1Size, int* nums2, int nums2Size, int k, int* returnSize, int** returnColumnSizes) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
     testcases: [
       { input: { nums1: [1,7,11], nums2: [2,4,6], k: 3 }, expectedOutput: [[1,2],[1,4],[1,6]] },
@@ -6308,7 +6368,9 @@ const rawProblems = [
       typescript: `function getOrder(tasks: number[][]): number[] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int[] getOrder(int[][] tasks) {\n        return new int[]{};\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<int> getOrder(vector<vector<int>>& tasks) {\n        return {};\n    }\n};`,
+      c: `int* getOrder(int** tasks, int tasksRows, int* tasksColSize, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
+    paramTypes: { c: { tasks: "int[][]" } },
     testcases: [
       { input: { tasks: [[1,2],[2,4],[3,2],[4,1]] }, expectedOutput: [0,2,3,1] },
       { input: { tasks: [[7,10],[7,12],[7,5],[7,4],[7,2]] }, expectedOutput: [4,3,2,0,1] },
@@ -6568,17 +6630,17 @@ const rawProblems = [
 
   { id: 209, title: "Max Consecutive Ones III", slug: "max-consecutive-ones-iii", functionName: "longestOnes", difficulty: "Medium", topic: "Sliding Window", pattern: "variable window with flip budget", companies: ["Amazon","Google"], description: "Given a binary array nums and an integer k, return the maximum number of consecutive 1's in the array if you can flip at most k 0's to 1's.", examples: [{ input: "nums = [1,1,1,0,0,0,1,1,1,1,0], k = 2", output: "6", explanation: "Flip the two 0's at indices 3 and 4 to get [1,1,1,1,1,1,1,1,1,1,0], which has 6 consecutive 1's starting at index 5." }, { input: "nums = [0,0,1,1,0,0,1,1,1,0,1,1,0,0,0,1,1,1,1], k = 3", output: "10", explanation: "Flip the three 0's at indices 4,5,9 to get a run of 10 consecutive 1's." }, { input: "nums = [0], k = 0", output: "0", explanation: "No flips allowed and there are no 1's, so the longest run of 1's is 0." }], constraints: ["1 <= nums.length <= 10^5", "nums[i] is either 0 or 1", "0 <= k <= nums.length"], starterCode: { python: `class Solution:\n    def longestOnes(self, nums, k):\n        pass`, javascript: `function longestOnes(nums, k) {\n\n}`, typescript: `function longestOnes(nums: number[], k: number): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int longestOnes(int[] nums, int k) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int longestOnes(vector<int>& nums, int k) { return 0; }\n};`, c: `int longestOnes(int* nums, int numsSize, int k) {\n    return 0;\n}` }, testcases: [{ input: { nums: [1,1,1,0,0,0,1,1,1,1,0], k: 2 }, expectedOutput: 6 }, { input: { nums: [0,0,1,1,0,0,1,1,1,0,1,1,0,0,0,1,1,1,1], k: 3 }, expectedOutput: 10 }, { input: { nums: [0], k: 0 }, expectedOutput: 0 }], hiddentestcases: [{ input: { nums: [1,1,1,1], k: 0 }, expectedOutput: 4 }, { input: { nums: [0,0,0,0], k: 2 }, expectedOutput: 2 }] },
 
-  { id: 210, title: "Course Schedule II", slug: "course-schedule-ii", functionName: "findOrder", difficulty: "Medium", topic: "Graphs", pattern: "topological sort DFS/BFS", companies: ["Amazon","Facebook","Microsoft","Google"], description: "Given numCourses and prerequisites where prerequisites[i] = [ai, bi] means you must take bi before ai, return an ordering of courses you can take to finish all courses. Return empty array if impossible.", examples: [{ input: "numCourses = 2, prerequisites = [[1,0]]", output: "[0,1]" }, { input: "numCourses = 4, prerequisites = [[1,0],[2,1],[3,2]]", output: "[0,1,2,3]", explanation: "A strict chain: 0 before 1, 1 before 2, 2 before 3 — only one valid order exists." }, { input: "numCourses = 1, prerequisites = []", output: "[0]" }], constraints: ["1 <= numCourses <= 2000", "0 <= prerequisites.length <= numCourses * (numCourses-1)"], starterCode: { python: `class Solution:\n    def findOrder(self, numCourses, prerequisites):\n        pass`, javascript: `function findOrder(numCourses, prerequisites) {\n\n}`, typescript: `function findOrder(numCourses: number, prerequisites: number[][]): number[] {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int[] findOrder(int numCourses, int[][] prerequisites) { return new int[]{}; }\n}`, cpp: `class Solution {\npublic:\n    vector<int> findOrder(int numCourses, vector<vector<int>>& prerequisites) { return {}; }\n};` }, testcases: [{ input: { numCourses: 2, prerequisites: [[1,0]] }, expectedOutput: [0,1] }, { input: { numCourses: 4, prerequisites: [[1,0],[2,1],[3,2]] }, expectedOutput: [0,1,2,3] }, { input: { numCourses: 1, prerequisites: [] }, expectedOutput: [0] }], hiddentestcases: [{ input: { numCourses: 2, prerequisites: [[1,0],[0,1]] }, expectedOutput: [] }, { input: { numCourses: 3, prerequisites: [[0,1],[0,2],[1,2]] }, expectedOutput: [2,1,0] }] },
+  { id: 210, title: "Course Schedule II", slug: "course-schedule-ii", functionName: "findOrder", difficulty: "Medium", topic: "Graphs", pattern: "topological sort DFS/BFS", companies: ["Amazon","Facebook","Microsoft","Google"], description: "Given numCourses and prerequisites where prerequisites[i] = [ai, bi] means you must take bi before ai, return an ordering of courses you can take to finish all courses. Return empty array if impossible.", examples: [{ input: "numCourses = 2, prerequisites = [[1,0]]", output: "[0,1]" }, { input: "numCourses = 4, prerequisites = [[1,0],[2,1],[3,2]]", output: "[0,1,2,3]", explanation: "A strict chain: 0 before 1, 1 before 2, 2 before 3 — only one valid order exists." }, { input: "numCourses = 1, prerequisites = []", output: "[0]" }], constraints: ["1 <= numCourses <= 2000", "0 <= prerequisites.length <= numCourses * (numCourses-1)"], starterCode: { python: `class Solution:\n    def findOrder(self, numCourses, prerequisites):\n        pass`, javascript: `function findOrder(numCourses, prerequisites) {\n\n}`, typescript: `function findOrder(numCourses: number, prerequisites: number[][]): number[] {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int[] findOrder(int numCourses, int[][] prerequisites) { return new int[]{}; }\n}`, cpp: `class Solution {\npublic:\n    vector<int> findOrder(int numCourses, vector<vector<int>>& prerequisites) { return {}; }\n};`, c: `int* findOrder(int numCourses, int** prerequisites, int prerequisitesRows, int* prerequisitesColSize, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}` }, paramTypes: { c: { prerequisites: "int[][]" } }, testcases: [{ input: { numCourses: 2, prerequisites: [[1,0]] }, expectedOutput: [0,1] }, { input: { numCourses: 4, prerequisites: [[1,0],[2,1],[3,2]] }, expectedOutput: [0,1,2,3] }, { input: { numCourses: 1, prerequisites: [] }, expectedOutput: [0] }], hiddentestcases: [{ input: { numCourses: 2, prerequisites: [[1,0],[0,1]] }, expectedOutput: [] }, { input: { numCourses: 3, prerequisites: [[0,1],[0,2],[1,2]] }, expectedOutput: [2,1,0] }] },
 
   // ── BATCH 047: Mixed Interview Favorites (IDs 211-220) ────────────────────
 
   { id: 211, title: "Longest Turbulent Subarray", slug: "longest-turbulent-subarray", functionName: "maxTurbulenceSize", difficulty: "Medium", topic: "Dynamic Programming", pattern: "state DP alternating", companies: ["Amazon"], description: "A subarray [arr[l], arr[l+1], ..., arr[r]] is turbulent if comparisons strictly alternate. Return the maximum length of a turbulent subarray.", examples: [{ input: "arr = [9,4,2,10,7,8,8,1,9]", output: "5", explanation: "[4,2,10,7,8]" }, { input: "arr = [4,8,12,16]", output: "2" }, { input: "arr = [100]", output: "1" }], constraints: ["1 <= arr.length <= 4 * 10^4", "0 <= arr[i] <= 10^9"], starterCode: { python: `class Solution:\n    def maxTurbulenceSize(self, arr):\n        pass`, javascript: `function maxTurbulenceSize(arr) {\n\n}`, typescript: `function maxTurbulenceSize(arr: number[]): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int maxTurbulenceSize(int[] arr) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int maxTurbulenceSize(vector<int>& arr) { return 0; }\n};`, c: `int maxTurbulenceSize(int* arr, int arrSize) {\n    return 0;\n}` }, testcases: [{ input: { arr: [9,4,2,10,7,8,8,1,9] }, expectedOutput: 5 }, { input: { arr: [4,8,12,16] }, expectedOutput: 2 }, { input: { arr: [100] }, expectedOutput: 1 }], hiddentestcases: [{ input: { arr: [0,1,0,1,0] }, expectedOutput: 5 }, { input: { arr: [9,9] }, expectedOutput: 1 }] },
 
-  { id: 212, title: "Minimum Path Sum", slug: "minimum-path-sum", functionName: "minPathSum", difficulty: "Medium", topic: "Dynamic Programming", pattern: "2D DP grid", companies: ["Amazon","Google","Facebook"], description: "Given an m x n grid filled with non-negative numbers, find a path from top left to bottom right which minimizes the sum of all numbers along its path. You can only move right or down.", examples: [{ input: "grid = [[1,3,1],[1,5,1],[4,2,1]]", output: "7", explanation: "1→3→1→1→1" }, { input: "grid = [[1,2,3],[4,5,6]]", output: "12" }], constraints: ["m == grid.length", "n == grid[i].length", "1 <= m, n <= 200", "0 <= grid[i][j] <= 200"], starterCode: { python: `class Solution:\n    def minPathSum(self, grid):\n        pass`, javascript: `function minPathSum(grid) {\n\n}`, typescript: `function minPathSum(grid: number[][]): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int minPathSum(int[][] grid) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int minPathSum(vector<vector<int>>& grid) { return 0; }\n};` }, testcases: [{ input: { grid: [[1,3,1],[1,5,1],[4,2,1]] }, expectedOutput: 7 }, { input: { grid: [[1,2,3],[4,5,6]] }, expectedOutput: 12 }], hiddentestcases: [{ input: { grid: [[1]] }, expectedOutput: 1 }, { input: { grid: [[1,2],[1,1]] }, expectedOutput: 3 }] },
+  { id: 212, title: "Minimum Path Sum", slug: "minimum-path-sum", functionName: "minPathSum", difficulty: "Medium", topic: "Dynamic Programming", pattern: "2D DP grid", companies: ["Amazon","Google","Facebook"], description: "Given an m x n grid filled with non-negative numbers, find a path from top left to bottom right which minimizes the sum of all numbers along its path. You can only move right or down.", examples: [{ input: "grid = [[1,3,1],[1,5,1],[4,2,1]]", output: "7", explanation: "1→3→1→1→1" }, { input: "grid = [[1,2,3],[4,5,6]]", output: "12" }], constraints: ["m == grid.length", "n == grid[i].length", "1 <= m, n <= 200", "0 <= grid[i][j] <= 200"], starterCode: { python: `class Solution:\n    def minPathSum(self, grid):\n        pass`, javascript: `function minPathSum(grid) {\n\n}`, typescript: `function minPathSum(grid: number[][]): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int minPathSum(int[][] grid) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int minPathSum(vector<vector<int>>& grid) { return 0; }\n};`, c: `int minPathSum(int** grid, int gridRows, int* gridColSize) {\n    return 0;\n}` }, paramTypes: { c: { grid: "int[][]" } }, testcases: [{ input: { grid: [[1,3,1],[1,5,1],[4,2,1]] }, expectedOutput: 7 }, { input: { grid: [[1,2,3],[4,5,6]] }, expectedOutput: 12 }], hiddentestcases: [{ input: { grid: [[1]] }, expectedOutput: 1 }, { input: { grid: [[1,2],[1,1]] }, expectedOutput: 3 }] },
 
-  { id: 213, title: "Dungeon Game", slug: "dungeon-game", functionName: "calculateMinimumHP", difficulty: "Hard", topic: "Dynamic Programming", pattern: "2D DP reverse", companies: ["Amazon","Google"], description: "A knight must rescue the princess at dungeon[m-1][n-1], starting at dungeon[0][0]. Each room has a value (positive=health gain, negative=health loss). Knight dies if health <= 0 at any point. Return minimum initial health needed.", examples: [{ input: "dungeon = [[-2,-3,3],[-5,-10,1],[10,30,-5]]", output: "7" }, { input: "dungeon = [[0]]", output: "1" }], constraints: ["m == dungeon.length", "n == dungeon[i].length", "1 <= m, n <= 200", "-1000 <= dungeon[i][j] <= 1000"], starterCode: { python: `class Solution:\n    def calculateMinimumHP(self, dungeon):\n        pass`, javascript: `function calculateMinimumHP(dungeon) {\n\n}`, typescript: `function calculateMinimumHP(dungeon: number[][]): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int calculateMinimumHP(int[][] dungeon) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int calculateMinimumHP(vector<vector<int>>& dungeon) { return 0; }\n};` }, testcases: [{ input: { dungeon: [[-2,-3,3],[-5,-10,1],[10,30,-5]] }, expectedOutput: 7 }, { input: { dungeon: [[0]] }, expectedOutput: 1 }], hiddentestcases: [{ input: { dungeon: [[-1,-30]] }, expectedOutput: 32 }, { input: { dungeon: [[1,-3,3],[-5,10,1]] }, expectedOutput: 5 }] },
+  { id: 213, title: "Dungeon Game", slug: "dungeon-game", functionName: "calculateMinimumHP", difficulty: "Hard", topic: "Dynamic Programming", pattern: "2D DP reverse", companies: ["Amazon","Google"], description: "A knight must rescue the princess at dungeon[m-1][n-1], starting at dungeon[0][0]. Each room has a value (positive=health gain, negative=health loss). Knight dies if health <= 0 at any point. Return minimum initial health needed.", examples: [{ input: "dungeon = [[-2,-3,3],[-5,-10,1],[10,30,-5]]", output: "7" }, { input: "dungeon = [[0]]", output: "1" }], constraints: ["m == dungeon.length", "n == dungeon[i].length", "1 <= m, n <= 200", "-1000 <= dungeon[i][j] <= 1000"], starterCode: { python: `class Solution:\n    def calculateMinimumHP(self, dungeon):\n        pass`, javascript: `function calculateMinimumHP(dungeon) {\n\n}`, typescript: `function calculateMinimumHP(dungeon: number[][]): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int calculateMinimumHP(int[][] dungeon) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int calculateMinimumHP(vector<vector<int>>& dungeon) { return 0; }\n};`, c: `int calculateMinimumHP(int** dungeon, int dungeonRows, int* dungeonColSize) {\n    return 0;\n}` }, paramTypes: { c: { dungeon: "int[][]" } }, testcases: [{ input: { dungeon: [[-2,-3,3],[-5,-10,1],[10,30,-5]] }, expectedOutput: 7 }, { input: { dungeon: [[0]] }, expectedOutput: 1 }], hiddentestcases: [{ input: { dungeon: [[-1,-30]] }, expectedOutput: 32 }, { input: { dungeon: [[1,-3,3],[-5,10,1]] }, expectedOutput: 5 }] },
 
-  { id: 214, title: "Cherry Pickup", slug: "cherry-pickup", functionName: "cherryPickup", difficulty: "Hard", topic: "Dynamic Programming", pattern: "3D DP two robots", companies: ["Google","Amazon"], description: "You have an n x n grid with -1 (thorn), 0 (empty), 1 (cherry). Walk from (0,0) to (n-1,n-1) picking cherries, then return via the same rules. Cherries can only be picked once. Return maximum cherries collected.", examples: [{ input: "grid = [[0,1,-1],[1,0,-1],[1,1,1]]", output: "5" }, { input: "grid = [[1,1,-1],[1,-1,1],[-1,1,1]]", output: "0" }], constraints: ["n == grid.length == grid[i].length", "1 <= n <= 50", "grid[i][j] is -1, 0, or 1."], starterCode: { python: `class Solution:\n    def cherryPickup(self, grid):\n        pass`, javascript: `function cherryPickup(grid) {\n\n}`, typescript: `function cherryPickup(grid: number[][]): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int cherryPickup(int[][] grid) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int cherryPickup(vector<vector<int>>& grid) { return 0; }\n};` }, testcases: [{ input: { grid: [[0,1,-1],[1,0,-1],[1,1,1]] }, expectedOutput: 5 }, { input: { grid: [[1,1,-1],[1,-1,1],[-1,1,1]] }, expectedOutput: 0 }], hiddentestcases: [{ input: { grid: [[1]] }, expectedOutput: 1 }, { input: { grid: [[1,1],[1,1]] }, expectedOutput: 4 }] },
+  { id: 214, title: "Cherry Pickup", slug: "cherry-pickup", functionName: "cherryPickup", difficulty: "Hard", topic: "Dynamic Programming", pattern: "3D DP two robots", companies: ["Google","Amazon"], description: "You have an n x n grid with -1 (thorn), 0 (empty), 1 (cherry). Walk from (0,0) to (n-1,n-1) picking cherries, then return via the same rules. Cherries can only be picked once. Return maximum cherries collected.", examples: [{ input: "grid = [[0,1,-1],[1,0,-1],[1,1,1]]", output: "5" }, { input: "grid = [[1,1,-1],[1,-1,1],[-1,1,1]]", output: "0" }], constraints: ["n == grid.length == grid[i].length", "1 <= n <= 50", "grid[i][j] is -1, 0, or 1."], starterCode: { python: `class Solution:\n    def cherryPickup(self, grid):\n        pass`, javascript: `function cherryPickup(grid) {\n\n}`, typescript: `function cherryPickup(grid: number[][]): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int cherryPickup(int[][] grid) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int cherryPickup(vector<vector<int>>& grid) { return 0; }\n};`, c: `int cherryPickup(int** grid, int gridRows, int* gridColSize) {\n    return 0;\n}` }, paramTypes: { c: { grid: "int[][]" } }, testcases: [{ input: { grid: [[0,1,-1],[1,0,-1],[1,1,1]] }, expectedOutput: 5 }, { input: { grid: [[1,1,-1],[1,-1,1],[-1,1,1]] }, expectedOutput: 0 }], hiddentestcases: [{ input: { grid: [[1]] }, expectedOutput: 1 }, { input: { grid: [[1,1],[1,1]] }, expectedOutput: 4 }] },
 
   { id: 215, title: "Stone Game", slug: "stone-game", functionName: "stoneGame", difficulty: "Medium", topic: "Dynamic Programming", pattern: "game theory DP", companies: ["Amazon","Facebook"], description: "Alice and Bob play a game with piles of stones. Each turn, a player takes the entire leftmost or rightmost pile. Scores accumulate. Alice always goes first. Both play optimally. Return true if Alice wins (her score > Bob's score). Alice always wins — but prove it with DP.", examples: [{ input: "piles = [5,3,4,5]", output: "true" }, { input: "piles = [3,7,2,3]", output: "true" }], constraints: ["2 <= piles.length <= 500", "piles.length is even.", "1 <= piles[i] <= 500", "sum of piles is odd."], starterCode: { python: `class Solution:\n    def stoneGame(self, piles):\n        pass`, javascript: `function stoneGame(piles) {\n\n}`, typescript: `function stoneGame(piles: number[]): boolean {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public boolean stoneGame(int[] piles) { return false; }\n}`, cpp: `class Solution {\npublic:\n    bool stoneGame(vector<int>& piles) { return false; }\n};`, c: `bool stoneGame(int* piles, int pilesSize) {\n    return false;\n}` }, testcases: [{ input: { piles: [5,3,4,5] }, expectedOutput: true }, { input: { piles: [3,7,2,3] }, expectedOutput: true }], hiddentestcases: [{ input: { piles: [1,2] }, expectedOutput: true }, { input: { piles: [1,100,3,5] }, expectedOutput: true }] },
 
@@ -6630,7 +6692,7 @@ const rawProblems = [
 
   { id: 222, title: "Next Greater Element II", slug: "next-greater-element-ii", functionName: "nextGreaterElements", difficulty: "Medium", topic: "Stacks", pattern: "circular monotonic stack", companies: ["Amazon","Facebook"], description: "Given a circular integer array nums, return the next greater number for every element. The next greater number of a number x is the first greater number to its traversal order next in the circular array.", examples: [{ input: "nums = [1,2,1]", output: "[2,-1,2]" }, { input: "nums = [1,2,3,4,3]", output: "[2,3,4,-1,4]" }], constraints: ["1 <= nums.length <= 10^4", "-10^9 <= nums[i] <= 10^9"], starterCode: { python: `class Solution:\n    def nextGreaterElements(self, nums):\n        pass`, javascript: `function nextGreaterElements(nums) {\n\n}`, typescript: `function nextGreaterElements(nums: number[]): number[] {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int[] nextGreaterElements(int[] nums) { return new int[]{}; }\n}`, cpp: `class Solution {\npublic:\n    vector<int> nextGreaterElements(vector<int>& nums) { return {}; }\n};`, c: `int* nextGreaterElements(int* nums, int numsSize, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}` }, testcases: [{ input: { nums: [1,2,1] }, expectedOutput: [2,-1,2] }, { input: { nums: [1,2,3,4,3] }, expectedOutput: [2,3,4,-1,4] }], hiddentestcases: [{ input: { nums: [5,4,3,2,1] }, expectedOutput: [-1,5,5,5,5] }, { input: { nums: [1] }, expectedOutput: [-1] }] },
 
-  { id: 223, title: "Trapping Rain Water II", slug: "trapping-rain-water-ii", functionName: "trapRainWater", difficulty: "Hard", topic: "Heap", pattern: "min heap BFS from border", companies: ["Amazon","Google"], description: "Given an m x n matrix of non-negative integers representing heights, compute how much water it can trap after raining (3D version).", examples: [{ input: "heightMap = [[1,4,3,1,3,2],[3,2,1,3,2,4],[2,3,3,2,3,1]]", output: "4" }, { input: "heightMap = [[3,3,3,3,3],[3,2,2,2,3],[3,2,1,2,3],[3,2,2,2,3],[3,3,3,3,3]]", output: "10" }], constraints: ["m == heightMap.length", "n == heightMap[i].length", "1 <= m, n <= 200", "0 <= heightMap[i][j] <= 2 * 10^4"], starterCode: { python: `class Solution:\n    def trapRainWater(self, heightMap):\n        pass`, javascript: `function trapRainWater(heightMap) {\n\n}`, typescript: `function trapRainWater(heightMap: number[][]): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int trapRainWater(int[][] heightMap) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int trapRainWater(vector<vector<int>>& heightMap) { return 0; }\n};` }, testcases: [{ input: { heightMap: [[1,4,3,1,3,2],[3,2,1,3,2,4],[2,3,3,2,3,1]] }, expectedOutput: 4 }, { input: { heightMap: [[3,3,3,3,3],[3,2,2,2,3],[3,2,1,2,3],[3,2,2,2,3],[3,3,3,3,3]] }, expectedOutput: 10 }], hiddentestcases: [{ input: { heightMap: [[1,1],[1,1]] }, expectedOutput: 0 }] },
+  { id: 223, title: "Trapping Rain Water II", slug: "trapping-rain-water-ii", functionName: "trapRainWater", difficulty: "Hard", topic: "Heap", pattern: "min heap BFS from border", companies: ["Amazon","Google"], description: "Given an m x n matrix of non-negative integers representing heights, compute how much water it can trap after raining (3D version).", examples: [{ input: "heightMap = [[1,4,3,1,3,2],[3,2,1,3,2,4],[2,3,3,2,3,1]]", output: "4" }, { input: "heightMap = [[3,3,3,3,3],[3,2,2,2,3],[3,2,1,2,3],[3,2,2,2,3],[3,3,3,3,3]]", output: "10" }], constraints: ["m == heightMap.length", "n == heightMap[i].length", "1 <= m, n <= 200", "0 <= heightMap[i][j] <= 2 * 10^4"], starterCode: { python: `class Solution:\n    def trapRainWater(self, heightMap):\n        pass`, javascript: `function trapRainWater(heightMap) {\n\n}`, typescript: `function trapRainWater(heightMap: number[][]): number {\n    throw new Error("Not implemented");\n}`, java: `class Solution {\n    public int trapRainWater(int[][] heightMap) { return 0; }\n}`, cpp: `class Solution {\npublic:\n    int trapRainWater(vector<vector<int>>& heightMap) { return 0; }\n};`, c: `int trapRainWater(int** heightMap, int heightMapRows, int* heightMapColSize) {\n    return 0;\n}` }, paramTypes: { c: { heightMap: "int[][]" } }, testcases: [{ input: { heightMap: [[1,4,3,1,3,2],[3,2,1,3,2,4],[2,3,3,2,3,1]] }, expectedOutput: 4 }, { input: { heightMap: [[3,3,3,3,3],[3,2,2,2,3],[3,2,1,2,3],[3,2,2,2,3],[3,3,3,3,3]] }, expectedOutput: 10 }], hiddentestcases: [{ input: { heightMap: [[1,1],[1,1]] }, expectedOutput: 0 }] },
 
   {
     id: 224,
@@ -6655,7 +6717,9 @@ const rawProblems = [
       typescript: `function maximalRectangle(matrix: string[][]): number {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int maximalRectangle(char[][] matrix) {\n        return 0;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    int maximalRectangle(vector<vector<char>>& matrix) {\n        return 0;\n    }\n};`,
+      c: `int maximalRectangle(char*** matrix, int matrixRows, int* matrixColSize) {\n    return 0;\n}`,
     },
+    paramTypes: { c: { matrix: "char*[][]" } },
     testcases: [
       { input: { matrix: [["1","0","1","0","0"],["1","0","1","1","1"],["1","1","1","1","1"],["1","0","0","1","0"]] }, expectedOutput: 6 },
       { input: { matrix: [["0"]] }, expectedOutput: 0 },
@@ -6877,7 +6941,9 @@ const rawProblems = [
       typescript: `function maximalSquare(matrix: string[][]): number {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int maximalSquare(char[][] matrix) {\n        return 0;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    int maximalSquare(vector<vector<char>>& matrix) {\n        return 0;\n    }\n};`,
+      c: `int maximalSquare(char*** matrix, int matrixRows, int* matrixColSize) {\n    return 0;\n}`,
     },
+    paramTypes: { c: { matrix: "char*[][]" } },
     testcases: [
       { input: { matrix: [["1","0","1","0","0"],["1","0","1","1","1"],["1","1","1","1","1"],["1","0","0","1","0"]] }, expectedOutput: 4 },
       { input: { matrix: [["0","1"],["1","0"]] }, expectedOutput: 1 },
@@ -7017,7 +7083,9 @@ const rawProblems = [
       typescript: `function reconstructQueue(people: number[][]): number[][] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int[][] reconstructQueue(int[][] people) {\n        return new int[][]{};\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<vector<int>> reconstructQueue(vector<vector<int>>& people) {\n        return {};\n    }\n};`,
+      c: `int** reconstructQueue(int** people, int peopleRows, int* peopleColSize, int* returnSize, int** returnColumnSizes) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
+    paramTypes: { c: { people: "int[][]" } },
     testcases: [
       { input: { people: [[7,0],[4,4],[7,1],[5,0],[6,1],[5,2]] }, expectedOutput: [[5,0],[7,0],[5,2],[6,1],[4,4],[7,1]] },
       { input: { people: [[6,0],[5,0],[4,0],[3,2],[2,2],[1,4]] }, expectedOutput: [[4,0],[5,0],[2,2],[3,2],[1,4],[6,0]] },
@@ -7086,7 +7154,9 @@ const rawProblems = [
       typescript: `function findMinArrowShots(points: number[][]): number {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int findMinArrowShots(int[][] points) {\n        return 0;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    int findMinArrowShots(vector<vector<int>>& points) {\n        return 0;\n    }\n};`,
+      c: `int findMinArrowShots(int** points, int pointsRows, int* pointsColSize) {\n    return 0;\n}`,
     },
+    paramTypes: { c: { points: "int[][]" } },
     testcases: [
       { input: { points: [[10,16],[2,8],[1,6],[7,12]] }, expectedOutput: 2 },
       { input: { points: [[1,2],[3,4],[5,6],[7,8]] }, expectedOutput: 4 },
@@ -7164,7 +7234,9 @@ const rawProblems = [
       typescript: `function wallsAndGates(rooms: number[][]): void {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public void wallsAndGates(int[][] rooms) {\n        \n    }\n}`,
       cpp: `class Solution {\npublic:\n    void wallsAndGates(vector<vector<int>>& rooms) {\n        \n    }\n};`,
+      c: `void wallsAndGates(int** rooms, int roomsRows, int* roomsColSize) {\n}`,
     },
+    paramTypes: { c: { rooms: "int[][]" } },
     testcases: [
       { input: { rooms: [[2147483647,-1,0,2147483647],[2147483647,2147483647,2147483647,-1],[2147483647,-1,2147483647,-1],[0,-1,2147483647,2147483647]] }, expectedOutput: [[3,-1,0,1],[2,2,1,-1],[1,-1,2,-1],[0,-1,3,4]] },
       { input: { rooms: [[-1]] }, expectedOutput: [[-1]] },
@@ -7196,7 +7268,9 @@ const rawProblems = [
       typescript: `function swimInWater(grid: number[][]): number {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int swimInWater(int[][] grid) {\n        return 0;\n    }\n}`,
       cpp: `class Solution {\npublic:\n    int swimInWater(vector<vector<int>>& grid) {\n        return 0;\n    }\n};`,
+      c: `int swimInWater(int** grid, int gridRows, int* gridColSize) {\n    return 0;\n}`,
     },
+    paramTypes: { c: { grid: "int[][]" } },
     testcases: [
       { input: { grid: [[0,2],[1,3]] }, expectedOutput: 3 },
       { input: { grid: [[0,1,2,3,4],[24,23,22,21,5],[12,13,14,15,16],[11,17,18,19,20],[10,9,8,7,6]] }, expectedOutput: 16 },
@@ -7265,7 +7339,9 @@ const rawProblems = [
       typescript: `function minInterval(intervals: number[][], queries: number[]): number[] {\n    throw new Error("Not implemented");\n}`,
       java: `class Solution {\n    public int[] minInterval(int[][] intervals, int[] queries) {\n        return new int[]{};\n    }\n}`,
       cpp: `class Solution {\npublic:\n    vector<int> minInterval(vector<vector<int>>& intervals, vector<int>& queries) {\n        return {};\n    }\n};`,
+      c: `int* minInterval(int** intervals, int intervalsRows, int* intervalsColSize, int* queries, int queriesSize, int* returnSize) {\n    *returnSize = 0;\n    return NULL;\n}`,
     },
+    paramTypes: { c: { intervals: "int[][]" } },
     testcases: [
       { input: { intervals: [[1,4],[2,4],[3,6],[4,4]], queries: [2,3,4,5] }, expectedOutput: [3,3,1,4] },
       { input: { intervals: [[2,3],[2,5],[1,8],[20,25]], queries: [2,19,5,22] }, expectedOutput: [2,-1,4,6] },

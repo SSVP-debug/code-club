@@ -154,7 +154,7 @@ export const LANGUAGES = {
     judge0Id: 50,
     extension: "c",
     editorIndentSize: 4,
-    enabled: false,
+    enabled: true,
     // Deliberately omitted (falsy) — see this entry's header comment.
     // requiredForNewProblems: false,
     requiresTypeDeclaration: true,

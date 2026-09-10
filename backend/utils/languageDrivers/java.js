@@ -26,7 +26,7 @@ import { javaDeclaration, formatJavaLiteral, inferJavaType } from "../languageTy
  */
 export function inferReturnType(userCode) {
   const match = userCode.match(
-    /public\s+(int\[\]|boolean|long|double|int|String)\s+\w+\s*\(/
+    /public\s+(int\[\]\[\]|int\[\]|boolean|long|double|int|String|void)\s+\w+\s*\(/
   );
 
   return match?.[1] || "int";
@@ -35,6 +35,24 @@ export function inferReturnType(userCode) {
 /**
  * generate — single-call driver template. Was the `if (language ===
  * "java")` branch body in generateDriverCode.js.
+ *
+ * Plan 012 Batch 6: two real, pre-existing bugs fixed here, neither
+ * C-specific (found while onboarding C, but this file's own bug, not
+ * introduced by that work):
+ *   1. `${returnType} result = solution.${fn}(...)` cannot declare a
+ *      variable of type `void` — a hard compile error for every void-
+ *      returning, in-place-mutation problem (rotate-array, sort-colors,
+ *      sudoku-solver, etc.). Fix mirrors cpp.js's: print the mutated
+ *      array argument (Java arrays are reference types, so the local
+ *      variable the driver already declared reflects the mutation)
+ *      instead of attempting to capture a nonexistent return value.
+ *   2. `int[][]` return fell through to the generic `System.out.println(result)`
+ *      branch, which for a 2D array prints Java's default
+ *      `Object.toString()` (something like `[[I@1b6d3586`), not the
+ *      array's contents — silently wrong output, not a compile error,
+ *      so easy to miss without actually running it. Fixed with
+ *      `Arrays.deepToString`, matching the existing `int[]` branch's use
+ *      of `Arrays.toString`.
  */
 export function generate({ userCode, fn, returnType, args, paramTypes }) {
   const declarations = args
@@ -42,6 +60,37 @@ export function generate({ userCode, fn, returnType, args, paramTypes }) {
     .join("\n    ");
 
   const javaCallArgs = args.map((a) => a.key).join(", ");
+
+  if (returnType === "void") {
+    const arrayArgs = args.filter(({ value }) => Array.isArray(value));
+    if (arrayArgs.length !== 1) {
+      throw new Error(
+        `generate(): "${fn}" returns void (an in-place-mutation problem) but has ${arrayArgs.length} array arguments — expected exactly 1 to know which one to print as the result`
+      );
+    }
+    const { key, value } = arrayArgs[0];
+    const is2d = Array.isArray(value[0]);
+    const printExpr = is2d ? `Arrays.deepToString(${key})` : `Arrays.toString(${key})`;
+
+    return `
+import java.util.Arrays;
+
+${userCode}
+
+class Main {
+  public static void main(String[] args) {
+    try {
+      ${declarations}
+      Solution solution = new Solution();
+      solution.${fn}(${javaCallArgs});
+      System.out.println(${printExpr});
+    } catch (Exception e) {
+      System.out.println("RUNTIME_ERROR:" + e.getMessage());
+    }
+  }
+}
+`;
+  }
 
   return `
 import java.util.Arrays;
@@ -52,7 +101,13 @@ class Main {
   public static void main(String[] args) {
     try {
       ${declarations}
-      ${returnType === "int[]"
+      ${returnType === "int[][]"
+        ? `
+      Solution solution = new Solution();
+      int[][] result = solution.${fn}(${javaCallArgs});
+      System.out.println(Arrays.deepToString(result));
+      `
+        : returnType === "int[]"
         ? `
       Solution solution = new Solution();
       int[] result = solution.${fn}(${javaCallArgs});
