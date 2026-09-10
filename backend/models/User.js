@@ -504,6 +504,27 @@ const userSchema = new mongoose.Schema(
       default: [],
     },
 
+    // ── Daily Quiz Gate (backend/controllers/dailyQuizController.js) ─────
+    // Schema-drift fix: dailyQuizController.js has been reading/writing
+    // `req.userDoc.dailyQuizCompletedDate` since the Daily Quiz Gate was
+    // built, but this path was never declared here. Under Mongoose's
+    // default `strict: true`, assigning an undeclared path is silently
+    // dropped from `$set` on `.save()` — same class of bug as the
+    // `education` sub-schema drift documented above. Net effect: every
+    // `completeDailyQuiz()` write appeared to succeed (the in-memory
+    // document reflected the change for the rest of that request, and for
+    // any request that hit the ~5s req.userDoc auth cache — see
+    // backend/utils/userAuthCache.js), but nothing ever reached MongoDB.
+    // The next time the cache expired and the user's doc was reloaded
+    // fresh from the database (e.g. refreshing the page while solving a
+    // problem, well past the 5s TTL), `dailyQuizCompletedDate` came back
+    // as `undefined`, `getDailyQuizStatus` recomputed `required: true`,
+    // and DailyQuizGate correctly — but incorrectly-from-the-user's-
+    // perspective — redirected back to the quiz. See
+    // backend/models/User.dailyQuizCompletedDate.integration.test.js for
+    // the regression test covering this specific class of bug.
+    dailyQuizCompletedDate: { type: String, default: null },
+
     problemNotes: {
       type: Map,
       of: String,
