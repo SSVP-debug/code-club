@@ -60,7 +60,7 @@ function DailyChallengeSection() {
 
           </p>
 
-          <h2 className="text-xl sm:text-3xl font-bold mt-2 break-words">
+          <h2 className="text-xl sm:text-3xl font-bold mt-2 break-words line-clamp-2">
 
             {challenge.title}
 
@@ -90,7 +90,10 @@ function DailyChallengeSection() {
 
       </div>
 
-      <p className="text-[var(--muted-foreground)] leading-7 mb-6">
+      <p
+        className="text-[var(--muted-foreground)] leading-7 mb-6 line-clamp-3"
+        title={challenge.description}
+      >
 
         {challenge.description}
 

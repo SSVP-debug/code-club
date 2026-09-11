@@ -42,7 +42,13 @@ function DashboardSections() {
 
       <AdvancedStatsSection />
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      {/* items-start: without it, CSS grid's default `align-items: stretch`
+          forces Rank/Weekly Goal/Next Contest to match whatever height
+          DailyChallengeSection needs for that day's title + description,
+          leaving large dead whitespace in the shorter cards. Paired with
+          the line-clamp on DailyChallengeSection itself so that card also
+          has a sane ceiling instead of just growing unbounded. */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         <RankProgressSection />
         <WeeklyGoalSection />
         <DailyChallengeSection />
