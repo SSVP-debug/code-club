@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import problems from "../../data/problems.js";
+import { useProblems } from "../../hooks/useProblems";
 import { useHideDifficultyLabels } from "../../hooks/useHideDifficultyLabels";
 
 const DIFFICULTY_STYLES = {
@@ -14,9 +14,28 @@ const DIFFICULTY_STYLES = {
  * Renders a list of thematically related problems as navigation links.
  * Each slug is resolved to a full problem object from the catalog.
  * Invalid/missing slugs are silently skipped.
+ *
+ * SECURITY (Sept 2026 architecture audit, finding D): this component used
+ * to `import problems from "../../data/problems.js"` directly. That file
+ * is the hand-authored source of truth and contains every problem's
+ * `hiddentestcases` in plaintext — a static import here meant Vite bundled
+ * the entire hidden-test dataset for all ~250 problems into the main
+ * problem-workspace chunk, shipped to every visitor, completely bypassing
+ * the backend's careful hidden-test exclusion (problemController.js's
+ * `.select("-hiddentestcases -hiddenTestcaseSet ...")`). This re-created
+ * the exact leak the Aug 2026 "problems-bundle-bloat" fix closed in
+ * useProblems.js's fallback path, unconditionally rather than just on
+ * API-down fallback.
+ *
+ * Fixed by sourcing from `useProblems()` instead, which resolves through
+ * GET /api/problems — a public-fields-only, Redis-cached endpoint that
+ * already excludes hidden testcase data server-side. No new hidden-data
+ * exposure risk regardless of how this component's props/lookups evolve.
  */
 function RelatedProblems({ relatedSlugs, currentSlug }) {
   const hideDifficulty = useHideDifficultyLabels();
+  const { problems } = useProblems();
+
   if (!relatedSlugs || relatedSlugs.length === 0) return null;
 
   const resolved = relatedSlugs
