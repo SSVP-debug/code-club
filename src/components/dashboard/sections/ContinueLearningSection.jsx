@@ -42,36 +42,25 @@ function ContinueLearningSection() {
       icon={<PlayCircle size={18} strokeWidth={2} />}
       accented
     >
-      <div className="flex items-center justify-between flex-wrap gap-6">
+      <h3 className="text-xl font-bold line-clamp-2" title={latestSubmission.problemTitle}>
+        {latestSubmission.problemTitle}
+      </h3>
 
-        <div>
+      <p className="text-[var(--muted-foreground)] mt-2 mb-6">
+        Last attempt:{" "}
+        <span
+          className={`font-medium ${latestSubmission.status === "Accepted"
+            ? "text-green-400"
+            : "text-red-400"
+            }`}
+        >
+          {latestSubmission.status}
+        </span>
+      </p>
 
-          {/* Debug output removed */}
-
-          <h3 className="text-2xl font-bold">
-            {latestSubmission.problemTitle}
-          </h3>
-
-          <p className="text-[var(--muted-foreground)] mt-2">
-            Last attempt:
-            <span
-              className={`ml-2 font-medium ${latestSubmission.status === "Accepted"
-                ? "text-green-400"
-                : "text-red-400"
-                }`}
-            >
-              {latestSubmission.status}
-            </span>
-          </p>
-        </div>
-
-        <Button to={`/problems/${latestSubmission.problemSlug ?? latestSubmission.problemId}`} variant="theme">
-          Continue →
-        </Button>
-
-      </div>
-
-      {/* Debug output removed */}
+      <Button to={`/problems/${latestSubmission.problemSlug ?? latestSubmission.problemId}`} variant="theme">
+        Continue →
+      </Button>
     </SectionCard>
   );
 }

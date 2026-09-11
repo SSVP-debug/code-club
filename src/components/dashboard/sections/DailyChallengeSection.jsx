@@ -5,14 +5,12 @@ import {
 } from "../../../utils/dailyChallenge";
 
 import { useTheme } from "../../../hooks/useTheme";
-import { useHideDifficultyLabels } from "../../../hooks/useHideDifficultyLabels";
 import SectionCard from "../../ui/layout/SectionCard";
 import Button from "../../ui/Button";
 import { CheckCircle2 } from "lucide-react";
 
 function DailyChallengeSection() {
   const { theme } = useTheme();
-  const hideDifficulty = useHideDifficultyLabels();
   const [challenge, setChallenge] = useState(null);
 
   const {
@@ -46,58 +44,26 @@ function DailyChallengeSection() {
         entry.slug === challenge.slug
     );
 
+  // Kept deliberately minimal — just enough to identify + start today's
+  // problem. Difficulty and the full description used to render here too,
+  // but the description in particular had no length cap, so on longer
+  // problems this card grew taller than Continue Learning/Weekly Goal/Next
+  // Contest and (via grid stretch) dragged all three of them up with it,
+  // leaving dead space in the shorter ones. Full details are one click
+  // away on the problem page itself.
   return (
-
     <SectionCard accented>
 
-      <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
-
-        <div className="min-w-0">
-
-          <p className="text-[var(--muted-foreground)] text-sm">
-
-            {theme.words.dailyChallenge}
-
-          </p>
-
-          <h2 className="text-xl sm:text-3xl font-bold mt-2 break-words line-clamp-2">
-
-            {challenge.title}
-
-          </h2>
-
-        </div>
-
-        <div className="text-right flex-shrink-0">
-
-          {!hideDifficulty && (
-            <>
-              <p className="text-[var(--muted-foreground)] text-sm">
-
-                {theme.words.difficulty}
-
-              </p>
-
-              <h2 className="text-xl font-semibold mt-2">
-
-                {challenge.difficulty}
-
-              </h2>
-            </>
-          )}
-
-        </div>
-
-      </div>
-
-      <p
-        className="text-[var(--muted-foreground)] leading-7 mb-6 line-clamp-3"
-        title={challenge.description}
-      >
-
-        {challenge.description}
-
+      <p className="text-[var(--muted-foreground)] text-sm mb-2">
+        {theme.words.dailyChallenge}
       </p>
+
+      <h2
+        className="text-xl sm:text-3xl font-bold break-words line-clamp-2 mb-6"
+        title={challenge.title}
+      >
+        {challenge.title}
+      </h2>
 
       {completedToday ? (
         <div className="inline-flex items-center gap-2 bg-[var(--theme-primary,#2dd4bf)] text-black px-6 py-3 rounded-xl font-semibold">
@@ -111,7 +77,6 @@ function DailyChallengeSection() {
       )}
 
     </SectionCard>
-
   );
 }
 

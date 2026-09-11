@@ -23,11 +23,21 @@ import ContestCountdownCard from "./sections/ContestCountdownCard";
 //   - ContestCountdownCard calls the already-existing, already-cached
 //     GET /api/contests?status=upcoming endpoint
 //
+// Phase C (this batch): Row 3 reordered into an explicit priority ladder —
+// what should a returning user see first, second, third, fourth:
+//   1. Continue Learning  — resume the most recent in-progress problem
+//   2. Daily Challenge    — today's problem, if they'd rather start fresh
+//   3. Weekly Goal        — a lighter-weight ask than the daily challenge
+//   4. Next Contest       — awareness, lowest urgency of the four
+// Rank moved out of Row 3 to make room and now lives in Row 5 alongside
+// the other "momentum" cards (AI Insights, Recent Achievement) — same
+// slot Continue Learning used to occupy there.
+//
 // Row 1 — Greeting                        (full width)
 // Row 2 — KPI strip                       (full width, 4-up internally)
-// Row 3 — Status & goals: Rank | Weekly Goal | Daily Challenge | Next Contest
+// Row 3 — Priority ladder: Continue Learning | Daily Challenge | Weekly Goal | Next Contest
 // Row 4 — Patterns: Activity Heatmap (wide) | Topic Progress
-// Row 5 — Momentum: Continue | AI Insights | Recent Achievement
+// Row 5 — Momentum: Rank | AI Insights | Recent Achievement
 // Row 6 — Profile-share CTA               (full width, compact)
 //
 // Row 6 (PublicProfileCard, which duplicated stats already shown in Row 2 and
@@ -42,16 +52,16 @@ function DashboardSections() {
 
       <AdvancedStatsSection />
 
-      {/* items-start: without it, CSS grid's default `align-items: stretch`
-          forces Rank/Weekly Goal/Next Contest to match whatever height
-          DailyChallengeSection needs for that day's title + description,
-          leaving large dead whitespace in the shorter cards. Paired with
-          the line-clamp on DailyChallengeSection itself so that card also
-          has a sane ceiling instead of just growing unbounded. */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-        <RankProgressSection />
-        <WeeklyGoalSection />
+      {/* Default grid stretch (no items-start) is intentional here: with
+          DailyChallengeSection's title/description now line-clamped, its
+          height is bounded to a sane, consistent size — so letting the
+          other three cards stretch to match it is what makes the row look
+          even, instead of the tallest card dragging the others up
+          unboundedly. */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <ContinueLearningSection />
         <DailyChallengeSection />
+        <WeeklyGoalSection />
         <ContestCountdownCard />
       </div>
 
@@ -61,7 +71,7 @@ function DashboardSections() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <ContinueLearningSection />
+        <RankProgressSection />
         <AIInsightsSection />
         <RecentAchievementCard />
       </div>
