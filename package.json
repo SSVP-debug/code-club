@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "verify:no-hidden-test-leak": "node scripts/checkBundleForHiddenTestLeak.js"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",

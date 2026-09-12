@@ -8,6 +8,11 @@ import { createPortal } from "react-dom";
  * small dark label beside it on hover/focus — the "hover a symbol, see
  * its name" interaction from Claude's own sidebar.
  *
+ * `side="top"` (added for ActivityHeatmapCard's per-day cells) centers the
+ * tooltip above the anchor instead of beside it — a dense grid of small
+ * cells has neighbors immediately left/right, so anchoring there risks
+ * the tooltip overlapping the next cell; "top" doesn't have that problem.
+ *
  * Two things this deliberately gets right, both learned the hard way:
  *
  * 1. No wrapper DOM node. `children` (the actual button/Link) gets the
@@ -39,11 +44,15 @@ function HoverTooltip({ label, side = "right", children }) {
   function show() {
     const rect = anchorRef.current?.getBoundingClientRect();
     if (!rect) return;
-    setCoords(
-      side === "right"
-        ? { top: rect.top + rect.height / 2, left: rect.right + 8 }
-        : { top: rect.top + rect.height / 2, left: rect.left - 8 }
-    );
+    if (side === "top") {
+      setCoords({ top: rect.top - 8, left: rect.left + rect.width / 2 });
+    } else {
+      setCoords(
+        side === "right"
+          ? { top: rect.top + rect.height / 2, left: rect.right + 8 }
+          : { top: rect.top + rect.height / 2, left: rect.left - 8 }
+      );
+    }
   }
 
   function hide() {
@@ -78,9 +87,11 @@ function HoverTooltip({ label, side = "right", children }) {
         createPortal(
           <span
             role="tooltip"
-            className={`pointer-events-none fixed z-[100] -translate-y-1/2 ${
-              side === "right" ? "" : "-translate-x-full"
-            } whitespace-nowrap rounded-lg border border-[var(--border-strong)] bg-[var(--surface-elevated)] px-2.5 py-1.5 text-xs font-semibold text-[var(--foreground)] shadow-xl`}
+            className={`pointer-events-none fixed z-[100] whitespace-nowrap rounded-lg border border-[var(--border-strong)] bg-[var(--surface-elevated)] px-2.5 py-1.5 text-xs font-semibold text-[var(--foreground)] shadow-xl ${
+              side === "top"
+                ? "-translate-x-1/2 -translate-y-full"
+                : `-translate-y-1/2 ${side === "right" ? "" : "-translate-x-full"}`
+            }`}
             style={{ top: coords.top, left: coords.left }}
           >
             {label}

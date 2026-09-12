@@ -10,6 +10,15 @@ export default defineConfig({
 
   build: {
     chunkSizeWarningLimit: 1000,
+    // Needed by scripts/checkBundleForHiddenTestLeak.js (Sept 2026 audit,
+    // Batch 2): the manifest records which chunks reach which other chunks
+    // via a *static* import vs. a *dynamic* import(), which is the actual
+    // signal the leak check needs. Chunk filenames alone aren't reliable —
+    // Vite names a chunk after its source module's basename regardless of
+    // whether it got there via a static or dynamic import, so two very
+    // different-risk cases (an eager static import vs. a reviewed lazy
+    // fallback) can produce identically-prefixed chunk names.
+    manifest: true,
 
     rollupOptions: {
       output: {
