@@ -1,0 +1,26 @@
+[
+  {
+    "input": {
+      "head": [
+        1
+      ],
+      "k": 1
+    },
+    "expectedOutput": [
+      1
+    ]
+  },
+  {
+    "input": {
+      "head": [
+        1,
+        2
+      ],
+      "k": 2
+    },
+    "expectedOutput": [
+      2,
+      1
+    ]
+  }
+]

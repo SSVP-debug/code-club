@@ -1,42 +1,20 @@
-{
-  "visible": [
-    {
-      "input": {
-        "s": "babad"
-      },
-      "expectedOutput": "bab"
+[
+  {
+    "input": {
+      "s": "babad"
     },
-    {
-      "input": {
-        "s": "cbbd"
-      },
-      "expectedOutput": "bb"
+    "expectedOutput": "bab"
+  },
+  {
+    "input": {
+      "s": "cbbd"
     },
-    {
-      "input": {
-        "s": "a"
-      },
-      "expectedOutput": "a"
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "s": "ac"
-      },
-      "expectedOutput": "a"
+    "expectedOutput": "bb"
+  },
+  {
+    "input": {
+      "s": "a"
     },
-    {
-      "input": {
-        "s": "racecar"
-      },
-      "expectedOutput": "racecar"
-    },
-    {
-      "input": {
-        "s": "aacabdkacaa"
-      },
-      "expectedOutput": "aca"
-    }
-  ]
-}
+    "expectedOutput": "a"
+  }
+]

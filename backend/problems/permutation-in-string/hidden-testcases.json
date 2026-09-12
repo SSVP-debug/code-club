@@ -1,0 +1,16 @@
+[
+  {
+    "input": {
+      "s1": "hello",
+      "s2": "ooolleoooleh"
+    },
+    "expectedOutput": false
+  },
+  {
+    "input": {
+      "s1": "a",
+      "s2": "ab"
+    },
+    "expectedOutput": true
+  }
+]

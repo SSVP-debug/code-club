@@ -1,0 +1,22 @@
+[
+  {
+    "input": {
+      "words": [
+        "z",
+        "z"
+      ]
+    },
+    "expectedOutput": "z"
+  },
+  {
+    "input": {
+      "words": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ]
+    },
+    "expectedOutput": "abcd"
+  }
+]

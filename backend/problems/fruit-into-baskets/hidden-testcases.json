@@ -1,0 +1,28 @@
+[
+  {
+    "input": {
+      "fruits": [
+        3,
+        3,
+        3,
+        1,
+        2,
+        1,
+        1,
+        2,
+        3,
+        3,
+        4
+      ]
+    },
+    "expectedOutput": 5
+  },
+  {
+    "input": {
+      "fruits": [
+        1
+      ]
+    },
+    "expectedOutput": 1
+  }
+]

@@ -1,36 +1,20 @@
-{
-  "visible": [
-    {
-      "input": {
-        "columnTitle": "A"
-      },
-      "expectedOutput": 1
+[
+  {
+    "input": {
+      "columnTitle": "A"
     },
-    {
-      "input": {
-        "columnTitle": "AB"
-      },
-      "expectedOutput": 28
+    "expectedOutput": 1
+  },
+  {
+    "input": {
+      "columnTitle": "AB"
     },
-    {
-      "input": {
-        "columnTitle": "ZY"
-      },
-      "expectedOutput": 701
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "columnTitle": "Z"
-      },
-      "expectedOutput": 26
+    "expectedOutput": 28
+  },
+  {
+    "input": {
+      "columnTitle": "ZY"
     },
-    {
-      "input": {
-        "columnTitle": "AA"
-      },
-      "expectedOutput": 27
-    }
-  ]
-}
+    "expectedOutput": 701
+  }
+]

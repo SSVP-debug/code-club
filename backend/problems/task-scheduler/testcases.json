@@ -1,75 +1,50 @@
-{
-  "visible": [
-    {
-      "input": {
-        "tasks": [
-          "A",
-          "A",
-          "A",
-          "B",
-          "B",
-          "B"
-        ],
-        "n": 2
-      },
-      "expectedOutput": 8
+[
+  {
+    "input": {
+      "tasks": [
+        "A",
+        "A",
+        "A",
+        "B",
+        "B",
+        "B"
+      ],
+      "n": 2
     },
-    {
-      "input": {
-        "tasks": [
-          "A",
-          "A",
-          "A",
-          "B",
-          "B",
-          "B"
-        ],
-        "n": 0
-      },
-      "expectedOutput": 6
+    "expectedOutput": 8
+  },
+  {
+    "input": {
+      "tasks": [
+        "A",
+        "A",
+        "A",
+        "B",
+        "B",
+        "B"
+      ],
+      "n": 0
     },
-    {
-      "input": {
-        "tasks": [
-          "A",
-          "A",
-          "A",
-          "A",
-          "A",
-          "A",
-          "B",
-          "C",
-          "D",
-          "E",
-          "F",
-          "G"
-        ],
-        "n": 2
-      },
-      "expectedOutput": 16
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "tasks": [
-          "A"
-        ],
-        "n": 5
-      },
-      "expectedOutput": 1
+    "expectedOutput": 6
+  },
+  {
+    "input": {
+      "tasks": [
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ],
+      "n": 2
     },
-    {
-      "input": {
-        "tasks": [
-          "A",
-          "A",
-          "B",
-          "B"
-        ],
-        "n": 2
-      },
-      "expectedOutput": 5
-    }
-  ]
-}
+    "expectedOutput": 16
+  }
+]

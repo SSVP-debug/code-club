@@ -1,0 +1,27 @@
+[
+  {
+    "input": {
+      "grid": [
+        [
+          1
+        ]
+      ]
+    },
+    "expectedOutput": 1
+  },
+  {
+    "input": {
+      "grid": [
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    "expectedOutput": 4
+  }
+]

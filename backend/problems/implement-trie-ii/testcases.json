@@ -1,86 +1,57 @@
-{
-  "visible": [
-    {
-      "input": {
-        "ops": [
-          "insert",
-          "insert",
-          "countWordsEqualTo",
-          "countWordsStartingWith",
-          "erase",
-          "countWordsEqualTo",
-          "countWordsStartingWith",
-          "erase",
-          "countWordsStartingWith"
+[
+  {
+    "input": {
+      "ops": [
+        "insert",
+        "insert",
+        "countWordsEqualTo",
+        "countWordsStartingWith",
+        "erase",
+        "countWordsEqualTo",
+        "countWordsStartingWith",
+        "erase",
+        "countWordsStartingWith"
+      ],
+      "vals": [
+        [
+          "apple"
         ],
-        "vals": [
-          [
-            "apple"
-          ],
-          [
-            "apple"
-          ],
-          [
-            "apple"
-          ],
-          [
-            "app"
-          ],
-          [
-            "apple"
-          ],
-          [
-            "apple"
-          ],
-          [
-            "app"
-          ],
-          [
-            "apple"
-          ],
-          [
-            "app"
-          ]
-        ]
-      },
-      "expectedOutput": [
-        null,
-        null,
-        2,
-        2,
-        null,
-        1,
-        1,
-        null,
-        0
-      ]
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "ops": [
-          "insert",
-          "countWordsEqualTo",
-          "countWordsStartingWith"
+        [
+          "apple"
         ],
-        "vals": [
-          [
-            "bag"
-          ],
-          [
-            "bag"
-          ],
-          [
-            "ba"
-          ]
+        [
+          "apple"
+        ],
+        [
+          "app"
+        ],
+        [
+          "apple"
+        ],
+        [
+          "apple"
+        ],
+        [
+          "app"
+        ],
+        [
+          "apple"
+        ],
+        [
+          "app"
         ]
-      },
-      "expectedOutput": [
-        null,
-        1,
-        1
       ]
-    }
-  ]
-}
+    },
+    "expectedOutput": [
+      null,
+      null,
+      2,
+      2,
+      null,
+      1,
+      1,
+      null,
+      0
+    ]
+  }
+]

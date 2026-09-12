@@ -1,36 +1,20 @@
-{
-  "visible": [
-    {
-      "input": {
-        "s": "abcabcbb"
-      },
-      "expectedOutput": 3
+[
+  {
+    "input": {
+      "s": "abcabcbb"
     },
-    {
-      "input": {
-        "s": "bbbbb"
-      },
-      "expectedOutput": 1
+    "expectedOutput": 3
+  },
+  {
+    "input": {
+      "s": "bbbbb"
     },
-    {
-      "input": {
-        "s": "pwwkew"
-      },
-      "expectedOutput": 3
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "s": ""
-      },
-      "expectedOutput": 0
+    "expectedOutput": 1
+  },
+  {
+    "input": {
+      "s": "pwwkew"
     },
-    {
-      "input": {
-        "s": "dvdf"
-      },
-      "expectedOutput": 3
-    }
-  ]
-}
+    "expectedOutput": 3
+  }
+]

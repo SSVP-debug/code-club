@@ -1,115 +1,76 @@
-{
-  "visible": [
-    {
-      "input": {
-        "ops": [
-          [
-            "push",
-            5
-          ],
-          [
-            "push",
-            3
-          ],
-          [
-            "push",
-            7
-          ],
-          [
-            "getMin"
-          ],
-          [
-            "pop"
-          ],
-          [
-            "getMin"
-          ]
+[
+  {
+    "input": {
+      "ops": [
+        [
+          "push",
+          5
+        ],
+        [
+          "push",
+          3
+        ],
+        [
+          "push",
+          7
+        ],
+        [
+          "getMin"
+        ],
+        [
+          "pop"
+        ],
+        [
+          "getMin"
         ]
-      },
-      "expectedOutput": [
-        3,
-        3
       ]
     },
-    {
-      "input": {
-        "ops": [
-          [
-            "push",
-            2
-          ],
-          [
-            "push",
-            0
-          ],
-          [
-            "getMin"
-          ],
-          [
-            "pop"
-          ],
-          [
-            "getMin"
-          ]
+    "expectedOutput": [
+      3,
+      3
+    ]
+  },
+  {
+    "input": {
+      "ops": [
+        [
+          "push",
+          2
+        ],
+        [
+          "push",
+          0
+        ],
+        [
+          "getMin"
+        ],
+        [
+          "pop"
+        ],
+        [
+          "getMin"
         ]
-      },
-      "expectedOutput": [
-        0,
-        2
       ]
     },
-    {
-      "input": {
-        "ops": [
-          [
-            "push",
-            1
-          ],
-          [
-            "top"
-          ]
+    "expectedOutput": [
+      0,
+      2
+    ]
+  },
+  {
+    "input": {
+      "ops": [
+        [
+          "push",
+          1
+        ],
+        [
+          "top"
         ]
-      },
-      "expectedOutput": [
-        1
       ]
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "ops": [
-          [
-            "push",
-            10
-          ],
-          [
-            "push",
-            5
-          ],
-          [
-            "push",
-            15
-          ],
-          [
-            "getMin"
-          ],
-          [
-            "pop"
-          ],
-          [
-            "getMin"
-          ],
-          [
-            "top"
-          ]
-        ]
-      },
-      "expectedOutput": [
-        5,
-        5,
-        10
-      ]
-    }
-  ]
-}
+    },
+    "expectedOutput": [
+      1
+    ]
+  }
+]

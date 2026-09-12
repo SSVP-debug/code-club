@@ -1,90 +1,70 @@
-{
-  "visible": [
-    {
-      "input": {
-        "intervals": [
-          [
-            1,
-            4
-          ],
-          [
-            2,
-            4
-          ],
-          [
-            3,
-            6
-          ],
-          [
-            4,
-            4
-          ]
+[
+  {
+    "input": {
+      "intervals": [
+        [
+          1,
+          4
         ],
-        "queries": [
+        [
           2,
+          4
+        ],
+        [
           3,
+          6
+        ],
+        [
           4,
-          5
+          4
         ]
-      },
-      "expectedOutput": [
+      ],
+      "queries": [
+        2,
         3,
-        3,
-        1,
-        4
+        4,
+        5
       ]
     },
-    {
-      "input": {
-        "intervals": [
-          [
-            2,
-            3
-          ],
-          [
-            2,
-            5
-          ],
-          [
-            1,
-            8
-          ],
-          [
-            20,
-            25
-          ]
-        ],
-        "queries": [
+    "expectedOutput": [
+      3,
+      3,
+      1,
+      4
+    ]
+  },
+  {
+    "input": {
+      "intervals": [
+        [
           2,
-          19,
-          5,
-          22
-        ]
-      },
-      "expectedOutput": [
-        2,
-        -1,
-        4,
-        6
-      ]
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "intervals": [
-          [
-            1,
-            100
-          ]
+          3
         ],
-        "queries": [
-          50
+        [
+          2,
+          5
+        ],
+        [
+          1,
+          8
+        ],
+        [
+          20,
+          25
         ]
-      },
-      "expectedOutput": [
-        100
+      ],
+      "queries": [
+        2,
+        19,
+        5,
+        22
       ]
-    }
-  ]
-}
+    },
+    "expectedOutput": [
+      2,
+      -1,
+      4,
+      6
+    ]
+  }
+]

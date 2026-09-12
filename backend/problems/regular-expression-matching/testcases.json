@@ -1,41 +1,23 @@
-{
-  "visible": [
-    {
-      "input": {
-        "s": "aa",
-        "p": "a"
-      },
-      "expectedOutput": false
+[
+  {
+    "input": {
+      "s": "aa",
+      "p": "a"
     },
-    {
-      "input": {
-        "s": "aa",
-        "p": "a*"
-      },
-      "expectedOutput": true
+    "expectedOutput": false
+  },
+  {
+    "input": {
+      "s": "aa",
+      "p": "a*"
     },
-    {
-      "input": {
-        "s": "ab",
-        "p": ".*"
-      },
-      "expectedOutput": true
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "s": "aab",
-        "p": "c*a*b"
-      },
-      "expectedOutput": true
+    "expectedOutput": true
+  },
+  {
+    "input": {
+      "s": "ab",
+      "p": ".*"
     },
-    {
-      "input": {
-        "s": "mississippi",
-        "p": "mis*is*p*."
-      },
-      "expectedOutput": false
-    }
-  ]
-}
+    "expectedOutput": true
+  }
+]

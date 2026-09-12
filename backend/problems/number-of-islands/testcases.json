@@ -1,101 +1,71 @@
-{
-  "visible": [
-    {
-      "input": {
-        "grid": [
-          1,
-          1,
-          1,
-          1,
-          0,
-          1,
-          1,
-          0,
-          1,
-          0,
-          1,
-          1,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        "numCols": 5
-      },
-      "expectedOutput": 1
+[
+  {
+    "input": {
+      "grid": [
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "numCols": 5
     },
-    {
-      "input": {
-        "grid": [
-          1,
-          1,
-          0,
-          0,
-          0,
-          1,
-          1,
-          0,
-          0,
-          0,
-          0,
-          0,
-          1,
-          0,
-          0,
-          0,
-          0,
-          0,
-          1,
-          1
-        ],
-        "numCols": 5
-      },
-      "expectedOutput": 3
+    "expectedOutput": 1
+  },
+  {
+    "input": {
+      "grid": [
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1
+      ],
+      "numCols": 5
     },
-    {
-      "input": {
-        "grid": [
-          1,
-          1,
-          0,
-          1,
-          0
-        ],
-        "numCols": 5
-      },
-      "expectedOutput": 2
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "grid": [
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        "numCols": 5
-      },
-      "expectedOutput": 0
+    "expectedOutput": 3
+  },
+  {
+    "input": {
+      "grid": [
+        1,
+        1,
+        0,
+        1,
+        0
+      ],
+      "numCols": 5
     },
-    {
-      "input": {
-        "grid": [
-          1,
-          0,
-          1,
-          0,
-          1
-        ],
-        "numCols": 5
-      },
-      "expectedOutput": 3
-    }
-  ]
-}
+    "expectedOutput": 2
+  }
+]

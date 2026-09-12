@@ -1,91 +1,58 @@
-{
-  "visible": [
-    {
-      "input": {
-        "ops": [
-          "postTweet",
-          "getNewsFeed",
-          "follow",
-          "postTweet",
-          "getNewsFeed",
-          "unfollow",
-          "getNewsFeed"
-        ],
-        "vals": [
-          [
-            1,
-            5
-          ],
-          [
-            1
-          ],
-          [
-            1,
-            2
-          ],
-          [
-            2,
-            6
-          ],
-          [
-            1
-          ],
-          [
-            1,
-            2
-          ],
-          [
-            1
-          ]
-        ]
-      },
-      "expectedOutput": [
-        null,
+[
+  {
+    "input": {
+      "ops": [
+        "postTweet",
+        "getNewsFeed",
+        "follow",
+        "postTweet",
+        "getNewsFeed",
+        "unfollow",
+        "getNewsFeed"
+      ],
+      "vals": [
         [
+          1,
           5
         ],
-        null,
-        null,
         [
-          6,
-          5
+          1
         ],
-        null,
         [
-          5
+          1,
+          2
+        ],
+        [
+          2,
+          6
+        ],
+        [
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1
         ]
       ]
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "ops": [
-          "postTweet",
-          "follow",
-          "getNewsFeed"
-        ],
-        "vals": [
-          [
-            2,
-            5
-          ],
-          [
-            1,
-            2
-          ],
-          [
-            1
-          ]
-        ]
-      },
-      "expectedOutput": [
-        null,
-        null,
-        [
-          5
-        ]
+    },
+    "expectedOutput": [
+      null,
+      [
+        5
+      ],
+      null,
+      null,
+      [
+        6,
+        5
+      ],
+      null,
+      [
+        5
       ]
-    }
-  ]
-}
+    ]
+  }
+]

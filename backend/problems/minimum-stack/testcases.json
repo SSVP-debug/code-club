@@ -1,72 +1,39 @@
-{
-  "visible": [
-    {
-      "input": {
-        "ops": [
-          "push",
-          "push",
-          "push",
-          "getMin",
-          "pop",
-          "top",
-          "getMin"
+[
+  {
+    "input": {
+      "ops": [
+        "push",
+        "push",
+        "push",
+        "getMin",
+        "pop",
+        "top",
+        "getMin"
+      ],
+      "vals": [
+        [
+          -2
         ],
-        "vals": [
-          [
-            -2
-          ],
-          [
-            0
-          ],
-          [
-            -3
-          ],
-          [],
-          [],
-          [],
-          []
-        ]
-      },
-      "expectedOutput": [
-        null,
-        null,
-        null,
-        -3,
-        null,
-        0,
-        -2
-      ]
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "ops": [
-          "push",
-          "push",
-          "getMin",
-          "pop",
-          "getMin"
+        [
+          0
         ],
-        "vals": [
-          [
-            2
-          ],
-          [
-            1
-          ],
-          [],
-          [],
-          []
-        ]
-      },
-      "expectedOutput": [
-        null,
-        null,
-        1,
-        null,
-        2
+        [
+          -3
+        ],
+        [],
+        [],
+        [],
+        []
       ]
-    }
-  ]
-}
+    },
+    "expectedOutput": [
+      null,
+      null,
+      null,
+      -3,
+      null,
+      0,
+      -2
+    ]
+  }
+]

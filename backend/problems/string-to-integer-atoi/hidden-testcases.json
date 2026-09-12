@@ -1,0 +1,20 @@
+[
+  {
+    "input": {
+      "s": "words and 987"
+    },
+    "expectedOutput": 0
+  },
+  {
+    "input": {
+      "s": "-91283472332"
+    },
+    "expectedOutput": -2147483648
+  },
+  {
+    "input": {
+      "s": "  +  413"
+    },
+    "expectedOutput": 0
+  }
+]

@@ -1799,3 +1799,137 @@ for unrelated reasons, one generic comment).
 
 **C is now live**: `enabled: true`, `judge0Id: 50` confirmed by Bunny
 against the real instance, 223/250 problems have real `starterCode.c`.
+
+---
+
+## Sept 2026 Architecture Audit — Batch 3: contentVersion investigation
+
+The audit's remediation plan (`plans/014`) scoped versioning as new work
+("Batch 4 — Problem/testcase versioning") to be sized only after checking
+`backend/models/Problem.contentVersion.integration.test.js` first. Checked
+it before scoping anything, per the audit's own stated principle (audit
+before trusting documentation — in this case, audit before trusting a
+prior audit's own assumption).
+
+**Finding: this is already fully implemented, not just tested-ahead-of-
+build.** Read every piece involved, not just the test file:
+
+- `Problem.js`: `contentVersion` field (default `1`), `GRADING_CONTRACT_FIELDS`
+  list (`hiddenTestcaseSet`, `comparisonMode`, `operationSequence`,
+  `returnType`, `paramTypes` — deliberately excludes cosmetic fields like
+  `topic`/`title`), a `pre("save")` hook bumping on `.isModified()` for
+  admin's `.save()` path, and a `pre("findOneAndUpdate")` hook bumping via
+  `$inc` for the seed/import upsert path — the second hook does an actual
+  value comparison against the existing document, not just field presence,
+  specifically so `seedProblems.js`'s routine reseed (which always rewrites
+  `hiddenTestcaseSet` from scratch, unchanged or not) doesn't bump the
+  version on every run.
+- `Submission.js`: `problemVersion` field (default `null` — treated as
+  "unknown," not "version 0," for pre-existing submissions).
+- `controllers/submissionController.js`'s `recordVerifiedSubmission()` — the
+  single, only place a Submission is ever written (per its own header
+  comment) — accepts `problemVersion` and passes it straight through.
+- `controllers/judgeController.js`'s `submitHandler` calls it with
+  `problemVersion: problem.contentVersion`, i.e. captured live at the
+  moment of grading, before any later edit could change it.
+- `controllers/adminProblemController.js` already surfaces `contentVersion`
+  in the admin problem-list projection (read-only, no drift-comparison UI
+  built on top of it yet — consistent with the feature's own documented
+  "minimum-viable" framing: this stores enough to notice after the fact
+  that a submission was graded under a since-changed contract, not to
+  reconstruct or re-run against the old one).
+
+**Verification status:**
+- Hook logic read side-by-side against all 12 integration-test cases
+  (starts at 1 / bumps on contract-field change / does not bump on
+  cosmetic-field change / does not bump on no-op resave / bumps correctly
+  via both `.save()` and `findOneAndUpdate` / does not bump on an
+  identical-value reseed / upsert starts at default) — every case's
+  described behavior matches what the hooks actually do.
+- Could not get an actual green run of the integration file itself in this
+  session — confirmed the documented blocker still holds:
+  `mongodb-memory-server` needs `fastdl.mongodb.org`
+  (`mongodb-linux-x86_64-ubuntu2404-8.2.6.tgz`), returns 403 in this
+  sandbox. Same restriction as every other `*.integration.test.js` file.
+  **Still needs a real CI/local run to get an actual pass/fail, not just a
+  code-reading confirmation** — carrying forward the same open item this
+  audit already had for the Phase 5 Feature Requests integration tier.
+- The one piece of this that unit-tests (mocked, not integration) *do*
+  cover and that I could actually run green in this sandbox:
+  `controllers/submissionController.test.js`'s "passes problemVersion
+  through to Submission.create when provided" and "defaults problemVersion
+  to null when the caller doesn't pass one" — both pass (6/6 in that file).
+
+**Action:** `plans/014` Batch 4 is resized from "design and implement
+versioning" to "verify the existing implementation on real CI, then decide
+if the minimum-viable line (capture-only, no drift-alerting UI) is still
+sufficient or worth extending" — see `plans/014` for the updated checklist.
+
+---
+
+## Sept 2026 Architecture Audit — Batch 5 (partial): hidden-testcase file split
+
+Completed the first, additive slice of Batch 5 (authoring-folder
+promotion): `backend/problems/<slug>/testcases.json` used to hold
+`{visible, hidden}` together in one file. Split into `testcases.json`
+(visible only) and a physically separate `hidden-testcases.json`. This is
+defense-in-depth, not itself a new security fix — nothing under
+`backend/problems/` was ever reachable from the frontend bundle; the actual
+leak (Batch 1) was `src/data/problems.js`. The point of the split is that
+"never import `hidden-testcases.json` from `src/`" is a path-level rule a
+reviewer can enforce by eye, where "never pull the hidden field out of
+`testcases.json`" needed field-level discipline every time anyone touched
+a file that also held innocuous visible data — same reasoning as Section K
+of the audit report.
+
+**Changed exactly one place that mattered — `scripts/lib/problemFolderFiles.js`**
+(the single source of truth `exportProblemsToFolders.js` and
+`checkProblemsFolderDrift.js` both already delegated to, per Plan 011's own
+setup): `buildProblemFiles()` now emits `testcases.json` (visible array,
+not wrapped in `{visible: ...}`) and a new `hidden-testcases.json` (hidden
+array). `checkProblemsFolderDrift.js` needed **zero changes** — it's fully
+generic over whatever keys `buildProblemFiles()` returns.
+
+**`importProblems.js`** (the one place that reads the old combined shape)
+updated to read both files separately; `ProblemFolderSchema` needed no
+change since it validates the already-parsed `visibleTestcases`/
+`hiddenTestcases` fields, not raw file layout.
+
+**`validateProblemContracts.js` needed no change** — confirmed it reads
+`problem.testcases`/`problem.hiddentestcases` directly from
+`src/data/problems.js`'s object shape, never from the folder mirror. That
+JS-source object shape is unchanged by this batch; only the generated
+mirror's file layout changed.
+
+**Regenerated all 250 problem folders** via
+`npm run problems:export-to-folders` (new `hidden-testcases.json` created
+for every problem, `testcases.json` rewritten to the visible-only shape) —
+500 files touched. Verified, not just assumed:
+- `checkProblemsFolderDrift.js`: zero drift across all 250 problems against
+  the new expected shape.
+- `validateProblemContracts.js`: unaffected, 250 problems + 8 Code Club
+  Edition missions still validate clean.
+- Full backend suite: **103/103 files, 1198/1198 tests pass**, including
+  the drift-check test's real-disk comparison across all 250 folders.
+- Wrote and ran a standalone script (not committed — scratch, deleted after
+  use) exercising the new `importProblems.js` read logic against four real
+  problem folders (including `word-ladder` and `trapping-rain-water-ii`,
+  both C-starter problems) through `ProblemFolderSchema.safeParse` directly,
+  since the actual `importProblems.js --dry-run` path still calls
+  `connectDB()` unconditionally before checking the dry-run flag (a
+  pre-existing script limitation, not something this batch introduced) and
+  this sandbox has no real Mongo. All four parsed valid.
+
+**What Batch 5 still has left, deliberately not attempted this session**
+(per the project's own "confirmed, one-batch-per-session increments"
+preference, given how much bigger and riskier the remaining pieces are than
+this additive split):
+- Migrating `src/data/problems.js` off being hand-authored (making it a
+  generated artifact, or retiring it and seeding straight from the folder
+  set) — this is the actual source-of-truth inversion, not yet done.
+  `src/data/problems.js` is still what a developer hand-edits today.
+- A `create-problem <slug>` scaffold command (low priority, trivial once
+  the folder shape is the authoring target rather than just a mirror).
+- Updating `docs/adding-a-language.md`'s framing of `src/data/problems.js`
+  as "the actual single source of truth" — still accurate today, since the
+  inversion above hasn't happened yet.

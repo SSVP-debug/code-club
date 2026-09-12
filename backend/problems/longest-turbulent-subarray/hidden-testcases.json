@@ -1,0 +1,23 @@
+[
+  {
+    "input": {
+      "arr": [
+        0,
+        1,
+        0,
+        1,
+        0
+      ]
+    },
+    "expectedOutput": 5
+  },
+  {
+    "input": {
+      "arr": [
+        9,
+        9
+      ]
+    },
+    "expectedOutput": 1
+  }
+]

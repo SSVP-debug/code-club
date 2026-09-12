@@ -1,0 +1,30 @@
+[
+  {
+    "input": {
+      "ops": [
+        "book",
+        "book",
+        "book"
+      ],
+      "vals": [
+        [
+          0,
+          10
+        ],
+        [
+          0,
+          10
+        ],
+        [
+          0,
+          10
+        ]
+      ]
+    },
+    "expectedOutput": [
+      true,
+      true,
+      false
+    ]
+  }
+]

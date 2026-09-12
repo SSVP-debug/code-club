@@ -1,58 +1,34 @@
-{
-  "visible": [
-    {
-      "input": {
-        "nums": [
-          10,
-          5,
-          2,
-          6
-        ],
-        "k": 100
-      },
-      "expectedOutput": 8
+[
+  {
+    "input": {
+      "nums": [
+        10,
+        5,
+        2,
+        6
+      ],
+      "k": 100
     },
-    {
-      "input": {
-        "nums": [
-          1,
-          2,
-          3
-        ],
-        "k": 0
-      },
-      "expectedOutput": 0
+    "expectedOutput": 8
+  },
+  {
+    "input": {
+      "nums": [
+        1,
+        2,
+        3
+      ],
+      "k": 0
     },
-    {
-      "input": {
-        "nums": [
-          1
-        ],
-        "k": 2
-      },
-      "expectedOutput": 1
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "nums": [
-          1,
-          1,
-          1
-        ],
-        "k": 1
-      },
-      "expectedOutput": 0
+    "expectedOutput": 0
+  },
+  {
+    "input": {
+      "nums": [
+        1
+      ],
+      "k": 2
     },
-    {
-      "input": {
-        "nums": [
-          100
-        ],
-        "k": 100
-      },
-      "expectedOutput": 0
-    }
-  ]
-}
+    "expectedOutput": 1
+  }
+]

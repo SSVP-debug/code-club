@@ -1,0 +1,16 @@
+[
+  {
+    "input": {
+      "w": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "ops": [
+        "pickIndex"
+      ]
+    },
+    "expectedOutput": "0-3"
+  }
+]

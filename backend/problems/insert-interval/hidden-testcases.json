@@ -1,0 +1,46 @@
+[
+  {
+    "input": {
+      "intervals": [
+        [
+          1,
+          5
+        ]
+      ],
+      "newInterval": [
+        2,
+        3
+      ]
+    },
+    "expectedOutput": [
+      [
+        1,
+        5
+      ]
+    ]
+  },
+  {
+    "input": {
+      "intervals": [
+        [
+          1,
+          5
+        ]
+      ],
+      "newInterval": [
+        6,
+        8
+      ]
+    },
+    "expectedOutput": [
+      [
+        1,
+        5
+      ],
+      [
+        6,
+        8
+      ]
+    ]
+  }
+]

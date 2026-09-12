@@ -1,0 +1,23 @@
+[
+  {
+    "input": {
+      "s": "abcde"
+    },
+    "expectedOutput": [
+      1,
+      1,
+      1,
+      1,
+      1
+    ]
+  },
+  {
+    "input": {
+      "s": "eaaaabaaec"
+    },
+    "expectedOutput": [
+      9,
+      1
+    ]
+  }
+]

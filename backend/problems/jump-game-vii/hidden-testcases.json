@@ -1,0 +1,18 @@
+[
+  {
+    "input": {
+      "s": "00",
+      "minJump": 1,
+      "maxJump": 1
+    },
+    "expectedOutput": true
+  },
+  {
+    "input": {
+      "s": "0000000000",
+      "minJump": 3,
+      "maxJump": 7
+    },
+    "expectedOutput": true
+  }
+]

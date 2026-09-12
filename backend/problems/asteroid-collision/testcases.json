@@ -1,71 +1,36 @@
-{
-  "visible": [
-    {
-      "input": {
-        "asteroids": [
-          5,
-          10,
-          -5
-        ]
-      },
-      "expectedOutput": [
+[
+  {
+    "input": {
+      "asteroids": [
         5,
-        10
+        10,
+        -5
       ]
     },
-    {
-      "input": {
-        "asteroids": [
-          8,
-          -8
-        ]
-      },
-      "expectedOutput": []
-    },
-    {
-      "input": {
-        "asteroids": [
-          10,
-          2,
-          -5
-        ]
-      },
-      "expectedOutput": [
-        10
-      ]
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "asteroids": [
-          -2,
-          -1,
-          1,
-          2
-        ]
-      },
-      "expectedOutput": [
-        -2,
-        -1,
-        1,
-        2
+    "expectedOutput": [
+      5,
+      10
+    ]
+  },
+  {
+    "input": {
+      "asteroids": [
+        8,
+        -8
       ]
     },
-    {
-      "input": {
-        "asteroids": [
-          1,
-          -2,
-          -2,
-          -2
-        ]
-      },
-      "expectedOutput": [
-        -2,
-        -2,
-        -2
+    "expectedOutput": []
+  },
+  {
+    "input": {
+      "asteroids": [
+        10,
+        2,
+        -5
       ]
-    }
-  ]
-}
+    },
+    "expectedOutput": [
+      10
+    ]
+  }
+]

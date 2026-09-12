@@ -1,0 +1,26 @@
+[
+  {
+    "input": {
+      "ops": [
+        "addWord",
+        "search",
+        "search"
+      ],
+      "vals": [
+        [
+          "a"
+        ],
+        [
+          "a"
+        ],
+        [
+          "."
+        ]
+      ]
+    },
+    "expectedOutput": [
+      true,
+      true
+    ]
+  }
+]

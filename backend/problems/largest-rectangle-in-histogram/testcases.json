@@ -1,60 +1,32 @@
-{
-  "visible": [
-    {
-      "input": {
-        "heights": [
-          2,
-          1,
-          5,
-          6,
-          2,
-          3
-        ]
-      },
-      "expectedOutput": 10
+[
+  {
+    "input": {
+      "heights": [
+        2,
+        1,
+        5,
+        6,
+        2,
+        3
+      ]
     },
-    {
-      "input": {
-        "heights": [
-          2,
-          4
-        ]
-      },
-      "expectedOutput": 4
+    "expectedOutput": 10
+  },
+  {
+    "input": {
+      "heights": [
+        2,
+        4
+      ]
     },
-    {
-      "input": {
-        "heights": [
-          1
-        ]
-      },
-      "expectedOutput": 1
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "heights": [
-          0,
-          9
-        ]
-      },
-      "expectedOutput": 9
+    "expectedOutput": 4
+  },
+  {
+    "input": {
+      "heights": [
+        1
+      ]
     },
-    {
-      "input": {
-        "heights": [
-          6,
-          7,
-          5,
-          2,
-          4,
-          5,
-          9,
-          3
-        ]
-      },
-      "expectedOutput": 16
-    }
-  ]
-}
+    "expectedOutput": 1
+  }
+]

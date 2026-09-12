@@ -1,57 +1,33 @@
-{
-  "visible": [
-    {
-      "input": {
-        "words": [
-          "wrt",
-          "wrf",
-          "er",
-          "ett",
-          "rftt"
-        ]
-      },
-      "expectedOutput": "wertf"
+[
+  {
+    "input": {
+      "words": [
+        "wrt",
+        "wrf",
+        "er",
+        "ett",
+        "rftt"
+      ]
     },
-    {
-      "input": {
-        "words": [
-          "z",
-          "x"
-        ]
-      },
-      "expectedOutput": "zx"
+    "expectedOutput": "wertf"
+  },
+  {
+    "input": {
+      "words": [
+        "z",
+        "x"
+      ]
     },
-    {
-      "input": {
-        "words": [
-          "z",
-          "x",
-          "z"
-        ]
-      },
-      "expectedOutput": ""
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "words": [
-          "z",
-          "z"
-        ]
-      },
-      "expectedOutput": "z"
+    "expectedOutput": "zx"
+  },
+  {
+    "input": {
+      "words": [
+        "z",
+        "x",
+        "z"
+      ]
     },
-    {
-      "input": {
-        "words": [
-          "a",
-          "b",
-          "c",
-          "d"
-        ]
-      },
-      "expectedOutput": "abcd"
-    }
-  ]
-}
+    "expectedOutput": ""
+  }
+]

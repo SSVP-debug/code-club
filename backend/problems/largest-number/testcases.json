@@ -1,60 +1,32 @@
-{
-  "visible": [
-    {
-      "input": {
-        "nums": [
-          10,
-          2
-        ]
-      },
-      "expectedOutput": "210"
+[
+  {
+    "input": {
+      "nums": [
+        10,
+        2
+      ]
     },
-    {
-      "input": {
-        "nums": [
-          3,
-          30,
-          34,
-          5,
-          9
-        ]
-      },
-      "expectedOutput": "9534330"
+    "expectedOutput": "210"
+  },
+  {
+    "input": {
+      "nums": [
+        3,
+        30,
+        34,
+        5,
+        9
+      ]
     },
-    {
-      "input": {
-        "nums": [
-          0,
-          0
-        ]
-      },
-      "expectedOutput": "0"
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "nums": [
-          1
-        ]
-      },
-      "expectedOutput": "1"
+    "expectedOutput": "9534330"
+  },
+  {
+    "input": {
+      "nums": [
+        0,
+        0
+      ]
     },
-    {
-      "input": {
-        "nums": [
-          824,
-          938,
-          1399,
-          5607,
-          6973,
-          5703,
-          9609,
-          4398,
-          8247
-        ]
-      },
-      "expectedOutput": "9609938824824769735703560743981399"
-    }
-  ]
-}
+    "expectedOutput": "0"
+  }
+]

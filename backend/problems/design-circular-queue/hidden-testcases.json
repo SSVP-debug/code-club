@@ -1,0 +1,27 @@
+[
+  {
+    "input": {
+      "k": 1,
+      "ops": [
+        "enQueue",
+        "isFull",
+        "deQueue",
+        "isEmpty"
+      ],
+      "vals": [
+        [
+          5
+        ],
+        [],
+        [],
+        []
+      ]
+    },
+    "expectedOutput": [
+      true,
+      true,
+      true,
+      true
+    ]
+  }
+]

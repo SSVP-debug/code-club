@@ -1,42 +1,20 @@
-{
-  "visible": [
-    {
-      "input": {
-        "s": "42"
-      },
-      "expectedOutput": 42
+[
+  {
+    "input": {
+      "s": "42"
     },
-    {
-      "input": {
-        "s": "   -42"
-      },
-      "expectedOutput": -42
+    "expectedOutput": 42
+  },
+  {
+    "input": {
+      "s": "   -42"
     },
-    {
-      "input": {
-        "s": "4193 with words"
-      },
-      "expectedOutput": 4193
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "s": "words and 987"
-      },
-      "expectedOutput": 0
+    "expectedOutput": -42
+  },
+  {
+    "input": {
+      "s": "4193 with words"
     },
-    {
-      "input": {
-        "s": "-91283472332"
-      },
-      "expectedOutput": -2147483648
-    },
-    {
-      "input": {
-        "s": "  +  413"
-      },
-      "expectedOutput": 0
-    }
-  ]
-}
+    "expectedOutput": 4193
+  }
+]

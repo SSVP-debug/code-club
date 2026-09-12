@@ -1,0 +1,16 @@
+[
+  {
+    "input": {
+      "s": "adceb",
+      "p": "*a*b"
+    },
+    "expectedOutput": true
+  },
+  {
+    "input": {
+      "s": "acdcb",
+      "p": "a*c?b"
+    },
+    "expectedOutput": false
+  }
+]

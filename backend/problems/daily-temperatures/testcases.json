@@ -1,88 +1,56 @@
-{
-  "visible": [
-    {
-      "input": {
-        "temperatures": [
-          73,
-          74,
-          75,
-          71,
-          69,
-          72,
-          76,
-          73
-        ]
-      },
-      "expectedOutput": [
-        1,
-        1,
-        4,
-        2,
-        1,
-        1,
-        0,
-        0
+[
+  {
+    "input": {
+      "temperatures": [
+        73,
+        74,
+        75,
+        71,
+        69,
+        72,
+        76,
+        73
       ]
     },
-    {
-      "input": {
-        "temperatures": [
-          30,
-          40,
-          50,
-          60
-        ]
-      },
-      "expectedOutput": [
-        1,
-        1,
-        1,
-        0
+    "expectedOutput": [
+      1,
+      1,
+      4,
+      2,
+      1,
+      1,
+      0,
+      0
+    ]
+  },
+  {
+    "input": {
+      "temperatures": [
+        30,
+        40,
+        50,
+        60
       ]
     },
-    {
-      "input": {
-        "temperatures": [
-          30,
-          60,
-          90
-        ]
-      },
-      "expectedOutput": [
-        1,
-        1,
-        0
+    "expectedOutput": [
+      1,
+      1,
+      1,
+      0
+    ]
+  },
+  {
+    "input": {
+      "temperatures": [
+        30,
+        60,
+        90
       ]
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "temperatures": [
-          89,
-          62,
-          70,
-          58,
-          47,
-          47,
-          46,
-          76,
-          100,
-          70
-        ]
-      },
-      "expectedOutput": [
-        8,
-        1,
-        5,
-        4,
-        3,
-        2,
-        1,
-        1,
-        0,
-        0
-      ]
-    }
-  ]
-}
+    },
+    "expectedOutput": [
+      1,
+      1,
+      0
+    ]
+  }
+]

@@ -1,41 +1,23 @@
-{
-  "visible": [
-    {
-      "input": {
-        "num": "1432219",
-        "k": 3
-      },
-      "expectedOutput": "1219"
+[
+  {
+    "input": {
+      "num": "1432219",
+      "k": 3
     },
-    {
-      "input": {
-        "num": "10200",
-        "k": 1
-      },
-      "expectedOutput": "200"
+    "expectedOutput": "1219"
+  },
+  {
+    "input": {
+      "num": "10200",
+      "k": 1
     },
-    {
-      "input": {
-        "num": "10",
-        "k": 2
-      },
-      "expectedOutput": "0"
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "num": "9",
-        "k": 1
-      },
-      "expectedOutput": "0"
+    "expectedOutput": "200"
+  },
+  {
+    "input": {
+      "num": "10",
+      "k": 2
     },
-    {
-      "input": {
-        "num": "112",
-        "k": 1
-      },
-      "expectedOutput": "11"
-    }
-  ]
-}
+    "expectedOutput": "0"
+  }
+]

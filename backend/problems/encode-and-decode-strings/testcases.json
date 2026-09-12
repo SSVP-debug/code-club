@@ -1,72 +1,44 @@
-{
-  "visible": [
-    {
-      "input": {
-        "strs": [
-          "lint",
-          "code",
-          "love",
-          "you"
-        ]
-      },
-      "expectedOutput": [
+[
+  {
+    "input": {
+      "strs": [
         "lint",
         "code",
         "love",
         "you"
       ]
     },
-    {
-      "input": {
-        "strs": [
-          "we",
-          "say",
-          ":",
-          "yes"
-        ]
-      },
-      "expectedOutput": [
+    "expectedOutput": [
+      "lint",
+      "code",
+      "love",
+      "you"
+    ]
+  },
+  {
+    "input": {
+      "strs": [
         "we",
         "say",
         ":",
         "yes"
       ]
     },
-    {
-      "input": {
-        "strs": [
-          ""
-        ]
-      },
-      "expectedOutput": [
+    "expectedOutput": [
+      "we",
+      "say",
+      ":",
+      "yes"
+    ]
+  },
+  {
+    "input": {
+      "strs": [
         ""
       ]
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "strs": [
-          "hello",
-          "world"
-        ]
-      },
-      "expectedOutput": [
-        "hello",
-        "world"
-      ]
     },
-    {
-      "input": {
-        "strs": [
-          "#",
-          "##"
-        ]
-      },
-      "expectedOutput": [
-        "#",
-        "##"
-      ]
-    }
-  ]
-}
+    "expectedOutput": [
+      ""
+    ]
+  }
+]

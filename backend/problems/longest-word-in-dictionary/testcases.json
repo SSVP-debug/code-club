@@ -1,53 +1,28 @@
-{
-  "visible": [
-    {
-      "input": {
-        "words": [
-          "w",
-          "wo",
-          "wor",
-          "worl",
-          "world"
-        ]
-      },
-      "expectedOutput": "world"
+[
+  {
+    "input": {
+      "words": [
+        "w",
+        "wo",
+        "wor",
+        "worl",
+        "world"
+      ]
     },
-    {
-      "input": {
-        "words": [
-          "a",
-          "banana",
-          "app",
-          "appl",
-          "ap",
-          "apply",
-          "apple"
-        ]
-      },
-      "expectedOutput": "apple"
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "words": [
-          "yo",
-          "ew",
-          "fc",
-          "zrc",
-          "yodn",
-          "fcm",
-          "qm",
-          "qmo",
-          "fcmz",
-          "z",
-          "ewq",
-          "yod",
-          "ewqz",
-          "y"
-        ]
-      },
-      "expectedOutput": "yodn"
-    }
-  ]
-}
+    "expectedOutput": "world"
+  },
+  {
+    "input": {
+      "words": [
+        "a",
+        "banana",
+        "app",
+        "appl",
+        "ap",
+        "apply",
+        "apple"
+      ]
+    },
+    "expectedOutput": "apple"
+  }
+]

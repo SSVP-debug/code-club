@@ -1,111 +1,80 @@
-{
-  "visible": [
-    {
-      "input": {
-        "board": [
-          [
-            "A",
-            "B",
-            "C",
-            "E"
-          ],
-          [
-            "S",
-            "F",
-            "C",
-            "S"
-          ],
-          [
-            "A",
-            "D",
-            "E",
-            "E"
-          ]
+[
+  {
+    "input": {
+      "board": [
+        [
+          "A",
+          "B",
+          "C",
+          "E"
         ],
-        "word": "ABCCED"
-      },
-      "expectedOutput": true
+        [
+          "S",
+          "F",
+          "C",
+          "S"
+        ],
+        [
+          "A",
+          "D",
+          "E",
+          "E"
+        ]
+      ],
+      "word": "ABCCED"
     },
-    {
-      "input": {
-        "board": [
-          [
-            "A",
-            "B",
-            "C",
-            "E"
-          ],
-          [
-            "S",
-            "F",
-            "C",
-            "S"
-          ],
-          [
-            "A",
-            "D",
-            "E",
-            "E"
-          ]
+    "expectedOutput": true
+  },
+  {
+    "input": {
+      "board": [
+        [
+          "A",
+          "B",
+          "C",
+          "E"
         ],
-        "word": "SEE"
-      },
-      "expectedOutput": true
+        [
+          "S",
+          "F",
+          "C",
+          "S"
+        ],
+        [
+          "A",
+          "D",
+          "E",
+          "E"
+        ]
+      ],
+      "word": "SEE"
     },
-    {
-      "input": {
-        "board": [
-          [
-            "A",
-            "B",
-            "C",
-            "E"
-          ],
-          [
-            "S",
-            "F",
-            "C",
-            "S"
-          ],
-          [
-            "A",
-            "D",
-            "E",
-            "E"
-          ]
+    "expectedOutput": true
+  },
+  {
+    "input": {
+      "board": [
+        [
+          "A",
+          "B",
+          "C",
+          "E"
         ],
-        "word": "ABCB"
-      },
-      "expectedOutput": false
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "board": [
-          [
-            "a"
-          ]
+        [
+          "S",
+          "F",
+          "C",
+          "S"
         ],
-        "word": "a"
-      },
-      "expectedOutput": true
+        [
+          "A",
+          "D",
+          "E",
+          "E"
+        ]
+      ],
+      "word": "ABCB"
     },
-    {
-      "input": {
-        "board": [
-          [
-            "a",
-            "b"
-          ],
-          [
-            "c",
-            "d"
-          ]
-        ],
-        "word": "abdc"
-      },
-      "expectedOutput": true
-    }
-  ]
-}
+    "expectedOutput": false
+  }
+]

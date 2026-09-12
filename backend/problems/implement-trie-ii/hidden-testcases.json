@@ -1,0 +1,27 @@
+[
+  {
+    "input": {
+      "ops": [
+        "insert",
+        "countWordsEqualTo",
+        "countWordsStartingWith"
+      ],
+      "vals": [
+        [
+          "bag"
+        ],
+        [
+          "bag"
+        ],
+        [
+          "ba"
+        ]
+      ]
+    },
+    "expectedOutput": [
+      null,
+      1,
+      1
+    ]
+  }
+]

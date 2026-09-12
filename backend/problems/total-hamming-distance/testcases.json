@@ -1,45 +1,22 @@
-{
-  "visible": [
-    {
-      "input": {
-        "nums": [
-          4,
-          14,
-          2
-        ]
-      },
-      "expectedOutput": 6
+[
+  {
+    "input": {
+      "nums": [
+        4,
+        14,
+        2
+      ]
     },
-    {
-      "input": {
-        "nums": [
-          4,
-          14,
-          4
-        ]
-      },
-      "expectedOutput": 4
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "nums": [
-          0,
-          0
-        ]
-      },
-      "expectedOutput": 0
+    "expectedOutput": 6
+  },
+  {
+    "input": {
+      "nums": [
+        4,
+        14,
+        4
+      ]
     },
-    {
-      "input": {
-        "nums": [
-          1,
-          2,
-          3
-        ]
-      },
-      "expectedOutput": 4
-    }
-  ]
-}
+    "expectedOutput": 4
+  }
+]

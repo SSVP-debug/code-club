@@ -1,0 +1,31 @@
+[
+  {
+    "input": {
+      "root": [
+        3,
+        1,
+        4,
+        null,
+        2
+      ],
+      "ops": [
+        "next",
+        "next",
+        "hasNext",
+        "next"
+      ],
+      "vals": [
+        [],
+        [],
+        [],
+        []
+      ]
+    },
+    "expectedOutput": [
+      1,
+      2,
+      true,
+      3
+    ]
+  }
+]

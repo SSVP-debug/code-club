@@ -1,0 +1,22 @@
+[
+  {
+    "input": {
+      "root": [
+        1
+      ]
+    },
+    "expectedOutput": 1
+  },
+  {
+    "input": {
+      "root": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "expectedOutput": 3
+  }
+]

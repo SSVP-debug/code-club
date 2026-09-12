@@ -1,0 +1,16 @@
+[
+  {
+    "input": {
+      "s": "A",
+      "k": 0
+    },
+    "expectedOutput": 1
+  },
+  {
+    "input": {
+      "s": "ABCDE",
+      "k": 1
+    },
+    "expectedOutput": 2
+  }
+]

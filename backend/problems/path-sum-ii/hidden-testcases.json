@@ -1,0 +1,27 @@
+[
+  {
+    "input": {
+      "root": [
+        1,
+        2
+      ],
+      "targetSum": 1
+    },
+    "expectedOutput": []
+  },
+  {
+    "input": {
+      "root": [
+        1,
+        2
+      ],
+      "targetSum": 3
+    },
+    "expectedOutput": [
+      [
+        1,
+        2
+      ]
+    ]
+  }
+]

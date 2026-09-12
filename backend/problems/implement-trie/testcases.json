@@ -1,68 +1,40 @@
-{
-  "visible": [
-    {
-      "input": {
-        "ops": [
-          "insert",
-          "search",
-          "search",
-          "startsWith",
-          "insert",
-          "search"
+[
+  {
+    "input": {
+      "ops": [
+        "insert",
+        "search",
+        "search",
+        "startsWith",
+        "insert",
+        "search"
+      ],
+      "vals": [
+        [
+          "apple"
         ],
-        "vals": [
-          [
-            "apple"
-          ],
-          [
-            "apple"
-          ],
-          [
-            "app"
-          ],
-          [
-            "app"
-          ],
-          [
-            "app"
-          ],
-          [
-            "app"
-          ]
-        ]
-      },
-      "expectedOutput": [
-        true,
-        false,
-        true,
-        true
-      ]
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "ops": [
-          "insert",
-          "search",
-          "startsWith"
+        [
+          "apple"
         ],
-        "vals": [
-          [
-            "hello"
-          ],
-          [
-            "hello"
-          ],
-          [
-            "hel"
-          ]
+        [
+          "app"
+        ],
+        [
+          "app"
+        ],
+        [
+          "app"
+        ],
+        [
+          "app"
         ]
-      },
-      "expectedOutput": [
-        true,
-        true
       ]
-    }
-  ]
-}
+    },
+    "expectedOutput": [
+      true,
+      false,
+      true,
+      true
+    ]
+  }
+]

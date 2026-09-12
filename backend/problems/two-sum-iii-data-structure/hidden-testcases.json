@@ -1,0 +1,47 @@
+[
+  {
+    "input": {
+      "ops": [
+        "add",
+        "find"
+      ],
+      "vals": [
+        [
+          0
+        ],
+        [
+          0
+        ]
+      ]
+    },
+    "expectedOutput": [
+      null,
+      false
+    ]
+  },
+  {
+    "input": {
+      "ops": [
+        "add",
+        "add",
+        "find"
+      ],
+      "vals": [
+        [
+          3
+        ],
+        [
+          3
+        ],
+        [
+          6
+        ]
+      ]
+    },
+    "expectedOutput": [
+      null,
+      null,
+      true
+    ]
+  }
+]

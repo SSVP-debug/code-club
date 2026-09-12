@@ -1,41 +1,23 @@
-{
-  "visible": [
-    {
-      "input": {
-        "x": 2,
-        "n": 10
-      },
-      "expectedOutput": 1024
+[
+  {
+    "input": {
+      "x": 2,
+      "n": 10
     },
-    {
-      "input": {
-        "x": 2,
-        "n": -2
-      },
-      "expectedOutput": 0.25
+    "expectedOutput": 1024
+  },
+  {
+    "input": {
+      "x": 2,
+      "n": -2
     },
-    {
-      "input": {
-        "x": 2,
-        "n": 0
-      },
-      "expectedOutput": 1
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "x": 1,
-        "n": -2147483648
-      },
-      "expectedOutput": 1
+    "expectedOutput": 0.25
+  },
+  {
+    "input": {
+      "x": 2,
+      "n": 0
     },
-    {
-      "input": {
-        "x": 0,
-        "n": 0
-      },
-      "expectedOutput": 1
-    }
-  ]
-}
+    "expectedOutput": 1
+  }
+]

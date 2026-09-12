@@ -1,0 +1,23 @@
+[
+  {
+    "input": {
+      "strs": [
+        "abc",
+        "bca",
+        "cab",
+        "xyz"
+      ]
+    },
+    "expectedOutput": 2
+  },
+  {
+    "input": {
+      "strs": [
+        "a",
+        "b",
+        "c"
+      ]
+    },
+    "expectedOutput": 3
+  }
+]

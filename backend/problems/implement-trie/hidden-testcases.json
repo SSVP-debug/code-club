@@ -1,0 +1,26 @@
+[
+  {
+    "input": {
+      "ops": [
+        "insert",
+        "search",
+        "startsWith"
+      ],
+      "vals": [
+        [
+          "hello"
+        ],
+        [
+          "hello"
+        ],
+        [
+          "hel"
+        ]
+      ]
+    },
+    "expectedOutput": [
+      true,
+      true
+    ]
+  }
+]

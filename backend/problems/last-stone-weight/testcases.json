@@ -1,58 +1,32 @@
-{
-  "visible": [
-    {
-      "input": {
-        "stones": [
-          2,
-          7,
-          4,
-          1,
-          8,
-          1
-        ]
-      },
-      "expectedOutput": 1
+[
+  {
+    "input": {
+      "stones": [
+        2,
+        7,
+        4,
+        1,
+        8,
+        1
+      ]
     },
-    {
-      "input": {
-        "stones": [
-          1
-        ]
-      },
-      "expectedOutput": 1
+    "expectedOutput": 1
+  },
+  {
+    "input": {
+      "stones": [
+        1
+      ]
     },
-    {
-      "input": {
-        "stones": [
-          3,
-          3
-        ]
-      },
-      "expectedOutput": 0
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "stones": [
-          10,
-          4,
-          2,
-          10
-        ]
-      },
-      "expectedOutput": 2
+    "expectedOutput": 1
+  },
+  {
+    "input": {
+      "stones": [
+        3,
+        3
+      ]
     },
-    {
-      "input": {
-        "stones": [
-          1,
-          1,
-          1,
-          1
-        ]
-      },
-      "expectedOutput": 0
-    }
-  ]
-}
+    "expectedOutput": 0
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "input": {
+      "beginWord": "a",
+      "endWord": "c",
+      "wordList": [
+        "a",
+        "b",
+        "c"
+      ]
+    },
+    "expectedOutput": 2
+  }
+]

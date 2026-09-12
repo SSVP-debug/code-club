@@ -1,81 +1,48 @@
-{
-  "visible": [
-    {
-      "input": {
-        "root": [
-          7,
-          3,
-          15,
-          null,
-          null,
-          9,
-          20
-        ],
-        "ops": [
-          "next",
-          "next",
-          "hasNext",
-          "next",
-          "hasNext",
-          "next",
-          "hasNext",
-          "next",
-          "hasNext"
-        ],
-        "vals": [
-          [],
-          [],
-          [],
-          [],
-          [],
-          [],
-          [],
-          [],
-          []
-        ]
-      },
-      "expectedOutput": [
+[
+  {
+    "input": {
+      "root": [
+        7,
         3,
-        9,
-        true,
         15,
-        true,
-        20,
-        false,
         null,
-        false
+        null,
+        9,
+        20
+      ],
+      "ops": [
+        "next",
+        "next",
+        "hasNext",
+        "next",
+        "hasNext",
+        "next",
+        "hasNext",
+        "next",
+        "hasNext"
+      ],
+      "vals": [
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        []
       ]
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "root": [
-          3,
-          1,
-          4,
-          null,
-          2
-        ],
-        "ops": [
-          "next",
-          "next",
-          "hasNext",
-          "next"
-        ],
-        "vals": [
-          [],
-          [],
-          [],
-          []
-        ]
-      },
-      "expectedOutput": [
-        1,
-        2,
-        true,
-        3
-      ]
-    }
-  ]
-}
+    },
+    "expectedOutput": [
+      3,
+      9,
+      true,
+      15,
+      true,
+      20,
+      false,
+      null,
+      false
+    ]
+  }
+]

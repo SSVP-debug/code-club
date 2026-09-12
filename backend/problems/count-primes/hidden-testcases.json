@@ -1,0 +1,14 @@
+[
+  {
+    "input": {
+      "n": 2
+    },
+    "expectedOutput": 0
+  },
+  {
+    "input": {
+      "n": 20
+    },
+    "expectedOutput": 8
+  }
+]

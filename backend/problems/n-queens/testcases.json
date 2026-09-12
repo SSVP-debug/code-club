@@ -1,47 +1,31 @@
-{
-  "visible": [
-    {
-      "input": {
-        "n": 4
-      },
-      "expectedOutput": [
-        [
-          ".Q..",
-          "...Q",
-          "Q...",
-          "..Q."
-        ],
-        [
-          "..Q.",
-          "Q...",
-          "...Q",
-          ".Q.."
-        ]
-      ]
+[
+  {
+    "input": {
+      "n": 4
     },
-    {
-      "input": {
-        "n": 1
-      },
-      "expectedOutput": [
-        [
-          "Q"
-        ]
+    "expectedOutput": [
+      [
+        ".Q..",
+        "...Q",
+        "Q...",
+        "..Q."
+      ],
+      [
+        "..Q.",
+        "Q...",
+        "...Q",
+        ".Q.."
       ]
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "n": 2
-      },
-      "expectedOutput": []
+    ]
+  },
+  {
+    "input": {
+      "n": 1
     },
-    {
-      "input": {
-        "n": 3
-      },
-      "expectedOutput": []
-    }
-  ]
-}
+    "expectedOutput": [
+      [
+        "Q"
+      ]
+    ]
+  }
+]

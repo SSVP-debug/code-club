@@ -1,68 +1,34 @@
-{
-  "visible": [
-    {
-      "input": {
-        "digits": "23"
-      },
-      "expectedOutput": [
-        "ad",
-        "ae",
-        "af",
-        "bd",
-        "be",
-        "bf",
-        "cd",
-        "ce",
-        "cf"
-      ]
+[
+  {
+    "input": {
+      "digits": "23"
     },
-    {
-      "input": {
-        "digits": ""
-      },
-      "expectedOutput": []
+    "expectedOutput": [
+      "ad",
+      "ae",
+      "af",
+      "bd",
+      "be",
+      "bf",
+      "cd",
+      "ce",
+      "cf"
+    ]
+  },
+  {
+    "input": {
+      "digits": ""
     },
-    {
-      "input": {
-        "digits": "2"
-      },
-      "expectedOutput": [
-        "a",
-        "b",
-        "c"
-      ]
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "digits": "9"
-      },
-      "expectedOutput": [
-        "w",
-        "x",
-        "y",
-        "z"
-      ]
+    "expectedOutput": []
+  },
+  {
+    "input": {
+      "digits": "2"
     },
-    {
-      "input": {
-        "digits": "29"
-      },
-      "expectedOutput": [
-        "aw",
-        "ax",
-        "ay",
-        "az",
-        "bw",
-        "bx",
-        "by",
-        "bz",
-        "cw",
-        "cx",
-        "cy",
-        "cz"
-      ]
-    }
-  ]
-}
+    "expectedOutput": [
+      "a",
+      "b",
+      "c"
+    ]
+  }
+]

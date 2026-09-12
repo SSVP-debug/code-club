@@ -1,0 +1,22 @@
+[
+  {
+    "input": {
+      "s": "ab",
+      "wordDict": [
+        "a",
+        "b"
+      ]
+    },
+    "expectedOutput": true
+  },
+  {
+    "input": {
+      "s": "aaaaaaa",
+      "wordDict": [
+        "aaaa",
+        "aaa"
+      ]
+    },
+    "expectedOutput": true
+  }
+]

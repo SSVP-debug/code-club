@@ -1,0 +1,37 @@
+[
+  {
+    "input": {
+      "ops": [
+        [
+          "push",
+          10
+        ],
+        [
+          "push",
+          5
+        ],
+        [
+          "push",
+          15
+        ],
+        [
+          "getMin"
+        ],
+        [
+          "pop"
+        ],
+        [
+          "getMin"
+        ],
+        [
+          "top"
+        ]
+      ]
+    },
+    "expectedOutput": [
+      5,
+      5,
+      10
+    ]
+  }
+]

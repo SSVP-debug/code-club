@@ -1,0 +1,14 @@
+[
+  {
+    "input": {
+      "s": ""
+    },
+    "expectedOutput": 0
+  },
+  {
+    "input": {
+      "s": "dvdf"
+    },
+    "expectedOutput": 3
+  }
+]

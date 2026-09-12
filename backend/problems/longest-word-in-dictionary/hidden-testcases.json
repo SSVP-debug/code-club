@@ -1,0 +1,23 @@
+[
+  {
+    "input": {
+      "words": [
+        "yo",
+        "ew",
+        "fc",
+        "zrc",
+        "yodn",
+        "fcm",
+        "qm",
+        "qmo",
+        "fcmz",
+        "z",
+        "ewq",
+        "yod",
+        "ewqz",
+        "y"
+      ]
+    },
+    "expectedOutput": "yodn"
+  }
+]

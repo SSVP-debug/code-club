@@ -1,72 +1,44 @@
-{
-  "visible": [
-    {
-      "input": {
-        "ops": [
-          "addWord",
-          "addWord",
-          "addWord",
-          "search",
-          "search",
-          "search",
-          "search"
+[
+  {
+    "input": {
+      "ops": [
+        "addWord",
+        "addWord",
+        "addWord",
+        "search",
+        "search",
+        "search",
+        "search"
+      ],
+      "vals": [
+        [
+          "bad"
         ],
-        "vals": [
-          [
-            "bad"
-          ],
-          [
-            "dad"
-          ],
-          [
-            "mad"
-          ],
-          [
-            "pad"
-          ],
-          [
-            "bad"
-          ],
-          [
-            ".ad"
-          ],
-          [
-            "b.."
-          ]
-        ]
-      },
-      "expectedOutput": [
-        false,
-        true,
-        true,
-        true
-      ]
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "ops": [
-          "addWord",
-          "search",
-          "search"
+        [
+          "dad"
         ],
-        "vals": [
-          [
-            "a"
-          ],
-          [
-            "a"
-          ],
-          [
-            "."
-          ]
+        [
+          "mad"
+        ],
+        [
+          "pad"
+        ],
+        [
+          "bad"
+        ],
+        [
+          ".ad"
+        ],
+        [
+          "b.."
         ]
-      },
-      "expectedOutput": [
-        true,
-        true
       ]
-    }
-  ]
-}
+    },
+    "expectedOutput": [
+      false,
+      true,
+      true,
+      true
+    ]
+  }
+]

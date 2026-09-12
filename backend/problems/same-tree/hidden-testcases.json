@@ -1,0 +1,20 @@
+[
+  {
+    "input": {
+      "p": [],
+      "q": []
+    },
+    "expectedOutput": true
+  },
+  {
+    "input": {
+      "p": [
+        1
+      ],
+      "q": [
+        1
+      ]
+    },
+    "expectedOutput": true
+  }
+]

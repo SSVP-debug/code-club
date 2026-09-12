@@ -1,36 +1,20 @@
-{
-  "visible": [
-    {
-      "input": {
-        "s": "III"
-      },
-      "expectedOutput": 3
+[
+  {
+    "input": {
+      "s": "III"
     },
-    {
-      "input": {
-        "s": "LVIII"
-      },
-      "expectedOutput": 58
+    "expectedOutput": 3
+  },
+  {
+    "input": {
+      "s": "LVIII"
     },
-    {
-      "input": {
-        "s": "MCMXCIV"
-      },
-      "expectedOutput": 1994
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "s": "IV"
-      },
-      "expectedOutput": 4
+    "expectedOutput": 58
+  },
+  {
+    "input": {
+      "s": "MCMXCIV"
     },
-    {
-      "input": {
-        "s": "IX"
-      },
-      "expectedOutput": 9
-    }
-  ]
-}
+    "expectedOutput": 1994
+  }
+]

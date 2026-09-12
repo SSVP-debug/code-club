@@ -1,0 +1,14 @@
+[
+  {
+    "input": {
+      "columnTitle": "Z"
+    },
+    "expectedOutput": 26
+  },
+  {
+    "input": {
+      "columnTitle": "AA"
+    },
+    "expectedOutput": 27
+  }
+]

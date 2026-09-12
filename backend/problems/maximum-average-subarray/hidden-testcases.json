@@ -1,0 +1,26 @@
+[
+  {
+    "input": {
+      "nums": [
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "k": 3
+    },
+    "expectedOutput": 3
+  },
+  {
+    "input": {
+      "nums": [
+        -1,
+        -12,
+        -5
+      ],
+      "k": 2
+    },
+    "expectedOutput": -6.5
+  }
+]

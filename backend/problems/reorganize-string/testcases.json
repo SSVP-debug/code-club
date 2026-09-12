@@ -1,36 +1,20 @@
-{
-  "visible": [
-    {
-      "input": {
-        "s": "aab"
-      },
-      "expectedOutput": "aba"
+[
+  {
+    "input": {
+      "s": "aab"
     },
-    {
-      "input": {
-        "s": "aaab"
-      },
-      "expectedOutput": ""
+    "expectedOutput": "aba"
+  },
+  {
+    "input": {
+      "s": "aaab"
     },
-    {
-      "input": {
-        "s": "a"
-      },
-      "expectedOutput": "a"
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "s": "aaabb"
-      },
-      "expectedOutput": "ababa"
+    "expectedOutput": ""
+  },
+  {
+    "input": {
+      "s": "a"
     },
-    {
-      "input": {
-        "s": "aaaabbb"
-      },
-      "expectedOutput": "abababa"
-    }
-  ]
-}
+    "expectedOutput": "a"
+  }
+]

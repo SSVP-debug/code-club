@@ -1,56 +1,31 @@
-{
-  "visible": [
-    {
-      "input": {
-        "strs": [
-          "eat",
-          "tea",
-          "tan",
-          "ate",
-          "nat",
-          "bat"
-        ]
-      },
-      "expectedOutput": 3
+[
+  {
+    "input": {
+      "strs": [
+        "eat",
+        "tea",
+        "tan",
+        "ate",
+        "nat",
+        "bat"
+      ]
     },
-    {
-      "input": {
-        "strs": [
-          ""
-        ]
-      },
-      "expectedOutput": 1
+    "expectedOutput": 3
+  },
+  {
+    "input": {
+      "strs": [
+        ""
+      ]
     },
-    {
-      "input": {
-        "strs": [
-          "a"
-        ]
-      },
-      "expectedOutput": 1
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "strs": [
-          "abc",
-          "bca",
-          "cab",
-          "xyz"
-        ]
-      },
-      "expectedOutput": 2
+    "expectedOutput": 1
+  },
+  {
+    "input": {
+      "strs": [
+        "a"
+      ]
     },
-    {
-      "input": {
-        "strs": [
-          "a",
-          "b",
-          "c"
-        ]
-      },
-      "expectedOutput": 3
-    }
-  ]
-}
+    "expectedOutput": 1
+  }
+]

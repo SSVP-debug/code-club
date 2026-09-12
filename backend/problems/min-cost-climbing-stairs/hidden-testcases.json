@@ -1,0 +1,21 @@
+[
+  {
+    "input": {
+      "cost": [
+        1,
+        2,
+        3
+      ]
+    },
+    "expectedOutput": 2
+  },
+  {
+    "input": {
+      "cost": [
+        10,
+        15
+      ]
+    },
+    "expectedOutput": 10
+  }
+]

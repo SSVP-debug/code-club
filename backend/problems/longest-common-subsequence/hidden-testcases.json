@@ -1,0 +1,16 @@
+[
+  {
+    "input": {
+      "text1": "bl",
+      "text2": "yby"
+    },
+    "expectedOutput": 1
+  },
+  {
+    "input": {
+      "text1": "bsbininm",
+      "text2": "jmjkbkjkv"
+    },
+    "expectedOutput": 2
+  }
+]

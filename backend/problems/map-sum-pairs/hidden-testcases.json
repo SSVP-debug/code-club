@@ -1,0 +1,34 @@
+[
+  {
+    "input": {
+      "ops": [
+        "insert",
+        "sum",
+        "insert",
+        "sum"
+      ],
+      "vals": [
+        [
+          "apple",
+          3
+        ],
+        [
+          "apple"
+        ],
+        [
+          "apple",
+          5
+        ],
+        [
+          "apple"
+        ]
+      ]
+    },
+    "expectedOutput": [
+      null,
+      3,
+      null,
+      5
+    ]
+  }
+]

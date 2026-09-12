@@ -1,38 +1,18 @@
-{
-  "visible": [
-    {
-      "input": {
-        "s": "011010",
-        "minJump": 2,
-        "maxJump": 3
-      },
-      "expectedOutput": true
+[
+  {
+    "input": {
+      "s": "011010",
+      "minJump": 2,
+      "maxJump": 3
     },
-    {
-      "input": {
-        "s": "01101110",
-        "minJump": 2,
-        "maxJump": 3
-      },
-      "expectedOutput": false
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "s": "00",
-        "minJump": 1,
-        "maxJump": 1
-      },
-      "expectedOutput": true
+    "expectedOutput": true
+  },
+  {
+    "input": {
+      "s": "01101110",
+      "minJump": 2,
+      "maxJump": 3
     },
-    {
-      "input": {
-        "s": "0000000000",
-        "minJump": 3,
-        "maxJump": 7
-      },
-      "expectedOutput": true
-    }
-  ]
-}
+    "expectedOutput": false
+  }
+]

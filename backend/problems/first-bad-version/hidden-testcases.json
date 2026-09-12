@@ -1,0 +1,16 @@
+[
+  {
+    "input": {
+      "n": 2126753390,
+      "bad": 1702766719
+    },
+    "expectedOutput": 1702766719
+  },
+  {
+    "input": {
+      "n": 100,
+      "bad": 1
+    },
+    "expectedOutput": 1
+  }
+]

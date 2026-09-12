@@ -1,82 +1,63 @@
-{
-  "visible": [
-    {
-      "input": {
-        "board": [
-          [
-            "o",
-            "a",
-            "a",
-            "n"
-          ],
-          [
-            "e",
-            "t",
-            "a",
-            "e"
-          ],
-          [
-            "i",
-            "h",
-            "k",
-            "r"
-          ],
-          [
-            "i",
-            "f",
-            "l",
-            "v"
-          ]
+[
+  {
+    "input": {
+      "board": [
+        [
+          "o",
+          "a",
+          "a",
+          "n"
         ],
-        "words": [
-          "oath",
-          "pea",
-          "eat",
-          "rain"
+        [
+          "e",
+          "t",
+          "a",
+          "e"
+        ],
+        [
+          "i",
+          "h",
+          "k",
+          "r"
+        ],
+        [
+          "i",
+          "f",
+          "l",
+          "v"
         ]
-      },
-      "expectedOutput": [
+      ],
+      "words": [
+        "oath",
+        "pea",
         "eat",
-        "oath"
+        "rain"
       ]
     },
-    {
-      "input": {
-        "board": [
-          [
-            "a",
-            "b"
-          ],
-          [
-            "c",
-            "d"
-          ]
+    "expectedOutput": [
+      "eat",
+      "oath"
+    ]
+  },
+  {
+    "input": {
+      "board": [
+        [
+          "a",
+          "b"
         ],
-        "words": [
-          "abdc",
-          "abcd"
+        [
+          "c",
+          "d"
         ]
-      },
-      "expectedOutput": [
-        "abdc"
+      ],
+      "words": [
+        "abdc",
+        "abcd"
       ]
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "board": [
-          [
-            "a"
-          ]
-        ],
-        "words": [
-          "a"
-        ]
-      },
-      "expectedOutput": [
-        "a"
-      ]
-    }
-  ]
-}
+    },
+    "expectedOutput": [
+      "abdc"
+    ]
+  }
+]

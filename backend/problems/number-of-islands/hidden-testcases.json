@@ -1,0 +1,28 @@
+[
+  {
+    "input": {
+      "grid": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "numCols": 5
+    },
+    "expectedOutput": 0
+  },
+  {
+    "input": {
+      "grid": [
+        1,
+        0,
+        1,
+        0,
+        1
+      ],
+      "numCols": 5
+    },
+    "expectedOutput": 3
+  }
+]

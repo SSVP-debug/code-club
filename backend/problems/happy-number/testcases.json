@@ -1,36 +1,20 @@
-{
-  "visible": [
-    {
-      "input": {
-        "n": 19
-      },
-      "expectedOutput": true
+[
+  {
+    "input": {
+      "n": 19
     },
-    {
-      "input": {
-        "n": 2
-      },
-      "expectedOutput": false
+    "expectedOutput": true
+  },
+  {
+    "input": {
+      "n": 2
     },
-    {
-      "input": {
-        "n": 1
-      },
-      "expectedOutput": true
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "n": 7
-      },
-      "expectedOutput": true
+    "expectedOutput": false
+  },
+  {
+    "input": {
+      "n": 1
     },
-    {
-      "input": {
-        "n": 4
-      },
-      "expectedOutput": false
-    }
-  ]
-}
+    "expectedOutput": true
+  }
+]

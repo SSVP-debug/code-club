@@ -1,89 +1,54 @@
-{
-  "visible": [
-    {
-      "input": {
-        "ops": [
-          "push",
-          "push",
-          "push",
-          "push",
-          "push",
-          "push",
-          "pop",
-          "pop",
-          "pop",
-          "pop"
+[
+  {
+    "input": {
+      "ops": [
+        "push",
+        "push",
+        "push",
+        "push",
+        "push",
+        "push",
+        "pop",
+        "pop",
+        "pop",
+        "pop"
+      ],
+      "vals": [
+        [
+          5
         ],
-        "vals": [
-          [
-            5
-          ],
-          [
-            7
-          ],
-          [
-            5
-          ],
-          [
-            7
-          ],
-          [
-            4
-          ],
-          [
-            5
-          ],
-          [],
-          [],
-          [],
-          []
-        ]
-      },
-      "expectedOutput": [
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        5,
-        7,
-        5,
-        4
-      ]
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "ops": [
-          "push",
-          "push",
-          "push",
-          "pop",
-          "pop"
+        [
+          7
         ],
-        "vals": [
-          [
-            1
-          ],
-          [
-            1
-          ],
-          [
-            2
-          ],
-          [],
-          []
-        ]
-      },
-      "expectedOutput": [
-        null,
-        null,
-        null,
-        1,
-        2
+        [
+          5
+        ],
+        [
+          7
+        ],
+        [
+          4
+        ],
+        [
+          5
+        ],
+        [],
+        [],
+        [],
+        []
       ]
-    }
-  ]
-}
+    },
+    "expectedOutput": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      5,
+      7,
+      5,
+      4
+    ]
+  }
+]

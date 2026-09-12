@@ -1,0 +1,28 @@
+[
+  {
+    "input": {
+      "root": [
+        6,
+        2,
+        8
+      ],
+      "p": 2,
+      "q": 8
+    },
+    "expectedOutput": 6
+  },
+  {
+    "input": {
+      "root": [
+        3,
+        1,
+        4,
+        null,
+        2
+      ],
+      "p": 1,
+      "q": 4
+    },
+    "expectedOutput": 3
+  }
+]

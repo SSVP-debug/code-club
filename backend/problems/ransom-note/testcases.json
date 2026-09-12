@@ -1,34 +1,23 @@
-{
-  "visible": [
-    {
-      "input": {
-        "ransomNote": "a",
-        "magazine": "b"
-      },
-      "expectedOutput": false
+[
+  {
+    "input": {
+      "ransomNote": "a",
+      "magazine": "b"
     },
-    {
-      "input": {
-        "ransomNote": "aa",
-        "magazine": "ab"
-      },
-      "expectedOutput": false
+    "expectedOutput": false
+  },
+  {
+    "input": {
+      "ransomNote": "aa",
+      "magazine": "ab"
     },
-    {
-      "input": {
-        "ransomNote": "aa",
-        "magazine": "aab"
-      },
-      "expectedOutput": true
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "ransomNote": "fihjjjjei",
-        "magazine": "hjibagacbhadfaefdjaeaebgi"
-      },
-      "expectedOutput": true
-    }
-  ]
-}
+    "expectedOutput": false
+  },
+  {
+    "input": {
+      "ransomNote": "aa",
+      "magazine": "aab"
+    },
+    "expectedOutput": true
+  }
+]

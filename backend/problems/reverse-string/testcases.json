@@ -1,36 +1,20 @@
-{
-  "visible": [
-    {
-      "input": {
-        "s": "hello"
-      },
-      "expectedOutput": "olleh"
+[
+  {
+    "input": {
+      "s": "hello"
     },
-    {
-      "input": {
-        "s": "Hannah"
-      },
-      "expectedOutput": "hannaH"
+    "expectedOutput": "olleh"
+  },
+  {
+    "input": {
+      "s": "Hannah"
     },
-    {
-      "input": {
-        "s": "a"
-      },
-      "expectedOutput": "a"
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "s": "abcde"
-      },
-      "expectedOutput": "edcba"
+    "expectedOutput": "hannaH"
+  },
+  {
+    "input": {
+      "s": "a"
     },
-    {
-      "input": {
-        "s": "racecar"
-      },
-      "expectedOutput": "racecar"
-    }
-  ]
-}
+    "expectedOutput": "a"
+  }
+]

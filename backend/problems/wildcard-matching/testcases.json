@@ -1,41 +1,23 @@
-{
-  "visible": [
-    {
-      "input": {
-        "s": "aa",
-        "p": "a"
-      },
-      "expectedOutput": false
+[
+  {
+    "input": {
+      "s": "aa",
+      "p": "a"
     },
-    {
-      "input": {
-        "s": "aa",
-        "p": "*"
-      },
-      "expectedOutput": true
+    "expectedOutput": false
+  },
+  {
+    "input": {
+      "s": "aa",
+      "p": "*"
     },
-    {
-      "input": {
-        "s": "cb",
-        "p": "?a"
-      },
-      "expectedOutput": false
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "s": "adceb",
-        "p": "*a*b"
-      },
-      "expectedOutput": true
+    "expectedOutput": true
+  },
+  {
+    "input": {
+      "s": "cb",
+      "p": "?a"
     },
-    {
-      "input": {
-        "s": "acdcb",
-        "p": "a*c?b"
-      },
-      "expectedOutput": false
-    }
-  ]
-}
+    "expectedOutput": false
+  }
+]

@@ -1,0 +1,40 @@
+[
+  {
+    "input": {
+      "firstList": [
+        [
+          1,
+          3
+        ],
+        [
+          5,
+          9
+        ]
+      ],
+      "secondList": []
+    },
+    "expectedOutput": []
+  },
+  {
+    "input": {
+      "firstList": [
+        [
+          1,
+          7
+        ]
+      ],
+      "secondList": [
+        [
+          3,
+          10
+        ]
+      ]
+    },
+    "expectedOutput": [
+      [
+        3,
+        7
+      ]
+    ]
+  }
+]

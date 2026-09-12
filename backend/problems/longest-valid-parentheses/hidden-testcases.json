@@ -1,0 +1,14 @@
+[
+  {
+    "input": {
+      "s": "()()"
+    },
+    "expectedOutput": 4
+  },
+  {
+    "input": {
+      "s": "((("
+    },
+    "expectedOutput": 0
+  }
+]

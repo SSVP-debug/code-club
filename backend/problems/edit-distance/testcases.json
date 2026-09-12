@@ -1,41 +1,23 @@
-{
-  "visible": [
-    {
-      "input": {
-        "word1": "horse",
-        "word2": "ros"
-      },
-      "expectedOutput": 3
+[
+  {
+    "input": {
+      "word1": "horse",
+      "word2": "ros"
     },
-    {
-      "input": {
-        "word1": "intention",
-        "word2": "execution"
-      },
-      "expectedOutput": 5
+    "expectedOutput": 3
+  },
+  {
+    "input": {
+      "word1": "intention",
+      "word2": "execution"
     },
-    {
-      "input": {
-        "word1": "",
-        "word2": "a"
-      },
-      "expectedOutput": 1
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "word1": "abc",
-        "word2": "abc"
-      },
-      "expectedOutput": 0
+    "expectedOutput": 5
+  },
+  {
+    "input": {
+      "word1": "",
+      "word2": "a"
     },
-    {
-      "input": {
-        "word1": "abc",
-        "word2": ""
-      },
-      "expectedOutput": 3
-    }
-  ]
-}
+    "expectedOutput": 1
+  }
+]

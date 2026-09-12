@@ -1,85 +1,57 @@
-{
-  "visible": [
-    {
-      "input": {
-        "nums": [
-          1,
-          1,
-          1,
-          0,
-          0,
-          0,
-          1,
-          1,
-          1,
-          1,
-          0
-        ],
-        "k": 2
-      },
-      "expectedOutput": 6
+[
+  {
+    "input": {
+      "nums": [
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        0
+      ],
+      "k": 2
     },
-    {
-      "input": {
-        "nums": [
-          0,
-          0,
-          1,
-          1,
-          0,
-          0,
-          1,
-          1,
-          1,
-          0,
-          1,
-          1,
-          0,
-          0,
-          0,
-          1,
-          1,
-          1,
-          1
-        ],
-        "k": 3
-      },
-      "expectedOutput": 10
+    "expectedOutput": 6
+  },
+  {
+    "input": {
+      "nums": [
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1
+      ],
+      "k": 3
     },
-    {
-      "input": {
-        "nums": [
-          0
-        ],
-        "k": 0
-      },
-      "expectedOutput": 0
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "nums": [
-          1,
-          1,
-          1,
-          1
-        ],
-        "k": 0
-      },
-      "expectedOutput": 4
+    "expectedOutput": 10
+  },
+  {
+    "input": {
+      "nums": [
+        0
+      ],
+      "k": 0
     },
-    {
-      "input": {
-        "nums": [
-          0,
-          0,
-          0,
-          0
-        ],
-        "k": 2
-      },
-      "expectedOutput": 2
-    }
-  ]
-}
+    "expectedOutput": 0
+  }
+]

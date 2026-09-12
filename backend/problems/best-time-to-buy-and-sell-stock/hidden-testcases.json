@@ -1,0 +1,22 @@
+[
+  {
+    "input": {
+      "prices": [
+        2,
+        4,
+        1
+      ]
+    },
+    "expectedOutput": 2
+  },
+  {
+    "input": {
+      "prices": [
+        1,
+        1,
+        1
+      ]
+    },
+    "expectedOutput": 0
+  }
+]

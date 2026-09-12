@@ -1,47 +1,31 @@
-{
-  "visible": [
-    {
-      "input": {
-        "beginWord": "hit",
-        "endWord": "cog",
-        "wordList": [
-          "hot",
-          "dot",
-          "dog",
-          "lot",
-          "log",
-          "cog"
-        ]
-      },
-      "expectedOutput": 5
+[
+  {
+    "input": {
+      "beginWord": "hit",
+      "endWord": "cog",
+      "wordList": [
+        "hot",
+        "dot",
+        "dog",
+        "lot",
+        "log",
+        "cog"
+      ]
     },
-    {
-      "input": {
-        "beginWord": "hit",
-        "endWord": "cog",
-        "wordList": [
-          "hot",
-          "dot",
-          "dog",
-          "lot",
-          "log"
-        ]
-      },
-      "expectedOutput": 0
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "beginWord": "a",
-        "endWord": "c",
-        "wordList": [
-          "a",
-          "b",
-          "c"
-        ]
-      },
-      "expectedOutput": 2
-    }
-  ]
-}
+    "expectedOutput": 5
+  },
+  {
+    "input": {
+      "beginWord": "hit",
+      "endWord": "cog",
+      "wordList": [
+        "hot",
+        "dot",
+        "dog",
+        "lot",
+        "log"
+      ]
+    },
+    "expectedOutput": 0
+  }
+]

@@ -1,0 +1,16 @@
+[
+  {
+    "input": {
+      "target": 10,
+      "position": [
+        6,
+        8
+      ],
+      "speed": [
+        3,
+        2
+      ]
+    },
+    "expectedOutput": 2
+  }
+]

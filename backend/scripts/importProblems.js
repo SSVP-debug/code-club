@@ -57,9 +57,23 @@ async function main() {
                 "utf8"
             );
 
-        const testcases = JSON.parse(
+        // Sept 2026 audit, Batch 5: was a single testcases.json holding
+        // {visible, hidden} together (see problemFolderFiles.js's comment
+        // for why these were split into separate files). Read side updated
+        // to match; ProblemFolderSchema below is unchanged — it validates
+        // the already-parsed `visibleTestcases`/`hiddenTestcases` fields,
+        // not the raw on-disk file layout, so this is the only read-side
+        // change needed.
+        const visibleTestcases = JSON.parse(
             await fs.readFile(
                 path.join(folderPath, "testcases.json"),
+                "utf8"
+            )
+        );
+
+        const hiddenTestcases = JSON.parse(
+            await fs.readFile(
+                path.join(folderPath, "hidden-testcases.json"),
                 "utf8"
             )
         );
@@ -104,10 +118,8 @@ async function main() {
             ProblemFolderSchema.safeParse({
                 meta,
                 description,
-                visibleTestcases:
-                    testcases.visible,
-                hiddenTestcases:
-                    testcases.hidden,
+                visibleTestcases,
+                hiddenTestcases,
                 starterCode,
                 editorial,
                 hints,
@@ -128,11 +140,10 @@ async function main() {
 
         // Content & Execution Architecture, Phase 3 adapter — same
         // reasoning as the equivalent change in scripts/seedProblems.js:
-        // the folder format's testcases.json is unchanged (still
-        // {visible, hidden}), this just wraps `testcases.hidden` into
-        // Problem.js's actual `hiddenTestcaseSet` sub-document at the one
-        // point this script writes to Mongo, preserving whatever
-        // `enabled` state already exists there rather than resetting it.
+        // this wraps the hidden testcases into Problem.js's actual
+        // `hiddenTestcaseSet` sub-document at the one point this script
+        // writes to Mongo, preserving whatever `enabled` state already
+        // exists there rather than resetting it.
         const existingForHiddenSet = DRY_RUN
             ? null
             : await Problem.findOne({ slug: meta.slug }).lean();
@@ -141,12 +152,12 @@ async function main() {
             ...meta,
             description,
             visibleTestCases:
-                testcases.visible,
+                visibleTestcases,
             testcases:
-                testcases.visible,
+                visibleTestcases,
             hiddenTestcaseSet: {
                 enabled: existingForHiddenSet?.hiddenTestcaseSet?.enabled ?? true,
-                testcases: testcases.hidden,
+                testcases: hiddenTestcases,
             },
             starterCode,
             editorial: {

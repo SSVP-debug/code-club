@@ -1,0 +1,22 @@
+[
+  {
+    "input": {
+      "piles": [
+        1,
+        2
+      ]
+    },
+    "expectedOutput": true
+  },
+  {
+    "input": {
+      "piles": [
+        1,
+        100,
+        3,
+        5
+      ]
+    },
+    "expectedOutput": true
+  }
+]

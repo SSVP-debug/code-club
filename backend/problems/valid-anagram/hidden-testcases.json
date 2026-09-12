@@ -1,0 +1,16 @@
+[
+  {
+    "input": {
+      "s": "listen",
+      "t": "silent"
+    },
+    "expectedOutput": true
+  },
+  {
+    "input": {
+      "s": "hello",
+      "t": "world"
+    },
+    "expectedOutput": false
+  }
+]

@@ -1,0 +1,23 @@
+[
+  {
+    "input": {
+      "candidates": [
+        3,
+        5,
+        7
+      ],
+      "target": 12
+    },
+    "expectedOutput": 2
+  },
+  {
+    "input": {
+      "candidates": [
+        1,
+        2
+      ],
+      "target": 4
+    },
+    "expectedOutput": 3
+  }
+]

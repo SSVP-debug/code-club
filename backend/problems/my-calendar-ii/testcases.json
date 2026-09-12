@@ -1,80 +1,48 @@
-{
-  "visible": [
-    {
-      "input": {
-        "ops": [
-          "book",
-          "book",
-          "book",
-          "book",
-          "book",
-          "book"
+[
+  {
+    "input": {
+      "ops": [
+        "book",
+        "book",
+        "book",
+        "book",
+        "book",
+        "book"
+      ],
+      "vals": [
+        [
+          10,
+          20
         ],
-        "vals": [
-          [
-            10,
-            20
-          ],
-          [
-            50,
-            60
-          ],
-          [
-            10,
-            40
-          ],
-          [
-            5,
-            15
-          ],
-          [
-            5,
-            10
-          ],
-          [
-            25,
-            55
-          ]
-        ]
-      },
-      "expectedOutput": [
-        true,
-        true,
-        true,
-        false,
-        true,
-        true
-      ]
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "ops": [
-          "book",
-          "book",
-          "book"
+        [
+          50,
+          60
         ],
-        "vals": [
-          [
-            0,
-            10
-          ],
-          [
-            0,
-            10
-          ],
-          [
-            0,
-            10
-          ]
+        [
+          10,
+          40
+        ],
+        [
+          5,
+          15
+        ],
+        [
+          5,
+          10
+        ],
+        [
+          25,
+          55
         ]
-      },
-      "expectedOutput": [
-        true,
-        true,
-        false
       ]
-    }
-  ]
-}
+    },
+    "expectedOutput": [
+      true,
+      true,
+      true,
+      false,
+      true,
+      true
+    ]
+  }
+]

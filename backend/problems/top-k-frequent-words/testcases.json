@@ -1,73 +1,42 @@
-{
-  "visible": [
-    {
-      "input": {
-        "words": [
-          "i",
-          "love",
-          "leetcode",
-          "i",
-          "love",
-          "coding"
-        ],
-        "k": 2
-      },
-      "expectedOutput": [
+[
+  {
+    "input": {
+      "words": [
         "i",
-        "love"
-      ]
+        "love",
+        "leetcode",
+        "i",
+        "love",
+        "coding"
+      ],
+      "k": 2
     },
-    {
-      "input": {
-        "words": [
-          "the",
-          "day",
-          "is",
-          "sunny",
-          "the",
-          "the",
-          "the",
-          "sunny",
-          "is",
-          "is"
-        ],
-        "k": 4
-      },
-      "expectedOutput": [
+    "expectedOutput": [
+      "i",
+      "love"
+    ]
+  },
+  {
+    "input": {
+      "words": [
         "the",
+        "day",
         "is",
         "sunny",
-        "day"
-      ]
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "words": [
-          "a",
-          "aa",
-          "aaa"
-        ],
-        "k": 1
-      },
-      "expectedOutput": [
-        "a"
-      ]
+        "the",
+        "the",
+        "the",
+        "sunny",
+        "is",
+        "is"
+      ],
+      "k": 4
     },
-    {
-      "input": {
-        "words": [
-          "a",
-          "b",
-          "a"
-        ],
-        "k": 2
-      },
-      "expectedOutput": [
-        "a",
-        "b"
-      ]
-    }
-  ]
-}
+    "expectedOutput": [
+      "the",
+      "is",
+      "sunny",
+      "day"
+    ]
+  }
+]

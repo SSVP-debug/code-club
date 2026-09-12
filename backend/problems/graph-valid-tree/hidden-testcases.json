@@ -1,0 +1,29 @@
+[
+  {
+    "input": {
+      "n": 2,
+      "edges": []
+    },
+    "expectedOutput": false
+  },
+  {
+    "input": {
+      "n": 3,
+      "edges": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          2
+        ]
+      ]
+    },
+    "expectedOutput": false
+  }
+]

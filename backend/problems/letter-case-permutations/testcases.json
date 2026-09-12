@@ -1,36 +1,20 @@
-{
-  "visible": [
-    {
-      "input": {
-        "s": "a1b2"
-      },
-      "expectedOutput": 4
+[
+  {
+    "input": {
+      "s": "a1b2"
     },
-    {
-      "input": {
-        "s": "3z4"
-      },
-      "expectedOutput": 2
+    "expectedOutput": 4
+  },
+  {
+    "input": {
+      "s": "3z4"
     },
-    {
-      "input": {
-        "s": "12345"
-      },
-      "expectedOutput": 1
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "s": "abc"
-      },
-      "expectedOutput": 8
+    "expectedOutput": 2
+  },
+  {
+    "input": {
+      "s": "12345"
     },
-    {
-      "input": {
-        "s": "C"
-      },
-      "expectedOutput": 2
-    }
-  ]
-}
+    "expectedOutput": 1
+  }
+]

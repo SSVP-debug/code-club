@@ -1,0 +1,24 @@
+[
+  {
+    "input": {
+      "head": [
+        1,
+        2,
+        3,
+        2,
+        1
+      ]
+    },
+    "expectedOutput": true
+  },
+  {
+    "input": {
+      "head": [
+        1,
+        0,
+        0
+      ]
+    },
+    "expectedOutput": false
+  }
+]

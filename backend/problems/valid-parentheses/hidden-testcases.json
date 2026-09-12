@@ -1,0 +1,14 @@
+[
+  {
+    "input": {
+      "s": "([)]"
+    },
+    "expectedOutput": false
+  },
+  {
+    "input": {
+      "s": "{[]}"
+    },
+    "expectedOutput": true
+  }
+]

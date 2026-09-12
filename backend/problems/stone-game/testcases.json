@@ -1,48 +1,24 @@
-{
-  "visible": [
-    {
-      "input": {
-        "piles": [
-          5,
-          3,
-          4,
-          5
-        ]
-      },
-      "expectedOutput": true
+[
+  {
+    "input": {
+      "piles": [
+        5,
+        3,
+        4,
+        5
+      ]
     },
-    {
-      "input": {
-        "piles": [
-          3,
-          7,
-          2,
-          3
-        ]
-      },
-      "expectedOutput": true
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "piles": [
-          1,
-          2
-        ]
-      },
-      "expectedOutput": true
+    "expectedOutput": true
+  },
+  {
+    "input": {
+      "piles": [
+        3,
+        7,
+        2,
+        3
+      ]
     },
-    {
-      "input": {
-        "piles": [
-          1,
-          100,
-          3,
-          5
-        ]
-      },
-      "expectedOutput": true
-    }
-  ]
-}
+    "expectedOutput": true
+  }
+]

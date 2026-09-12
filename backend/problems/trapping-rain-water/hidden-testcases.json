@@ -1,0 +1,23 @@
+[
+  {
+    "input": {
+      "height": [
+        1,
+        0,
+        1
+      ]
+    },
+    "expectedOutput": 1
+  },
+  {
+    "input": {
+      "height": [
+        5,
+        4,
+        1,
+        2
+      ]
+    },
+    "expectedOutput": 1
+  }
+]

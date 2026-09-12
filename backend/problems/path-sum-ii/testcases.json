@@ -1,83 +1,54 @@
-{
-  "visible": [
-    {
-      "input": {
-        "root": [
-          5,
-          4,
-          8,
-          11,
-          null,
-          13,
-          4,
-          7,
-          2,
-          null,
-          null,
-          5,
-          1
-        ],
-        "targetSum": 22
-      },
-      "expectedOutput": [
-        [
-          5,
-          4,
-          11,
-          2
-        ],
-        [
-          5,
-          8,
-          4,
-          5
-        ]
+[
+  {
+    "input": {
+      "root": [
+        5,
+        4,
+        8,
+        11,
+        null,
+        13,
+        4,
+        7,
+        2,
+        null,
+        null,
+        5,
+        1
+      ],
+      "targetSum": 22
+    },
+    "expectedOutput": [
+      [
+        5,
+        4,
+        11,
+        2
+      ],
+      [
+        5,
+        8,
+        4,
+        5
       ]
+    ]
+  },
+  {
+    "input": {
+      "root": [
+        1,
+        2,
+        3
+      ],
+      "targetSum": 5
     },
-    {
-      "input": {
-        "root": [
-          1,
-          2,
-          3
-        ],
-        "targetSum": 5
-      },
-      "expectedOutput": []
+    "expectedOutput": []
+  },
+  {
+    "input": {
+      "root": [],
+      "targetSum": 0
     },
-    {
-      "input": {
-        "root": [],
-        "targetSum": 0
-      },
-      "expectedOutput": []
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "root": [
-          1,
-          2
-        ],
-        "targetSum": 1
-      },
-      "expectedOutput": []
-    },
-    {
-      "input": {
-        "root": [
-          1,
-          2
-        ],
-        "targetSum": 3
-      },
-      "expectedOutput": [
-        [
-          1,
-          2
-        ]
-      ]
-    }
-  ]
-}
+    "expectedOutput": []
+  }
+]

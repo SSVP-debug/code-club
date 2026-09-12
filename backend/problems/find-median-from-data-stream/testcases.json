@@ -1,72 +1,30 @@
-{
-  "visible": [
-    {
-      "input": {
-        "ops": [
-          "addNum",
-          "addNum",
-          "findMedian",
-          "addNum",
-          "findMedian"
+[
+  {
+    "input": {
+      "ops": [
+        "addNum",
+        "addNum",
+        "findMedian",
+        "addNum",
+        "findMedian"
+      ],
+      "vals": [
+        [
+          1
         ],
-        "vals": [
-          [
-            1
-          ],
-          [
-            2
-          ],
-          [],
-          [
-            3
-          ],
-          []
-        ]
-      },
-      "expectedOutput": [
-        1.5,
-        2
-      ]
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "ops": [
-          "addNum",
-          "findMedian"
+        [
+          2
         ],
-        "vals": [
-          [
-            1
-          ],
-          []
-        ]
-      },
-      "expectedOutput": [
-        1
+        [],
+        [
+          3
+        ],
+        []
       ]
     },
-    {
-      "input": {
-        "ops": [
-          "addNum",
-          "addNum",
-          "findMedian"
-        ],
-        "vals": [
-          [
-            2
-          ],
-          [
-            3
-          ],
-          []
-        ]
-      },
-      "expectedOutput": [
-        2.5
-      ]
-    }
-  ]
-}
+    "expectedOutput": [
+      1.5,
+      2
+    ]
+  }
+]

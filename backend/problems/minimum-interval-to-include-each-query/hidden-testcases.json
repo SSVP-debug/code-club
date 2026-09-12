@@ -1,0 +1,18 @@
+[
+  {
+    "input": {
+      "intervals": [
+        [
+          1,
+          100
+        ]
+      ],
+      "queries": [
+        50
+      ]
+    },
+    "expectedOutput": [
+      100
+    ]
+  }
+]

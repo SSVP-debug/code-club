@@ -1,0 +1,18 @@
+[
+  {
+    "input": {
+      "startPos": 0,
+      "endPos": 0,
+      "k": 2
+    },
+    "expectedOutput": 2
+  },
+  {
+    "input": {
+      "startPos": 1000,
+      "endPos": 1,
+      "k": 999
+    },
+    "expectedOutput": 1
+  }
+]

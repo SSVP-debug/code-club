@@ -1,0 +1,17 @@
+[
+  {
+    "input": {
+      "board": [
+        [
+          "a"
+        ]
+      ],
+      "words": [
+        "a"
+      ]
+    },
+    "expectedOutput": [
+      "a"
+    ]
+  }
+]

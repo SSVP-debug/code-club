@@ -1,48 +1,30 @@
-{
-  "visible": [
-    {
-      "input": {
-        "w": [
-          1
-        ],
-        "ops": [
-          "pickIndex"
-        ]
-      },
-      "expectedOutput": [
-        0
+[
+  {
+    "input": {
+      "w": [
+        1
+      ],
+      "ops": [
+        "pickIndex"
       ]
     },
-    {
-      "input": {
-        "w": [
-          1,
-          3
-        ],
-        "ops": [
-          "pickIndex",
-          "pickIndex",
-          "pickIndex",
-          "pickIndex"
-        ]
-      },
-      "expectedOutput": "varies"
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "w": [
-          1,
-          1,
-          1,
-          1
-        ],
-        "ops": [
-          "pickIndex"
-        ]
-      },
-      "expectedOutput": "0-3"
-    }
-  ]
-}
+    "expectedOutput": [
+      0
+    ]
+  },
+  {
+    "input": {
+      "w": [
+        1,
+        3
+      ],
+      "ops": [
+        "pickIndex",
+        "pickIndex",
+        "pickIndex",
+        "pickIndex"
+      ]
+    },
+    "expectedOutput": "varies"
+  }
+]

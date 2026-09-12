@@ -1,0 +1,40 @@
+[
+  {
+    "input": {
+      "intervals": [
+        [
+          1,
+          5
+        ],
+        [
+          5,
+          10
+        ],
+        [
+          10,
+          14
+        ]
+      ]
+    },
+    "expectedOutput": 1
+  },
+  {
+    "input": {
+      "intervals": [
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          5
+        ],
+        [
+          7,
+          9
+        ]
+      ]
+    },
+    "expectedOutput": 2
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "input": {
+      "s": "(a(b(c)d)"
+    },
+    "expectedOutput": "a(b(c)d)"
+  },
+  {
+    "input": {
+      "s": "a"
+    },
+    "expectedOutput": "a"
+  }
+]

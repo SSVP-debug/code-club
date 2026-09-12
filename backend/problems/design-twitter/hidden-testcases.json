@@ -1,0 +1,31 @@
+[
+  {
+    "input": {
+      "ops": [
+        "postTweet",
+        "follow",
+        "getNewsFeed"
+      ],
+      "vals": [
+        [
+          2,
+          5
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1
+        ]
+      ]
+    },
+    "expectedOutput": [
+      null,
+      null,
+      [
+        5
+      ]
+    ]
+  }
+]

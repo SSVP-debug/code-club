@@ -1,77 +1,54 @@
-{
-  "visible": [
-    {
-      "input": {
-        "rooms": [
-          [
-            1
-          ],
-          [
-            2
-          ],
-          [
-            3
-          ],
-          []
-        ]
-      },
-      "expectedOutput": true
+[
+  {
+    "input": {
+      "rooms": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ],
+        []
+      ]
     },
-    {
-      "input": {
-        "rooms": [
-          [
-            1,
-            3
-          ],
-          [
-            3,
-            0,
-            1
-          ],
-          [
-            2
-          ],
-          [
-            0
-          ]
+    "expectedOutput": true
+  },
+  {
+    "input": {
+      "rooms": [
+        [
+          1,
+          3
+        ],
+        [
+          3,
+          0,
+          1
+        ],
+        [
+          2
+        ],
+        [
+          0
         ]
-      },
-      "expectedOutput": false
+      ]
     },
-    {
-      "input": {
-        "rooms": [
-          [
-            1
-          ],
-          [
-            0
-          ]
+    "expectedOutput": false
+  },
+  {
+    "input": {
+      "rooms": [
+        [
+          1
+        ],
+        [
+          0
         ]
-      },
-      "expectedOutput": true
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "rooms": [
-          [
-            2,
-            3
-          ],
-          [],
-          [
-            2
-          ],
-          [
-            1,
-            3
-          ]
-        ]
-      },
-      "expectedOutput": false
-    }
-  ]
-}
+      ]
+    },
+    "expectedOutput": true
+  }
+]

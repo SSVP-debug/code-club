@@ -1,0 +1,14 @@
+[
+  {
+    "input": {
+      "s": "abcde"
+    },
+    "expectedOutput": "edcba"
+  },
+  {
+    "input": {
+      "s": "racecar"
+    },
+    "expectedOutput": "racecar"
+  }
+]

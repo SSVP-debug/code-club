@@ -1,0 +1,29 @@
+[
+  {
+    "input": {
+      "words": [
+        "a",
+        "aa",
+        "aaa"
+      ],
+      "k": 1
+    },
+    "expectedOutput": [
+      "a"
+    ]
+  },
+  {
+    "input": {
+      "words": [
+        "a",
+        "b",
+        "a"
+      ],
+      "k": 2
+    },
+    "expectedOutput": [
+      "a",
+      "b"
+    ]
+  }
+]

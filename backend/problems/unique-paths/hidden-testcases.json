@@ -1,0 +1,16 @@
+[
+  {
+    "input": {
+      "m": 7,
+      "n": 3
+    },
+    "expectedOutput": 28
+  },
+  {
+    "input": {
+      "m": 2,
+      "n": 2
+    },
+    "expectedOutput": 2
+  }
+]

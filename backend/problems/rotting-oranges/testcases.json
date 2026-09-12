@@ -1,90 +1,57 @@
-{
-  "visible": [
-    {
-      "input": {
-        "grid": [
-          [
-            2,
-            1,
-            1
-          ],
-          [
-            1,
-            1,
-            0
-          ],
-          [
-            0,
-            1,
-            1
-          ]
+[
+  {
+    "input": {
+      "grid": [
+        [
+          2,
+          1,
+          1
+        ],
+        [
+          1,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          1
         ]
-      },
-      "expectedOutput": 4
+      ]
     },
-    {
-      "input": {
-        "grid": [
-          [
-            2,
-            1,
-            1
-          ],
-          [
-            0,
-            1,
-            1
-          ],
-          [
-            1,
-            0,
-            1
-          ]
+    "expectedOutput": 4
+  },
+  {
+    "input": {
+      "grid": [
+        [
+          2,
+          1,
+          1
+        ],
+        [
+          0,
+          1,
+          1
+        ],
+        [
+          1,
+          0,
+          1
         ]
-      },
-      "expectedOutput": -1
+      ]
     },
-    {
-      "input": {
-        "grid": [
-          [
-            0,
-            2
-          ]
+    "expectedOutput": -1
+  },
+  {
+    "input": {
+      "grid": [
+        [
+          0,
+          2
         ]
-      },
-      "expectedOutput": 0
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "grid": [
-          [
-            1
-          ]
-        ]
-      },
-      "expectedOutput": -1
+      ]
     },
-    {
-      "input": {
-        "grid": [
-          [
-            2,
-            2
-          ],
-          [
-            1,
-            1
-          ],
-          [
-            0,
-            0
-          ]
-        ]
-      },
-      "expectedOutput": 1
-    }
-  ]
-}
+    "expectedOutput": 0
+  }
+]

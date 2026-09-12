@@ -1,0 +1,14 @@
+[
+  {
+    "input": {
+      "n": 0
+    },
+    "expectedOutput": false
+  },
+  {
+    "input": {
+      "n": -16
+    },
+    "expectedOutput": false
+  }
+]

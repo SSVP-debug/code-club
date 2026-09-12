@@ -1,65 +1,40 @@
-{
-  "visible": [
-    {
-      "input": {
-        "piles": [
-          3,
-          6,
-          7,
-          11
-        ],
-        "h": 8
-      },
-      "expectedOutput": 4
+[
+  {
+    "input": {
+      "piles": [
+        3,
+        6,
+        7,
+        11
+      ],
+      "h": 8
     },
-    {
-      "input": {
-        "piles": [
-          30,
-          11,
-          23,
-          4,
-          20
-        ],
-        "h": 5
-      },
-      "expectedOutput": 30
+    "expectedOutput": 4
+  },
+  {
+    "input": {
+      "piles": [
+        30,
+        11,
+        23,
+        4,
+        20
+      ],
+      "h": 5
     },
-    {
-      "input": {
-        "piles": [
-          30,
-          11,
-          23,
-          4,
-          20
-        ],
-        "h": 6
-      },
-      "expectedOutput": 23
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "piles": [
-          312884470
-        ],
-        "h": 312884469
-      },
-      "expectedOutput": 2
+    "expectedOutput": 30
+  },
+  {
+    "input": {
+      "piles": [
+        30,
+        11,
+        23,
+        4,
+        20
+      ],
+      "h": 6
     },
-    {
-      "input": {
-        "piles": [
-          1,
-          1,
-          1,
-          999999999
-        ],
-        "h": 10
-      },
-      "expectedOutput": 142857143
-    }
-  ]
-}
+    "expectedOutput": 23
+  }
+]

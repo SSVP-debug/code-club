@@ -1,18 +1,7 @@
-{
-  "visible": [
-    {
-      "input": {
-        "root": [
-          1,
-          2,
-          3,
-          null,
-          null,
-          4,
-          5
-        ]
-      },
-      "expectedOutput": [
+[
+  {
+    "input": {
+      "root": [
         1,
         2,
         3,
@@ -22,53 +11,30 @@
         5
       ]
     },
-    {
-      "input": {
-        "root": []
-      },
-      "expectedOutput": []
+    "expectedOutput": [
+      1,
+      2,
+      3,
+      null,
+      null,
+      4,
+      5
+    ]
+  },
+  {
+    "input": {
+      "root": []
     },
-    {
-      "input": {
-        "root": [
-          1
-        ]
-      },
-      "expectedOutput": [
+    "expectedOutput": []
+  },
+  {
+    "input": {
+      "root": [
         1
       ]
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "root": [
-          1,
-          2
-        ]
-      },
-      "expectedOutput": [
-        1,
-        2
-      ]
     },
-    {
-      "input": {
-        "root": [
-          1,
-          null,
-          2,
-          null,
-          3
-        ]
-      },
-      "expectedOutput": [
-        1,
-        null,
-        2,
-        null,
-        3
-      ]
-    }
-  ]
-}
+    "expectedOutput": [
+      1
+    ]
+  }
+]

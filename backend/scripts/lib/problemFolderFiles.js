@@ -80,14 +80,18 @@ export function buildProblemFiles(problem) {
       2
     ),
     "description.md": problem.description ?? "",
-    "testcases.json": JSON.stringify(
-      {
-        visible: problem.testcases ?? [],
-        hidden: problem.hiddentestcases ?? [],
-      },
-      null,
-      2
-    ),
+    // Sept 2026 audit, finding D / Batch 5: this used to be a single
+    // testcases.json holding {visible, hidden} together. Splitting hidden
+    // data into its own physically separate file is defense-in-depth, not
+    // a security fix on its own (nothing under backend/problems/ was ever
+    // reachable from the frontend bundle in the first place — the actual
+    // leak was src/data/problems.js, fixed separately). The point is that
+    // "never import hidden-testcases.json from src/" is a path-level rule
+    // a reviewer can enforce by eye, where "never import the hidden field
+    // out of testcases.json" required field-level discipline every time
+    // anyone touched a file that also held innocuous visible data.
+    "testcases.json": JSON.stringify(problem.testcases ?? [], null, 2),
+    "hidden-testcases.json": JSON.stringify(problem.hiddentestcases ?? [], null, 2),
     "hints.json": JSON.stringify(problem.hints ?? [], null, 2),
     ...buildStarterFiles(starters),
     "editorial.md": problem.editorial?.content ?? "",

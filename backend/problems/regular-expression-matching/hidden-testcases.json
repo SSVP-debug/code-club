@@ -1,0 +1,16 @@
+[
+  {
+    "input": {
+      "s": "aab",
+      "p": "c*a*b"
+    },
+    "expectedOutput": true
+  },
+  {
+    "input": {
+      "s": "mississippi",
+      "p": "mis*is*p*."
+    },
+    "expectedOutput": false
+  }
+]

@@ -1,56 +1,36 @@
-{
-  "visible": [
-    {
-      "input": {
-        "startGene": "AACCGGTT",
-        "endGene": "AACCGGTA",
-        "bank": [
-          "AACCGGTA"
-        ]
-      },
-      "expectedOutput": 1
+[
+  {
+    "input": {
+      "startGene": "AACCGGTT",
+      "endGene": "AACCGGTA",
+      "bank": [
+        "AACCGGTA"
+      ]
     },
-    {
-      "input": {
-        "startGene": "AACCGGTT",
-        "endGene": "AAACGGTA",
-        "bank": [
-          "AACCGGTA",
-          "AACCGCTA",
-          "AAACGGTA"
-        ]
-      },
-      "expectedOutput": 2
+    "expectedOutput": 1
+  },
+  {
+    "input": {
+      "startGene": "AACCGGTT",
+      "endGene": "AAACGGTA",
+      "bank": [
+        "AACCGGTA",
+        "AACCGCTA",
+        "AAACGGTA"
+      ]
     },
-    {
-      "input": {
-        "startGene": "AAAAACCC",
-        "endGene": "AACCCCCC",
-        "bank": [
-          "AAAACCCC",
-          "AAACCCCC",
-          "AACCCCCC"
-        ]
-      },
-      "expectedOutput": 3
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "startGene": "AACCGGTT",
-        "endGene": "AACCGGTA",
-        "bank": []
-      },
-      "expectedOutput": -1
+    "expectedOutput": 2
+  },
+  {
+    "input": {
+      "startGene": "AAAAACCC",
+      "endGene": "AACCCCCC",
+      "bank": [
+        "AAAACCCC",
+        "AAACCCCC",
+        "AACCCCCC"
+      ]
     },
-    {
-      "input": {
-        "startGene": "AAAAAAAA",
-        "endGene": "AAAAAAAA",
-        "bank": []
-      },
-      "expectedOutput": 0
-    }
-  ]
-}
+    "expectedOutput": 3
+  }
+]

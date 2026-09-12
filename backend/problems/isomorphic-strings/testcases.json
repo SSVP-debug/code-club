@@ -1,41 +1,23 @@
-{
-  "visible": [
-    {
-      "input": {
-        "s": "egg",
-        "t": "add"
-      },
-      "expectedOutput": true
+[
+  {
+    "input": {
+      "s": "egg",
+      "t": "add"
     },
-    {
-      "input": {
-        "s": "foo",
-        "t": "bar"
-      },
-      "expectedOutput": false
+    "expectedOutput": true
+  },
+  {
+    "input": {
+      "s": "foo",
+      "t": "bar"
     },
-    {
-      "input": {
-        "s": "paper",
-        "t": "title"
-      },
-      "expectedOutput": true
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "s": "badc",
-        "t": "baba"
-      },
-      "expectedOutput": false
+    "expectedOutput": false
+  },
+  {
+    "input": {
+      "s": "paper",
+      "t": "title"
     },
-    {
-      "input": {
-        "s": "ab",
-        "t": "aa"
-      },
-      "expectedOutput": false
-    }
-  ]
-}
+    "expectedOutput": true
+  }
+]

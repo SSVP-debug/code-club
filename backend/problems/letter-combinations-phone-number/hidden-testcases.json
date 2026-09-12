@@ -1,0 +1,32 @@
+[
+  {
+    "input": {
+      "digits": "9"
+    },
+    "expectedOutput": [
+      "w",
+      "x",
+      "y",
+      "z"
+    ]
+  },
+  {
+    "input": {
+      "digits": "29"
+    },
+    "expectedOutput": [
+      "aw",
+      "ax",
+      "ay",
+      "az",
+      "bw",
+      "bx",
+      "by",
+      "bz",
+      "cw",
+      "cx",
+      "cy",
+      "cz"
+    ]
+  }
+]

@@ -1,0 +1,24 @@
+[
+  {
+    "input": {
+      "stones": [
+        10,
+        4,
+        2,
+        10
+      ]
+    },
+    "expectedOutput": 2
+  },
+  {
+    "input": {
+      "stones": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "expectedOutput": 0
+  }
+]

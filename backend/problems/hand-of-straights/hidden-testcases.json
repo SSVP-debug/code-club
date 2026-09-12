@@ -1,0 +1,24 @@
+[
+  {
+    "input": {
+      "hand": [
+        8,
+        10,
+        12
+      ],
+      "groupSize": 3
+    },
+    "expectedOutput": false
+  },
+  {
+    "input": {
+      "hand": [
+        1,
+        2,
+        3
+      ],
+      "groupSize": 1
+    },
+    "expectedOutput": true
+  }
+]

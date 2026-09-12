@@ -1,0 +1,16 @@
+[
+  {
+    "input": {
+      "a": -12,
+      "b": -8
+    },
+    "expectedOutput": -20
+  },
+  {
+    "input": {
+      "a": 0,
+      "b": 0
+    },
+    "expectedOutput": 0
+  }
+]

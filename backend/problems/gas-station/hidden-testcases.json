@@ -1,0 +1,30 @@
+[
+  {
+    "input": {
+      "gas": [
+        1,
+        2
+      ],
+      "cost": [
+        2,
+        1
+      ]
+    },
+    "expectedOutput": 1
+  },
+  {
+    "input": {
+      "gas": [
+        3,
+        1,
+        1
+      ],
+      "cost": [
+        1,
+        2,
+        2
+      ]
+    },
+    "expectedOutput": 0
+  }
+]

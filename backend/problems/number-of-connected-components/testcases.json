@@ -1,80 +1,53 @@
-{
-  "visible": [
-    {
-      "input": {
-        "n": 5,
-        "edges": [
-          [
-            0,
-            1
-          ],
-          [
-            1,
-            2
-          ],
-          [
-            3,
-            4
-          ]
+[
+  {
+    "input": {
+      "n": 5,
+      "edges": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          3,
+          4
         ]
-      },
-      "expectedOutput": 2
+      ]
     },
-    {
-      "input": {
-        "n": 5,
-        "edges": [
-          [
-            0,
-            1
-          ],
-          [
-            1,
-            2
-          ],
-          [
-            2,
-            3
-          ],
-          [
-            3,
-            4
-          ]
+    "expectedOutput": 2
+  },
+  {
+    "input": {
+      "n": 5,
+      "edges": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          4
         ]
-      },
-      "expectedOutput": 1
+      ]
     },
-    {
-      "input": {
-        "n": 3,
-        "edges": []
-      },
-      "expectedOutput": 3
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "n": 1,
-        "edges": []
-      },
-      "expectedOutput": 1
+    "expectedOutput": 1
+  },
+  {
+    "input": {
+      "n": 3,
+      "edges": []
     },
-    {
-      "input": {
-        "n": 4,
-        "edges": [
-          [
-            0,
-            1
-          ],
-          [
-            2,
-            3
-          ]
-        ]
-      },
-      "expectedOutput": 2
-    }
-  ]
-}
+    "expectedOutput": 3
+  }
+]

@@ -1,0 +1,18 @@
+[
+  {
+    "input": {
+      "s1": "a",
+      "s2": "b",
+      "s3": "ab"
+    },
+    "expectedOutput": true
+  },
+  {
+    "input": {
+      "s1": "a",
+      "s2": "b",
+      "s3": "ba"
+    },
+    "expectedOutput": true
+  }
+]

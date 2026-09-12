@@ -1,0 +1,22 @@
+[
+  {
+    "input": {
+      "tokens": [
+        "3",
+        "11",
+        "5",
+        "+",
+        "-"
+      ]
+    },
+    "expectedOutput": -13
+  },
+  {
+    "input": {
+      "tokens": [
+        "2"
+      ]
+    },
+    "expectedOutput": 2
+  }
+]

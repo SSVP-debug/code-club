@@ -1,0 +1,18 @@
+[
+  {
+    "input": {
+      "startGene": "AACCGGTT",
+      "endGene": "AACCGGTA",
+      "bank": []
+    },
+    "expectedOutput": -1
+  },
+  {
+    "input": {
+      "startGene": "AAAAAAAA",
+      "endGene": "AAAAAAAA",
+      "bank": []
+    },
+    "expectedOutput": 0
+  }
+]

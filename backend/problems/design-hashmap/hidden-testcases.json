@@ -1,0 +1,45 @@
+[
+  {
+    "input": {
+      "ops": [
+        "put",
+        "put",
+        "put",
+        "get",
+        "remove",
+        "get"
+      ],
+      "vals": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ]
+      ]
+    },
+    "expectedOutput": [
+      null,
+      null,
+      null,
+      2,
+      null,
+      -1
+    ]
+  }
+]

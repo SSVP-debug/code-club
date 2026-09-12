@@ -1,54 +1,32 @@
-{
-  "visible": [
-    {
-      "input": {
-        "strs": [
-          "flower",
-          "flow",
-          "flight"
-        ]
-      },
-      "expectedOutput": "fl"
+[
+  {
+    "input": {
+      "strs": [
+        "flower",
+        "flow",
+        "flight"
+      ]
     },
-    {
-      "input": {
-        "strs": [
-          "dog",
-          "racecar",
-          "car"
-        ]
-      },
-      "expectedOutput": ""
+    "expectedOutput": "fl"
+  },
+  {
+    "input": {
+      "strs": [
+        "dog",
+        "racecar",
+        "car"
+      ]
     },
-    {
-      "input": {
-        "strs": [
-          "interview",
-          "inter",
-          "interest"
-        ]
-      },
-      "expectedOutput": "inter"
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "strs": [
-          "a"
-        ]
-      },
-      "expectedOutput": "a"
+    "expectedOutput": ""
+  },
+  {
+    "input": {
+      "strs": [
+        "interview",
+        "inter",
+        "interest"
+      ]
     },
-    {
-      "input": {
-        "strs": [
-          "abc",
-          "abc",
-          "abc"
-        ]
-      },
-      "expectedOutput": "abc"
-    }
-  ]
-}
+    "expectedOutput": "inter"
+  }
+]

@@ -1,0 +1,33 @@
+[
+  {
+    "input": {
+      "asteroids": [
+        -2,
+        -1,
+        1,
+        2
+      ]
+    },
+    "expectedOutput": [
+      -2,
+      -1,
+      1,
+      2
+    ]
+  },
+  {
+    "input": {
+      "asteroids": [
+        1,
+        -2,
+        -2,
+        -2
+      ]
+    },
+    "expectedOutput": [
+      -2,
+      -2,
+      -2
+    ]
+  }
+]

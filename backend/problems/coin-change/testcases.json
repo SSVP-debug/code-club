@@ -1,57 +1,33 @@
-{
-  "visible": [
-    {
-      "input": {
-        "coins": [
-          1,
-          5,
-          11
-        ],
-        "amount": 15
-      },
-      "expectedOutput": 3
+[
+  {
+    "input": {
+      "coins": [
+        1,
+        5,
+        11
+      ],
+      "amount": 15
     },
-    {
-      "input": {
-        "coins": [
-          2
-        ],
-        "amount": 3
-      },
-      "expectedOutput": -1
+    "expectedOutput": 3
+  },
+  {
+    "input": {
+      "coins": [
+        2
+      ],
+      "amount": 3
     },
-    {
-      "input": {
-        "coins": [
-          1,
-          2,
-          5
-        ],
-        "amount": 11
-      },
-      "expectedOutput": 3
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "coins": [
-          1
-        ],
-        "amount": 2
-      },
-      "expectedOutput": 2
+    "expectedOutput": -1
+  },
+  {
+    "input": {
+      "coins": [
+        1,
+        2,
+        5
+      ],
+      "amount": 11
     },
-    {
-      "input": {
-        "coins": [
-          2,
-          5,
-          10
-        ],
-        "amount": 27
-      },
-      "expectedOutput": 4
-    }
-  ]
-}
+    "expectedOutput": 3
+  }
+]

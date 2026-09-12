@@ -1,0 +1,36 @@
+[
+  {
+    "input": {
+      "k": 1,
+      "w": 0,
+      "profits": [
+        1,
+        2,
+        3
+      ],
+      "capital": [
+        1,
+        1,
+        2
+      ]
+    },
+    "expectedOutput": 0
+  },
+  {
+    "input": {
+      "k": 11,
+      "w": 11,
+      "profits": [
+        1,
+        2,
+        3
+      ],
+      "capital": [
+        11,
+        12,
+        13
+      ]
+    },
+    "expectedOutput": 17
+  }
+]

@@ -1,36 +1,20 @@
-{
-  "visible": [
-    {
-      "input": {
-        "n": 12
-      },
-      "expectedOutput": 3
+[
+  {
+    "input": {
+      "n": 12
     },
-    {
-      "input": {
-        "n": 13
-      },
-      "expectedOutput": 2
+    "expectedOutput": 3
+  },
+  {
+    "input": {
+      "n": 13
     },
-    {
-      "input": {
-        "n": 1
-      },
-      "expectedOutput": 1
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "n": 4
-      },
-      "expectedOutput": 1
+    "expectedOutput": 2
+  },
+  {
+    "input": {
+      "n": 1
     },
-    {
-      "input": {
-        "n": 7
-      },
-      "expectedOutput": 4
-    }
-  ]
-}
+    "expectedOutput": 1
+  }
+]

@@ -1,36 +1,20 @@
-{
-  "visible": [
-    {
-      "input": {
-        "s": "()"
-      },
-      "expectedOutput": true
+[
+  {
+    "input": {
+      "s": "()"
     },
-    {
-      "input": {
-        "s": "()[]{}"
-      },
-      "expectedOutput": true
+    "expectedOutput": true
+  },
+  {
+    "input": {
+      "s": "()[]{}"
     },
-    {
-      "input": {
-        "s": "(]"
-      },
-      "expectedOutput": false
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "s": "([)]"
-      },
-      "expectedOutput": false
+    "expectedOutput": true
+  },
+  {
+    "input": {
+      "s": "(]"
     },
-    {
-      "input": {
-        "s": "{[]}"
-      },
-      "expectedOutput": true
-    }
-  ]
-}
+    "expectedOutput": false
+  }
+]

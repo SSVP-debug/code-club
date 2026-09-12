@@ -1,41 +1,23 @@
-{
-  "visible": [
-    {
-      "input": {
-        "s": "ADOBECODEBANC",
-        "t": "ABC"
-      },
-      "expectedOutput": "BANC"
+[
+  {
+    "input": {
+      "s": "ADOBECODEBANC",
+      "t": "ABC"
     },
-    {
-      "input": {
-        "s": "a",
-        "t": "a"
-      },
-      "expectedOutput": "a"
+    "expectedOutput": "BANC"
+  },
+  {
+    "input": {
+      "s": "a",
+      "t": "a"
     },
-    {
-      "input": {
-        "s": "a",
-        "t": "aa"
-      },
-      "expectedOutput": ""
-    }
-  ],
-  "hidden": [
-    {
-      "input": {
-        "s": "abc",
-        "t": "cba"
-      },
-      "expectedOutput": "abc"
+    "expectedOutput": "a"
+  },
+  {
+    "input": {
+      "s": "a",
+      "t": "aa"
     },
-    {
-      "input": {
-        "s": "bba",
-        "t": "ab"
-      },
-      "expectedOutput": "ba"
-    }
-  ]
-}
+    "expectedOutput": ""
+  }
+]

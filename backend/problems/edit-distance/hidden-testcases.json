@@ -1,0 +1,16 @@
+[
+  {
+    "input": {
+      "word1": "abc",
+      "word2": "abc"
+    },
+    "expectedOutput": 0
+  },
+  {
+    "input": {
+      "word1": "abc",
+      "word2": ""
+    },
+    "expectedOutput": 3
+  }
+]
