@@ -1,5 +1,6 @@
 import { apiFetch } from "./api";
 import { getSubmissions } from "./submissionService";
+import { getStudentDayKey } from "../utils/studentDay";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const toISODate = (dates = []) => [...new Set(dates.filter(d => ISO_DATE.test(d)))];
@@ -36,7 +37,7 @@ export async function markProblemSolved(currentProgress, problemSlug) {
     new Set([...(currentProgress.solvedSlugs || []), problemSlug])
   );
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = getStudentDayKey();
   // ← FIX A: sanitize legacy locale-format dates before they hit Zod
   const activityDates = Array.from(
     new Set([...toISODate(currentProgress.activityDates), today])

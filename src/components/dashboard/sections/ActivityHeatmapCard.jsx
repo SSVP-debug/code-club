@@ -4,19 +4,16 @@ import { useTheme } from "../../../hooks/useTheme";
 import SectionCard from "../../ui/layout/SectionCard";
 import HoverTooltip from "../../ui/HoverTooltip";
 import { Activity } from "lucide-react";
+import { getStudentDayKey } from "../../../utils/studentDay";
 
 const DAYS_TO_SHOW = 365; // full year, GitHub-style — dynamically laid out below, not tied to this specific number
 const WEEKDAY_ROW_LABELS = ["", "Mon", "", "Wed", "", "Fri", ""]; // Sun-first rows; GitHub's own graph only labels alternate rows to stay legible at this size
 
-function toUTCISODate(date) {
-  return date.toISOString().split("T")[0];
-}
-
 function formatDisplayDate(iso) {
-  // Format as a UTC date explicitly — `iso` is a UTC calendar date (see
-  // cell-building comment below), so letting toLocaleDateString apply the
-  // viewer's local timezone here could print a different day than the one
-  // the cell actually represents.
+  // Format using the UTC formatter explicitly — `iso` is an IST calendar
+  // day key (see backend/utils/studentDay.js), not a UTC one, so letting
+  // toLocaleDateString apply the viewer's local timezone here could still
+  // print a different day than the one the cell actually represents.
   return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -86,7 +83,7 @@ function ActivityHeatmapCard() {
     for (let i = DAYS_TO_SHOW - 1; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(today.getDate() - i);
-      const iso = toUTCISODate(date);
+      const iso = getStudentDayKey(date);
       const active = activeSet.has(iso);
       cells.push({
         date: iso,

@@ -1,0 +1,1883 @@
+{
+  "totalProblems": 250,
+  "enabledLanguages": [
+    "python",
+    "javascript",
+    "java",
+    "cpp",
+    "c",
+    "typescript"
+  ],
+  "requiredStarterLanguages": [
+    "python",
+    "javascript",
+    "java",
+    "cpp"
+  ],
+  "totalFailFindings": 0,
+  "totalInfoFindings": 274,
+  "problemsWithFailures": 0,
+  "problemsWithInfoOnly": 245,
+  "findingsByProblem": {
+    "3sum-closest": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "3sum-smaller": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "4sum-ii": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "accounts-merge": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "add-two-numbers": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "alien-dictionary": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "all-paths-source-to-target": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "asteroid-collision": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "basic-calculator-ii": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "best-time-to-buy-and-sell-stock": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "best-time-to-buy-sell-stock-iii": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "binary-search": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "binary-search-tree-iterator": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "binary-tree-level-order-traversal": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "binary-tree-right-side-view": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "bitwise-and-numbers-range": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "boats-to-save-people": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "burst-balloons": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "candy": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "car-fleet": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "cheapest-flights-within-k-stops": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "cherry-pickup": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "climbing-stairs": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "clone-graph": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "coin-change": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "combination-sum": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "combination-sum-ii": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "construct-binary-tree-from-preorder-inorder": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "container-with-most-water": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "contains-duplicate": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "contiguous-array": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "count-and-say": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "count-primes": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "count-smaller-numbers-after-self": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "counting-bits": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "course-schedule": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "course-schedule-ii": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "daily-temperatures": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "decode-string": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "decode-ways": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "design-add-search-words": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "design-circular-queue": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "design-hashmap": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "design-twitter": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "diameter-of-binary-tree": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "distinct-subsequences": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "dungeon-game": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "edit-distance": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "encode-and-decode-strings": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "evaluate-reverse-polish-notation": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "excel-sheet-column-number": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "fibonacci-number": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "find-all-anagrams-in-string": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "find-all-duplicates-in-array": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "find-k-closest-elements": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "find-k-pairs-with-smallest-sums": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "find-median-from-data-stream": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "find-minimum-in-rotated-sorted-array": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "find-peak-element": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "find-the-duplicate-number": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "find-the-town-judge": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "first-bad-version": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "starter/javascript.js does not contain the declared functionName \"firstBadVersion\" — verify manually"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "starter/typescript.ts does not contain the declared functionName \"firstBadVersion\" — verify manually"
+      }
+    ],
+    "flood-fill": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "four-sum": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "fruit-into-baskets": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "game-of-life": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "gas-station": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "generate-parentheses": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "graph-valid-tree": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "group-anagrams": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "hand-of-straights": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "happy-number": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "house-robber": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "house-robber-ii": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "implement-queue-using-stacks": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "implement-stack-using-queues": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "implement-trie": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "implement-trie-ii": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "insert-interval": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "interleaving-string": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "intersection-of-two-linked-lists": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "interval-list-intersections": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "invert-binary-tree": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "ipo": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "is-palindrome": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "isomorphic-strings": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "jump-game": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "jump-game-ii": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "jump-game-vii": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "k-closest-points-to-origin": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "keys-and-rooms": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "koko-eating-bananas": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "kth-largest-element": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "kth-smallest-element-in-bst": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "largest-number": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "largest-rectangle-in-histogram": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "last-stone-weight": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "letter-case-permutations": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "letter-combinations-phone-number": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "linked-list-cycle": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "longest-common-prefix": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "longest-common-subsequence": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "longest-consecutive-sequence": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "longest-increasing-subsequence": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "longest-repeating-character-replacement": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "longest-substring-two-distinct": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "longest-substring-without-repeating-characters": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "longest-turbulent-subarray": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "longest-valid-parentheses": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "longest-word-in-dictionary": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "lowest-common-ancestor-of-bst": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "lru-cache": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "majority-element": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "map-sum-pairs": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "max-consecutive-ones-iii": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "maximal-rectangle": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "maximal-square": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "maximum-average-subarray": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "maximum-depth-of-binary-tree": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "maximum-frequency-stack": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "maximum-product-subarray": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "maximum-subarray": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "maximum-width-of-binary-tree": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "maximum-width-ramp": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "maximum-xor-of-two-numbers": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "median-of-two-sorted-arrays": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "meeting-rooms": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "merge-intervals": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "merge-k-sorted-lists": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "merge-two-sorted-lists": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "middle-of-the-linked-list": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "min-cost-climbing-stairs": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "min-cost-to-connect-all-points": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "min-stack": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "minimum-arrows-burst-balloons": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "minimum-cost-for-tickets": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "minimum-genetic-mutation": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "minimum-interval-to-include-each-query": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "minimum-meeting-rooms": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "minimum-path-sum": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "minimum-remove-valid-parentheses": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "minimum-size-subarray-sum": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "minimum-stack": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "minimum-window-substring": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "missing-number": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "move-zeroes": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "my-calendar-ii": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "n-queens": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "n-queens-ii": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "network-delay-time": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "next-greater-element-i": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "next-greater-element-ii": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "next-permutation": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "non-overlapping-intervals": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "number-of-1-bits": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "number-of-connected-components": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "number-of-islands": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "number-of-lis": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "number-of-ways-k-steps": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "online-stock-span": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "optimize-water-distribution": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "pacific-atlantic-water-flow": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "palindrome-linked-list": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "palindrome-number": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "palindrome-partitioning": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "palindromic-substrings": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "partition-equal-subset-sum": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "partition-labels": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "path-sum-ii": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "path-with-minimum-effort": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "peak-index-mountain-array": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "perfect-squares": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "permutation-in-string": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "permutations": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "permutations-ii": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "pow-x-n": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "power-of-two": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "queue-reconstruction-by-height": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "random-pick-with-weight": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "ransom-note": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "redundant-connection": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "regular-expression-matching": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "remove-duplicates-sorted-array-ii": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "remove-k-digits": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "remove-nth-node-from-end": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "reorder-list": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "reorganize-string": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "replace-words": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "reverse-bits": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "reverse-integer": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "reverse-linked-list": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "reverse-nodes-in-k-group": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "reverse-string": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "roman-to-integer": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "rotate-array": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "rotate-image": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "rotting-oranges": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "same-tree": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "search-a-2d-matrix": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "search-in-rotated-sorted-array": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "search-in-rotated-sorted-array-ii": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "serialize-deserialize-binary-tree": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "set-matrix-zeroes": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "shortest-bridge": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "single-number": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "single-number-ii": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "single-number-iii": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "single-thread-cpu": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "sliding-window-maximum": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "sort-colors": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "spiral-matrix": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "sqrt-x": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "squares-of-sorted-array": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "stone-game": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "subarray-product-less-than-k": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "subarray-sum-equals-k": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "subsets": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "subsets-ii": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "sum-of-two-integers": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "swim-in-rising-water": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "task-scheduler": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      },
+      {
+        "level": "INFO",
+        "check": "starter-code",
+        "message": "enabled language \"c\" has no starter/c.c — student selecting C gets a blank editor (useProblemSolver.js falls back to \"\")"
+      }
+    ],
+    "three-sum": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "time-based-key-value-store": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "top-k-frequent-elements": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "top-k-frequent-words": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "total-hamming-distance": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "trapping-rain-water": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "trapping-rain-water-ii": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "triangle": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "two-sum": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "two-sum-ii-sorted": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "two-sum-iii-data-structure": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "ugly-number-ii": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "unique-paths": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "valid-anagram": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "valid-parentheses": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "valid-triangle-number": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "validate-binary-search-tree": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "walls-and-gates": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "wiggle-subsequence": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "wildcard-matching": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "word-break": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "word-ladder": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "word-search": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 2 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ],
+    "word-search-ii": [
+      {
+        "level": "INFO",
+        "check": "hidden-testcases.json",
+        "message": "only 1 hidden case(s) — weak coverage against hardcoded/overfit solutions"
+      }
+    ]
+  }
+}

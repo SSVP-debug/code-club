@@ -13,6 +13,7 @@
     "seed": "node scripts/seedProblems.js",
     "seed:code-club-edition": "node scripts/seedCodeClubEdition.js",
     "validate:problems": "node scripts/validateProblemContracts.js",
+    "audit:problems-languages": "node scripts/auditProblemsAgainstLanguageRegistry.js",
     "problems:export-to-folders": "node scripts/exportProblemsToFolders.js",
     "problems:import-from-folders": "node scripts/importProblems.js",
     "backfill-xp": "node scripts/backfillXP.js",

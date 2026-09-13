@@ -1,3 +1,5 @@
+import { getStudentDayKey } from "../../utils/studentDay";
+
 function DailyMissionCard({ submissions = [], currentStreak = 0 }) {
   // Real missions derived from data the app already has — no missions
   // backend exists (verified: no model, no route), so rather than build
@@ -9,7 +11,7 @@ function DailyMissionCard({ submissions = [], currentStreak = 0 }) {
   // No XP reward numbers are shown since nothing in the backend actually
   // grants mission rewards — showing a fake "+50 XP" would repeat the
   // exact misleading-promise problem this card previously had.
-  const today = new Date().toISOString().split("T")[0];
+  const today = getStudentDayKey();
   const todaysSubmissions = submissions.filter((s) => s.date === today);
   const solvedToday = new Set(
     todaysSubmissions

@@ -1,3 +1,13 @@
+import { getStudentDayKey, getPreviousStudentDayKey, isNextStudentDay } from "./studentDay.js";
+
+/**
+ * calculateStreak — derives current/longest streak from a list of IST
+ * calendar-day keys (`activityDates`, each `YYYY-MM-DD` — see
+ * studentDay.js for what "day" means and why). Consecutiveness is decided
+ * by `isNextStudentDay()`, the same helper `studentDay.js` exports for any
+ * other feature that needs a "day after" check, so streak logic can't
+ * silently drift from the shared day-key definition.
+ */
 export function calculateStreak(activityDates = []) {
   if (!activityDates.length) {
     return {
@@ -6,64 +16,32 @@ export function calculateStreak(activityDates = []) {
     };
   }
 
-  const sorted = [...new Set(activityDates)]
-    .sort();
+  const sorted = [...new Set(activityDates)].sort();
 
   let longestStreak = 1;
   let currentRun = 1;
 
   for (let i = 1; i < sorted.length; i++) {
-    const prev = new Date(sorted[i - 1]);
-    const curr = new Date(sorted[i]);
-
-    const diffDays =
-      (curr - prev) / (1000 * 60 * 60 * 24);
-
-    if (diffDays === 1) {
+    if (isNextStudentDay(sorted[i - 1], sorted[i])) {
       currentRun++;
-      longestStreak = Math.max(
-        longestStreak,
-        currentRun
-      );
+      longestStreak = Math.max(longestStreak, currentRun);
     } else {
       currentRun = 1;
     }
   }
 
-  const today = new Date()
-    .toISOString()
-    .split("T")[0];
+  const today = getStudentDayKey();
+  const yesterday = getPreviousStudentDayKey();
 
-  const yesterday = new Date(
-    Date.now() - 86400000
-  )
-    .toISOString()
-    .split("T")[0];
-
-  const lastDate =
-    sorted[sorted.length - 1];
+  const lastDate = sorted[sorted.length - 1];
 
   let currentStreak = 0;
 
-  if (
-    lastDate === today ||
-    lastDate === yesterday
-  ) {
+  if (lastDate === today || lastDate === yesterday) {
     currentStreak = 1;
 
-    for (
-      let i = sorted.length - 1;
-      i > 0;
-      i--
-    ) {
-      const curr = new Date(sorted[i]);
-      const prev = new Date(sorted[i - 1]);
-
-      const diffDays =
-        (curr - prev) /
-        (1000 * 60 * 60 * 24);
-
-      if (diffDays === 1) {
+    for (let i = sorted.length - 1; i > 0; i--) {
+      if (isNextStudentDay(sorted[i - 1], sorted[i])) {
         currentStreak++;
       } else {
         break;

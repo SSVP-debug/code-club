@@ -1,20 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { Flame, ChevronLeft, ChevronRight } from "lucide-react";
+import { getStudentDayKey } from "../../utils/studentDay";
 
 const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 
-// `activityDates` entries are UTC ISO dates — `new Date().toISOString()
-// .split("T")[0]`, see appContext.jsx's markProblemSolved() — not local
-// calendar dates. ActivityHeatmapCard.jsx matches against that same UTC
-// slice for the same reason. Building this grid from local-date strings
-// instead would silently show 0 active days for anyone west of UTC (the
-// stored date is "tomorrow" relative to their local calendar) or shift
-// which cell lights up for anyone whose day rolls over off in either
-// direction — matching the UTC slice everywhere keeps this calendar and
-// the dashboard heatmap agreeing on the same set of active days.
-function toUTCISODate(date) {
-  return date.toISOString().split("T")[0];
-}
+// `activityDates` entries are IST calendar-day keys (see
+// backend/utils/studentDay.js and its frontend mirror,
+// src/utils/studentDay.js) — not raw UTC dates and not the viewer's local
+// calendar dates. ActivityHeatmapCard.jsx matches against the same key for
+// the same reason. Building this grid from a different day definition
+// would silently show 0 active days, or light up the wrong cell, for
+// anyone whose local calendar day doesn't line up with the IST day the
+// backend actually recorded.
 
 /**
  * StreakCalendarPopover
@@ -48,7 +45,7 @@ function StreakCalendarPopover({ streak, longestStreak, activityDates, onClose }
   }, [onClose]);
 
   const activeSet = useMemo(() => new Set(activityDates || []), [activityDates]);
-  const todayISO = useMemo(() => toUTCISODate(new Date()), []);
+  const todayISO = useMemo(() => getStudentDayKey(), []);
 
   const { weeks, monthLabel, isCurrentMonth, activeInMonth } = useMemo(() => {
     const year = viewDate.getFullYear();
@@ -59,7 +56,7 @@ function StreakCalendarPopover({ streak, longestStreak, activityDates, onClose }
 
     const cells = [];
     for (let day = 1; day <= daysInMonth; day++) {
-      const iso = toUTCISODate(new Date(Date.UTC(year, month, day)));
+      const iso = getStudentDayKey(new Date(Date.UTC(year, month, day)));
       cells.push({ iso, day, active: activeSet.has(iso), isToday: iso === todayISO });
     }
 

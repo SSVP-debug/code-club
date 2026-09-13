@@ -1,4 +1,5 @@
 import { calculateStreak } from "../utils/calculateStreak.js";
+import { getStudentDayKey } from "../utils/studentDay.js";
 import { evaluateAchievements } from "../services/achievementService.js";
 import { computeXPFromSlugs, buildDifficultyMap, XP_BY_DIFFICULTY } from "../utils/computeXP.js";
 import Problem from "../models/Problem.js";
@@ -147,7 +148,7 @@ export async function putProgress(req, res) {
         .lean();
       const bySlug = new Map(problems.map((p) => [p.slug, p]));
 
-      const today = new Date().toISOString().split("T")[0];
+      const today = getStudentDayKey();
       const nextTopicStats = topicStatsToObject(req.userDoc.topicStats);
       const nextSolvedDifficulty = {
         easy: req.userDoc.solvedDifficulty?.easy || 0,

@@ -1,4 +1,5 @@
 import { saveProgress } from "../services/userProgressService.js";
+import { getStudentDayKey } from "../utils/studentDay.js";
 
 export async function completeDailyChallenge(
   req,
@@ -13,9 +14,7 @@ export async function completeDailyChallenge(
       });
     }
 
-    const today = new Date()
-      .toISOString()
-      .split("T")[0];
+    const today = getStudentDayKey();
 
     const alreadyCompleted =
       (req.userDoc.dailyChallengeHistory || []).some(

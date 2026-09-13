@@ -8,7 +8,7 @@ A LeetCode-style DSA (Data Structures & Algorithms) practice platform built for 
 
 ## Features
 
-- **Monaco Editor** — VS Code-quality editor with syntax highlighting for Python, JavaScript, Java, and C++
+- **Monaco Editor** — VS Code-quality editor with syntax highlighting for Python, JavaScript, Java, C++, C, and TypeScript
 - **Live code execution** — runs code via Judge0 (self-hosted or RapidAPI) with custom stdin support
 - **Judge system** — submits against visible + hidden test cases, returns Accepted / Wrong Answer / Runtime Error / Compilation Error / Time Limit Exceeded
 - **250+ curated problems** — Easy through Hard, across Arrays, Two Pointers, Sliding Window, Hash Maps, Binary Search, Dynamic Programming, Bit Manipulation, Greedy, Stacks, Strings, Linked Lists, Trees, Graphs, Heaps, Backtracking, Tries, and more

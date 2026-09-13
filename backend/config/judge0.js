@@ -7,10 +7,72 @@
  * misconfigured or unreachable Judge0 instance should produce a loud log
  * line, not a failed deploy; the judge/compiler routes will surface the
  * real error to the user on their next submission anyway.
+ *
+ * That said, a silent log line is easy to miss in production — nobody
+ * tails startup logs on every deploy. `getJudge0ConfigStatus()` below is
+ * the machine-readable version of the same check, surfaced at
+ * GET /api/health/compiler (see controllers/healthController.js), which
+ * returns HTTP 503 in production when this configuration is unsafe. That
+ * makes it something a load balancer / uptime monitor / deploy pipeline
+ * can actually alert on, instead of relying on someone reading logs.
  */
 import { logger } from "./logger.js";
 
+/**
+ * Pure, side-effect-free check of the current Judge0 configuration.
+ * Exported separately from validateJudge0Config() so both the startup
+ * log and the health endpoint derive their verdict from one place —
+ * exactly the "one source of truth" pattern the rest of this codebase
+ * uses for streak/solved-count/etc.
+ *
+ * @returns {{ healthy: boolean, usingPublicSharedEndpoint: boolean, reason: string|null }}
+ */
+export function getJudge0ConfigStatus() {
+  const isProduction = process.env.NODE_ENV === "production";
+  const rawUrl = process.env.JUDGE0_API_URL;
+
+  if (!rawUrl) {
+    // No URL configured at all → defaults to the public ce.judge0.com
+    // instance. Fine for local dev; not for production.
+    return {
+      healthy: !isProduction,
+      usingPublicSharedEndpoint: true,
+      reason: isProduction
+        ? "JUDGE0_API_URL is not set — production is defaulting to the " +
+          "public ce.judge0.com instance, which is rate-limited and " +
+          "shared. See docs/judge0-setup.md."
+        : null,
+    };
+  }
+
+  let parsed;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    return {
+      healthy: false,
+      usingPublicSharedEndpoint: false,
+      reason: `JUDGE0_API_URL is not a valid URL: "${rawUrl}".`,
+    };
+  }
+
+  const usingPublicSharedEndpoint = parsed.hostname === "ce.judge0.com";
+  const unsafe = isProduction && usingPublicSharedEndpoint;
+
+  return {
+    healthy: !unsafe,
+    usingPublicSharedEndpoint,
+    reason: unsafe
+      ? "Running in production against the public ce.judge0.com instance " +
+        "— it's rate-limited and shared, and is the single biggest scale " +
+        "bottleneck in the stack. Migrate to a dedicated instance before " +
+        "real traffic; see docs/judge0-setup.md."
+      : null,
+  };
+}
+
 export function validateJudge0Config() {
+  const status = getJudge0ConfigStatus();
   const rawUrl = process.env.JUDGE0_API_URL;
 
   if (!rawUrl) {
@@ -24,7 +86,8 @@ export function validateJudge0Config() {
         "and RapidAPI setup." +
         (process.env.NODE_ENV === "production"
           ? " THIS IS PRODUCTION — real user code runs will queue behind " +
-            "every other ce.judge0.com user and start failing under load."
+            "every other ce.judge0.com user and start failing under load. " +
+            "GET /api/health/compiler will report 503 until this is fixed."
           : "")
     );
     return;
@@ -41,15 +104,9 @@ export function validateJudge0Config() {
     return;
   }
 
-  if (
-    process.env.NODE_ENV === "production" &&
-    parsed.hostname === "ce.judge0.com"
-  ) {
+  if (!status.healthy) {
     logger.error(
-      "[Judge0] Running in production against the public ce.judge0.com " +
-        "instance. This is the single biggest scale bottleneck in the " +
-        "stack — it's rate-limited and shared. Migrate to a dedicated " +
-        "instance before real traffic; see docs/judge0-setup.md."
+      `[Judge0] ${status.reason} GET /api/health/compiler will report 503 until this is fixed.`
     );
   }
 

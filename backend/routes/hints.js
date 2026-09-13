@@ -5,6 +5,7 @@ import User from "../models/User.js";
 import { PREMIUM_FEATURES } from "../middleware/premiumGate.js";
 import { getOrSetCache } from "../utils/cache.js";
 import { canAccessContestProblem } from "../services/contestProblemAccess.js";
+import { getStudentDayKey } from "../utils/studentDay.js";
 
 const router = Router({ mergeParams: true });
 const claude = new Anthropic();
@@ -48,10 +49,12 @@ router.post("/", async (req, res) => {
       if (!allowed) return res.status(404).json({ error: "Problem not found." });
     }
 
-    // ── Free tier limit: 3 hints/day (resets at midnight UTC) ───────────────
+    // ── Free tier limit: 3 hints/day (resets at midnight IST — see
+    // backend/utils/studentDay.js for the shared daily-gating policy)
+    // ─────────────────────────────────────────────────────────────────────
     // Premium users (or everyone, while MONETIZATION_ENABLED=false) skip this.
     if (!req.isPremium && req.userDoc) {
-      const today = new Date().toISOString().split("T")[0];
+      const today = getStudentDayKey();
       const freeLimit = PREMIUM_FEATURES.UNLIMITED_AI_HINTS.freeLimitPerDay;
 
       // Atomic conditional update: the filter only matches (and the update

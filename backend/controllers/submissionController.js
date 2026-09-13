@@ -2,6 +2,7 @@ import Submission, { SUBMISSION_STATUSES } from "../models/Submission.js";
 import { logger } from "../config/logger.js";
 import { hashNormalizedCode } from "../utils/codeNormalization.js";
 import { pickEncouragementMessage } from "../utils/encouragementMessages.js";
+import { getStudentDayKey } from "../utils/studentDay.js";
 
 export function toClientSubmission(doc) {
   return {
@@ -19,7 +20,11 @@ export function toClientSubmission(doc) {
     actualOutput: doc.actualOutput,
     encouragementMessage: doc.encouragementMessage ?? null,
     time: new Date(doc.createdAt).toISOString(),
-    date: new Date(doc.createdAt).toISOString().split("T")[0],
+    // IST calendar day this submission falls on — must agree with the
+    // shared day-key policy (backend/utils/studentDay.js) so "did I
+    // attempt something today" checks (e.g. DailyMissionCard.jsx) use the
+    // same day boundary as streak/quiz/challenge, not a UTC one.
+    date: getStudentDayKey(doc.createdAt),
     createdAt: doc.createdAt,
   };
 }

@@ -16,6 +16,7 @@ import { Router } from "express";
 import User from "../models/User.js";
 import Submission from "../models/Submission.js";
 import { progressToClientForRole } from "../controllers/progressController.js";
+import { getStudentDayKey } from "../utils/studentDay.js";
 
 const router = Router();
 
@@ -132,7 +133,9 @@ router.get("/", async (req, res) => {
         expectedOutput: doc.expectedOutput,
         actualOutput: doc.actualOutput,
         time: new Date(doc.createdAt).toISOString(),
-        date: new Date(doc.createdAt).toISOString().split("T")[0],
+        // Same IST day-key policy as submissionController.js's
+        // toClientSubmission() — see backend/utils/studentDay.js.
+        date: getStudentDayKey(doc.createdAt),
         createdAt: doc.createdAt,
       })),
     });

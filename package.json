@@ -11,7 +11,8 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "verify:no-hidden-test-leak": "node scripts/checkBundleForHiddenTestLeak.js"
+    "verify:no-hidden-test-leak": "node scripts/checkBundleForHiddenTestLeak.js",
+    "verify:readme-languages": "node scripts/checkReadmeLanguagesInSync.js"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",

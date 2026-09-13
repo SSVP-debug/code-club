@@ -9,28 +9,25 @@
  * this only needs to remember the date the quiz was last completed, not
  * the result itself.
  *
- * Uses the same date-key convention as appContext.jsx's streak calculation
- * (ISO "YYYY-MM-DD", local calendar day via toISOString) and the existing
- * getStorageData/setStorageData wrapper (src/services/storageService.js)
- * rather than raw localStorage calls.
+ * Uses the shared IST day-key policy (src/utils/studentDay.js — same
+ * policy the backend uses for streak/Daily Quiz Gate/Daily Challenge) and
+ * the existing getStorageData/setStorageData wrapper
+ * (src/services/storageService.js) rather than raw localStorage calls.
  */
 
 import { getStorageData, setStorageData } from "../services/storageService";
+import { getStudentDayKey } from "./studentDay";
 
 const LAST_COMPLETED_KEY = "codeclubDailyQuizLastCompleted";
 
-function todayKey() {
-  return new Date().toISOString().split("T")[0];
-}
-
 /** Has the Daily Quick Quiz already been completed today? */
 export function hasCompletedQuizToday() {
-  return getStorageData(LAST_COMPLETED_KEY, null) === todayKey();
+  return getStorageData(LAST_COMPLETED_KEY, null) === getStudentDayKey();
 }
 
 /** Marks today's Daily Quick Quiz as completed. */
 export function markQuizCompletedToday() {
-  setStorageData(LAST_COMPLETED_KEY, todayKey());
+  setStorageData(LAST_COMPLETED_KEY, getStudentDayKey());
 }
 
 // ── Per-session onboarding flow tracking ────────────────────────────────

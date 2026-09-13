@@ -9,17 +9,14 @@
  * server-side. This gate must not be bypassable by clearing browser
  * storage, so completion is read from and written to `User.dailyQuizCompletedDate`.
  *
- * "Today" is the same UTC calendar day used everywhere else in this
- * codebase for daily gating (`lastActivityDate`, `dailyChallengeHistory`
- * entries) — `new Date().toISOString().split("T")[0]`. Not user-local
- * time; see the module-level date helper below for the one place this is
- * computed, so status-checking, completion-recording, and "is it a new
- * day yet" all agree.
+ * "Today" is the shared IST calendar day used everywhere else in this
+ * codebase for daily gating (streak, `dailyChallengeHistory`, the daily
+ * hint quota) — see `backend/utils/studentDay.js` for the policy and the
+ * one place this is computed, so status-checking, completion-recording,
+ * and "is it a new day yet" all agree with every other daily feature.
  */
 
-function todayUTC() {
-  return new Date().toISOString().split("T")[0];
-}
+import { getStudentDayKey } from "../utils/studentDay.js";
 
 /**
  * GET /api/daily-quiz/status
@@ -30,7 +27,7 @@ function todayUTC() {
  * security information through the status endpoint").
  */
 export function getDailyQuizStatus(req, res) {
-  const completed = req.userDoc.dailyQuizCompletedDate === todayUTC();
+  const completed = req.userDoc.dailyQuizCompletedDate === getStudentDayKey();
 
   res.json({
     required: !completed,
@@ -47,7 +44,7 @@ export function getDailyQuizStatus(req, res) {
  */
 export async function completeDailyQuiz(req, res) {
   try {
-    const today = todayUTC();
+    const today = getStudentDayKey();
     const alreadyCompleted = req.userDoc.dailyQuizCompletedDate === today;
 
     if (!alreadyCompleted) {
