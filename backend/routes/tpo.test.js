@@ -4,7 +4,14 @@ vi.mock("../config/featureFlags.js", () => ({
   B2B_ENABLED: true,
 }));
 vi.mock("../models/User.js", () => ({
-  default: { find: vi.fn() },
+  default: { find: vi.fn(), aggregate: vi.fn() },
+}));
+vi.mock("../utils/cache.js", () => ({
+  // Bypass real caching — treat every call as a cache MISS, so each test's
+  // aggregate call is actually exercised instead of hitting a previous
+  // test's cached result. Same convention as routes/leaderboard.test.js.
+  getOrSetCache: vi.fn(async (key, ttl, fetchFn) => ({ value: await fetchFn(), cacheStatus: "MISS" })),
+  invalidateCachePrefix: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock("../models/Assignment.js", () => ({
   default: { findOne: vi.fn(), create: vi.fn(), find: vi.fn() },
@@ -26,6 +33,7 @@ function mockRes() {
   const res = {};
   res.status = vi.fn().mockReturnValue(res);
   res.json = vi.fn().mockReturnValue(res);
+  res.set = vi.fn().mockReturnValue(res);
   return res;
 }
 
@@ -37,6 +45,41 @@ const assignmentDoc = {
   dueDate: "2026-08-01",
   problemSlugs: ["two-sum", "valid-parentheses"],
 };
+
+// ── Shared route-dispatch test harness ──────────────────────────────────────
+// Walks the REAL exported router's route-layer stack for `method`+`path` and
+// invokes each handler in order exactly as Express does: if a handler
+// doesn't call next(), it was terminal (it already sent a response), so we
+// stop — mirroring real dispatch rather than re-implementing it. This tests
+// actual route wiring (role check → verified check → handler), not just
+// whatever an individual middleware does in isolation — see the
+// "assignment routes — requireVerified wiring" describe block below for why
+// that distinction is exactly what let the original P0 bug ship.
+async function runRoute(method, path, req) {
+  const res = mockRes();
+  const layer = tpoRouter.stack.find(
+    (l) => l.route && l.route.path === path && l.route.methods[method]
+  );
+  if (!layer) {
+    throw new Error(`No ${method.toUpperCase()} ${path} route found on tpoRouter`);
+  }
+
+  for (const routeLayer of layer.route.stack) {
+    let calledNext = false;
+    let nextErr;
+    await routeLayer.handle(req, res, (err) => {
+      calledNext = true;
+      nextErr = err;
+    });
+    if (nextErr) throw nextErr;
+    if (!calledNext) break; // terminal: this layer already sent the response
+  }
+  return res;
+}
+
+const pendingTpo = { role: "tpo", tpoProfile: { collegeDomain: "example.edu", verified: false } };
+const verifiedTpo = { role: "tpo", tpoProfile: { collegeDomain: "example.edu", verified: true } };
+const admin = { role: "admin" };
 
 describe("handleRemindAssignment", () => {
   let res;
@@ -164,38 +207,6 @@ describe("tpoRegistrationGate", () => {
 // same way Express would dispatch a live request, so a future regression
 // in route wiring (not middleware logic) would be caught here.
 describe("assignment routes — requireVerified wiring (regression for the pending-TPO bypass)", () => {
-  // Walks the REAL exported router's route-layer stack for `method`+`path`
-  // and invokes each handler in order exactly as Express does: if a
-  // handler doesn't call next(), it was terminal (it already sent a
-  // response), so we stop — mirroring real dispatch, not re-implementing
-  // it. This proves the actual wired chain (role check → verified check →
-  // handler), not just that requireVerified works in isolation.
-  async function runRoute(method, path, req) {
-    const res = mockRes();
-    const layer = tpoRouter.stack.find(
-      (l) => l.route && l.route.path === path && l.route.methods[method]
-    );
-    if (!layer) {
-      throw new Error(`No ${method.toUpperCase()} ${path} route found on tpoRouter`);
-    }
-
-    for (const routeLayer of layer.route.stack) {
-      let calledNext = false;
-      let nextErr;
-      await routeLayer.handle(req, res, (err) => {
-        calledNext = true;
-        nextErr = err;
-      });
-      if (nextErr) throw nextErr;
-      if (!calledNext) break; // terminal: this layer already sent the response
-    }
-    return res;
-  }
-
-  const pendingTpo = { role: "tpo", tpoProfile: { collegeDomain: "example.edu", verified: false } };
-  const verifiedTpo = { role: "tpo", tpoProfile: { collegeDomain: "example.edu", verified: true } };
-  const admin = { role: "admin" };
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -306,6 +317,293 @@ describe("assignment routes — requireVerified wiring (regression for the pendi
 
       expect(res.status).not.toHaveBeenCalledWith(403); // not blocked by verification...
       expect(res.status).toHaveBeenCalledWith(404); // ...but still blocked by college scoping
+    });
+  });
+});
+
+// ── GET /api/tpo/students — server-side pagination/search/sort ─────────────
+//
+// Scalability fix (2026-09): this endpoint used to load the entire college
+// roster and let TpoDashboardPage.jsx filter/sort in the browser. Rewritten
+// to a single Mongo aggregation with $facet, mirroring the pattern
+// recruiter.js's /candidates endpoint already established for the same
+// "search+sort+paginate a User collection" shape.
+describe("GET /students — pagination, search, sort, and authorization", () => {
+  function mockAggregateResult(data, totalCount) {
+    User.aggregate.mockResolvedValue([{ data, totalCount: [{ count: totalCount }] }]);
+  }
+
+  function lastPipeline() {
+    return User.aggregate.mock.calls.at(-1)[0];
+  }
+
+  function matchStage(pipeline) {
+    return pipeline.find((stage) => stage.$match)?.$match;
+  }
+
+  function sortStage(pipeline) {
+    return pipeline.find((stage) => stage.$sort)?.$sort;
+  }
+
+  function facetDataStage(pipeline) {
+    const facet = pipeline.find((stage) => stage.$facet)?.$facet;
+    return facet?.data ?? [];
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAggregateResult([], 0);
+  });
+
+  describe("authentication / role / verification", () => {
+    it("a pending TPO gets 403 and the database is never queried", async () => {
+      const req = { userDoc: pendingTpo, query: {} };
+      const res = await runRoute("get", "/students", req);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(User.aggregate).not.toHaveBeenCalled();
+    });
+
+    it("a student account gets 403 at the role check, before verification is even considered", async () => {
+      const req = { userDoc: { role: "student" }, query: {} };
+      const res = await runRoute("get", "/students", req);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(User.aggregate).not.toHaveBeenCalled();
+    });
+
+    it("a recruiter account gets 403 at the role check", async () => {
+      const req = { userDoc: { role: "recruiter", recruiterProfile: { verified: true } }, query: {} };
+      const res = await runRoute("get", "/students", req);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+    });
+
+    it("a verified TPO is allowed through to the handler", async () => {
+      const req = { userDoc: verifiedTpo, query: {} };
+      const res = await runRoute("get", "/students", req);
+
+      expect(res.status).not.toHaveBeenCalledWith(403);
+      expect(User.aggregate).toHaveBeenCalled();
+    });
+
+    it("an admin is allowed through regardless of tpoProfile", async () => {
+      // Admins hit /tpo/students too (requireRole allows "tpo" or "admin"),
+      // but the route still needs *some* collegeDomain to scope the query —
+      // this exercises the admin-bypasses-verification path specifically,
+      // not the (separate, pre-existing) "admin with no domain set" 400 case.
+      const req = { userDoc: { role: "admin", tpoProfile: { collegeDomain: "example.edu" } }, query: {} };
+      const res = await runRoute("get", "/students", req);
+
+      expect(res.status).not.toHaveBeenCalledWith(403);
+    });
+  });
+
+  describe("college isolation — must always come from the server-known TPO profile", () => {
+    it("scopes the query to the TPO's own collegeDomain", async () => {
+      const req = { userDoc: verifiedTpo, query: {} };
+      await runRoute("get", "/students", req);
+
+      expect(matchStage(lastPipeline())).toEqual(
+        expect.objectContaining({ emailDomain: "example.edu", role: "student" })
+      );
+    });
+
+    it("ignores a client-supplied collegeDomain/domain/collegeId query param entirely", async () => {
+      const req = {
+        userDoc: verifiedTpo,
+        query: { collegeDomain: "rival-college.edu", domain: "rival-college.edu", collegeId: "someone-elses-id" },
+      };
+      await runRoute("get", "/students", req);
+
+      const match = matchStage(lastPipeline());
+      expect(match.emailDomain).toBe("example.edu"); // still the TPO's own domain
+      expect(JSON.stringify(match)).not.toContain("rival-college.edu");
+    });
+
+    it("two different TPOs' requests each scope to their own domain, never each other's", async () => {
+      const tpoA = { role: "tpo", tpoProfile: { collegeDomain: "college-a.edu", verified: true } };
+      const tpoB = { role: "tpo", tpoProfile: { collegeDomain: "college-b.edu", verified: true } };
+
+      await runRoute("get", "/students", { userDoc: tpoA, query: {} });
+      expect(matchStage(lastPipeline()).emailDomain).toBe("college-a.edu");
+
+      await runRoute("get", "/students", { userDoc: tpoB, query: {} });
+      expect(matchStage(lastPipeline()).emailDomain).toBe("college-b.edu");
+    });
+  });
+
+  describe("pagination", () => {
+    it("defaults to page 1 with the default page size when no query params are given", async () => {
+      await runRoute("get", "/students", { userDoc: verifiedTpo, query: {} });
+
+      const data = facetDataStage(lastPipeline());
+      expect(data).toContainEqual({ $skip: 0 });
+      expect(data).toContainEqual({ $limit: 25 });
+    });
+
+    it("page 2 skips exactly one page's worth of records", async () => {
+      await runRoute("get", "/students", { userDoc: verifiedTpo, query: { page: "2", limit: "10" } });
+
+      const data = facetDataStage(lastPipeline());
+      expect(data).toContainEqual({ $skip: 10 });
+      expect(data).toContainEqual({ $limit: 10 });
+    });
+
+    it("a page far beyond the total simply returns an empty page, not an error", async () => {
+      mockAggregateResult([], 3); // 3 total students, but...
+      const res = await runRoute("get", "/students", { userDoc: verifiedTpo, query: { page: "999" } });
+
+      expect(res.status).not.toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ students: [], total: 3, page: 999 }));
+    });
+
+    it("response includes page/limit/total so the frontend can compute total pages", async () => {
+      mockAggregateResult([{ name: "Alice" }], 47);
+      const res = await runRoute("get", "/students", { userDoc: verifiedTpo, query: { page: "2", limit: "10" } });
+
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ students: [{ name: "Alice" }], total: 47, page: 2, limit: 10 })
+      );
+    });
+  });
+
+  describe("page size normalization", () => {
+    it("uses the default (25) when no limit is given", async () => {
+      await runRoute("get", "/students", { userDoc: verifiedTpo, query: {} });
+      expect(facetDataStage(lastPipeline())).toContainEqual({ $limit: 25 });
+    });
+
+    it("respects a valid custom limit", async () => {
+      await runRoute("get", "/students", { userDoc: verifiedTpo, query: { limit: "5" } });
+      expect(facetDataStage(lastPipeline())).toContainEqual({ $limit: 5 });
+    });
+
+    it("caps an excessively large limit at the maximum (50)", async () => {
+      await runRoute("get", "/students", { userDoc: verifiedTpo, query: { limit: "999999" } });
+      expect(facetDataStage(lastPipeline())).toContainEqual({ $limit: 50 });
+    });
+
+    it("falls back to the default for a non-numeric limit", async () => {
+      await runRoute("get", "/students", { userDoc: verifiedTpo, query: { limit: "abc" } });
+      expect(facetDataStage(lastPipeline())).toContainEqual({ $limit: 25 });
+    });
+
+    it("falls back to the default for a zero or negative limit", async () => {
+      await runRoute("get", "/students", { userDoc: verifiedTpo, query: { limit: "0" } });
+      expect(facetDataStage(lastPipeline())).toContainEqual({ $limit: 25 });
+
+      await runRoute("get", "/students", { userDoc: verifiedTpo, query: { limit: "-5" } });
+      expect(facetDataStage(lastPipeline())).toContainEqual({ $limit: 25 });
+    });
+
+    it("falls back to page 1 for an invalid page number", async () => {
+      await runRoute("get", "/students", { userDoc: verifiedTpo, query: { page: "not-a-number" } });
+      expect(facetDataStage(lastPipeline())).toContainEqual({ $skip: 0 });
+
+      await runRoute("get", "/students", { userDoc: verifiedTpo, query: { page: "-3" } });
+      expect(facetDataStage(lastPipeline())).toContainEqual({ $skip: 0 });
+    });
+  });
+
+  describe("search", () => {
+    it("with no search term, applies no $or filter", async () => {
+      await runRoute("get", "/students", { userDoc: verifiedTpo, query: {} });
+      expect(matchStage(lastPipeline()).$or).toBeUndefined();
+    });
+
+    it("searches by name/email via a case-insensitive $or", async () => {
+      await runRoute("get", "/students", { userDoc: verifiedTpo, query: { q: "krishna" } });
+
+      const match = matchStage(lastPipeline());
+      expect(match.$or).toEqual([
+        { displayName: { $regex: "krishna", $options: "i" } },
+        { email: { $regex: "krishna", $options: "i" } },
+      ]);
+    });
+
+    it("escapes regex metacharacters in the search term instead of treating them as a pattern", async () => {
+      await runRoute("get", "/students", { userDoc: verifiedTpo, query: { q: "a.b(c)" } });
+
+      const match = matchStage(lastPipeline());
+      expect(match.$or[0].displayName.$regex).toBe("a\\.b\\(c\\)");
+    });
+
+    it("trims whitespace-only search to an empty (no-op) search", async () => {
+      await runRoute("get", "/students", { userDoc: verifiedTpo, query: { q: "   " } });
+      expect(matchStage(lastPipeline()).$or).toBeUndefined();
+    });
+
+    it("still scopes to the TPO's own college even while searching", async () => {
+      await runRoute("get", "/students", { userDoc: verifiedTpo, query: { q: "krishna" } });
+      expect(matchStage(lastPipeline()).emailDomain).toBe("example.edu");
+    });
+
+    it("combines with pagination correctly", async () => {
+      await runRoute("get", "/students", { userDoc: verifiedTpo, query: { q: "krishna", page: "2", limit: "5" } });
+
+      expect(matchStage(lastPipeline()).$or).toBeDefined();
+      expect(facetDataStage(lastPipeline())).toContainEqual({ $skip: 5 });
+    });
+  });
+
+  describe("sorting", () => {
+    it.each([
+      ["xp", { totalXP: -1, _id: 1 }],
+      ["solved", { solvedCount: -1, _id: 1 }],
+      ["streak", { currentStreak: -1, _id: 1 }],
+      ["name", { displayName: 1, _id: 1 }],
+    ])("sort=%s maps to the correct, allowlisted Mongo sort spec", async (sortKey, expectedSort) => {
+      await runRoute("get", "/students", { userDoc: verifiedTpo, query: { sort: sortKey } });
+      expect(sortStage(lastPipeline())).toEqual(expectedSort);
+    });
+
+    it("defaults to xp when no sort is given", async () => {
+      await runRoute("get", "/students", { userDoc: verifiedTpo, query: {} });
+      expect(sortStage(lastPipeline())).toEqual({ totalXP: -1, _id: 1 });
+    });
+
+    it("falls back to xp for an unrecognized/malicious sort value instead of passing it through to Mongo", async () => {
+      await runRoute("get", "/students", {
+        userDoc: verifiedTpo,
+        query: { sort: "__proto__.polluted" },
+      });
+      expect(sortStage(lastPipeline())).toEqual({ totalXP: -1, _id: 1 });
+    });
+  });
+
+  describe("combined search + sort + pagination", () => {
+    it("produces a single deterministic pipeline reflecting all three", async () => {
+      await runRoute("get", "/students", {
+        userDoc: verifiedTpo,
+        query: { q: "krishna", sort: "name", page: "3", limit: "10" },
+      });
+
+      const pipeline = lastPipeline();
+      expect(matchStage(pipeline)).toEqual(
+        expect.objectContaining({
+          emailDomain: "example.edu",
+          role: "student",
+          $or: expect.any(Array),
+        })
+      );
+      expect(sortStage(pipeline)).toEqual({ displayName: 1, _id: 1 });
+      expect(facetDataStage(pipeline)).toContainEqual({ $skip: 20 });
+      expect(facetDataStage(pipeline)).toContainEqual({ $limit: 10 });
+    });
+  });
+
+  describe("data exposure", () => {
+    it("the $project stage only exposes the intended fields — no solvedSlugs, no password/internal fields", async () => {
+      await runRoute("get", "/students", { userDoc: verifiedTpo, query: {} });
+
+      const project = facetDataStage(lastPipeline()).find((s) => s.$project)?.$project;
+      expect(Object.keys(project).sort()).toEqual(
+        ["_id", "currentStreak", "easy", "email", "hard", "joinedDate", "medium", "name", "solvedCount", "totalXP"].sort()
+      );
+      expect(project).not.toHaveProperty("solvedSlugs");
+      expect(project).not.toHaveProperty("password");
+      expect(project).not.toHaveProperty("topicStats");
     });
   });
 });

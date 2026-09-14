@@ -45,13 +45,41 @@ const dashboardData = {
   topicCoverage: [{ topic: "Arrays", totalSolves: 10 }],
 };
 
-const studentsData = {
-  students: [
-    { name: "Alice Adams", email: "alice@example.edu", totalXP: 500, solvedCount: 20, currentStreak: 3 },
-    { name: "Bob Brown", email: "bob@example.edu", totalXP: 900, solvedCount: 10, currentStreak: 0 },
-    { name: "Carol Chen", email: "carol@example.edu", totalXP: 100, solvedCount: 5, currentStreak: 1 },
-  ],
+const allStudents = [
+  { name: "Alice Adams", email: "alice@example.edu", totalXP: 500, solvedCount: 20, currentStreak: 3 },
+  { name: "Bob Brown", email: "bob@example.edu", totalXP: 900, solvedCount: 10, currentStreak: 0 },
+  { name: "Carol Chen", email: "carol@example.edu", totalXP: 100, solvedCount: 5, currentStreak: 1 },
+];
+// Kept for the (rare) place a test wants the raw fixture rather than the
+// fake-backend response below.
+const studentsData = { students: allStudents, total: allStudents.length, page: 1, limit: 25 };
+
+// A tiny stand-in for the real GET /api/tpo/students — applies the same
+// q/sort/page contract the real backend implements (see
+// backend/routes/tpo.js), against the static fixture above. Lets these
+// tests exercise the real request-per-change architecture (debounced
+// search, sort-triggers-a-request, page-triggers-a-request) instead of
+// re-testing client-side filtering that no longer exists.
+const SORTERS = {
+  xp: (a, b) => b.totalXP - a.totalXP,
+  solved: (a, b) => b.solvedCount - a.solvedCount,
+  streak: (a, b) => b.currentStreak - a.currentStreak,
+  name: (a, b) => a.name.localeCompare(b.name),
 };
+function fakeStudentsBackend(url) {
+  const params = new URLSearchParams(url.split("?")[1] || "");
+  const q = (params.get("q") || "").toLowerCase();
+  const sort = params.get("sort") || "xp";
+  const page = parseInt(params.get("page"), 10) || 1;
+  const limit = parseInt(params.get("limit"), 10) || 25;
+
+  const filtered = allStudents.filter(
+    s => !q || s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q)
+  );
+  const sorted = [...filtered].sort(SORTERS[sort] || SORTERS.xp);
+  const start = (page - 1) * limit;
+  return Promise.resolve({ students: sorted.slice(start, start + limit), total: filtered.length, page, limit });
+}
 
 function renderDashboard() {
   return render(
@@ -66,7 +94,7 @@ function renderDashboard() {
 async function loadDashboard() {
   apiFetch.mockImplementation((url) => {
     if (url === "/api/tpo/dashboard") return Promise.resolve(dashboardData);
-    if (url === "/api/tpo/students") return Promise.resolve(studentsData);
+    if (url.startsWith("/api/tpo/students")) return fakeStudentsBackend(url);
     if (url === "/api/tpo/assignments") return Promise.resolve({ assignments: [] });
     return Promise.reject(new Error(`Unexpected apiFetch call: ${url}`));
   });
@@ -86,27 +114,34 @@ describe("TpoDashboardPage — students tab", () => {
     expect(rows).toEqual(["Bob Brown", "Alice Adams", "Carol Chen"]);
   });
 
-  it("filters the roster by name as you type", async () => {
+  it("filters the roster by name as you type (debounced, server-side)", async () => {
     await loadDashboard();
 
     fireEvent.change(screen.getByPlaceholderText(/search by name or email/i), {
       target: { value: "carol" },
     });
 
-    expect(screen.getByText("Carol Chen")).toBeInTheDocument();
-    expect(screen.queryByText("Alice Adams")).not.toBeInTheDocument();
-    expect(screen.queryByText("Bob Brown")).not.toBeInTheDocument();
+    // Debounced — the request (and re-render) happen after a short delay,
+    // not on the keystroke itself.
+    await waitFor(() => {
+      expect(screen.getByText("Carol Chen")).toBeInTheDocument();
+      expect(screen.queryByText("Alice Adams")).not.toBeInTheDocument();
+      expect(screen.queryByText("Bob Brown")).not.toBeInTheDocument();
+    });
+    expect(apiFetch).toHaveBeenCalledWith(expect.stringContaining("q=carol"));
   });
 
-  it("filters the roster by email as you type", async () => {
+  it("filters the roster by email as you type (debounced, server-side)", async () => {
     await loadDashboard();
 
     fireEvent.change(screen.getByPlaceholderText(/search by name or email/i), {
       target: { value: "bob@example.edu" },
     });
 
-    expect(screen.getByText("Bob Brown")).toBeInTheDocument();
-    expect(screen.queryByText("Alice Adams")).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Bob Brown")).toBeInTheDocument();
+      expect(screen.queryByText("Alice Adams")).not.toBeInTheDocument();
+    });
   });
 
   it("re-sorts the roster when a different sort option is chosen (Name: Alice, Bob, Carol)", async () => {
@@ -114,8 +149,11 @@ describe("TpoDashboardPage — students tab", () => {
 
     fireEvent.change(screen.getByDisplayValue("Sort: XP"), { target: { value: "name" } });
 
-    const rows = screen.getAllByText(/Adams|Brown|Chen/).map((el) => el.textContent);
-    expect(rows).toEqual(["Alice Adams", "Bob Brown", "Carol Chen"]);
+    await waitFor(() => {
+      const rows = screen.getAllByText(/Adams|Brown|Chen/).map((el) => el.textContent);
+      expect(rows).toEqual(["Alice Adams", "Bob Brown", "Carol Chen"]);
+    });
+    expect(apiFetch).toHaveBeenCalledWith(expect.stringContaining("sort=name"));
   });
 
   it("shows an empty-state message instead of an empty list when no student matches the search", async () => {
@@ -125,7 +163,9 @@ describe("TpoDashboardPage — students tab", () => {
       target: { value: "nobody-matches-this" },
     });
 
-    expect(screen.getByText(/no students match/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/no students match/i)).toBeInTheDocument();
+    });
   });
 
   it("no longer renders the dead hover-only affordance on student rows", async () => {
@@ -133,6 +173,57 @@ describe("TpoDashboardPage — students tab", () => {
 
     const row = screen.getByText("Alice Adams").closest("div");
     expect(row.className).not.toMatch(/hover:bg-zinc-800\/30/);
+  });
+
+  it("shows pagination info and disables Previous on the first page", async () => {
+    await loadDashboard();
+    await waitFor(() => expect(screen.getByText(/page 1 of 1/i)).toBeInTheDocument());
+    expect(screen.getByRole("button", { name: /previous/i })).toBeDisabled();
+  });
+
+  it("Next fetches the next page and Previous becomes enabled", async () => {
+    // A dedicated multi-page fixture — the shared 3-student fixture above
+    // fits on one page, so it can't exercise real page navigation.
+    const pageOneStudents = [{ name: "Page One Student", email: "p1@example.edu", totalXP: 1, solvedCount: 1, currentStreak: 0 }];
+    const pageTwoStudents = [{ name: "Page Two Student", email: "p2@example.edu", totalXP: 1, solvedCount: 1, currentStreak: 0 }];
+
+    apiFetch.mockImplementation((url) => {
+      if (url === "/api/tpo/dashboard") return Promise.resolve(dashboardData);
+      if (url === "/api/tpo/assignments") return Promise.resolve({ assignments: [] });
+      if (url.startsWith("/api/tpo/students")) {
+        const params = new URLSearchParams(url.split("?")[1] || "");
+        const page = parseInt(params.get("page"), 10) || 1;
+        return Promise.resolve({
+          students: page === 1 ? pageOneStudents : pageTwoStudents,
+          total: 26, // > 25 (STUDENTS_PAGE_SIZE) so there are two pages
+          page,
+          limit: 25,
+        });
+      }
+      return Promise.reject(new Error(`Unexpected apiFetch call: ${url}`));
+    });
+    renderDashboard();
+    await waitFor(() => screen.getByText("Page One Student"));
+
+    fireEvent.click(screen.getByRole("button", { name: /next/i }));
+
+    await waitFor(() => expect(screen.getByText("Page Two Student")).toBeInTheDocument());
+    expect(screen.queryByText("Page One Student")).not.toBeInTheDocument();
+    expect(apiFetch).toHaveBeenCalledWith(expect.stringContaining("page=2"));
+    expect(screen.getByRole("button", { name: /previous/i })).not.toBeDisabled();
+  });
+
+  it("shows an API error with a retry option instead of a blank table", async () => {
+    apiFetch.mockImplementation((url) => {
+      if (url === "/api/tpo/dashboard") return Promise.resolve(dashboardData);
+      if (url === "/api/tpo/assignments") return Promise.resolve({ assignments: [] });
+      if (url.startsWith("/api/tpo/students")) return Promise.reject(new Error("Network error"));
+      return Promise.reject(new Error(`Unexpected apiFetch call: ${url}`));
+    });
+    renderDashboard();
+
+    await waitFor(() => expect(screen.getByText(/try again/i)).toBeInTheDocument());
+    expect(screen.getByText(/network error/i)).toBeInTheDocument();
   });
 });
 
@@ -174,7 +265,7 @@ describe("TpoDashboardPage — overview tab (analytics)", () => {
   async function loadOverview(overrides = {}) {
     apiFetch.mockImplementation((url) => {
       if (url === "/api/tpo/dashboard") return Promise.resolve({ ...dashboardData, ...overrides });
-      if (url === "/api/tpo/students") return Promise.resolve(studentsData);
+      if (url.startsWith("/api/tpo/students")) return Promise.resolve(studentsData);
       if (url === "/api/tpo/assignments") return Promise.resolve({ assignments: [] });
       return Promise.reject(new Error(`Unexpected apiFetch call: ${url}`));
     });
@@ -228,7 +319,7 @@ describe("TpoDashboardPage — assignments tab reminder", () => {
   async function loadAssignmentsTab() {
     apiFetch.mockImplementation((url, opts) => {
       if (url === "/api/tpo/dashboard") return Promise.resolve(dashboardData);
-      if (url === "/api/tpo/students") return Promise.resolve(studentsData);
+      if (url.startsWith("/api/tpo/students")) return Promise.resolve(studentsData);
       if (url === "/api/tpo/assignments" && !opts) {
         return Promise.resolve({
           assignments: [

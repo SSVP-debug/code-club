@@ -192,38 +192,115 @@ router.get("/me", requireRole("tpo", "admin"),
   });
 
 // ── GET /api/tpo/students ───────────────────────────────────────────────────
+// Server-side paginated/searched/sorted student directory. Previously this
+// returned the ENTIRE college roster in one response and TpoDashboardPage.jsx
+// filtered/sorted the full array in the browser — fine at a handful of
+// students, not at the thousands a real college has. Rewritten to mirror
+// the same pattern recruiter.js's /candidates endpoint already established
+// for this exact "search+sort+paginate a User collection" shape: a single
+// Mongo aggregation with $facet (one round-trip for both the page of data
+// and the total count), rather than pulling the whole collection into Node.
+const STUDENT_SORT_FIELDS = {
+  // Client sort key → { Mongo sort spec }. Explicit allowlist — req.query.sort
+  // is never passed into .sort()/$sort directly, so a client can't inject an
+  // arbitrary field or operator here. _id is always the tiebreaker so paging
+  // stays stable even when many students share the same primary sort value
+  // (e.g. many students with 0 XP) — without it, students could
+  // duplicate/skip across page boundaries as ties get ordered inconsistently
+  // between requests.
+  xp: { totalXP: -1, _id: 1 },
+  solved: { solvedCount: -1, _id: 1 },
+  streak: { currentStreak: -1, _id: 1 },
+  name: { displayName: 1, _id: 1 },
+};
+const STUDENTS_DEFAULT_PAGE_SIZE = 25;
+const STUDENTS_MAX_PAGE_SIZE = 50; // same cap as recruiter.js's /candidates
+
 router.get("/students", requireRole("tpo", "admin"),
   requireVerified, async (req, res) => {
     if (b2bGate(req, res)) return;
 
     try {
 
-
       const domain = req.userDoc.tpoProfile?.collegeDomain;
       if (!domain) return res.status(400).json({ error: "No college domain set on this TPO account." });
 
-      const { value: formatted, cacheStatus } = await getOrSetCache(
-        `${TPO_CACHE_PREFIX}students:${domain}`,
+      // Normalize page/limit — never trust these as-is. Invalid, missing,
+      // zero, or negative values all fall back to sane defaults rather
+      // than erroring or producing an inconsistent edge case, since a
+      // malformed query param here shouldn't break the page for a TPO.
+      const rawPage = parseInt(req.query.page, 10);
+      const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
+      const rawLimit = parseInt(req.query.limit, 10);
+      const limit = Math.min(
+        STUDENTS_MAX_PAGE_SIZE,
+        Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : STUDENTS_DEFAULT_PAGE_SIZE
+      );
+      const skip = (page - 1) * limit;
+
+      // Sort: explicit allowlist only — see STUDENT_SORT_FIELDS above.
+      const sortKey = STUDENT_SORT_FIELDS[req.query.sort] ? req.query.sort : "xp";
+      const sortSpec = STUDENT_SORT_FIELDS[sortKey];
+
+      // Search: college-scoped like everything else here — the $match
+      // below already restricts to this TPO's own emailDomain before any
+      // search term is applied, so `q` can never widen the result set
+      // outside the TPO's own institution. Same regex-escaping approach as
+      // recruiter.js's `college` filter, so a search term containing regex
+      // metacharacters (e.g. "a.b" or "(test)") is treated literally
+      // instead of as a pattern.
+      const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+      const searchMatch = q
+        ? {
+          $or: [
+            { displayName: { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" } },
+            { email: { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" } },
+          ],
+        }
+        : {};
+
+      const cacheKey = `${TPO_CACHE_PREFIX}students:${domain}:${JSON.stringify({ page, limit, sortKey, q })}`;
+
+      const { value: payload, cacheStatus } = await getOrSetCache(
+        cacheKey,
         TPO_CACHE_TTL_SECONDS,
         async () => {
-          const students = await User.find({
-            emailDomain: domain.toLowerCase(),
-            role: "student",
-          })
-            .select("displayName email totalXP solvedSlugs currentStreak solvedDifficulty topicStats joinedDate")
-            .lean();
+          const [aggResult] = await User.aggregate([
+            { $match: { emailDomain: domain.toLowerCase(), role: "student", ...searchMatch } },
+            // solvedCount computed here, once, in Mongo — the raw
+            // `solvedSlugs` array itself is never selected/projected out
+            // below, so it never crosses into Node for this endpoint.
+            { $addFields: { solvedCount: { $size: { $ifNull: ["$solvedSlugs", []] } } } },
+            { $sort: sortSpec },
+            {
+              $facet: {
+                data: [
+                  { $skip: skip },
+                  { $limit: limit },
+                  {
+                    $project: {
+                      _id: 0,
+                      name: "$displayName",
+                      email: 1,
+                      totalXP: { $ifNull: ["$totalXP", 0] },
+                      solvedCount: 1,
+                      currentStreak: { $ifNull: ["$currentStreak", 0] },
+                      easy: { $ifNull: ["$solvedDifficulty.easy", 0] },
+                      medium: { $ifNull: ["$solvedDifficulty.medium", 0] },
+                      hard: { $ifNull: ["$solvedDifficulty.hard", 0] },
+                      joinedDate: 1,
+                    },
+                  },
+                ],
+                totalCount: [{ $count: "count" }],
+              },
+            },
+          ]);
 
-          return students.map(s => ({
-            name: s.displayName,
-            email: s.email,
-            totalXP: s.totalXP || 0,
-            solvedCount: s.solvedSlugs?.length ?? 0,
-            currentStreak: s.currentStreak || 0,
-            easy: s.solvedDifficulty?.easy || 0,
-            medium: s.solvedDifficulty?.medium || 0,
-            hard: s.solvedDifficulty?.hard || 0,
-            joinedDate: s.joinedDate,
-          }));
+          return {
+            students: aggResult?.data ?? [],
+            total: aggResult?.totalCount?.[0]?.count ?? 0,
+          };
         }
       );
 
@@ -231,8 +308,10 @@ router.get("/students", requireRole("tpo", "admin"),
       return res.json({
         college: req.userDoc.tpoProfile?.collegeName,
         domain,
-        students: formatted,
-        total: formatted.length,
+        students: payload.students,
+        total: payload.total,
+        page,
+        limit,
       });
 
     } catch (err) {
