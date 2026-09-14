@@ -352,7 +352,14 @@ router.get("/dashboard", requireRole("tpo", "admin"),
 
 // ── POST /api/tpo/assignments ───────────────────────────────────────────────
 // TPO creates a new problem assignment for their college.
-router.post("/assignments", requireRole("tpo", "admin"), async (req, res) => {
+//
+// requireVerified added here (2026-09) — this route was missing it while
+// every other TPO route already had it (see /me, /students, /dashboard,
+// /report/pdf below). Without it, a pending/unverified TPO account could
+// create an assignment and trigger a mass notification to every real
+// student on their claimed college domain before any admin had ever
+// reviewed the account. See docs/audits/ TPO security audit.
+router.post("/assignments", requireRole("tpo", "admin"), requireVerified, async (req, res) => {
   if (b2bGate(req, res)) return;
 
   try {
@@ -408,7 +415,9 @@ router.post("/assignments", requireRole("tpo", "admin"), async (req, res) => {
 
 // ── GET /api/tpo/assignments ────────────────────────────────────────────────
 // TPO view: all assignments they've created, with per-student completion %.
-router.get("/assignments", requireRole("tpo", "admin"), async (req, res) => {
+// requireVerified added here (2026-09) — see the POST /assignments comment
+// above for why.
+router.get("/assignments", requireRole("tpo", "admin"), requireVerified, async (req, res) => {
   if (b2bGate(req, res)) return;
 
   try {
@@ -501,7 +510,9 @@ export async function handleRemindAssignment(req, res) {
   }
 }
 
-router.post("/assignments/:id/remind", requireRole("tpo", "admin"), handleRemindAssignment);
+// requireVerified added here (2026-09) — see the POST /assignments comment
+// above for why.
+router.post("/assignments/:id/remind", requireRole("tpo", "admin"), requireVerified, handleRemindAssignment);
 
 // ── GET /api/assignments/student ────────────────────────────────────────────
 // Student view: assignments relevant to their college, with their own progress.
