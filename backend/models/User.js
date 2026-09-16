@@ -536,6 +536,19 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Compound index for the { emailDomain, role: "student" } filter shared by
+// every TPO/recruiter endpoint that scopes a query to "students at this
+// institution": routes/tpo.js's /students, /dashboard, /assignments, and
+// routes/recruiter.js's /candidates search all run this exact filter
+// shape. emailDomain and role each already have their own single-field
+// index above (kept — role alone is still queried independently
+// elsewhere, e.g. adminController.js's role-count dashboards), but no
+// compound index existed for the pair itself. Added once real usage
+// (Phase 2's TPO student-directory pagination) made this filter run far
+// more often per session than the old single unbounded fetch it replaced
+// — see docs/audits/ for the index-analysis writeup that preceded this.
+userSchema.index({ emailDomain: 1, role: 1 });
+
 // Keeps emailDomain derived from email on every save, not just at account
 // creation — see the emailDomain field comment above for why this exists
 // as a hook rather than a one-off setter in middleware/auth.js. Runs on
