@@ -4,6 +4,7 @@ vi.mock("../models/College.js", () => ({
     default: {
         find: vi.fn(),
         findById: vi.fn(),
+        findByDomain: vi.fn(),
         deleteOne: vi.fn(),
         countDocuments: vi.fn(),
     },
@@ -16,6 +17,10 @@ vi.mock("../models/User.js", () => ({
         countDocuments: vi.fn(),
         deleteOne: vi.fn(),
     },
+}));
+vi.mock("../services/tpoTeamService.js", () => ({
+    claimPrimaryIfNone: vi.fn(),
+    clearPrimaryIfCurrent: vi.fn(),
 }));
 vi.mock("../models/ImpersonationLog.js", () => ({
     default: { updateOne: vi.fn(), create: vi.fn() },
@@ -55,6 +60,7 @@ import Problem from "../models/Problem.js";
 import { createNotification } from "../services/notificationService.js";
 import { recordAdminAction } from "../services/adminAuditLog.js";
 import { invalidateCachedUserByFirebaseUid } from "../utils/userAuthCache.js";
+import { claimPrimaryIfNone, clearPrimaryIfCurrent } from "../services/tpoTeamService.js";
 import {
     getPendingQueue,
     approveRecruiter,
@@ -233,6 +239,14 @@ describe("adminController", () => {
     });
 
     describe("approveTpo", () => {
+        function mockPendingCandidates(candidates) {
+            User.find.mockReturnValueOnce({
+                sort: vi.fn().mockReturnThis(),
+                select: vi.fn().mockReturnThis(),
+                lean: vi.fn().mockResolvedValue(candidates),
+            });
+        }
+
         it("verifies the college, bulk-verifies matching pending TPO profiles, and audit-logs it", async () => {
             const college = {
                 _id: "c1",
@@ -244,6 +258,7 @@ describe("adminController", () => {
             };
             const admin = makeAdmin();
             College.findById.mockResolvedValueOnce(college);
+            mockPendingCandidates([{ _id: "req1" }]);
             User.updateMany.mockResolvedValueOnce({ modifiedCount: 3 });
 
             await approveTpo({ params: { collegeId: "c1" }, userDoc: admin, actingAdminDoc: null }, res);
@@ -268,6 +283,61 @@ describe("adminController", () => {
             await approveTpo({ params: { collegeId: "missing" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
 
             expect(res.status).toHaveBeenCalledWith(404);
+        });
+
+        // ── First verified TPO becomes primary (Phase 3) ─────────────────
+        it("claims primary for the earliest-requestedAt pending TPO among those just verified", async () => {
+            const college = {
+                _id: "c1", domains: ["mit.edu"], name: "MIT", submittedBy: "u1", status: "pending",
+                save: vi.fn().mockResolvedValue(true),
+            };
+            College.findById.mockResolvedValueOnce(college);
+            // Sorted ascending by requestedAt — the service is trusted to
+            // have applied the sort; the handler just uses candidates[0].
+            mockPendingCandidates([{ _id: "earliest" }, { _id: "later" }]);
+            User.updateMany.mockResolvedValueOnce({ modifiedCount: 2 });
+
+            await approveTpo({ params: { collegeId: "c1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
+
+            expect(User.find).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    role: "tpo",
+                    "tpoProfile.collegeDomain": { $in: ["mit.edu"] },
+                    "tpoProfile.verified": false,
+                })
+            );
+            expect(claimPrimaryIfNone).toHaveBeenCalledWith("c1", "earliest");
+        });
+
+        it("still calls claimPrimaryIfNone (a safe no-op CAS) even when the college already has a primary", async () => {
+            const college = {
+                _id: "c1", domains: ["mit.edu"], name: "MIT", submittedBy: "u1", status: "pending",
+                primaryTpo: "already-primary",
+                save: vi.fn().mockResolvedValue(true),
+            };
+            College.findById.mockResolvedValueOnce(college);
+            mockPendingCandidates([{ _id: "second-tpo" }]);
+            User.updateMany.mockResolvedValueOnce({ modifiedCount: 1 });
+            claimPrimaryIfNone.mockResolvedValueOnce(false); // CAS no-op — already claimed
+
+            await approveTpo({ params: { collegeId: "c1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
+
+            expect(claimPrimaryIfNone).toHaveBeenCalledWith("c1", "second-tpo");
+            expect(res.json).toHaveBeenCalledWith({ success: true });
+        });
+
+        it("does not attempt a primary claim when there are no pending candidates", async () => {
+            const college = {
+                _id: "c1", domains: ["mit.edu"], name: "MIT", submittedBy: "u1", status: "pending",
+                save: vi.fn().mockResolvedValue(true),
+            };
+            College.findById.mockResolvedValueOnce(college);
+            mockPendingCandidates([]);
+            User.updateMany.mockResolvedValueOnce({ modifiedCount: 0 });
+
+            await approveTpo({ params: { collegeId: "c1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
+
+            expect(claimPrimaryIfNone).not.toHaveBeenCalled();
         });
     });
 
@@ -714,6 +784,38 @@ describe("adminController", () => {
 
             expect(res.status).toHaveBeenCalledWith(400);
             expect(User.deleteOne).not.toHaveBeenCalled();
+        });
+
+        // ── Primary-TPO dangling-reference cleanup (Phase 3) ─────────────
+        it("clears College.primaryTpo when the deleted account was the primary TPO", async () => {
+            const target = makeUser({
+                _id: "u1", role: "tpo",
+                tpoProfile: { collegeDomain: "mit.edu", collegeName: "MIT", verified: true },
+            });
+            User.findById.mockResolvedValueOnce(target);
+            College.findByDomain.mockResolvedValueOnce({ _id: "c1" });
+            Submission.deleteMany.mockResolvedValueOnce({ deletedCount: 0 });
+            Notification.deleteMany.mockResolvedValueOnce({ deletedCount: 0 });
+            User.deleteOne.mockResolvedValueOnce({ deletedCount: 1 });
+
+            await deleteUser({ params: { id: "u1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
+
+            expect(College.findByDomain).toHaveBeenCalledWith("mit.edu");
+            expect(clearPrimaryIfCurrent).toHaveBeenCalledWith("c1", "u1");
+            expect(res.json).toHaveBeenCalledWith({ success: true });
+        });
+
+        it("skips the College lookup entirely for a non-TPO account", async () => {
+            const target = makeUser({ _id: "u1", role: "student" });
+            User.findById.mockResolvedValueOnce(target);
+            Submission.deleteMany.mockResolvedValueOnce({ deletedCount: 0 });
+            Notification.deleteMany.mockResolvedValueOnce({ deletedCount: 0 });
+            User.deleteOne.mockResolvedValueOnce({ deletedCount: 1 });
+
+            await deleteUser({ params: { id: "u1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
+
+            expect(College.findByDomain).not.toHaveBeenCalled();
+            expect(clearPrimaryIfCurrent).not.toHaveBeenCalled();
         });
     });
 

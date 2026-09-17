@@ -262,4 +262,98 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
     await switchActiveRole({ userDoc: reloaded, body: { role: "tpo" } }, switchRes);
     expect(switchRes.status).toHaveBeenCalledWith(403);
   });
+
+  // ── Phase 3: primary TPO claim, real Mongo ──────────────────────────────
+  describe("primary TPO claim (real Mongo)", () => {
+    it("the first auto-verified TPO on a brand-new domain becomes primary immediately", async () => {
+      const user = await seedStudent({ email: "founder@new-domain.ac.in" });
+      const res = mockRes();
+
+      await registerHandler(
+        { userDoc: user, log: mockLog(), body: { collegeName: "New Domain College" } },
+        res
+      );
+
+      // A brand-new domain isn't auto-verified (isDomainAutoVerified is
+      // false for an unrecognized domain), so this registers pending, not
+      // primary yet — primary claim only fires on the auto-verified path.
+      expect(res._json.status).toBe("pending");
+      expect(res._json.isPrimary).toBe(false);
+
+      const college = await College.findByDomain("new-domain.ac.in");
+      expect(college.primaryTpo).toBeNull();
+    });
+
+    it("first verified TPO (via admin approval) becomes primary; a later-verified batch-mate does not", async () => {
+      const earlier = await seedStudent({ email: "early-signup@some-college.ac.in" });
+      await registerHandler(
+        { userDoc: earlier, log: mockLog(), body: { collegeName: "Some College" } },
+        mockRes()
+      );
+      // Small delay so requestedAt ordering is unambiguous.
+      await new Promise((r) => setTimeout(r, 5));
+      const later = await seedStudent({ email: "later-signup@some-college.ac.in" });
+      await registerHandler(
+        { userDoc: later, log: mockLog(), body: { collegeName: "Some College" } },
+        mockRes()
+      );
+
+      const admin = await User.create({ firebaseUid: "fb-admin-8", email: "admin8@codeclub.test", role: "admin" });
+      const college = await College.findByDomain("some-college.ac.in");
+      await approveTpo({ params: { collegeId: college._id.toString() }, userDoc: admin, log: mockLog() }, mockRes());
+
+      const reloadedCollege = await College.findById(college._id);
+      const reloadedEarlier = await User.findById(earlier._id);
+      const reloadedLater = await User.findById(later._id);
+
+      expect(reloadedEarlier.tpoProfile.verified).toBe(true);
+      expect(reloadedLater.tpoProfile.verified).toBe(true);
+      expect(reloadedCollege.primaryTpo.toString()).toBe(reloadedEarlier._id.toString());
+      expect(reloadedCollege.primaryTpo.toString()).not.toBe(reloadedLater._id.toString());
+    });
+
+    it("a second TPO registering on an already-verified (already-primaried) domain never becomes primary", async () => {
+      const first = await seedStudent({ email: "first@established.ac.in" });
+      await registerHandler(
+        { userDoc: first, log: mockLog(), body: { collegeName: "Established College" } },
+        mockRes()
+      );
+      const admin = await User.create({ firebaseUid: "fb-admin-9", email: "admin9@codeclub.test", role: "admin" });
+      const college = await College.findByDomain("established.ac.in");
+      await approveTpo({ params: { collegeId: college._id.toString() }, userDoc: admin, log: mockLog() }, mockRes());
+
+      const second = await seedStudent({ email: "second@established.ac.in" });
+      const res2 = mockRes();
+      await registerHandler(
+        { userDoc: second, log: mockLog(), body: { collegeName: "Established College" } },
+        res2
+      );
+
+      expect(res2._json.isPrimary).toBe(false);
+      const reloadedCollege = await College.findById(college._id);
+      const reloadedFirst = await User.findById(first._id);
+      expect(reloadedCollege.primaryTpo.toString()).toBe(reloadedFirst._id.toString());
+    });
+
+    it("deleting the primary TPO's account clears College.primaryTpo (no dangling reference)", async () => {
+      const { deleteUser } = await import("../controllers/adminController.js");
+      const first = await seedStudent({ email: "solo-primary@deletetest.ac.in" });
+      await registerHandler(
+        { userDoc: first, log: mockLog(), body: { collegeName: "Delete Test College" } },
+        mockRes()
+      );
+      const admin = await User.create({ firebaseUid: "fb-admin-10", email: "admin10@codeclub.test", role: "admin" });
+      const college = await College.findByDomain("deletetest.ac.in");
+      await approveTpo({ params: { collegeId: college._id.toString() }, userDoc: admin, log: mockLog() }, mockRes());
+
+      const reloadedFirst = await User.findById(first._id);
+      const reloadedCollege = await College.findById(college._id);
+      expect(reloadedCollege.primaryTpo.toString()).toBe(reloadedFirst._id.toString());
+
+      await deleteUser({ params: { id: reloadedFirst._id.toString() }, userDoc: admin, log: mockLog() }, mockRes());
+
+      const collegeAfterDelete = await College.findById(college._id);
+      expect(collegeAfterDelete.primaryTpo).toBeNull();
+    });
+  });
 });

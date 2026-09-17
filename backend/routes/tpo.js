@@ -10,10 +10,18 @@ import { SITE_URL, SUPPORT_EMAIL } from "../config/site.js";
 import { requireVerified } from "../middleware/requireVerified.js";
 import { getOrSetCache } from "../utils/cache.js";
 import { invalidateTpoCache } from "../controllers/tpoController.js";
-import { createNotificationBulk } from "../services/notificationService.js";
+import { createNotification, createNotificationBulk } from "../services/notificationService.js";
 import { isDomainAutoVerified, isConsumerEmailDomain } from "../utils/domainVerification.js";
 import { looksLikeEmailAddress } from "../utils/collegeNameHeuristics.js";
 import { getSettings } from "../services/settingsService.js";
+import {
+  getCollegeForTpo,
+  isPrimaryTpo,
+  listTeam,
+  claimPrimaryIfNone,
+  transferPrimary,
+} from "../services/tpoTeamService.js";
+import { invalidateCachedUserByFirebaseUid } from "../utils/userAuthCache.js";
 
 const TPO_CACHE_TTL_SECONDS = 2 * 60; // 2 minutes — matches profile cache TTL
 const TPO_CACHE_PREFIX = "tpo:";
@@ -117,8 +125,13 @@ router.post("/register", async (req, res) => {
       (existingCollege?.status === "verified" && !existingIsAutoPlaceholder) ||
       (await isDomainAutoVerified(domain, "college"));
 
+    // Tracks the resolved College doc across all three branches below
+    // (brand new / upgraded placeholder / already-verified existing) so
+    // the primary-TPO claim after it can run against a real _id in every
+    // case, not just the "created a new one" branch.
+    let collegeDoc = existingCollege;
     if (!existingCollege) {
-      await College.create({
+      collegeDoc = await College.create({
         domains: [domain],
         name: collegeName,
         status: autoVerified ? "verified" : "pending",
@@ -162,11 +175,26 @@ router.post("/register", async (req, res) => {
 
     await req.userDoc.save();
 
+    // ── First verified TPO becomes primary (Phase 3, item 5) ────────────
+    // Only ever attempted here for the auto-verified path — a pending TPO
+    // isn't verified yet and can't hold primary authority (item 3/18).
+    // Pending TPOs get their shot at this when an admin later verifies
+    // their college — see adminController.js's approveTpo, which runs the
+    // same claim against whichever pending TPO registered earliest. Uses
+    // the atomic CAS in tpoTeamService.js rather than a plain "is there a
+    // primary yet?" read-then-write, so two people registering for a
+    // brand-new domain at nearly the same moment can't both become primary.
+    let isPrimary = false;
+    if (autoVerified && collegeDoc) {
+      isPrimary = await claimPrimaryIfNone(collegeDoc._id, req.userDoc._id);
+    }
+
     return res.status(201).json({
       success: true,
       role: "tpo",
       verified: autoVerified,
       status: autoVerified ? "verified" : "pending",
+      isPrimary,
       message: autoVerified
         ? "Your college is verified. You're all set — head to your dashboard."
         : "Your college registration request has been submitted for verification.",
@@ -178,18 +206,291 @@ router.post("/register", async (req, res) => {
 });
 
 // ── GET /api/tpo/me ──────────────────────────────────────────────────────────
+// isPrimary/teamCount added (Phase 3, item 17) — the minimum institutional
+// identity info the TPO dashboard needs to show "you are/aren't the
+// primary TPO" and a team-size hint without a separate round trip.
 router.get("/me", requireRole("tpo", "admin"),
   requireVerified, async (req, res) => {
     if (b2bGate(req, res)) return;
 
-
+    const college = await getCollegeForTpo(req.userDoc);
 
     return res.json({
       collegeName: req.userDoc.tpoProfile?.collegeName,
       collegeDomain: req.userDoc.tpoProfile?.collegeDomain,
       email: req.userDoc.email,
+      isPrimary: college ? isPrimaryTpo(college, req.userDoc._id) : false,
+      hasPrimary: Boolean(college?.primaryTpo),
     });
   });
+
+// ── TPO TEAM MANAGEMENT (Phase 3) ───────────────────────────────────────────
+// GET  /api/tpo/team                      — list this college's TPO team
+// POST /api/tpo/team/invite                — primary adds an existing account
+// DELETE /api/tpo/team/:tpoId              — primary removes a team member
+// POST /api/tpo/team/:tpoId/make-primary   — primary transfers primary status
+//
+// All four require a verified TPO (requireVerified) on top of requireRole,
+// same as every other TPO route in this file — a pending TPO can't manage
+// institutional membership (invariant #5). The three mutating ones
+// additionally require the caller to BE the primary TPO for their own
+// college (requirePrimaryTeamAction below) — a secondary TPO can view the
+// team but not act on it (permission matrix, item 4).
+
+// Resolves the caller's own College doc and, for the three mutating routes,
+// confirms they're its primary TPO before calling through. Stashes the
+// resolved college on req.tpoCollege so handlers don't re-query it — cheap
+// here since TPO team size is always small (item 27), but no reason to ask
+// twice in the same request.
+async function requirePrimaryTeamAction(req, res, next) {
+  try {
+    const college = await getCollegeForTpo(req.userDoc);
+    if (!college) {
+      return res.status(400).json({ error: "No college found for this TPO account." });
+    }
+    if (!isPrimaryTpo(college, req.userDoc._id)) {
+      return res.status(403).json({ error: "Only the primary TPO can manage the TPO team." });
+    }
+    req.tpoCollege = college;
+    next();
+  } catch (err) {
+    (req.log || logger).error({ err }, "[TPO] requirePrimaryTeamAction error");
+    return res.status(500).json({ error: "Failed to verify primary TPO status." });
+  }
+}
+
+router.get("/team", requireRole("tpo", "admin"), requireVerified, async (req, res) => {
+  if (b2bGate(req, res)) return;
+
+  try {
+    const college = await getCollegeForTpo(req.userDoc);
+    if (!college) {
+      return res.status(400).json({ error: "No college found for this TPO account." });
+    }
+
+    const members = await listTeam(college);
+
+    return res.json({
+      collegeName: college.name,
+      domain: req.userDoc.tpoProfile?.collegeDomain,
+      primaryTpoId: college.primaryTpo ? college.primaryTpo.toString() : null,
+      team: members.map((m) => ({
+        id: m._id.toString(),
+        name: m.displayName,
+        email: m.email,
+        isPrimary: isPrimaryTpo(college, m._id),
+        verified: Boolean(m.tpoProfile?.verified),
+        requestedAt: m.tpoProfile?.requestedAt,
+        verifiedAt: m.tpoProfile?.verifiedAt,
+        joinedDate: m.joinedDate,
+      })),
+    });
+  } catch (err) {
+    (req.log || logger).error({ err }, "[TPO] team list error");
+    return res.status(500).json({ error: "Failed to load TPO team." });
+  }
+});
+
+// ── POST /api/tpo/team/invite ───────────────────────────────────────────────
+// Adds an EXISTING Code Club account (found by email) as a verified
+// secondary TPO on the primary's college. Deliberately does not create a
+// new account or a separate invitation-token identity system (item 9) —
+// the candidate must already have signed up (and therefore already gone
+// through Firebase auth) before the primary can add them, mirroring the
+// "candidate authenticates, then institution relationship established"
+// flow the phase doc describes. This is the same instant-verification
+// trust decision POST /register already makes for a second TPO registering
+// on an already-verified college domain (see isDomainAutoVerified/
+// existingCollege.status === "verified" above): a known institutional-
+// domain account, vouched for by the college's own primary TPO, doesn't
+// need a second manual admin review.
+router.post("/team/invite", requireRole("tpo", "admin"), requireVerified, requirePrimaryTeamAction, async (req, res) => {
+  if (b2bGate(req, res)) return;
+
+  try {
+    const { email } = req.body;
+    if (!email || typeof email !== "string") {
+      return res.status(400).json({ error: "email is required." });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const domain = normalizedEmail.split("@")[1];
+    const college = req.tpoCollege;
+
+    // Cross-college protection: the invited email's domain must be one of
+    // THIS college's own domains — a primary can never grant TPO authority
+    // for a domain they don't represent (invariant #2).
+    if (!domain || !college.domains.includes(domain)) {
+      return res.status(400).json({
+        error: `That email must belong to your institution's domain (${college.domains.join(", ")}).`,
+      });
+    }
+
+    const target = await User.findOne({ email: normalizedEmail });
+    if (!target) {
+      return res.status(404).json({
+        error: "No Code Club account exists for that email yet. They'll need to sign up first.",
+      });
+    }
+
+    if (target.role === "tpo" && target.tpoProfile?.collegeDomain === req.userDoc.tpoProfile?.collegeDomain) {
+      return res.status(409).json({ error: "That person is already on your TPO team." });
+    }
+    // A TPO belongs to only one college at a time (invariant #1) — reject
+    // rather than silently reassigning someone verified at another
+    // institution.
+    if (
+      target.role === "tpo" &&
+      target.tpoProfile?.verified &&
+      target.tpoProfile?.collegeDomain &&
+      !college.domains.includes(target.tpoProfile.collegeDomain)
+    ) {
+      return res.status(409).json({ error: "That person is already a verified TPO at a different institution." });
+    }
+
+    const now = new Date();
+    target.grantRole("tpo");
+    target.role = "tpo";
+    target.tpoProfile = {
+      collegeDomain: req.userDoc.tpoProfile?.collegeDomain,
+      collegeName: college.name,
+      verified: true,
+      requestedAt: now,
+      verifiedAt: now,
+    };
+    await target.save();
+    invalidateCachedUserByFirebaseUid(target.firebaseUid);
+
+    createNotificationBulk([target._id], {
+      type: "tpo_team_added",
+      title: "You've been added as a TPO",
+      message: `${college.name} added you as a secondary TPO on Code Club.`,
+      link: "/tpo/dashboard",
+    }).catch((err) => (req.log || logger).error({ err }, "[TPO] team invite notification failed"));
+
+    return res.status(201).json({ success: true, id: target._id.toString(), name: target.displayName, email: target.email });
+  } catch (err) {
+    (req.log || logger).error({ err }, "[TPO] team invite error");
+    return res.status(500).json({ error: "Failed to add TPO." });
+  }
+});
+
+// ── DELETE /api/tpo/team/:tpoId ─────────────────────────────────────────────
+// Revokes TPO authority only — never deletes the account or touches any
+// Student-track field (invariant #4). The primary cannot remove themself
+// this way (item 10's "Primary removal" rule: transfer first, via
+// POST /team/:tpoId/make-primary, then the now-secondary former primary can
+// be removed like anyone else).
+router.delete("/team/:tpoId", requireRole("tpo", "admin"), requireVerified, requirePrimaryTeamAction, async (req, res) => {
+  if (b2bGate(req, res)) return;
+
+  try {
+    const { tpoId } = req.params;
+    const college = req.tpoCollege;
+
+    if (tpoId === req.userDoc._id.toString()) {
+      return res.status(400).json({
+        error: "You can't remove yourself as primary TPO. Transfer primary status to someone else first.",
+      });
+    }
+    // Defense in depth: even if tpoId somehow doesn't match the caller's
+    // own id but does match college.primaryTpo (a stale-primary edge
+    // case), never let a team-removal request strip primary authority
+    // out from under the invariant — that must go through the transfer
+    // endpoint, which keeps the "college always has 0/1 primary" CAS
+    // intact end to end.
+    if (college.primaryTpo && college.primaryTpo.toString() === tpoId) {
+      return res.status(400).json({
+        error: "Cannot remove the current primary TPO. Transfer primary status first.",
+      });
+    }
+
+    const target = await User.findOne({
+      _id: tpoId,
+      role: "tpo",
+      "tpoProfile.collegeDomain": { $in: college.domains },
+    });
+    if (!target) {
+      return res.status(404).json({ error: "TPO not found on your team." });
+    }
+
+    // Preserve the Student role/data entirely — revokeRole only ever
+    // touches `roles`/the active `role` fallback (see models/User.js), and
+    // tpoProfile is the only thing reset below.
+    const wasActiveTpo = target.role === "tpo";
+    target.revokeRole("tpo");
+    if (wasActiveTpo) target.role = "student";
+    target.tpoProfile = {
+      collegeDomain: null,
+      collegeName: null,
+      verified: false,
+      requestedAt: null,
+      verifiedAt: null,
+    };
+    await target.save();
+    invalidateCachedUserByFirebaseUid(target.firebaseUid);
+
+    createNotification({
+      userId: target._id,
+      type: "tpo_team_removed",
+      title: "TPO access removed",
+      message: `Your TPO access at ${college.name} has been removed. Your student account is unaffected.`,
+      link: "/dashboard",
+    }).catch((err) => (req.log || logger).error({ err }, "[TPO] team removal notification failed"));
+
+    return res.json({ success: true });
+  } catch (err) {
+    (req.log || logger).error({ err }, "[TPO] team removal error");
+    return res.status(500).json({ error: "Failed to remove TPO." });
+  }
+});
+
+// ── POST /api/tpo/team/:tpoId/make-primary ──────────────────────────────────
+// Atomic primary transfer (item 11) — see tpoTeamService.js's
+// transferPrimary for the CAS that guarantees exactly 0 or 1 primary TPO
+// survives even under concurrent transfer attempts.
+router.post("/team/:tpoId/make-primary", requireRole("tpo", "admin"), requireVerified, requirePrimaryTeamAction, async (req, res) => {
+  if (b2bGate(req, res)) return;
+
+  try {
+    const { tpoId } = req.params;
+    const college = req.tpoCollege;
+
+    if (tpoId === req.userDoc._id.toString()) {
+      return res.status(400).json({ error: "You're already the primary TPO." });
+    }
+
+    const target = await User.findOne({
+      _id: tpoId,
+      role: "tpo",
+      "tpoProfile.collegeDomain": { $in: college.domains },
+      "tpoProfile.verified": true,
+    });
+    if (!target) {
+      return res.status(404).json({ error: "Verified TPO not found on your team." });
+    }
+
+    const transferred = await transferPrimary(college._id, req.userDoc._id, target._id);
+    if (!transferred) {
+      return res.status(409).json({
+        error: "Primary status changed since this page loaded. Refresh and try again.",
+      });
+    }
+
+    createNotification({
+      userId: target._id,
+      type: "tpo_team_primary_transfer",
+      title: "You're now the primary TPO",
+      message: `${college.name} transferred primary TPO status to you.`,
+      link: "/tpo/dashboard",
+    }).catch((err) => (req.log || logger).error({ err }, "[TPO] primary transfer notification failed"));
+
+    return res.json({ success: true, primaryTpoId: target._id.toString() });
+  } catch (err) {
+    (req.log || logger).error({ err }, "[TPO] primary transfer error");
+    return res.status(500).json({ error: "Failed to transfer primary TPO status." });
+  }
+});
 
 // ── GET /api/tpo/students ───────────────────────────────────────────────────
 // Server-side paginated/searched/sorted student directory. Previously this

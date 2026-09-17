@@ -34,6 +34,7 @@ import { createNotification } from "../services/notificationService.js";
 import { recordAdminAction } from "../services/adminAuditLog.js";
 import { invalidateCachedUserByFirebaseUid } from "../utils/userAuthCache.js";
 import { logger } from "../config/logger.js";
+import { claimPrimaryIfNone, clearPrimaryIfCurrent } from "../services/tpoTeamService.js";
 
 const RECRUITER_QUEUE_FIELDS = "email displayName recruiterProfile createdAt";
 
@@ -219,10 +220,34 @@ export async function approveTpo(req, res) {
       return res.status(404).json({ error: "College request not found." });
     }
 
+    // ── First verified TPO becomes primary (Phase 3, item 5/6) ──────────
+    // This approval can verify several pending TPOs for the same domain in
+    // one bulk updateMany (anyone who registered while the college was
+    // still pending) — "first" among them is deterministic by earliest
+    // tpoProfile.requestedAt, read BEFORE the updateMany flips their
+    // verified flag (after which this same unverified-only query would
+    // match none of them). If the college already has a primary (e.g. an
+    // earlier auto-verified registration already claimed it — see
+    // routes/tpo.js's POST /register), claimPrimaryIfNone's CAS is a
+    // guaranteed no-op, so this is safe to call unconditionally rather
+    // than branching on college.primaryTpo here.
+    const pendingCandidates = await User.find({
+      role: "tpo",
+      "tpoProfile.collegeDomain": { $in: college.domains },
+      "tpoProfile.verified": false,
+    })
+      .sort({ "tpoProfile.requestedAt": 1 })
+      .select("_id")
+      .lean();
+
     await User.updateMany(
       { role: "tpo", "tpoProfile.collegeDomain": { $in: college.domains }, "tpoProfile.verified": false },
       { $set: { "tpoProfile.verified": true, "tpoProfile.verifiedAt": college.verifiedAt } }
     );
+
+    if (pendingCandidates.length > 0) {
+      await claimPrimaryIfNone(college._id, pendingCandidates[0]._id);
+    }
 
     recordAdminAction({
       adminDoc: req.actingAdminDoc || req.userDoc,
@@ -730,6 +755,21 @@ export async function activateUser(req, res) {
 //     self-healing — see middleware/auth.js's stale-pointer cleanup, which
 //     runs lazily on the admin's next request and needs no extra handling
 //     here.
+//   - College.primaryTpo (Phase 3, added after this cascade table was
+//     written): DOES need explicit handling, unlike the "orphaned but
+//     harmless" refs above — an ObjectId reference is technically still
+//     "harmless" sitting on a College doc, but every primary-only TPO
+//     team action (routes/tpo.js) resolves it via College.findOneAndUpdate
+//     CAS keyed on it, and there's no way to distinguish "primary account
+//     was deleted" from "primary account exists but the query missed it."
+//     Cleared here so the college falls back to "no primary yet" — the
+//     same safe, explicit state a college in "not claimed yet" already
+//     uses (tpoTeamService.js's claimPrimaryIfNone) — rather than an admin
+//     needing to notice and fix a silently-broken team page. No auto-
+//     promotion of a replacement primary happens here on purpose (item 6:
+//     don't silently invent ownership) — the next verified TPO to be
+//     approved (approveTpo above) or an existing verified secondary via
+//     the team UI can claim it.
 export async function deleteUser(req, res) {
   try {
     const target = await User.findById(req.params.id);
@@ -741,6 +781,11 @@ export async function deleteUser(req, res) {
     }
 
     const { firebaseUid, _id } = target;
+
+    if (target.tpoProfile?.collegeDomain) {
+      const college = await College.findByDomain(target.tpoProfile.collegeDomain);
+      if (college) await clearPrimaryIfCurrent(college._id, _id);
+    }
 
     await Promise.all([
       Submission.deleteMany({ userId: _id }),

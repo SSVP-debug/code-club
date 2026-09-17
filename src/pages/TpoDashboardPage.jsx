@@ -9,6 +9,7 @@ import Button from "../components/ui/Button";
 import AuthGate from "../components/auth/AuthGate";
 import { useIdentity } from "../hooks/useIdentity";
 import { GraduationCap, Users, Flame } from "lucide-react";
+import TpoTeamPanel from "../components/tpo/TpoTeamPanel";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const STUDENTS_PAGE_SIZE = 25; // matches the backend's default (backend/routes/tpo.js)
@@ -127,7 +128,7 @@ function CreateAssignmentModal({ onClose, onCreated }) {
 }
 
 export default function TpoDashboardPage() {
-  const VALID_TABS = ["overview", "students", "assignments"];
+  const VALID_TABS = ["overview", "students", "assignments", "team"];
   const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthenticated } = useIdentity();
 
@@ -480,7 +481,7 @@ export default function TpoDashboardPage() {
             other, and wrapping to a second line pushes content down
             awkwardly for just one overflow tab. */}
         <div className="flex gap-2 mb-6 overflow-x-auto">
-          {["overview", "students", "assignments"].map(t => (
+          {["overview", "students", "assignments", "team"].map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -669,6 +670,8 @@ export default function TpoDashboardPage() {
             </div>
           </div>
         )}
+
+        {tab === "team" && <TpoTeamPanel />}
       </div>
 
       {showModal && (

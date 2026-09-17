@@ -83,6 +83,36 @@ const collegeSchema = new mongoose.Schema(
       enum: ["student", "tpo", "auto"],
       default: null,
     },
+
+    // ── Primary TPO (Phase 3 — TPO identity & institution management) ────
+    // The single source of truth for "who currently holds primary TPO
+    // authority for this institution." Deliberately lives here rather than
+    // as a denormalized `isPrimary` flag on User.tpoProfile: a college has
+    // at most one primary at a time (invariant #3, docs/roadmap.md Phase 3),
+    // and a single field on the one-per-institution College document lets
+    // that invariant be enforced with a single atomic, race-safe
+    // findOneAndUpdate CAS (`{ _id, primaryTpo: null }` / `{ _id,
+    // primaryTpo: currentPrimaryId }`) — see services/tpoTeamService.js —
+    // rather than needing a multi-document transaction to keep two
+    // "who's primary" fields in sync. Any code that needs to know whether a
+    // given user is the primary TPO should compare against this field
+    // (services/tpoTeamService.js's isPrimaryTpo helper), never maintain
+    // its own copy.
+    //
+    // null means "no primary yet" — either no TPO has been verified for
+    // this college yet, or the primary was removed/deleted and nobody has
+    // been promoted to replace them (see tpoTeamService.js and
+    // adminController.js's deleteUser for where that can happen). A
+    // college in this state still functions; it just can't run
+    // primary-only team actions (invite/remove/transfer) until an admin or
+    // the next verified TPO claims it — see docs/audits/ for the Phase 3
+    // writeup on why this was chosen over silently auto-assigning one.
+    primaryTpo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+      index: true,
+    },
   },
   {
     timestamps: true,
