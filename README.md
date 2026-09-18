@@ -8,21 +8,21 @@ A LeetCode-style DSA (Data Structures & Algorithms) practice platform built for 
 
 ## Features
 
-- **Monaco Editor** — VS Code-quality editor with syntax highlighting for Python, JavaScript, Java, C++, C, and TypeScript
-- **Live code execution** — runs code via Judge0 (self-hosted or RapidAPI) with custom stdin support
-- **Judge system** — submits against visible + hidden test cases, returns Accepted / Wrong Answer / Runtime Error / Compilation Error / Time Limit Exceeded
-- **250+ curated problems** — Easy through Hard, across Arrays, Two Pointers, Sliding Window, Hash Maps, Binary Search, Dynamic Programming, Bit Manipulation, Greedy, Stacks, Strings, Linked Lists, Trees, Graphs, Heaps, Backtracking, Tries, and more
-- **Progress tracking** — solved problems, activity streak, difficulty breakdown, topic-level stats — all computed server-side from `solvedSlugs`, never trusted from the client
-- **Firebase Auth** — Google sign-in with persistent sessions
-- **Contests** — public and private/invite-only, live leaderboards
-- **Certifications** — topic-track completion certificates with QR-verifiable public codes
-- **Recruiter portal** — candidate search, signature-verified public profiles, timed skills tests
+- **Monaco Editor** - VS Code-quality editor with syntax highlighting for Python, JavaScript, Java, C++, C, and TypeScript
+- **Live code execution** - runs code via Judge0 (self-hosted or RapidAPI) with custom stdin support
+- **Judge system** - submits against visible + hidden test cases, returns Accepted / Wrong Answer / Runtime Error / Compilation Error / Time Limit Exceeded
+- **250+ curated problems** - Easy through Hard, across Arrays, Two Pointers, Sliding Window, Hash Maps, Binary Search, Dynamic Programming, Bit Manipulation, Greedy, Stacks, Strings, Linked Lists, Trees, Graphs, Heaps, Backtracking, Tries, and more
+- **Progress tracking** - solved problems, activity streak, difficulty breakdown, topic-level stats — all computed server-side from `solvedSlugs`, never trusted from the client
+- **Firebase Auth** - Google sign-in with persistent sessions
+- **Contests** - public and private/invite-only, live leaderboards
+- **Certifications** - topic-track completion certificates with QR-verifiable public codes
+- **Recruiter portal** - candidate search, signature-verified public profiles, timed skills tests
 - **TPO (college admin) dashboard** — class-wide stats, placement-readiness score, problem-set assignments — feature-flagged (`B2B_ENABLED`)
-- **Premium features** — AI-powered mock interview mode, billing via Razorpay — feature-flagged (`MONETIZATION_ENABLED`)
-- **AI coaching** — Claude-powered hints and dashboard insights
-- **Weekly AI review email** — automated, personalized weekly progress email via Resend (opt-out per user)
-- **Installable PWA** — offline problem *reading* (not solving), works on mobile
-- **Recruiter-ready exports** — profile PDF and certification PDFs with QR codes
+- **Premium features** - AI-powered mock interview mode, billing via Razorpay — feature-flagged (`MONETIZATION_ENABLED`)
+- **AI coaching** - Claude-powered hints and dashboard insights
+- **Weekly AI review email** - automated, personalized weekly progress email via Resend (opt-out per user)
+- **Installable PWA** - offline problem *reading* (not solving), works on mobile
+- **Recruiter-ready exports** - profile PDF and certification PDFs with QR codes
 
 See `docs/architecture.md` for the full system diagram and `docs/api-contracts.md` for every endpoint.
 
