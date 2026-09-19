@@ -130,8 +130,12 @@ router.post("/register", async (req, res) => {
     // Tracks the resolved College doc across all three branches below
     // (brand new / upgraded placeholder / already-verified existing) so
     // the primary-TPO claim after it can run against a real _id in every
-    // case, not just the "created a new one" branch.
+    // case, not just the "created a new one" branch. Also tracks enough
+    // to roll a College-side change back if the User-side save fails
+    // right after — see the try/catch around req.userDoc.save() below.
     let collegeDoc = existingCollege;
+    let createdNewCollege = false;
+    let placeholderSnapshot = null;
     if (!existingCollege) {
       collegeDoc = await College.create({
         domains: [domain],
@@ -141,11 +145,19 @@ router.post("/register", async (req, res) => {
         submittedBy: req.userDoc._id,
         submittedByRole: "tpo",
       });
+      createdNewCollege = true;
     } else if (existingIsAutoPlaceholder) {
       // Upgrade the auto-detected placeholder into a real TPO submission
       // — replace the guessed name with the TPO's actual college name and
       // record who's now vouching for it, rather than leaving a second,
       // duplicate College doc for the same domain.
+      placeholderSnapshot = {
+        name: existingCollege.name,
+        status: existingCollege.status,
+        verifiedAt: existingCollege.verifiedAt,
+        submittedBy: existingCollege.submittedBy,
+        submittedByRole: existingCollege.submittedByRole,
+      };
       existingCollege.name = collegeName;
       existingCollege.status = autoVerified ? "verified" : "pending";
       existingCollege.verifiedAt = autoVerified ? now : null;
@@ -175,7 +187,39 @@ router.post("/register", async (req, res) => {
       verifiedAt: autoVerified ? now : null,
     };
 
-    await req.userDoc.save();
+    // TPO-1 hardening: partial-failure handling. The College-side write
+    // above already committed by this point — if the User-side write
+    // fails now, we'd otherwise strand the domain in a half-claimed state
+    // with no valid owner (the pending-college 409 guard near the top of
+    // this handler would then permanently block every future
+    // registration attempt for this domain, since College.findByDomain
+    // would keep finding this orphaned record). Roll the College-side
+    // change back so the domain returns to its pre-request state and can
+    // be retried cleanly. Best-effort (a rollback failure is logged, not
+    // thrown over) — there is no fully atomic alternative available in
+    // this codebase (no transactions are used anywhere else either; see
+    // tpoTeamService.js's CAS-based approach for why single-document
+    // atomic operations are preferred where the invariant allows it).
+    try {
+      await req.userDoc.save();
+    } catch (err) {
+      if (createdNewCollege) {
+        await College.deleteOne({ _id: collegeDoc._id }).catch((rollbackErr) =>
+          (req.log || logger).error(
+            { err: rollbackErr, collegeId: collegeDoc._id },
+            "[TPO] register: failed to roll back newly-created College after User save failure"
+          )
+        );
+      } else if (placeholderSnapshot) {
+        await College.updateOne({ _id: collegeDoc._id }, { $set: placeholderSnapshot }).catch((rollbackErr) =>
+          (req.log || logger).error(
+            { err: rollbackErr, collegeId: collegeDoc._id },
+            "[TPO] register: failed to roll back placeholder-upgrade College change after User save failure"
+          )
+        );
+      }
+      throw err;
+    }
 
     // ── First verified TPO becomes primary (Phase 3, item 5) ────────────
     // Only ever attempted here for the auto-verified path — a pending TPO
@@ -186,9 +230,27 @@ router.post("/register", async (req, res) => {
     // the atomic CAS in tpoTeamService.js rather than a plain "is there a
     // primary yet?" read-then-write, so two people registering for a
     // brand-new domain at nearly the same moment can't both become primary.
+    //
+    // TPO-1 hardening: this is deliberately isolated in its own try/catch.
+    // By this point the User doc is already saved and verified — the core
+    // "did registration succeed" outcome is already settled. A failure
+    // here (e.g. a transient DB error on the CAS write) must not make an
+    // otherwise-successful registration report as a 500 to the person
+    // registering. Falling back to isPrimary: false is always a *safe*
+    // default per the invariant (rule 4: a college can legitimately have
+    // zero primary TPOs temporarily) — it just means this particular
+    // attempt didn't claim it, recoverable later via the team endpoints
+    // or the next verified registration.
     let isPrimary = false;
     if (autoVerified && collegeDoc) {
-      isPrimary = await claimPrimaryIfNone(collegeDoc._id, req.userDoc._id);
+      try {
+        isPrimary = await claimPrimaryIfNone(collegeDoc._id, req.userDoc._id);
+      } catch (err) {
+        (req.log || logger).error(
+          { err, collegeId: collegeDoc._id, userId: req.userDoc._id },
+          "[TPO] register: primary claim failed after successful registration — continuing without primary"
+        );
+      }
     }
 
     return res.status(201).json({

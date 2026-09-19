@@ -256,8 +256,25 @@ export async function approveTpo(req, res) {
     // immediately after approval.
     pendingCandidates.forEach((u) => invalidateCachedUserByFirebaseUid(u.firebaseUid));
 
+    // TPO-1 hardening: isolated in its own try/catch. By this point the
+    // college is verified and every pending TPO has already been bulk-
+    // verified — the core "approve this TPO application" operation has
+    // already succeeded. A transient failure in this CAS write must not
+    // make the whole approval report a 500 back to the admin (who would
+    // then have no way to know the approval itself actually went
+    // through). Falling back to "no primary claimed this round" is a
+    // safe, already-supported state (rule 4: zero primary TPOs
+    // temporarily) — recoverable via the team endpoints' admin override,
+    // or automatically on this same college's next approval/registration.
     if (pendingCandidates.length > 0) {
-      await claimPrimaryIfNone(college._id, pendingCandidates[0]._id);
+      try {
+        await claimPrimaryIfNone(college._id, pendingCandidates[0]._id);
+      } catch (err) {
+        logger.error(
+          { err, collegeId: college._id },
+          "[Admin] approveTpo: primary claim failed after successful bulk-verification — continuing"
+        );
+      }
     }
 
     recordAdminAction({
@@ -792,17 +809,40 @@ export async function deleteUser(req, res) {
     }
 
     const { firebaseUid, _id } = target;
-
-    if (target.tpoProfile?.collegeDomain) {
-      const college = await College.findByDomain(target.tpoProfile.collegeDomain);
-      if (college) await clearPrimaryIfCurrent(college._id, _id);
-    }
+    const tpoCollegeDomain = target.tpoProfile?.collegeDomain || null;
 
     await Promise.all([
       Submission.deleteMany({ userId: _id }),
       Notification.deleteMany({ userId: _id }),
     ]);
     await User.deleteOne({ _id });
+
+    // TPO-1 hardening: reordered to run AFTER the account is actually
+    // gone, not before. This used to run first — if the deletion below
+    // then failed partway (a real possibility Promise.all/deleteOne can
+    // hit), a still-existing, still-valid primary TPO would have their
+    // primary status silently stripped for no reason, while continuing
+    // to exist and believing themselves still primary (every primary-
+    // only action they take would then wrongly 403). Clearing it after
+    // deletion instead means a failure in THIS step leaves a dangling
+    // primaryTpo reference — but that degrades into the same "no primary
+    // yet" state the rest of the system already handles safely (rule 4),
+    // recoverable via the team endpoints' admin override, rather than
+    // wrongly demoting someone who was never actually deleted. Best-
+    // effort and isolated in its own try/catch for the same reason: the
+    // account deletion itself already succeeded by this point and must
+    // be reported as success regardless of this cleanup step's outcome.
+    if (tpoCollegeDomain) {
+      try {
+        const college = await College.findByDomain(tpoCollegeDomain);
+        if (college) await clearPrimaryIfCurrent(college._id, _id);
+      } catch (err) {
+        logger.error(
+          { err, userId: _id.toString() },
+          "[Admin] deleteUser: failed to clear dangling primaryTpo reference after successful deletion"
+        );
+      }
+    }
 
     invalidateCachedUserByFirebaseUid(firebaseUid);
 

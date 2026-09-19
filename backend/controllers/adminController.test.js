@@ -372,6 +372,28 @@ describe("adminController", () => {
 
             expect(invalidateCachedUserByFirebaseUid).not.toHaveBeenCalled();
         });
+
+        // ── TPO-1 hardening: partial-failure handling ───────────────────────
+        it("still reports success when claimPrimaryIfNone throws after the college was already verified and TPOs already bulk-verified", async () => {
+            const college = {
+                _id: "c1", domains: ["mit.edu"], name: "MIT", submittedBy: "u1", status: "pending",
+                save: vi.fn().mockResolvedValue(true),
+            };
+            College.findById.mockResolvedValueOnce(college);
+            mockPendingCandidates([{ _id: "req1", firebaseUid: "fb-req1" }]);
+            User.updateMany.mockResolvedValueOnce({ modifiedCount: 1 });
+            claimPrimaryIfNone.mockRejectedValueOnce(new Error("CAS write boom"));
+
+            await approveTpo({ params: { collegeId: "c1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
+
+            // The core operation (verify college + bulk-verify TPOs) already
+            // happened by the time the claim fails — that must not turn into
+            // a 500 the admin reads as "the approval didn't go through".
+            expect(college.status).toBe("verified");
+            expect(User.updateMany).toHaveBeenCalledOnce();
+            expect(res.status).not.toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({ success: true });
+        });
     });
 
     describe("rejectTpo", () => {
@@ -849,6 +871,63 @@ describe("adminController", () => {
 
             expect(College.findByDomain).not.toHaveBeenCalled();
             expect(clearPrimaryIfCurrent).not.toHaveBeenCalled();
+        });
+
+        // ── TPO-1 hardening: partial-failure handling ───────────────────────
+        it("clears primaryTpo AFTER the account is actually deleted, not before", async () => {
+            const target = makeUser({
+                _id: "u1", role: "tpo",
+                tpoProfile: { collegeDomain: "mit.edu", collegeName: "MIT", verified: true },
+            });
+            User.findById.mockResolvedValueOnce(target);
+            College.findByDomain.mockResolvedValueOnce({ _id: "c1" });
+            Submission.deleteMany.mockResolvedValueOnce({ deletedCount: 0 });
+            Notification.deleteMany.mockResolvedValueOnce({ deletedCount: 0 });
+
+            const callOrder = [];
+            User.deleteOne.mockImplementationOnce(async () => { callOrder.push("deleteOne"); return { deletedCount: 1 }; });
+            clearPrimaryIfCurrent.mockImplementationOnce(async () => { callOrder.push("clearPrimaryIfCurrent"); return true; });
+
+            await deleteUser({ params: { id: "u1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
+
+            expect(callOrder).toEqual(["deleteOne", "clearPrimaryIfCurrent"]);
+        });
+
+        it("does NOT clear primaryTpo when the deletion itself fails — a still-existing primary must not be silently demoted", async () => {
+            const target = makeUser({
+                _id: "u1", role: "tpo",
+                tpoProfile: { collegeDomain: "mit.edu", collegeName: "MIT", verified: true },
+            });
+            User.findById.mockResolvedValueOnce(target);
+            Submission.deleteMany.mockResolvedValueOnce({ deletedCount: 0 });
+            Notification.deleteMany.mockResolvedValueOnce({ deletedCount: 0 });
+            User.deleteOne.mockRejectedValueOnce(new Error("delete boom"));
+
+            await deleteUser({ params: { id: "u1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
+
+            expect(College.findByDomain).not.toHaveBeenCalled();
+            expect(clearPrimaryIfCurrent).not.toHaveBeenCalled();
+            expect(res.status).toHaveBeenCalledWith(500);
+        });
+
+        it("still reports success when clearing the dangling primaryTpo reference fails after a successful deletion", async () => {
+            const target = makeUser({
+                _id: "u1", role: "tpo",
+                tpoProfile: { collegeDomain: "mit.edu", collegeName: "MIT", verified: true },
+            });
+            User.findById.mockResolvedValueOnce(target);
+            College.findByDomain.mockResolvedValueOnce({ _id: "c1" });
+            Submission.deleteMany.mockResolvedValueOnce({ deletedCount: 0 });
+            Notification.deleteMany.mockResolvedValueOnce({ deletedCount: 0 });
+            User.deleteOne.mockResolvedValueOnce({ deletedCount: 1 });
+            clearPrimaryIfCurrent.mockRejectedValueOnce(new Error("CAS write boom"));
+
+            await deleteUser({ params: { id: "u1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
+
+            // Deletion already succeeded by the time this fails — must still
+            // report success, not a 500 the admin reads as "delete failed".
+            expect(res.status).not.toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({ success: true });
         });
     });
 

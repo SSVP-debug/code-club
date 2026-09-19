@@ -15,6 +15,7 @@ const { default: College } = await import("../models/College.js");
 const { requireRole } = await import("../middleware/roleGuard.js");
 const { requireVerified } = await import("../middleware/requireVerified.js");
 const { approveTpo, rejectTpo } = await import("../controllers/adminController.js");
+const { claimPrimaryIfNone, transferPrimary } = await import("../services/tpoTeamService.js");
 
 function extractRegisterHandler() {
   const layer = tpoRouter.stack.find(
@@ -407,6 +408,124 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
 
       const collegeAfterDelete = await College.findById(college._id);
       expect(collegeAfterDelete.primaryTpo).toBeNull();
+    });
+
+    // ── TPO-1 hardening: genuine concurrency (real Mongo, real races) ────
+    // Everything above exercises claimPrimaryIfNone/transferPrimary
+    // sequentially — real, but not a race. These two use Promise.all
+    // against the actual mongodb-memory-server instance so the CAS
+    // (College.findOneAndUpdate) itself, not just app-level sequencing,
+    // is what's under test — per the hardening task's explicit "test
+    // concurrency rather than assuming it works".
+    it("concurrent primary claims for the same college: exactly one wins, enforced by the CAS write itself", async () => {
+      const college = await College.create({
+        domains: ["concurrent-claim.ac.in"],
+        name: "Concurrent Claim College",
+        status: "verified",
+      });
+      const userA = await seedStudent({
+        email: "a@concurrent-claim.ac.in", role: "tpo", roles: ["student", "tpo"],
+        tpoProfile: { collegeDomain: "concurrent-claim.ac.in", collegeName: "Concurrent Claim College", verified: true, requestedAt: new Date() },
+      });
+      const userB = await seedStudent({
+        email: "b@concurrent-claim.ac.in", role: "tpo", roles: ["student", "tpo"],
+        tpoProfile: { collegeDomain: "concurrent-claim.ac.in", collegeName: "Concurrent Claim College", verified: true, requestedAt: new Date() },
+      });
+
+      const [resultA, resultB] = await Promise.all([
+        claimPrimaryIfNone(college._id, userA._id),
+        claimPrimaryIfNone(college._id, userB._id),
+      ]);
+
+      // Exactly one of the two truly-concurrent attempts wins — never
+      // both, never neither.
+      expect([resultA, resultB].filter(Boolean)).toHaveLength(1);
+
+      const reloadedCollege = await College.findById(college._id);
+      const winnerId = resultA ? userA._id : userB._id;
+      expect(reloadedCollege.primaryTpo.toString()).toBe(winnerId.toString());
+    });
+
+    it("a stale transfer attempt cannot overwrite a newer primary state", async () => {
+      const college = await College.create({
+        domains: ["stale-transfer.ac.in"],
+        name: "Stale Transfer College",
+        status: "verified",
+      });
+      const originalPrimary = await seedStudent({
+        email: "original@stale-transfer.ac.in", role: "tpo", roles: ["student", "tpo"],
+        tpoProfile: { collegeDomain: "stale-transfer.ac.in", collegeName: "Stale Transfer College", verified: true, requestedAt: new Date() },
+      });
+      const rival = await seedStudent({
+        email: "rival@stale-transfer.ac.in", role: "tpo", roles: ["student", "tpo"],
+        tpoProfile: { collegeDomain: "stale-transfer.ac.in", collegeName: "Stale Transfer College", verified: true, requestedAt: new Date() },
+      });
+      const thirdParty = await seedStudent({
+        email: "third@stale-transfer.ac.in", role: "tpo", roles: ["student", "tpo"],
+        tpoProfile: { collegeDomain: "stale-transfer.ac.in", collegeName: "Stale Transfer College", verified: true, requestedAt: new Date() },
+      });
+
+      const claimed = await claimPrimaryIfNone(college._id, originalPrimary._id);
+      expect(claimed).toBe(true);
+
+      // A legitimate transfer happens (simulating another request winning
+      // a race, or simply the normal case of a transfer landing between
+      // when a stale client last read "I am primary" and when it acts on
+      // that belief).
+      const legitTransfer = await transferPrimary(college._id, originalPrimary._id, rival._id);
+      expect(legitTransfer).toBe(true);
+
+      // A STALE transfer attempt — still believing originalPrimary holds
+      // primary — must fail rather than silently overwrite rival's now-
+      // current primary status.
+      const staleTransfer = await transferPrimary(college._id, originalPrimary._id, thirdParty._id);
+      expect(staleTransfer).toBe(false);
+
+      const reloadedCollege = await College.findById(college._id);
+      expect(reloadedCollege.primaryTpo.toString()).toBe(rival._id.toString());
+    });
+  });
+
+  // ── TPO-1 hardening: cross-college isolation (real Mongo) ──────────────
+  describe("cross-college isolation (real Mongo)", () => {
+    it("a primary TPO of college A cannot invite, remove, or transfer primary on college B via a supplied collegeId", async () => {
+      const inviteLayer = tpoRouter.stack.find((l) => l.route?.path === "/team/invite" && l.route.methods.post);
+      // Stack order for this route: [requireRole, requireVerified,
+      // requirePrimaryTeamAction, handler] — same positional-extraction
+      // convention this file already uses for extractRegisterHandler above.
+      const requirePrimaryTeamAction = inviteLayer.route.stack[2].handle;
+      const inviteHandler = inviteLayer.route.stack[3].handle;
+
+      const collegeA = await College.create({ domains: ["college-a-iso.ac.in"], name: "College A", status: "verified" });
+      const collegeB = await College.create({ domains: ["college-b-iso.ac.in"], name: "College B", status: "verified" });
+      const primaryA = await seedStudent({
+        email: "primary@college-a-iso.ac.in", role: "tpo", roles: ["student", "tpo"],
+        tpoProfile: { collegeDomain: "college-a-iso.ac.in", collegeName: "College A", verified: true, requestedAt: new Date() },
+      });
+      await claimPrimaryIfNone(collegeA._id, primaryA._id);
+      const targetInB = await seedStudent({ email: "target@college-b-iso.ac.in" });
+
+      const req = {
+        userDoc: primaryA,
+        body: { email: targetInB.email, collegeId: collegeB._id.toString() }, // attempted bypass
+        query: {},
+      };
+      const res = mockRes();
+      let calledNext = false;
+      await requirePrimaryTeamAction(req, res, () => { calledNext = true; });
+
+      // The gate must resolve college A (the caller's OWN institution),
+      // completely ignoring the collegeId in the body — a non-admin
+      // caller's institution is never client-suppliable.
+      expect(req.tpoCollege?._id?.toString()).toBe(collegeA._id.toString());
+      expect(calledNext).toBe(true); // primaryA IS primary of A, so the gate itself passes...
+
+      await inviteHandler(req, res);
+      // ...but the invite itself must then reject: targetInB's email
+      // domain doesn't belong to college A.
+      expect(res._status).toBe(400);
+      const reloadedTarget = await User.findById(targetInB._id);
+      expect(reloadedTarget.role).toBe("student"); // never touched
     });
   });
 });
