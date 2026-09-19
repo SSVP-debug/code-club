@@ -285,21 +285,51 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
     });
 
     it("first verified TPO (via admin approval) becomes primary; a later-verified batch-mate does not", async () => {
-      const earlier = await seedStudent({ email: "early-signup@some-college.ac.in" });
-      await registerHandler(
-        { userDoc: earlier, log: mockLog(), body: { collegeName: "Some College" } },
-        mockRes()
-      );
-      // Small delay so requestedAt ordering is unambiguous.
-      await new Promise((r) => setTimeout(r, 5));
-      const later = await seedStudent({ email: "later-signup@some-college.ac.in" });
-      await registerHandler(
-        { userDoc: later, log: mockLog(), body: { collegeName: "Some College" } },
-        mockRes()
-      );
+      // Two pending TPOs for the same still-pending domain can't actually
+      // be produced through two sequential /register calls — the second
+      // one legitimately gets rejected with 409 ("already registered and
+      // pending verification", see the guard just above the autoVerified
+      // check in routes/tpo.js) by design, to avoid two conflicting
+      // requests in the review queue. That guard is correct and
+      // unrelated to what this test verifies. Two simultaneous pending
+      // TPOs on one domain is still a real (if narrow) possibility this
+      // system must handle correctly — e.g. two near-simultaneous
+      // registrations racing to upgrade the same auto-detected
+      // placeholder college (routes/tpo.js's existingIsAutoPlaceholder
+      // branch) before either's save commits — so this test seeds that
+      // end state directly rather than exercising the 409-guarded
+      // /register flow, to isolate approveTpo's own bulk-verify /
+      // earliest-requestedAt-becomes-primary logic.
+      const college = await College.create({
+        domains: ["some-college.ac.in"],
+        name: "Some College",
+        status: "pending",
+        submittedByRole: "tpo",
+      });
+      const earlier = await seedStudent({
+        email: "early-signup@some-college.ac.in",
+        role: "tpo",
+        roles: ["student", "tpo"],
+        tpoProfile: {
+          collegeDomain: "some-college.ac.in",
+          collegeName: "Some College",
+          verified: false,
+          requestedAt: new Date(Date.now() - 1000),
+        },
+      });
+      const later = await seedStudent({
+        email: "later-signup@some-college.ac.in",
+        role: "tpo",
+        roles: ["student", "tpo"],
+        tpoProfile: {
+          collegeDomain: "some-college.ac.in",
+          collegeName: "Some College",
+          verified: false,
+          requestedAt: new Date(),
+        },
+      });
 
       const admin = await User.create({ firebaseUid: "fb-admin-8", email: "admin8@codeclub.test", role: "admin" });
-      const college = await College.findByDomain("some-college.ac.in");
       await approveTpo({ params: { collegeId: college._id.toString() }, userDoc: admin, log: mockLog() }, mockRes());
 
       const reloadedCollege = await College.findById(college._id);
@@ -310,6 +340,29 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
       expect(reloadedLater.tpoProfile.verified).toBe(true);
       expect(reloadedCollege.primaryTpo.toString()).toBe(reloadedEarlier._id.toString());
       expect(reloadedCollege.primaryTpo.toString()).not.toBe(reloadedLater._id.toString());
+    });
+
+    it("two sequential self-registrations for the same still-pending domain: the second is rejected with 409, not silently queued", async () => {
+      // Documents/locks in the business rule the test above works around
+      // — this is the actual, intended behavior of a real second TPO
+      // trying to self-register while the first's request is still
+      // awaiting review.
+      const first = await seedStudent({ email: "first@sequential-college.ac.in" });
+      await registerHandler(
+        { userDoc: first, log: mockLog(), body: { collegeName: "Sequential College" } },
+        mockRes()
+      );
+
+      const second = await seedStudent({ email: "second@sequential-college.ac.in" });
+      const res2 = mockRes();
+      await registerHandler(
+        { userDoc: second, log: mockLog(), body: { collegeName: "Sequential College" } },
+        res2
+      );
+
+      expect(res2._status).toBe(409);
+      const reloadedSecond = await User.findById(second._id);
+      expect(reloadedSecond.role).toBe("student"); // never became a TPO at all
     });
 
     it("a second TPO registering on an already-verified (already-primaried) domain never becomes primary", async () => {
