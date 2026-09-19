@@ -20,6 +20,8 @@ import {
   listTeam,
   claimPrimaryIfNone,
   transferPrimary,
+  resolveTpoTeamContext,
+  resolveCollegeDomains,
 } from "../services/tpoTeamService.js";
 import { invalidateCachedUserByFirebaseUid } from "../utils/userAuthCache.js";
 
@@ -109,12 +111,7 @@ router.post("/register", async (req, res) => {
     const existingCollege = await College.findByDomain(domain);
     const existingIsAutoPlaceholder = existingCollege?.submittedByRole === "auto";
 
-    if (
-      existingCollege &&
-      existingCollege.status !== "verified" &&
-      !existingIsAutoPlaceholder &&
-      existingCollege.submittedByRole !== "tpo"
-    ) {
+    if (existingCollege && existingCollege.status !== "verified" && !existingIsAutoPlaceholder) {
       return res.status(409).json({
         error: "This college is already registered and pending verification.",
         status: existingCollege.status,
@@ -242,18 +239,36 @@ router.get("/me", requireRole("tpo", "admin"),
 // college (requirePrimaryTeamAction below) — a secondary TPO can view the
 // team but not act on it (permission matrix, item 4).
 
-// Resolves the caller's own College doc and, for the three mutating routes,
-// confirms they're its primary TPO before calling through. Stashes the
-// resolved college on req.tpoCollege so handlers don't re-query it — cheap
-// here since TPO team size is always small (item 27), but no reason to ask
+// Resolves the College doc a team request should act on and, for the
+// three mutating routes, confirms the caller is authorized on it (its
+// primary TPO, or an admin) before calling through. Stashes the resolved
+// college on req.tpoCollege so handlers don't re-query it — cheap here
+// since TPO team size is always small (item 27), but no reason to ask
 // twice in the same request.
+//
+// TPO-1 closure fix: this used to resolve the college purely from the
+// caller's OWN tpoProfile.collegeDomain (getCollegeForTpo), which always
+// returns null for an admin account (admins have no tpoProfile) — so
+// every admin request to these routes 400'd before it could even be
+// authorized, contradicting the required permission matrix ("Invite TPO
+// / Remove TPO / Transfer primary — Admin: YES"). Now routes through
+// resolveTpoTeamContext, which lets an admin name the college explicitly
+// via collegeId — see that function's own comment for why a non-admin
+// caller's collegeId is never consulted (cross-college isolation).
 async function requirePrimaryTeamAction(req, res, next) {
   try {
-    const college = await getCollegeForTpo(req.userDoc);
-    if (!college) {
-      return res.status(400).json({ error: "No college found for this TPO account." });
+    const explicitCollegeId = req.body?.collegeId || req.query?.collegeId;
+    const { college, isAdmin, missingCollegeId } = await resolveTpoTeamContext(req.userDoc, explicitCollegeId);
+
+    if (missingCollegeId) {
+      return res.status(400).json({ error: "collegeId is required." });
     }
-    if (!isPrimaryTpo(college, req.userDoc._id)) {
+    if (!college) {
+      return res.status(400).json({
+        error: isAdmin ? "College not found." : "No college found for this TPO account.",
+      });
+    }
+    if (!isAdmin && !isPrimaryTpo(college, req.userDoc._id)) {
       return res.status(403).json({ error: "Only the primary TPO can manage the TPO team." });
     }
     req.tpoCollege = college;
@@ -268,16 +283,23 @@ router.get("/team", requireRole("tpo", "admin"), requireVerified, async (req, re
   if (b2bGate(req, res)) return;
 
   try {
-    const college = await getCollegeForTpo(req.userDoc);
+    const explicitCollegeId = req.query?.collegeId;
+    const { college, isAdmin, missingCollegeId } = await resolveTpoTeamContext(req.userDoc, explicitCollegeId);
+
+    if (missingCollegeId) {
+      return res.status(400).json({ error: "collegeId is required." });
+    }
     if (!college) {
-      return res.status(400).json({ error: "No college found for this TPO account." });
+      return res.status(400).json({
+        error: isAdmin ? "College not found." : "No college found for this TPO account.",
+      });
     }
 
     const members = await listTeam(college);
 
     return res.json({
       collegeName: college.name,
-      domain: req.userDoc.tpoProfile?.collegeDomain,
+      domain: isAdmin ? college.domains[0] : req.userDoc.tpoProfile?.collegeDomain,
       primaryTpoId: college.primaryTpo ? college.primaryTpo.toString() : null,
       team: members.map((m) => ({
         id: m._id.toString(),
@@ -338,7 +360,15 @@ router.post("/team/invite", requireRole("tpo", "admin"), requireVerified, requir
       });
     }
 
-    if (target.role === "tpo" && target.tpoProfile?.collegeDomain === req.userDoc.tpoProfile?.collegeDomain) {
+    // Already on this team? Compare against every domain this college
+    // owns, not just the inviting primary's own literal collegeDomain —
+    // for a multi-domain college, a teammate who joined via a different
+    // (but still legitimate) domain of the SAME institution must still be
+    // recognized as already-a-member. Comparing against a single domain
+    // string here previously let this fall through to the "add" path
+    // below and silently re-issue/reset that teammate's tpoProfile
+    // (requestedAt/verifiedAt) instead of correctly rejecting with 409.
+    if (target.role === "tpo" && college.domains.includes(target.tpoProfile?.collegeDomain)) {
       return res.status(409).json({ error: "That person is already on your TPO team." });
     }
     // A TPO belongs to only one college at a time (invariant #1) — reject
@@ -357,7 +387,12 @@ router.post("/team/invite", requireRole("tpo", "admin"), requireVerified, requir
     target.grantRole("tpo");
     target.role = "tpo";
     target.tpoProfile = {
-      collegeDomain: req.userDoc.tpoProfile?.collegeDomain,
+      // The domain the invited email actually belongs to, not the
+      // inviting primary's own domain — for a multi-domain college these
+      // can legitimately differ, and each TPO's tpoProfile should record
+      // which literal domain THEY belong to (their own audit trail, and
+      // what getCollegeForTpo/College.findByDomain resolve back from).
+      collegeDomain: domain,
       collegeName: college.name,
       verified: true,
       requestedAt: now,
@@ -531,6 +566,17 @@ router.get("/students", requireRole("tpo", "admin"),
       const domain = req.userDoc.tpoProfile?.collegeDomain;
       if (!domain) return res.status(400).json({ error: "No college domain set on this TPO account." });
 
+      // Multi-domain college fix (TPO-1 closure): match every domain the
+      // college owns, not just this TPO's own literal collegeDomain — a
+      // teammate who joined via a different domain of the SAME
+      // multi-domain institution was previously invisible here. The cache
+      // key below intentionally stays keyed on this TPO's own literal
+      // `domain` (not the full set) — see invalidateTpoCache in
+      // controllers/tpoController.js, which now loops every domain of the
+      // college to invalidate every such per-domain cache entry, so this
+      // doesn't go stale.
+      const collegeDomains = await resolveCollegeDomains(req.userDoc);
+
       // Normalize page/limit — never trust these as-is. Invalid, missing,
       // zero, or negative values all fall back to sane defaults rather
       // than erroring or producing an inconsistent edge case, since a
@@ -572,7 +618,7 @@ router.get("/students", requireRole("tpo", "admin"),
         TPO_CACHE_TTL_SECONDS,
         async () => {
           const [aggResult] = await User.aggregate([
-            { $match: { emailDomain: domain.toLowerCase(), role: "student", ...searchMatch } },
+            { $match: { emailDomain: { $in: collegeDomains }, role: "student", ...searchMatch } },
             // solvedCount computed here, once, in Mongo — the raw
             // `solvedSlugs` array itself is never selected/projected out
             // below, so it never crosses into Node for this endpoint.
@@ -639,6 +685,10 @@ router.get("/dashboard", requireRole("tpo", "admin"),
       const domain = req.userDoc.tpoProfile?.collegeDomain;
       if (!domain) return res.status(400).json({ error: "No college domain set." });
 
+      // Multi-domain college fix (TPO-1 closure) — see the matching
+      // comment in GET /students above.
+      const collegeDomains = await resolveCollegeDomains(req.userDoc);
+
       const { value: dashboard, cacheStatus } = await getOrSetCache(
         `${TPO_CACHE_PREFIX}dashboard:${domain}`,
         TPO_CACHE_TTL_SECONDS,
@@ -654,7 +704,7 @@ router.get("/dashboard", requireRole("tpo", "admin"),
           // wire just to add up numbers doesn't hold as a college's
           // student count grows.
           const [aggResult] = await User.aggregate([
-            { $match: { emailDomain: domain.toLowerCase(), role: "student" } },
+            { $match: { emailDomain: { $in: collegeDomains }, role: "student" } },
             {
               $facet: {
                 summary: [
@@ -957,8 +1007,11 @@ router.get("/report/pdf", requireRole("tpo", "admin"),
 
       const domain = req.userDoc.tpoProfile?.collegeDomain;
       if (!domain) return res.status(400).json({ error: "No college domain set on this TPO account." });
+      // Multi-domain college fix (TPO-1 closure) — see the matching
+      // comment in GET /students above.
+      const collegeDomains = await resolveCollegeDomains(req.userDoc);
       const students = await User.find({
-        emailDomain: domain.toLowerCase(),
+        emailDomain: { $in: collegeDomains },
         role: "student",
       })
         .select("displayName totalXP solvedSlugs solvedDifficulty currentStreak topicStats")
@@ -1026,7 +1079,7 @@ router.get("/report/pdf", requireRole("tpo", "admin"),
 
       // Footer
       const footerY = doc.page.height - 40;
-      doc.fontSize(8).fillColor("#a1a1aa").text(`Generated by Code Club · ${SITE_URL.replace("https://", "")}`, 50, footerY, { align: "center", width: doc.page.width - 100 });
+      doc.fontSize(8).fillColor("#a1a1aa").text(`Generated by Code Club · ${SITE_URL.replace("https://","")}`, 50, footerY, { align: "center", width: doc.page.width - 100 });
 
       doc.end();
     } catch (err) {

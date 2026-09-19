@@ -29,6 +29,8 @@ vi.mock("../services/tpoTeamService.js", () => ({
   listTeam: vi.fn(),
   claimPrimaryIfNone: vi.fn(),
   transferPrimary: vi.fn(),
+  resolveTpoTeamContext: vi.fn(),
+  resolveCollegeDomains: vi.fn(),
 }));
 
 import User from "../models/User.js";
@@ -39,6 +41,7 @@ import {
   isPrimaryTpo,
   listTeam,
   transferPrimary,
+  resolveTpoTeamContext,
 } from "../services/tpoTeamService.js";
 import tpoRouter from "./tpo.js";
 
@@ -82,6 +85,13 @@ const college = {
   primaryTpo: "primary-id",
 };
 
+const multiDomainCollege = {
+  _id: "college2",
+  name: "Old & New MIT",
+  domains: ["mit.edu", "old-mit.edu"],
+  primaryTpo: "primary-id",
+};
+
 const primaryTpo = {
   role: "tpo",
   _id: { toString: () => "primary-id" },
@@ -93,6 +103,21 @@ const secondaryTpo = {
   _id: { toString: () => "secondary-id" },
   tpoProfile: { collegeDomain: "mit.edu", collegeName: "MIT", verified: true },
 };
+
+const adminUser = {
+  role: "admin",
+  _id: { toString: () => "admin-id" },
+};
+
+function nonAdminContext(collegeDoc) {
+  return { college: collegeDoc, isAdmin: false, missingCollegeId: false };
+}
+function adminContext(collegeDoc) {
+  return { college: collegeDoc, isAdmin: true, missingCollegeId: false };
+}
+function missingCollegeIdContext() {
+  return { college: null, isAdmin: true, missingCollegeId: true };
+}
 
 function makeSavableUser(overrides = {}) {
   return {
@@ -118,18 +143,30 @@ function makeSavableUser(overrides = {}) {
 describe("TPO team management routes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // The vi.mock() factories above set default resolved-promise
+    // implementations for createNotification/createNotificationBulk
+    // (handlers call `.catch()` on their return value) — clearAllMocks
+    // clears call history without wiping those, which is what this suite
+    // needs; resetAllMocks would wipe them and make every `.catch()` call
+    // throw on `undefined`. Individual tests still layer their own
+    // mockResolvedValueOnce/mockReturnValueOnce on top per-case.
+    resolveTpoTeamContext.mockReset();
+    isPrimaryTpo.mockReset();
+    getCollegeForTpo.mockReset();
+    listTeam.mockReset();
+    transferPrimary.mockReset();
   });
 
   describe("GET /team", () => {
     it("returns the team roster with primary flags derived from college.primaryTpo", async () => {
-      getCollegeForTpo.mockResolvedValueOnce(college);
+      resolveTpoTeamContext.mockResolvedValueOnce(nonAdminContext(college));
       listTeam.mockResolvedValueOnce([
         { _id: { toString: () => "primary-id" }, displayName: "Prim", email: "p@mit.edu", tpoProfile: { verified: true } },
         { _id: { toString: () => "secondary-id" }, displayName: "Sec", email: "s@mit.edu", tpoProfile: { verified: true } },
       ]);
       isPrimaryTpo.mockImplementation((c, id) => id.toString() === "primary-id");
 
-      const res = await runRoute("get", "/team", { userDoc: primaryTpo });
+      const res = await runRoute("get", "/team", { userDoc: primaryTpo, query: {} });
 
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -144,24 +181,44 @@ describe("TPO team management routes", () => {
     });
 
     it("a secondary TPO can view the team (view-only, no primary gate)", async () => {
-      getCollegeForTpo.mockResolvedValueOnce(college);
+      resolveTpoTeamContext.mockResolvedValueOnce(nonAdminContext(college));
       listTeam.mockResolvedValueOnce([]);
       isPrimaryTpo.mockReturnValue(false);
 
-      const res = await runRoute("get", "/team", { userDoc: secondaryTpo });
+      const res = await runRoute("get", "/team", { userDoc: secondaryTpo, query: {} });
       expect(res.status).not.toHaveBeenCalledWith(403);
     });
 
     it("returns 400 when the TPO has no resolvable college", async () => {
-      getCollegeForTpo.mockResolvedValueOnce(null);
-      const res = await runRoute("get", "/team", { userDoc: primaryTpo });
+      resolveTpoTeamContext.mockResolvedValueOnce(nonAdminContext(null));
+      const res = await runRoute("get", "/team", { userDoc: primaryTpo, query: {} });
       expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    // ── TPO-1 closure: admin override ────────────────────────────────────
+    it("lets an admin view any college's team by passing an explicit collegeId", async () => {
+      resolveTpoTeamContext.mockResolvedValueOnce(adminContext(college));
+      listTeam.mockResolvedValueOnce([]);
+      isPrimaryTpo.mockReturnValue(false);
+
+      const res = await runRoute("get", "/team", { userDoc: adminUser, query: { collegeId: "college1" } });
+
+      expect(resolveTpoTeamContext).toHaveBeenCalledWith(adminUser, "college1");
+      expect(res.status).not.toHaveBeenCalledWith(400);
+      expect(res.status).not.toHaveBeenCalledWith(403);
+    });
+
+    it("400s an admin request with no collegeId (admin has no institution of their own)", async () => {
+      resolveTpoTeamContext.mockResolvedValueOnce(missingCollegeIdContext());
+      const res = await runRoute("get", "/team", { userDoc: adminUser, query: {} });
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(listTeam).not.toHaveBeenCalled();
     });
   });
 
   describe("primary-only gating (requirePrimaryTeamAction)", () => {
     it("blocks a secondary TPO from inviting with 403", async () => {
-      getCollegeForTpo.mockResolvedValueOnce(college);
+      resolveTpoTeamContext.mockResolvedValueOnce(nonAdminContext(college));
       isPrimaryTpo.mockReturnValueOnce(false);
 
       const res = await runRoute("post", "/team/invite", {
@@ -174,24 +231,26 @@ describe("TPO team management routes", () => {
     });
 
     it("blocks a secondary TPO from removing a teammate with 403", async () => {
-      getCollegeForTpo.mockResolvedValueOnce(college);
+      resolveTpoTeamContext.mockResolvedValueOnce(nonAdminContext(college));
       isPrimaryTpo.mockReturnValueOnce(false);
 
       const res = await runRoute("delete", "/team/:tpoId", {
         userDoc: secondaryTpo,
         params: { tpoId: "someone" },
+        body: {},
       });
 
       expect(res.status).toHaveBeenCalledWith(403);
     });
 
     it("blocks a secondary TPO from transferring primary with 403", async () => {
-      getCollegeForTpo.mockResolvedValueOnce(college);
+      resolveTpoTeamContext.mockResolvedValueOnce(nonAdminContext(college));
       isPrimaryTpo.mockReturnValueOnce(false);
 
       const res = await runRoute("post", "/team/:tpoId/make-primary", {
         userDoc: secondaryTpo,
         params: { tpoId: "someone" },
+        body: {},
       });
 
       expect(res.status).toHaveBeenCalledWith(403);
@@ -199,18 +258,45 @@ describe("TPO team management routes", () => {
     });
 
     it("400s when the caller has no resolvable college at all", async () => {
-      getCollegeForTpo.mockResolvedValueOnce(null);
+      resolveTpoTeamContext.mockResolvedValueOnce(nonAdminContext(null));
       const res = await runRoute("post", "/team/invite", {
         userDoc: primaryTpo,
         body: { email: "x@mit.edu" },
       });
       expect(res.status).toHaveBeenCalledWith(400);
     });
+
+    // ── TPO-1 closure: admin override + isolation ────────────────────────
+    it("lets an admin invite into an explicit college without needing to be its primary", async () => {
+      resolveTpoTeamContext.mockResolvedValueOnce(adminContext(college));
+      User.findOne.mockResolvedValueOnce(makeSavableUser());
+
+      const res = await runRoute("post", "/team/invite", {
+        userDoc: adminUser,
+        body: { email: "target@mit.edu", collegeId: "college1" },
+      });
+
+      expect(resolveTpoTeamContext).toHaveBeenCalledWith(adminUser, "college1");
+      expect(res.status).toHaveBeenCalledWith(201);
+    });
+
+    it("a non-admin's collegeId body field is passed through, but the service contract ignores it for non-admins (isolation lives in tpoTeamService.test.js)", async () => {
+      resolveTpoTeamContext.mockResolvedValueOnce(nonAdminContext(college));
+      isPrimaryTpo.mockReturnValueOnce(true);
+      User.findOne.mockResolvedValueOnce(makeSavableUser());
+
+      await runRoute("post", "/team/invite", {
+        userDoc: primaryTpo,
+        body: { email: "target@mit.edu", collegeId: "some-other-college-id" },
+      });
+
+      expect(resolveTpoTeamContext).toHaveBeenCalledWith(primaryTpo, "some-other-college-id");
+    });
   });
 
   describe("POST /team/invite", () => {
     beforeEach(() => {
-      getCollegeForTpo.mockResolvedValue(college);
+      resolveTpoTeamContext.mockResolvedValue(nonAdminContext(college));
       isPrimaryTpo.mockReturnValue(true); // caller is primary
     });
 
@@ -268,6 +354,28 @@ describe("TPO team management routes", () => {
       expect(res.status).toHaveBeenCalledWith(409);
     });
 
+    // ── TPO-1 closure: multi-domain duplicate-membership fix ─────────────
+    it("409s when the target is already on the team via a DIFFERENT domain of the same multi-domain college", async () => {
+      resolveTpoTeamContext.mockResolvedValue(nonAdminContext(multiDomainCollege));
+      // The invited email uses old-mit.edu; the target's own tpoProfile
+      // was recorded under mit.edu — a different literal string, but the
+      // same institution (multiDomainCollege.domains includes both).
+      User.findOne.mockResolvedValueOnce(
+        makeSavableUser({
+          email: "target@old-mit.edu",
+          role: "tpo",
+          tpoProfile: { collegeDomain: "mit.edu", verified: true },
+        })
+      );
+
+      const res = await runRoute("post", "/team/invite", {
+        userDoc: primaryTpo,
+        body: { email: "target@old-mit.edu" },
+      });
+
+      expect(res.status).toHaveBeenCalledWith(409);
+    });
+
     it("409s when the target is already a verified TPO at a different institution", async () => {
       User.findOne.mockResolvedValueOnce(
         makeSavableUser({ role: "tpo", tpoProfile: { collegeDomain: "other.edu", verified: true } })
@@ -279,6 +387,19 @@ describe("TPO team management routes", () => {
       expect(res.status).toHaveBeenCalledWith(409);
     });
 
+    it("records the invited email's OWN domain on their tpoProfile, not the inviter's literal domain", async () => {
+      resolveTpoTeamContext.mockResolvedValue(nonAdminContext(multiDomainCollege));
+      const target = makeSavableUser({ email: "target@old-mit.edu" });
+      User.findOne.mockResolvedValueOnce(target);
+
+      await runRoute("post", "/team/invite", {
+        userDoc: { ...primaryTpo, tpoProfile: { ...primaryTpo.tpoProfile, collegeDomain: "mit.edu" } },
+        body: { email: "target@old-mit.edu" },
+      });
+
+      expect(target.tpoProfile.collegeDomain).toBe("old-mit.edu");
+    });
+
     it("400s when email is missing", async () => {
       const res = await runRoute("post", "/team/invite", { userDoc: primaryTpo, body: {} });
       expect(res.status).toHaveBeenCalledWith(400);
@@ -287,7 +408,7 @@ describe("TPO team management routes", () => {
 
   describe("DELETE /team/:tpoId", () => {
     beforeEach(() => {
-      getCollegeForTpo.mockResolvedValue(college);
+      resolveTpoTeamContext.mockResolvedValue(nonAdminContext(college));
       isPrimaryTpo.mockReturnValue(true);
     });
 
@@ -303,6 +424,7 @@ describe("TPO team management routes", () => {
       const res = await runRoute("delete", "/team/:tpoId", {
         userDoc: primaryTpo,
         params: { tpoId: "target-id" },
+        body: {},
       });
 
       expect(target.role).toBe("student");
@@ -324,6 +446,7 @@ describe("TPO team management routes", () => {
       const res = await runRoute("delete", "/team/:tpoId", {
         userDoc: primaryTpo,
         params: { tpoId: "primary-id" },
+        body: {},
       });
 
       expect(res.status).toHaveBeenCalledWith(400);
@@ -334,6 +457,7 @@ describe("TPO team management routes", () => {
       const res = await runRoute("delete", "/team/:tpoId", {
         userDoc: primaryTpo,
         params: { tpoId: "primary-id" }, // matches college.primaryTpo
+        body: {},
       });
       expect(res.status).toHaveBeenCalledWith(400);
     });
@@ -343,6 +467,7 @@ describe("TPO team management routes", () => {
       const res = await runRoute("delete", "/team/:tpoId", {
         userDoc: primaryTpo,
         params: { tpoId: "not-a-member" },
+        body: {},
       });
       expect(res.status).toHaveBeenCalledWith(404);
     });
@@ -352,16 +477,32 @@ describe("TPO team management routes", () => {
       await runRoute("delete", "/team/:tpoId", {
         userDoc: primaryTpo,
         params: { tpoId: "target-id" },
+        body: {},
       });
       expect(User.findOne).toHaveBeenCalledWith(
         expect.objectContaining({ "tpoProfile.collegeDomain": { $in: ["mit.edu"] } })
       );
     });
+
+    // ── TPO-1 closure: admin override ────────────────────────────────────
+    it("lets an admin remove a TPO from an explicit college without being its primary", async () => {
+      resolveTpoTeamContext.mockResolvedValueOnce(adminContext(college));
+      const target = makeSavableUser({ role: "tpo", roles: ["student", "tpo"] });
+      User.findOne.mockResolvedValueOnce(target);
+
+      const res = await runRoute("delete", "/team/:tpoId", {
+        userDoc: adminUser,
+        params: { tpoId: "target-id" },
+        body: { collegeId: "college1" },
+      });
+
+      expect(res.json).toHaveBeenCalledWith({ success: true });
+    });
   });
 
   describe("POST /team/:tpoId/make-primary", () => {
     beforeEach(() => {
-      getCollegeForTpo.mockResolvedValue(college);
+      resolveTpoTeamContext.mockResolvedValue(nonAdminContext(college));
       isPrimaryTpo.mockReturnValue(true);
     });
 
@@ -373,6 +514,7 @@ describe("TPO team management routes", () => {
       const res = await runRoute("post", "/team/:tpoId/make-primary", {
         userDoc: primaryTpo,
         params: { tpoId: "target-id" },
+        body: {},
       });
 
       expect(transferPrimary).toHaveBeenCalledWith("college1", primaryTpo._id, target._id);
@@ -392,6 +534,7 @@ describe("TPO team management routes", () => {
       const res = await runRoute("post", "/team/:tpoId/make-primary", {
         userDoc: primaryTpo,
         params: { tpoId: "target-id" },
+        body: {},
       });
 
       expect(res.status).toHaveBeenCalledWith(409);
@@ -402,6 +545,7 @@ describe("TPO team management routes", () => {
       const res = await runRoute("post", "/team/:tpoId/make-primary", {
         userDoc: primaryTpo,
         params: { tpoId: "pending-tpo-id" },
+        body: {},
       });
       expect(res.status).toHaveBeenCalledWith(404);
       expect(transferPrimary).not.toHaveBeenCalled();
@@ -411,6 +555,7 @@ describe("TPO team management routes", () => {
       const res = await runRoute("post", "/team/:tpoId/make-primary", {
         userDoc: primaryTpo,
         params: { tpoId: "primary-id" },
+        body: {},
       });
       expect(res.status).toHaveBeenCalledWith(400);
       expect(User.findOne).not.toHaveBeenCalled();
@@ -421,10 +566,27 @@ describe("TPO team management routes", () => {
       await runRoute("post", "/team/:tpoId/make-primary", {
         userDoc: primaryTpo,
         params: { tpoId: "target-id" },
+        body: {},
       });
       expect(User.findOne).toHaveBeenCalledWith(
         expect.objectContaining({ "tpoProfile.verified": true })
       );
+    });
+
+    // ── TPO-1 closure: admin override ────────────────────────────────────
+    it("lets an admin transfer primary on an explicit college without being its primary", async () => {
+      resolveTpoTeamContext.mockResolvedValueOnce(adminContext(college));
+      const target = makeSavableUser({ role: "tpo", tpoProfile: { collegeDomain: "mit.edu", verified: true } });
+      User.findOne.mockResolvedValueOnce(target);
+      transferPrimary.mockResolvedValueOnce(true);
+
+      const res = await runRoute("post", "/team/:tpoId/make-primary", {
+        userDoc: adminUser,
+        params: { tpoId: "target-id" },
+        body: { collegeId: "college1" },
+      });
+
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
     });
   });
 

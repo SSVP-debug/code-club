@@ -38,6 +38,56 @@ export async function getCollegeForTpo(userDoc) {
   return College.findByDomain(domain);
 }
 
+/**
+ * Resolves which College a /team request should operate against.
+ *
+ * A TPO always acts on their own institution (getCollegeForTpo — ignores
+ * `explicitCollegeId` entirely for a non-admin caller, so a TPO can never
+ * widen their own scope by adding a `collegeId` query/body param; this is
+ * what keeps cross-college isolation intact even under a hostile request
+ * body — see routes/tpo.js's requirePrimaryTeamAction).
+ *
+ * An admin has no institution of their own, but the TPO-1 permission
+ * matrix requires admins be able to view/manage ANY college's team
+ * ("Modify another institution — Admin: YES") — so an admin request must
+ * name which one via `explicitCollegeId`, the same collegeId-keyed
+ * convention adminController.js's approveTpo/rejectTpo already use.
+ *
+ * Returns `{ college, isAdmin, missingCollegeId }` rather than throwing,
+ * so callers can produce the right 400 vs 404 without a try/catch per
+ * call site.
+ */
+export async function resolveTpoTeamContext(userDoc, explicitCollegeId) {
+  if (userDoc?.role === "admin") {
+    if (!explicitCollegeId) {
+      return { college: null, isAdmin: true, missingCollegeId: true };
+    }
+    const college = await College.findById(explicitCollegeId).catch(() => null);
+    return { college, isAdmin: true, missingCollegeId: false };
+  }
+  const college = await getCollegeForTpo(userDoc);
+  return { college, isAdmin: false, missingCollegeId: false };
+}
+
+/**
+ * The full set of domains a TPO's institution owns, lowercased — for
+ * scoping student-roster queries (routes/tpo.js's /students, /dashboard,
+ * /report/pdf) so a multi-domain college's TPO sees students who joined
+ * via ANY of the college's domains, not just the one literal domain this
+ * particular TPO happened to register under. Falls back to the TPO's own
+ * single collegeDomain if no College record resolves (shouldn't happen
+ * for a verified TPO, but keeps these routes working rather than
+ * returning nothing if it does).
+ */
+export async function resolveCollegeDomains(userDoc) {
+  const college = await getCollegeForTpo(userDoc);
+  if (college?.domains?.length) {
+    return college.domains.map((d) => d.toLowerCase());
+  }
+  const domain = userDoc?.tpoProfile?.collegeDomain;
+  return domain ? [domain.toLowerCase()] : [];
+}
+
 /** True if `userId` is the current primary TPO on `college`. */
 export function isPrimaryTpo(college, userId) {
   if (!college?.primaryTpo || !userId) return false;

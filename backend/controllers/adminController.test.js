@@ -339,6 +339,39 @@ describe("adminController", () => {
 
             expect(claimPrimaryIfNone).not.toHaveBeenCalled();
         });
+
+        // ── TPO-1 closure: auth-cache invalidation for bulk-verified TPOs ──
+        it("invalidates the auth cache for every TPO account it just bulk-verified", async () => {
+            const college = {
+                _id: "c1", domains: ["mit.edu"], name: "MIT", submittedBy: "u1", status: "pending",
+                save: vi.fn().mockResolvedValue(true),
+            };
+            College.findById.mockResolvedValueOnce(college);
+            mockPendingCandidates([
+                { _id: "req1", firebaseUid: "fb-req1" },
+                { _id: "req2", firebaseUid: "fb-req2" },
+            ]);
+            User.updateMany.mockResolvedValueOnce({ modifiedCount: 2 });
+
+            await approveTpo({ params: { collegeId: "c1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
+
+            expect(invalidateCachedUserByFirebaseUid).toHaveBeenCalledWith("fb-req1");
+            expect(invalidateCachedUserByFirebaseUid).toHaveBeenCalledWith("fb-req2");
+        });
+
+        it("does not attempt any cache invalidation when there are no pending candidates", async () => {
+            const college = {
+                _id: "c1", domains: ["mit.edu"], name: "MIT", submittedBy: "u1", status: "pending",
+                save: vi.fn().mockResolvedValue(true),
+            };
+            College.findById.mockResolvedValueOnce(college);
+            mockPendingCandidates([]);
+            User.updateMany.mockResolvedValueOnce({ modifiedCount: 0 });
+
+            await approveTpo({ params: { collegeId: "c1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
+
+            expect(invalidateCachedUserByFirebaseUid).not.toHaveBeenCalled();
+        });
     });
 
     describe("rejectTpo", () => {

@@ -237,13 +237,24 @@ export async function approveTpo(req, res) {
       "tpoProfile.verified": false,
     })
       .sort({ "tpoProfile.requestedAt": 1 })
-      .select("_id")
+      .select("_id firebaseUid")
       .lean();
 
     await User.updateMany(
       { role: "tpo", "tpoProfile.collegeDomain": { $in: college.domains }, "tpoProfile.verified": false },
       { $set: { "tpoProfile.verified": true, "tpoProfile.verifiedAt": college.verifiedAt } }
     );
+
+    // TPO-1 closure fix: this bulk verification bypasses per-document
+    // save hooks (updateMany), so — unlike every other place in this file
+    // that flips a user's verified/authorization state (see
+    // approveStudentCollege below, rejectTpo, rejectRecruiter) — it never
+    // invalidated the short-lived auth cache (utils/userAuthCache.js) for
+    // the accounts it just verified. Each one would keep failing
+    // requireVerified with a stale "pending" userDoc until that cache
+    // entry's TTL expired on its own, rather than being usable
+    // immediately after approval.
+    pendingCandidates.forEach((u) => invalidateCachedUserByFirebaseUid(u.firebaseUid));
 
     if (pendingCandidates.length > 0) {
       await claimPrimaryIfNone(college._id, pendingCandidates[0]._id);

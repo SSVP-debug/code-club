@@ -22,11 +22,29 @@ vi.mock("../services/notificationService.js", () => ({
 vi.mock("../services/settingsService.js", () => ({
   getSettings: vi.fn(),
 }));
+vi.mock("../services/tpoTeamService.js", () => ({
+  getCollegeForTpo: vi.fn(),
+  isPrimaryTpo: vi.fn(),
+  listTeam: vi.fn(),
+  claimPrimaryIfNone: vi.fn(),
+  transferPrimary: vi.fn(),
+  resolveTpoTeamContext: vi.fn(),
+  // Default mirrors pre-fix single-domain behavior (just the caller's own
+  // literal collegeDomain) so every existing single-college assertion in
+  // this file keeps working unchanged; the multi-domain case itself is
+  // covered by tpoTeamService.test.js's own resolveCollegeDomains tests
+  // and by the dedicated multi-domain test below.
+  resolveCollegeDomains: vi.fn(async (userDoc) => {
+    const domain = userDoc?.tpoProfile?.collegeDomain;
+    return domain ? [domain.toLowerCase()] : [];
+  }),
+}));
 
 import User from "../models/User.js";
 import Assignment from "../models/Assignment.js";
 import { createNotificationBulk } from "../services/notificationService.js";
 import { getSettings } from "../services/settingsService.js";
+import { resolveCollegeDomains } from "../services/tpoTeamService.js";
 import tpoRouter, { handleRemindAssignment, tpoRegistrationGate } from "./tpo.js";
 
 function mockRes() {
@@ -405,7 +423,7 @@ describe("GET /students — pagination, search, sort, and authorization", () => 
       await runRoute("get", "/students", req);
 
       expect(matchStage(lastPipeline())).toEqual(
-        expect.objectContaining({ emailDomain: "example.edu", role: "student" })
+        expect.objectContaining({ emailDomain: { $in: ["example.edu"] }, role: "student" })
       );
     });
 
@@ -417,7 +435,7 @@ describe("GET /students — pagination, search, sort, and authorization", () => 
       await runRoute("get", "/students", req);
 
       const match = matchStage(lastPipeline());
-      expect(match.emailDomain).toBe("example.edu"); // still the TPO's own domain
+      expect(match.emailDomain).toEqual({ $in: ["example.edu"] }); // still the TPO's own domain
       expect(JSON.stringify(match)).not.toContain("rival-college.edu");
     });
 
@@ -426,10 +444,10 @@ describe("GET /students — pagination, search, sort, and authorization", () => 
       const tpoB = { role: "tpo", tpoProfile: { collegeDomain: "college-b.edu", verified: true } };
 
       await runRoute("get", "/students", { userDoc: tpoA, query: {} });
-      expect(matchStage(lastPipeline()).emailDomain).toBe("college-a.edu");
+      expect(matchStage(lastPipeline()).emailDomain).toEqual({ $in: ["college-a.edu"] });
 
       await runRoute("get", "/students", { userDoc: tpoB, query: {} });
-      expect(matchStage(lastPipeline()).emailDomain).toBe("college-b.edu");
+      expect(matchStage(lastPipeline()).emailDomain).toEqual({ $in: ["college-b.edu"] });
     });
   });
 
@@ -536,7 +554,7 @@ describe("GET /students — pagination, search, sort, and authorization", () => 
 
     it("still scopes to the TPO's own college even while searching", async () => {
       await runRoute("get", "/students", { userDoc: verifiedTpo, query: { q: "krishna" } });
-      expect(matchStage(lastPipeline()).emailDomain).toBe("example.edu");
+      expect(matchStage(lastPipeline()).emailDomain).toEqual({ $in: ["example.edu"] });
     });
 
     it("combines with pagination correctly", async () => {
@@ -582,7 +600,7 @@ describe("GET /students — pagination, search, sort, and authorization", () => 
       const pipeline = lastPipeline();
       expect(matchStage(pipeline)).toEqual(
         expect.objectContaining({
-          emailDomain: "example.edu",
+          emailDomain: { $in: ["example.edu"] },
           role: "student",
           $or: expect.any(Array),
         })
@@ -605,5 +623,42 @@ describe("GET /students — pagination, search, sort, and authorization", () => 
       expect(project).not.toHaveProperty("password");
       expect(project).not.toHaveProperty("topicStats");
     });
+  });
+});
+
+// ── TPO-1 closure: multi-domain college scoping ───────────────────────────
+// Bug found in the closure audit: /students and /dashboard matched
+// students by the TPO's own single literal collegeDomain instead of every
+// domain the TPO's college owns, so a TPO on a multi-domain college
+// couldn't see students who joined via a sibling domain of the SAME
+// institution. Fixed via resolveCollegeDomains (services/tpoTeamService.js);
+// these tests pin that both routes actually consult it and use its result
+// as an $in match, rather than falling back to the single-domain shape.
+describe("multi-domain college scoping (GET /students, GET /dashboard)", () => {
+  const multiDomainTpo = { role: "tpo", tpoProfile: { collegeDomain: "mit.edu", verified: true } };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    User.aggregate.mockResolvedValue([{ data: [], totalCount: [{ count: 0 }] }]);
+  });
+
+  it("GET /students matches every domain resolveCollegeDomains returns, not just the TPO's own literal domain", async () => {
+    resolveCollegeDomains.mockResolvedValueOnce(["mit.edu", "old-mit.edu"]);
+
+    await runRoute("get", "/students", { userDoc: multiDomainTpo, query: {} });
+
+    const pipeline = User.aggregate.mock.calls.at(-1)[0];
+    const match = pipeline.find((s) => s.$match)?.$match;
+    expect(resolveCollegeDomains).toHaveBeenCalledWith(multiDomainTpo);
+    expect(match.emailDomain).toEqual({ $in: ["mit.edu", "old-mit.edu"] });
+  });
+
+  it("GET /dashboard matches every domain resolveCollegeDomains returns", async () => {
+    await runRoute("get", "/dashboard", { userDoc: multiDomainTpo, query: {} });
+
+    const pipeline = User.aggregate.mock.calls.at(-1)[0];
+    const match = pipeline.find((s) => s.$match)?.$match;
+    expect(resolveCollegeDomains).toHaveBeenCalledWith(multiDomainTpo);
+    expect(match.emailDomain).toEqual({ $in: ["mit.edu"] }); // default mock: just the TPO's own domain
   });
 });

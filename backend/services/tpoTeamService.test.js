@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 vi.mock("../models/College.js", () => ({
-  default: { findByDomain: vi.fn(), findOneAndUpdate: vi.fn() },
+  default: { findByDomain: vi.fn(), findOneAndUpdate: vi.fn(), findById: vi.fn() },
 }));
 vi.mock("../models/User.js", () => ({
   default: { find: vi.fn() },
@@ -16,6 +16,8 @@ import {
   claimPrimaryIfNone,
   transferPrimary,
   clearPrimaryIfCurrent,
+  resolveTpoTeamContext,
+  resolveCollegeDomains,
 } from "./tpoTeamService.js";
 
 describe("tpoTeamService", () => {
@@ -152,6 +154,78 @@ describe("tpoTeamService", () => {
       College.findOneAndUpdate.mockResolvedValueOnce(null);
       const cleared = await clearPrimaryIfCurrent("c1", "not-primary");
       expect(cleared).toBe(false);
+    });
+  });
+
+  // ── TPO-1 closure: admin-override resolution ────────────────────────────
+  describe("resolveTpoTeamContext", () => {
+    it("for a non-admin, resolves the caller's OWN college and ignores explicitCollegeId entirely", async () => {
+      College.findByDomain.mockResolvedValueOnce({ _id: "own-college" });
+
+      const result = await resolveTpoTeamContext(
+        { role: "tpo", tpoProfile: { collegeDomain: "mit.edu" } },
+        "some-other-college-id" // must never be consulted — this is the isolation guarantee
+      );
+
+      expect(College.findByDomain).toHaveBeenCalledWith("mit.edu");
+      expect(College.findById).not.toHaveBeenCalled();
+      expect(result).toEqual({ college: { _id: "own-college" }, isAdmin: false, missingCollegeId: false });
+    });
+
+    it("for an admin, resolves the college from the explicit collegeId", async () => {
+      College.findById.mockResolvedValueOnce({ _id: "target-college" });
+
+      const result = await resolveTpoTeamContext({ role: "admin" }, "target-college");
+
+      expect(College.findById).toHaveBeenCalledWith("target-college");
+      expect(College.findByDomain).not.toHaveBeenCalled();
+      expect(result).toEqual({ college: { _id: "target-college" }, isAdmin: true, missingCollegeId: false });
+    });
+
+    it("for an admin with no collegeId, returns missingCollegeId without querying", async () => {
+      const result = await resolveTpoTeamContext({ role: "admin" }, undefined);
+
+      expect(result).toEqual({ college: null, isAdmin: true, missingCollegeId: true });
+      expect(College.findById).not.toHaveBeenCalled();
+    });
+
+    it("for an admin with a collegeId that doesn't resolve to a real college, returns college: null (not missingCollegeId)", async () => {
+      College.findById.mockResolvedValueOnce(null);
+
+      const result = await resolveTpoTeamContext({ role: "admin" }, "bogus-id");
+
+      expect(result).toEqual({ college: null, isAdmin: true, missingCollegeId: false });
+    });
+
+    it("for an admin, a malformed collegeId (invalid ObjectId) resolves to college: null rather than throwing", async () => {
+      College.findById.mockRejectedValueOnce(new Error("Cast to ObjectId failed"));
+
+      const result = await resolveTpoTeamContext({ role: "admin" }, "not-an-object-id");
+
+      expect(result).toEqual({ college: null, isAdmin: true, missingCollegeId: false });
+    });
+  });
+
+  describe("resolveCollegeDomains", () => {
+    it("returns every domain the TPO's college owns, lowercased", async () => {
+      College.findByDomain.mockResolvedValueOnce({ domains: ["MIT.edu", "old-mit.EDU"] });
+
+      const domains = await resolveCollegeDomains({ tpoProfile: { collegeDomain: "mit.edu" } });
+
+      expect(domains).toEqual(["mit.edu", "old-mit.edu"]);
+    });
+
+    it("falls back to just the TPO's own single domain when no College record resolves", async () => {
+      College.findByDomain.mockResolvedValueOnce(null);
+
+      const domains = await resolveCollegeDomains({ tpoProfile: { collegeDomain: "Mit.edu" } });
+
+      expect(domains).toEqual(["mit.edu"]);
+    });
+
+    it("returns an empty array when the TPO has no college domain at all", async () => {
+      const domains = await resolveCollegeDomains({ tpoProfile: {} });
+      expect(domains).toEqual([]);
     });
   });
 });
