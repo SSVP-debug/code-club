@@ -24,6 +24,7 @@ import {
   resolveCollegeDomains,
 } from "../services/tpoTeamService.js";
 import { invalidateCachedUserByFirebaseUid } from "../utils/userAuthCache.js";
+import * as cohortService from "../services/cohortService.js";
 
 const TPO_CACHE_TTL_SECONDS = 2 * 60; // 2 minutes — matches profile cache TTL
 const TPO_CACHE_PREFIX = "tpo:";
@@ -298,7 +299,7 @@ router.get("/me", requireRole("tpo", "admin"),
 // same as every other TPO route in this file — a pending TPO can't manage
 // institutional membership (invariant #5). The three mutating ones
 // additionally require the caller to BE the primary TPO for their own
-// college (requirePrimaryTeamAction below) — a secondary TPO can view the
+// college (resolveTpoInstitution + requirePrimaryOnly below) — a secondary TPO can view the
 // team but not act on it (permission matrix, item 4).
 
 // Resolves the College doc a team request should act on and, for the
@@ -317,7 +318,20 @@ router.get("/me", requireRole("tpo", "admin"),
 // resolveTpoTeamContext, which lets an admin name the college explicitly
 // via collegeId — see that function's own comment for why a non-admin
 // caller's collegeId is never consulted (cross-college isolation).
-async function requirePrimaryTeamAction(req, res, next) {
+// Resolves req.tpoCollege (the caller's own institution, or — for an
+// admin only — an explicitly supplied collegeId) and stashes
+// req.tpoIsAdmin alongside it. No primary-only gate here — this is the
+// shared base every institution-scoped TPO route needs (team management
+// AND, as of TPO-2 Step 4, cohort management), split out from what used
+// to be requirePrimaryTeamAction's single combined middleware so cohort
+// routes can reuse the institution-resolution half without inheriting
+// team-management's primary-only restriction (TPO-2 Step 4's explicit
+// product decision: cohort management is an operational workflow, not
+// an authority-transfer action — every verified TPO, primary or
+// secondary, can use it). This is the "smallest reusable extension" of
+// the TPO-1 hardening rather than a second, competing authorization
+// implementation.
+async function resolveTpoInstitution(req, res, next) {
   try {
     const explicitCollegeId = req.body?.collegeId || req.query?.collegeId;
     const { college, isAdmin, missingCollegeId } = await resolveTpoTeamContext(req.userDoc, explicitCollegeId);
@@ -330,32 +344,33 @@ async function requirePrimaryTeamAction(req, res, next) {
         error: isAdmin ? "College not found." : "No college found for this TPO account.",
       });
     }
-    if (!isAdmin && !isPrimaryTpo(college, req.userDoc._id)) {
-      return res.status(403).json({ error: "Only the primary TPO can manage the TPO team." });
-    }
     req.tpoCollege = college;
+    req.tpoIsAdmin = isAdmin;
     next();
   } catch (err) {
-    (req.log || logger).error({ err }, "[TPO] requirePrimaryTeamAction error");
-    return res.status(500).json({ error: "Failed to verify primary TPO status." });
+    (req.log || logger).error({ err }, "[TPO] resolveTpoInstitution error");
+    return res.status(500).json({ error: "Failed to resolve TPO institution." });
   }
 }
 
-router.get("/team", requireRole("tpo", "admin"), requireVerified, async (req, res) => {
+// Layers the primary-only gate on top of resolveTpoInstitution — for
+// TPO-team authority actions specifically (invite/remove/transfer
+// primary). Must run AFTER resolveTpoInstitution in a route's
+// middleware chain (relies on req.tpoCollege/req.tpoIsAdmin already
+// being set).
+function requirePrimaryOnly(req, res, next) {
+  if (!req.tpoIsAdmin && !isPrimaryTpo(req.tpoCollege, req.userDoc._id)) {
+    return res.status(403).json({ error: "Only the primary TPO can manage the TPO team." });
+  }
+  next();
+}
+
+router.get("/team", requireRole("tpo", "admin"), requireVerified, resolveTpoInstitution, async (req, res) => {
   if (b2bGate(req, res)) return;
 
   try {
-    const explicitCollegeId = req.query?.collegeId;
-    const { college, isAdmin, missingCollegeId } = await resolveTpoTeamContext(req.userDoc, explicitCollegeId);
-
-    if (missingCollegeId) {
-      return res.status(400).json({ error: "collegeId is required." });
-    }
-    if (!college) {
-      return res.status(400).json({
-        error: isAdmin ? "College not found." : "No college found for this TPO account.",
-      });
-    }
+    const college = req.tpoCollege;
+    const isAdmin = req.tpoIsAdmin;
 
     const members = await listTeam(college);
 
@@ -393,7 +408,7 @@ router.get("/team", requireRole("tpo", "admin"), requireVerified, async (req, re
 // existingCollege.status === "verified" above): a known institutional-
 // domain account, vouched for by the college's own primary TPO, doesn't
 // need a second manual admin review.
-router.post("/team/invite", requireRole("tpo", "admin"), requireVerified, requirePrimaryTeamAction, async (req, res) => {
+router.post("/team/invite", requireRole("tpo", "admin"), requireVerified, resolveTpoInstitution, requirePrimaryOnly, async (req, res) => {
   if (b2bGate(req, res)) return;
 
   try {
@@ -483,7 +498,7 @@ router.post("/team/invite", requireRole("tpo", "admin"), requireVerified, requir
 // this way (item 10's "Primary removal" rule: transfer first, via
 // POST /team/:tpoId/make-primary, then the now-secondary former primary can
 // be removed like anyone else).
-router.delete("/team/:tpoId", requireRole("tpo", "admin"), requireVerified, requirePrimaryTeamAction, async (req, res) => {
+router.delete("/team/:tpoId", requireRole("tpo", "admin"), requireVerified, resolveTpoInstitution, requirePrimaryOnly, async (req, res) => {
   if (b2bGate(req, res)) return;
 
   try {
@@ -551,7 +566,7 @@ router.delete("/team/:tpoId", requireRole("tpo", "admin"), requireVerified, requ
 // Atomic primary transfer (item 11) — see tpoTeamService.js's
 // transferPrimary for the CAS that guarantees exactly 0 or 1 primary TPO
 // survives even under concurrent transfer attempts.
-router.post("/team/:tpoId/make-primary", requireRole("tpo", "admin"), requireVerified, requirePrimaryTeamAction, async (req, res) => {
+router.post("/team/:tpoId/make-primary", requireRole("tpo", "admin"), requireVerified, resolveTpoInstitution, requirePrimaryOnly, async (req, res) => {
   if (b2bGate(req, res)) return;
 
   try {
@@ -594,6 +609,168 @@ router.post("/team/:tpoId/make-primary", requireRole("tpo", "admin"), requireVer
   }
 });
 
+// ── COHORT MANAGEMENT (TPO-2 Step 4) ────────────────────────────────────────
+// GET    /api/tpo/cohorts                    — list this institution's cohorts
+// POST   /api/tpo/cohorts                    — create a cohort
+// GET    /api/tpo/cohorts/:cohortId          — cohort detail
+// PATCH  /api/tpo/cohorts/:cohortId          — edit (name/year/branch/section/expectedHeadcount only)
+// POST   /api/tpo/cohorts/:cohortId/archive  — archive (idempotent)
+//
+// Every route: requireRole → requireVerified → resolveTpoInstitution.
+// Deliberately NO requirePrimaryOnly here — TPO-2 Step 4's explicit
+// product decision is that cohort management is an operational
+// institutional workflow, not an authority-transfer action, so both
+// primary and secondary verified TPOs get identical access (unlike the
+// team-management routes above, which do layer requirePrimaryOnly on
+// top of the same resolveTpoInstitution base). Admin access reuses the
+// exact same explicit-collegeId override resolveTpoInstitution already
+// provides for team routes — no second admin pattern invented here.
+//
+// Business logic lives in services/cohortService.js, not inline here —
+// same split this file already uses for team management
+// (services/tpoTeamService.js) and the pattern adminController.js
+// established for admin routes; these handlers stay thin: resolve →
+// call the service → shape the HTTP response.
+//
+// Caching: deliberately NONE for cohort reads in this step. The
+// existing TPO cache (getOrSetCache/invalidateCachePrefix, used by
+// /students and /dashboard above) is keyed and invalidated per literal
+// domain, driven by student-progress-change events
+// (controllers/tpoController.js's invalidateTpoCache) — an entirely
+// different invalidation trigger than "a TPO created/edited/archived a
+// cohort." Wiring a new, correct invalidation path for a low-volume,
+// cheaply-queried, per-institution collection (dozens of cohorts, not
+// thousands of students) is exactly the kind of speculative caching
+// infrastructure this step's instructions say to skip in favor of
+// correctness — added here only if/when real traffic data justifies it.
+
+router.get("/cohorts", requireRole("tpo", "admin"), requireVerified, resolveTpoInstitution, async (req, res) => {
+  if (b2bGate(req, res)) return;
+
+  try {
+    const rawPage = parseInt(req.query.page, 10);
+    const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
+    const rawLimit = parseInt(req.query.limit, 10);
+    const limit = Math.min(
+      COHORTS_MAX_PAGE_SIZE,
+      Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : COHORTS_DEFAULT_PAGE_SIZE
+    );
+
+    // status: no default filter — an unfiltered list returns BOTH
+    // active and archived cohorts (TPO-2 Step 4's "otherwise return
+    // both statuses with an explicit status filter" branch — there's no
+    // existing TPO UI/API precedent for a default-active convention to
+    // match here). Any other value than the two real statuses is
+    // ignored rather than erroring, same "malformed query param
+    // shouldn't break the page" spirit as /students' page/limit
+    // handling above.
+    const status = ["active", "archived"].includes(req.query.status) ? req.query.status : undefined;
+
+    const rawGradYear = parseInt(req.query.graduatingYear, 10);
+    const graduatingYear = Number.isFinite(rawGradYear) ? rawGradYear : undefined;
+
+    const branch = typeof req.query.branch === "string" && req.query.branch.trim() ? req.query.branch.trim() : undefined;
+    const search = typeof req.query.search === "string" && req.query.search.trim() ? req.query.search.trim() : undefined;
+
+    const result = await cohortService.listCohorts(req.tpoCollege._id, {
+      status, graduatingYear, branch, search, page, limit,
+    });
+
+    return res.json(result);
+  } catch (err) {
+    (req.log || logger).error({ err }, "[TPO] cohort list error");
+    return res.status(500).json({ error: "Failed to load cohorts." });
+  }
+});
+
+router.post("/cohorts", requireRole("tpo", "admin"), requireVerified, resolveTpoInstitution, async (req, res) => {
+  if (b2bGate(req, res)) return;
+
+  try {
+    // collegeId is never accepted from the client as authoritative —
+    // resolveTpoInstitution already ignores it for a non-admin caller
+    // when resolving req.tpoCollege; here we go one step further and
+    // never even read req.body.collegeId at all when building the
+    // document, so there is no code path where a client-supplied value
+    // could end up stored, even by accident.
+    const cohort = await cohortService.createCohort(req.tpoCollege._id, req.userDoc._id, req.body || {});
+    return res.status(201).json(cohort);
+  } catch (err) {
+    if (cohortService.isCohortValidationError(err)) {
+      return res.status(400).json({ error: cohortService.formatCohortValidationError(err) });
+    }
+    (req.log || logger).error({ err }, "[TPO] cohort create error");
+    return res.status(500).json({ error: "Failed to create cohort." });
+  }
+});
+
+router.get("/cohorts/:cohortId", requireRole("tpo", "admin"), requireVerified, resolveTpoInstitution, async (req, res) => {
+  if (b2bGate(req, res)) return;
+
+  try {
+    const result = await cohortService.getCohortForCollege(req.params.cohortId, req.tpoCollege._id);
+    if (result?.invalidId) {
+      return res.status(400).json({ error: "Invalid cohort ID." });
+    }
+    // A nonexistent cohort and a cohort belonging to another
+    // institution both resolve to the same `null` here and the same
+    // 404 — deliberately indistinguishable, so a cross-college probe
+    // learns nothing about whether the id exists at all.
+    if (!result) {
+      return res.status(404).json({ error: "Cohort not found." });
+    }
+    return res.json(result);
+  } catch (err) {
+    (req.log || logger).error({ err }, "[TPO] cohort get error");
+    return res.status(500).json({ error: "Failed to load cohort." });
+  }
+});
+
+router.patch("/cohorts/:cohortId", requireRole("tpo", "admin"), requireVerified, resolveTpoInstitution, async (req, res) => {
+  if (b2bGate(req, res)) return;
+
+  try {
+    const result = await cohortService.updateCohort(req.params.cohortId, req.tpoCollege._id, req.body || {});
+    if (result?.invalidId) {
+      return res.status(400).json({ error: "Invalid cohort ID." });
+    }
+    if (!result) {
+      return res.status(404).json({ error: "Cohort not found." });
+    }
+    return res.json(result);
+  } catch (err) {
+    if (cohortService.isCohortValidationError(err)) {
+      return res.status(400).json({ error: cohortService.formatCohortValidationError(err) });
+    }
+    (req.log || logger).error({ err }, "[TPO] cohort update error");
+    return res.status(500).json({ error: "Failed to update cohort." });
+  }
+});
+
+router.post("/cohorts/:cohortId/archive", requireRole("tpo", "admin"), requireVerified, resolveTpoInstitution, async (req, res) => {
+  if (b2bGate(req, res)) return;
+
+  try {
+    const result = await cohortService.archiveCohort(req.params.cohortId, req.tpoCollege._id, req.userDoc._id);
+    if (result?.invalidId) {
+      return res.status(400).json({ error: "Invalid cohort ID." });
+    }
+    if (!result) {
+      return res.status(404).json({ error: "Cohort not found." });
+    }
+    // Idempotent by design (TPO-2 Step 4's explicit requirement): both
+    // a first-time archive and a repeat archive attempt return 200 with
+    // the cohort's current (already-archived) state — a repeat call
+    // never re-stamps archivedAt/archivedBy with new values, and never
+    // errors. `alreadyArchived` lets a caller distinguish the two if it
+    // cares to, without that distinction being part of the status code.
+    return res.json({ ...result.cohort, alreadyArchived: result.alreadyArchived });
+  } catch (err) {
+    (req.log || logger).error({ err }, "[TPO] cohort archive error");
+    return res.status(500).json({ error: "Failed to archive cohort." });
+  }
+});
+
 // ── GET /api/tpo/students ───────────────────────────────────────────────────
 // Server-side paginated/searched/sorted student directory. Previously this
 // returned the ENTIRE college roster in one response and TpoDashboardPage.jsx
@@ -618,6 +795,9 @@ const STUDENT_SORT_FIELDS = {
 };
 const STUDENTS_DEFAULT_PAGE_SIZE = 25;
 const STUDENTS_MAX_PAGE_SIZE = 50; // same cap as recruiter.js's /candidates
+
+const COHORTS_DEFAULT_PAGE_SIZE = 25;
+const COHORTS_MAX_PAGE_SIZE = 50; // same cap as /students above
 
 router.get("/students", requireRole("tpo", "admin"),
   requireVerified, async (req, res) => {
