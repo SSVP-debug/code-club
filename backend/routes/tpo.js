@@ -25,6 +25,7 @@ import {
 } from "../services/tpoTeamService.js";
 import { invalidateCachedUserByFirebaseUid } from "../utils/userAuthCache.js";
 import * as cohortService from "../services/cohortService.js";
+import * as cohortMembershipService from "../services/cohortMembershipService.js";
 
 const TPO_CACHE_TTL_SECONDS = 2 * 60; // 2 minutes — matches profile cache TTL
 const TPO_CACHE_PREFIX = "tpo:";
@@ -768,6 +769,108 @@ router.post("/cohorts/:cohortId/archive", requireRole("tpo", "admin"), requireVe
   } catch (err) {
     (req.log || logger).error({ err }, "[TPO] cohort archive error");
     return res.status(500).json({ error: "Failed to archive cohort." });
+  }
+});
+
+// ── COHORT ROSTER / MEMBERSHIP (TPO-2 Step 5) ───────────────────────────────
+// GET    /api/tpo/cohorts/:cohortId/students                — roster (paginated/searched/sorted)
+// POST   /api/tpo/cohorts/:cohortId/students                — manually add/reactivate a student by email
+// DELETE /api/tpo/cohorts/:cohortId/students/:membershipId  — soft-remove a membership
+//
+// Same authorization shape as the cohort CRUD routes above: requireRole
+// → requireVerified → resolveTpoInstitution, no primary-only gate (Step
+// 4's product decision extends unchanged to roster management). Business
+// logic in services/cohortMembershipService.js — see that file's header
+// for the institution-matching and existing-membership-handling rules.
+// No caching (see that file's header for why).
+
+router.get("/cohorts/:cohortId/students", requireRole("tpo", "admin"), requireVerified, resolveTpoInstitution, async (req, res) => {
+  if (b2bGate(req, res)) return;
+
+  try {
+    const rawPage = parseInt(req.query.page, 10);
+    const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
+    const rawLimit = parseInt(req.query.limit, 10);
+    const limit = Math.min(
+      STUDENTS_MAX_PAGE_SIZE,
+      Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : STUDENTS_DEFAULT_PAGE_SIZE
+    );
+
+    const status = typeof req.query.status === "string" ? req.query.status : undefined;
+    const search = typeof req.query.search === "string" ? req.query.search : undefined;
+    const sort = typeof req.query.sort === "string" ? req.query.sort : undefined;
+
+    const result = await cohortMembershipService.getCohortRoster(req.params.cohortId, req.tpoCollege._id, {
+      status, search, sort, page, limit,
+    });
+
+    if (result?.invalidId) {
+      return res.status(400).json({ error: "Invalid cohort ID." });
+    }
+    if (!result) {
+      return res.status(404).json({ error: "Cohort not found." });
+    }
+    return res.json(result);
+  } catch (err) {
+    (req.log || logger).error({ err }, "[TPO] cohort roster error");
+    return res.status(500).json({ error: "Failed to load cohort roster." });
+  }
+});
+
+router.post("/cohorts/:cohortId/students", requireRole("tpo", "admin"), requireVerified, resolveTpoInstitution, async (req, res) => {
+  if (b2bGate(req, res)) return;
+
+  try {
+    // Only email is ever read from the body — collegeId/studentId/
+    // cohortId are never even looked at, let alone trusted, whether or
+    // not the client sends them (same "don't just ignore it, never
+    // read it" discipline as POST /cohorts above).
+    const result = await cohortMembershipService.addStudentToCohort(
+      req.params.cohortId, req.tpoCollege._id, req.userDoc._id, req.body?.email
+    );
+
+    if (result?.invalidId) {
+      return res.status(400).json({ error: "Invalid cohort ID." });
+    }
+    if (!result) {
+      return res.status(404).json({ error: "Cohort not found." });
+    }
+    if (result.validationError) {
+      return res.status(400).json({ error: result.validationError });
+    }
+    if (result.conflict) {
+      return res.status(409).json({ error: "This person is already an active member of this cohort.", membership: result.membership });
+    }
+    return res.status(result.created ? 201 : 200).json({ ...result.membership, created: result.created, noop: result.noop });
+  } catch (err) {
+    if (cohortMembershipService.isCohortValidationError(err)) {
+      return res.status(400).json({ error: cohortMembershipService.formatCohortValidationError(err) });
+    }
+    (req.log || logger).error({ err }, "[TPO] cohort add student error");
+    return res.status(500).json({ error: "Failed to add student to cohort." });
+  }
+});
+
+router.delete("/cohorts/:cohortId/students/:membershipId", requireRole("tpo", "admin"), requireVerified, resolveTpoInstitution, async (req, res) => {
+  if (b2bGate(req, res)) return;
+
+  try {
+    const result = await cohortMembershipService.removeCohortMembership(
+      req.params.cohortId, req.params.membershipId, req.tpoCollege._id
+    );
+
+    if (result?.invalidId) {
+      return res.status(400).json({ error: "Invalid cohort or membership ID." });
+    }
+    if (!result) {
+      return res.status(404).json({ error: "Membership not found." });
+    }
+    // Idempotent, same pattern as cohort archive: a repeat removal is a
+    // 200 no-op, never an error, and never re-stamps removedAt.
+    return res.json({ ...result.membership, alreadyRemoved: result.alreadyRemoved });
+  } catch (err) {
+    (req.log || logger).error({ err }, "[TPO] cohort remove student error");
+    return res.status(500).json({ error: "Failed to remove student from cohort." });
   }
 });
 
