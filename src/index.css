@@ -460,3 +460,20 @@ html.bw-mode .lp-visual-image {
     linear-gradient(to right, var(--surface) 0%, transparent 16%, transparent 84%, var(--surface) 100%),
     linear-gradient(to bottom, var(--surface) 0%, transparent 16%, transparent 84%, var(--surface) 100%);
 }
+
+
+/* Hero-specific image treatment: the hero should feel like a real scene
+   embedded in the page, not a dark thumbnail sitting beside the copy. */
+.lp-hero-visual .lp-visual-image {
+  filter: saturate(0.95) brightness(0.92) contrast(0.98);
+}
+
+.lp-hero-visual .lp-visual-fade {
+  background:
+    linear-gradient(to right, transparent 0%, transparent 42%, rgba(11,13,16,0.42) 68%, var(--background) 100%),
+    linear-gradient(to bottom, transparent 0%, transparent 68%, var(--background) 100%);
+}
+
+html.bw-mode .lp-hero-visual .lp-visual-image {
+  filter: saturate(0.8) brightness(0.98) contrast(0.98);
+}
