@@ -65,7 +65,7 @@ function AudienceGrid({ user }) {
           <LandingVisual
             src={LANDING_IMAGES.ecosystem}
             alt="College student working in a library"
-            className="absolute inset-0 h-full min-h-0"
+            className="lp-visual-on-surface absolute inset-0 h-full min-h-0"
             position="center"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-[var(--surface)] via-transparent to-[var(--surface)]/20" />
@@ -93,7 +93,7 @@ function AudienceGrid({ user }) {
                     <LandingVisual
                       src={r.image}
                       alt=""
-                      className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[44%] min-h-0 opacity-45 md:block"
+                      className="lp-visual-on-surface pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[44%] min-h-0 opacity-45 md:block"
                       position="center"
                     />
                     <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[58%] bg-gradient-to-r from-[var(--surface)] via-[var(--surface)]/45 to-transparent md:block" />
