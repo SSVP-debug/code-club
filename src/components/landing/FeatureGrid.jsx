@@ -33,7 +33,7 @@ const FEATURES = [
     Icon: Brain,
     title: "AI Coaching",
     description:
-      "Topic-level insights powered by Claude. What to practice next, not just "try harder."",
+      "Topic-level insights powered by Claude. What to practice next, not just \"try harder.\"",
     detail:
       "Use topic-level signals to understand what deserves attention next. Coaching is designed to turn your practice history into a more useful next-step recommendation.",
   },
