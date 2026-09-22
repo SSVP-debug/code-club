@@ -1,19 +1,16 @@
-import codeHeistBackground from "../assets/themes/code-heist.webp";
-import breakingBugBackground from "../assets/themes/breaking-bug.webp";
-import ghostProtocolBackground from "../assets/themes/ghost-protocol.webp";
-import survivalCodeBackground from "../assets/themes/survival-code.webp";
-import debugDynastyBackground from "../assets/themes/debug-dynasty.webp";
-
 /**
- * Cinematic artwork for each Code Club universe.
+ * Cinematic background artwork for each Code Club universe.
  *
- * These are background layers only. Theme copy, icons, status labels,
- * previews, and actions remain rendered by the UI above the artwork.
+ * Images are served from /public/themes so the theme system does not
+ * require the image files to exist during the JavaScript module build.
+ *
+ * Upload the five WebP files to:
+ *   public/themes/
  */
 export const THEME_BACKGROUNDS = {
-  codeHeist: codeHeistBackground,
-  breakingBug: breakingBugBackground,
-  ghostProtocol: ghostProtocolBackground,
-  survivalCode: survivalCodeBackground,
-  debugDynasty: debugDynastyBackground,
+  codeHeist: "/themes/code-heist.webp",
+  breakingBug: "/themes/breaking-bug.webp",
+  ghostProtocol: "/themes/ghost-protocol.webp",
+  survivalCode: "/themes/survival-code.webp",
+  debugDynasty: "/themes/debug-dynasty.webp",
 };
