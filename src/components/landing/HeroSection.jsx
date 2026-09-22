@@ -6,16 +6,17 @@ const TRUST_SIGNALS = "Free to use · No credit card · Google login in 10 sec";
 
 function HeroSection({ user }) {
   return (
-    <section className="relative min-h-[680px] overflow-hidden px-6 pb-24 pt-28 md:min-h-[760px] md:px-12 md:pb-32 md:pt-32 lg:flex lg:items-center">
+    <section className="relative min-h-[760px] overflow-hidden px-6 pb-24 pt-28 md:min-h-[860px] md:px-12 md:pb-32 md:pt-32 lg:min-h-[900px] lg:flex lg:items-center">
       <LandingVisual
         src={LANDING_IMAGES.hero}
         alt=""
         priority
-        className="pointer-events-none absolute inset-0 h-full min-h-0 opacity-[0.9]"
-        position="right"
+        className="pointer-events-none absolute inset-0 h-full min-h-0 opacity-100 [&_.lp-visual-image]:scale-[1.04] md:[&_.lp-visual-image]:scale-[1.06]"
+        position="top"
       />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_72%_42%,transparent_0%,rgba(11,13,16,0.18)_32%,rgba(11,13,16,0.82)_72%,var(--background)_100%)]" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[var(--background)] to-transparent" />
+
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,var(--background)_0%,rgba(11,13,16,0.88)_24%,rgba(11,13,16,0.38)_52%,rgba(11,13,16,0.08)_76%,rgba(11,13,16,0.2)_100%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(11,13,16,0.18)_0%,transparent_28%,transparent_72%,var(--background)_100%)]" />
 
       <div className="relative z-10 mx-auto w-full max-w-6xl">
         <div className="max-w-3xl">
