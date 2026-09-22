@@ -289,7 +289,7 @@ describe("importCohortRoster", () => {
       expect(result.rows).toHaveLength(5);
       expect(result.rows.map((r) => r.status)).toEqual(["active", "invited", "duplicate", "error", "error"]);
       expect(result.summary).toEqual({
-        totalRows: 5, processed: 2, active: 1, invited: 1, alreadyMember: 0, duplicates: 1, errors: 2,
+        totalRows: 5, processed: 2, active: 1, invited: 1, alreadyMember: 0, unchanged: 0, duplicates: 1, errors: 2,
       });
     });
   });
@@ -338,6 +338,40 @@ describe("importCohortRoster", () => {
       const second = await importCohortRoster(cohortId.toString(), collegeId, addedBy, file);
       expect(second.summary.alreadyMember).toBe(2);
       expect(second.summary.active).toBe(0);
+    });
+
+    // Regression test: re-importing rows that are already "invited" (and
+    // still unmatched — upsertCohortMembership's `noop: true` outcome,
+    // distinct from the "active" conflict case above) must not be
+    // double-counted as newly invited on the second run. This exact gap
+    // shipped once — the mocked suite above never exercised the `noop`
+    // outcome shape at all, so it only surfaced in the real-Mongo
+    // integration tier (services/cohortImportService.integration.test.js
+    // #3), which is precisely the kind of bug that tier exists to catch;
+    // this closes the mocked-tier coverage gap so it can't regress silently.
+    it("re-importing rows that are still 'invited' (still unmatched, noop) reports 0 newly invited the second time", async () => {
+      upsertCohortMembership.mockResolvedValue({ created: true, noop: false, membership: { membershipStatus: "invited" } });
+      const file = csv([["email"], ["a@b.com"], ["b@b.com"]]);
+
+      const first = await importCohortRoster(cohortId.toString(), collegeId, addedBy, file);
+      expect(first.summary.invited).toBe(2);
+      expect(first.summary.unchanged).toBe(0);
+
+      upsertCohortMembership.mockClear();
+      upsertCohortMembership.mockResolvedValue({
+        created: false, noop: true, previousStatus: "invited", membership: { membershipStatus: "invited" },
+      });
+
+      const second = await importCohortRoster(cohortId.toString(), collegeId, addedBy, file);
+
+      expect(second.summary.invited).toBe(0);
+      expect(second.summary.alreadyMember).toBe(0);
+      expect(second.summary.unchanged).toBe(2);
+      expect(second.summary.processed).toBe(2); // still successfully handled, just unchanged
+      // Row-level status still correctly reflects the CURRENT state
+      // ("invited") for display, even though it didn't count toward the
+      // summary's `invited` bucket — see mapOutcomeToRowResult's comment.
+      expect(second.rows.every((r) => r.status === "invited")).toBe(true);
     });
   });
 

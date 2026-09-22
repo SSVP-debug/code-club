@@ -154,7 +154,19 @@ function mapOutcomeToRowResult(row, outcome) {
     return { row: row.row, email: row.email, status: "already_member" };
   }
   const membershipStatus = outcome?.membership?.membershipStatus;
-  return { row: row.row, email: row.email, status: membershipStatus === "active" ? "active" : "invited" };
+  const status = membershipStatus === "active" ? "active" : "invited";
+  // outcome.noop (from upsertCohortMembership: an already-"invited" row
+  // whose email still doesn't match any account) means re-importing the
+  // same file made no real change to this row — the row's own `status`
+  // still reflects its current, unchanged state for display (this file's
+  // own docstring/tests: "still reported, just unchanged"), but
+  // buildSummary below must not count it as newly invited/active, or a
+  // second import of an identical file would falsely report the same
+  // counts as the first — exactly the idempotency this service is
+  // supposed to guarantee.
+  return outcome?.noop
+    ? { row: row.row, email: row.email, status, unchanged: true }
+    : { row: row.row, email: row.email, status };
 }
 
 /**
@@ -195,11 +207,21 @@ function buildSummary(results) {
     active: 0,
     invited: 0,
     alreadyMember: 0,
+    // Rows that resolved to their CURRENT state without any actual
+    // write — an already-"invited" row re-imported while still
+    // unmatched (see mapOutcomeToRowResult's `unchanged` flag above).
+    // Counted separately from `invited` so re-running an identical
+    // import reports 0 newly invited/active the second time, not the
+    // same non-zero counts as the first run.
+    unchanged: 0,
     duplicates: 0,
     errors: 0,
   };
   for (const r of results) {
-    if (r.status === "active") {
+    if (r.unchanged) {
+      summary.unchanged += 1;
+      summary.processed += 1;
+    } else if (r.status === "active") {
       summary.active += 1;
       summary.processed += 1;
     } else if (r.status === "invited") {
