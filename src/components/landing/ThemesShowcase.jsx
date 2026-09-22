@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import Reveal from "./Reveal";
 import { getTheme } from "../../themes";
 import { THEME_ICONS } from "../../themes/themeIcons";
+import { THEME_BACKGROUNDS } from "../../themes/themeBackgrounds";
 
 const ARROW = (
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -9,12 +10,6 @@ const ARROW = (
   </svg>
 );
 
-// Themed Practice — supporting-detail section.
-//
-// Every id/name/description/color below is read from the real theme
-// system (src/themes, themeIcons.js) at import time, not hand-typed.
-// "default" (the no-roleplay fallback) is intentionally excluded — it
-// isn't a story universe to preview.
 const THEME_IDS = ["codeHeist", "breakingBug", "ghostProtocol", "survivalCode", "debugDynasty"];
 
 const THEMES_PREVIEW = THEME_IDS.map((id) => {
@@ -25,6 +20,7 @@ const THEMES_PREVIEW = THEME_IDS.map((id) => {
     name: theme.name,
     description: theme.description,
     color: theme.colors.primary,
+    background: THEME_BACKGROUNDS[id],
   };
 });
 
@@ -44,29 +40,36 @@ function ThemesShowcase({ user }) {
         </p>
       </div>
 
-      {/* Each t.color below is that story-universe's own fixed brand
-          color (src/themes), not a page-theme value — intentionally left
-          as-is in both Black and White Mode, same as the identical
-          per-universe icon colors used on ThemeSelectionPage itself.
-          Card border/background use the same color at low opacity, so
-          each card reads as belonging to its universe without needing a
-          new token per universe. */}
       <div className="mx-auto mt-12 grid max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {THEMES_PREVIEW.map((t) => (
           <div
             key={t.id}
-            className="rounded-2xl border p-5"
-            style={{ backgroundColor: `${t.color}0d`, borderColor: `${t.color}33` }}
+            className="group relative min-h-[260px] overflow-hidden rounded-2xl border p-5 transition-all duration-300 hover:-translate-y-1"
+            style={{ borderColor: `${t.color}55` }}
           >
-            <span
-              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl"
-              style={{ backgroundColor: `${t.color}1a`, color: t.color }}
+            <div
               aria-hidden="true"
-            >
-              <t.Icon size={20} strokeWidth={2} />
-            </span>
-            <h3 className="mt-4 font-display font-semibold text-[var(--foreground)]">{t.name}</h3>
-            <p className="mt-1.5 text-sm leading-relaxed text-[var(--muted-foreground)]">{t.description}</p>
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+              style={{ backgroundImage: `url(${t.background})` }}
+            />
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/55 to-black/95"
+            />
+
+            <div className="relative z-10 flex h-full flex-col">
+              <span
+                className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl"
+                style={{ backgroundColor: `${t.color}1a`, color: t.color }}
+                aria-hidden="true"
+              >
+                <t.Icon size={20} strokeWidth={2} />
+              </span>
+              <div className="mt-auto">
+                <h3 className="font-display text-lg font-semibold text-white">{t.name}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-white/75">{t.description}</p>
+              </div>
+            </div>
           </div>
         ))}
       </div>
