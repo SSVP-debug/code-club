@@ -487,13 +487,26 @@ html.bw-mode .lp-visual-image {
 }
 
 html.bw-mode .lp-hero-visual .lp-visual-image {
-  opacity: 0.38;
-  filter: saturate(0.72) contrast(0.98);
+  opacity: 0.9;
+  filter: saturate(0.82) brightness(1.02) contrast(1.02);
+  mix-blend-mode: multiply;
 }
 
 html.bw-mode .lp-hero-overlay-x,
 html.bw-mode .lp-hero-overlay-y {
   display: none;
+}
+
+html.bw-mode .lp-hero-proof p:first-child {
+  color: var(--foreground) !important;
+}
+
+html.bw-mode .lp-hero-proof p:last-child {
+  color: var(--muted-foreground) !important;
+}
+
+html.bw-mode .lp-hero-proof > div > div {
+  border-color: rgba(10,10,10,0.14) !important;
 }
 
 .lp-hero-overlay-x,
@@ -517,6 +530,7 @@ html.bw-mode .lp-hero-proof {
   }
 
   html.bw-mode .lp-hero-visual .lp-visual-image {
-    opacity: 0.32;
+    opacity: 0.86;
+    mix-blend-mode: multiply;
   }
 }
