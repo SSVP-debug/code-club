@@ -15,8 +15,8 @@ function HeroSection({ user, stats }) {
         position="center"
       />
 
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,var(--background)_0%,rgba(11,13,16,0.97)_18%,rgba(11,13,16,0.84)_34%,rgba(11,13,16,0.38)_55%,rgba(11,13,16,0.04)_78%,rgba(11,13,16,0.12)_100%)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(11,13,16,0.18)_0%,transparent_22%,transparent_78%,var(--background)_100%)]" />
+      <div className="lp-hero-overlay-x pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,var(--background)_0%,rgba(11,13,16,0.97)_18%,rgba(11,13,16,0.84)_34%,rgba(11,13,16,0.38)_55%,rgba(11,13,16,0.04)_78%,rgba(11,13,16,0.12)_100%)]" />
+      <div className="lp-hero-overlay-y pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(11,13,16,0.18)_0%,transparent_22%,transparent_78%,var(--background)_100%)]" />
 
       <div className="relative z-10 mx-auto flex min-h-[500px] max-w-6xl items-center pb-12 md:min-h-[570px] md:pb-14">
         <div className="max-w-[570px]">
@@ -61,7 +61,7 @@ function HeroSection({ user, stats }) {
         </div>
       </div>
 
-      <div className="relative z-10 mx-auto max-w-6xl border-t border-white/10 bg-[linear-gradient(90deg,rgba(11,13,16,0.92),rgba(11,13,16,0.45),transparent)]">
+      <div className="lp-hero-proof relative z-10 mx-auto max-w-6xl border-t border-white/10 bg-[linear-gradient(90deg,rgba(11,13,16,0.92),rgba(11,13,16,0.45),transparent)]">
         <div className="grid grid-cols-2 md:grid-cols-4">
           {stats.map((s, index) => (
             <div
