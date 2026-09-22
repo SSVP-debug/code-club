@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import LandingNav from "../components/landing/LandingNav";
 import HeroSection from "../components/landing/HeroSection";
-import StatsBar from "../components/landing/StatsBar";
 import ProblemSection from "../components/landing/ProblemSection";
 import ProductDemonstration from "../components/landing/ProductDemonstration";
 import CompetitorComparison from "../components/landing/CompetitorComparison";
@@ -23,9 +22,6 @@ const STATIC_STATS = [
   { key: "ai", value: "AI Coaching", label: "Coaching Built In" },
 ];
 
-// The "ai" stat has no backend equivalent — it's a static descriptor, not a
-// count — so it's preserved as-is even once live numbers come in for the
-// other three, instead of silently dropping to a 3-stat bar.
 const AI_STAT = STATIC_STATS[3];
 
 function useLiveStats() {
@@ -56,7 +52,7 @@ function useLiveStats() {
           AI_STAT,
         ]);
       })
-      .catch(() => {}); // fail silently — static fallback stays
+      .catch(() => {});
   }, []);
 
   return stats;
@@ -76,8 +72,7 @@ export default function LandingPage() {
 
       <div className="relative">
         <LandingNav user={user} />
-        <HeroSection user={user} />
-        <StatsBar stats={stats} />
+        <HeroSection user={user} stats={stats} />
         <ProblemSection />
         <ProductDemonstration />
         <CompetitorComparison />
