@@ -400,3 +400,55 @@ html.bw-mode {
     transform: none;
   }
 }
+/* ── Landing imagery ──────────────────────────────────────────────────────
+   Images are intentionally not rendered as bordered cards. Their edges
+   dissolve into the surrounding theme so imagery reads as atmosphere,
+   not stock-photo UI. Empty slots keep their layout footprint but show
+   no placeholder, border, or broken-image affordance. */
+.lp-visual {
+  isolation: isolate;
+  border: 0;
+  background: transparent;
+}
+
+.lp-visual-image {
+  filter: saturate(0.86) brightness(0.78);
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%);
+  mask-image:
+    linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
+.lp-visual-fade {
+  background:
+    radial-gradient(ellipse at center, transparent 34%, var(--background) 100%),
+    linear-gradient(to right, var(--background) 0%, transparent 16%, transparent 84%, var(--background) 100%),
+    linear-gradient(to bottom, var(--background) 0%, transparent 16%, transparent 84%, var(--background) 100%);
+  mix-blend-mode: normal;
+  pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  .lp-visual-image {
+    -webkit-mask-image:
+      linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%),
+      linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%);
+    mask-image:
+      linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%),
+      linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%);
+  }
+}
+
+html.bw-mode .lp-visual-image {
+  filter: saturate(0.72) brightness(0.92);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-visual-image {
+    transition: none;
+  }
+}
