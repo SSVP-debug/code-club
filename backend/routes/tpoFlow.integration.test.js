@@ -488,14 +488,30 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
 
   // ── TPO-1 hardening: cross-college isolation (real Mongo) ──────────────
   describe("cross-college isolation (real Mongo)", () => {
-    it("a primary TPO of college A cannot invite, remove, or transfer primary on college B via a supplied collegeId", async () => {
-      const inviteLayer = tpoRouter.stack.find((l) => l.route?.path === "/team/invite" && l.route.methods.post);
-      // Stack order for this route: [requireRole, requireVerified,
-      // requirePrimaryTeamAction, handler] — same positional-extraction
-      // convention this file already uses for extractRegisterHandler above.
-      const requirePrimaryTeamAction = inviteLayer.route.stack[2].handle;
-      const inviteHandler = inviteLayer.route.stack[3].handle;
+    // Walks the FULL real middleware stack for a given method+path, same
+    // generic dispatch approach as routes/tpoTeam.test.js's runRoute —
+    // deliberately not a fixed stack-index extraction (a prior version
+    // of this test hardcoded stack[2]/stack[3] as "the gate" and "the
+    // handler," which silently broke when TPO-2 Step 4 split
+    // requirePrimaryTeamAction into resolveTpoInstitution +
+    // requirePrimaryOnly, adding a layer and shifting every index after
+    // it). Walking the whole stack is robust to that class of change.
+    async function runRoute(method, path, req) {
+      const res = mockRes();
+      const layer = tpoRouter.stack.find(
+        (l) => l.route && l.route.path === path && l.route.methods[method]
+      );
+      for (const routeLayer of layer.route.stack) {
+        let calledNext = false;
+        let nextErr;
+        await routeLayer.handle(req, res, (err) => { calledNext = true; nextErr = err; });
+        if (nextErr) throw nextErr;
+        if (!calledNext) break;
+      }
+      return res;
+    }
 
+    it("a primary TPO of college A cannot invite, remove, or transfer primary on college B via a supplied collegeId", async () => {
       const collegeA = await College.create({ domains: ["college-a-iso.ac.in"], name: "College A", status: "verified" });
       const collegeB = await College.create({ domains: ["college-b-iso.ac.in"], name: "College B", status: "verified" });
       const primaryA = await seedStudent({
@@ -509,20 +525,18 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
         userDoc: primaryA,
         body: { email: targetInB.email, collegeId: collegeB._id.toString() }, // attempted bypass
         query: {},
+        log: mockLog(),
       };
-      const res = mockRes();
-      let calledNext = false;
-      await requirePrimaryTeamAction(req, res, () => { calledNext = true; });
+
+      const res = await runRoute("post", "/team/invite", req);
 
       // The gate must resolve college A (the caller's OWN institution),
       // completely ignoring the collegeId in the body — a non-admin
-      // caller's institution is never client-suppliable.
+      // caller's institution is never client-suppliable. primaryA IS
+      // primary of A, so the primary-only gate itself passes, but the
+      // invite handler itself then rejects: targetInB's email domain
+      // doesn't belong to college A.
       expect(req.tpoCollege?._id?.toString()).toBe(collegeA._id.toString());
-      expect(calledNext).toBe(true); // primaryA IS primary of A, so the gate itself passes...
-
-      await inviteHandler(req, res);
-      // ...but the invite itself must then reject: targetInB's email
-      // domain doesn't belong to college A.
       expect(res._status).toBe(400);
       const reloadedTarget = await User.findById(targetInB._id);
       expect(reloadedTarget.role).toBe("student"); // never touched
