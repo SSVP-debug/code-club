@@ -463,108 +463,26 @@ html.bw-mode .lp-visual-image {
 
 
 /* ── Hero image treatment ───────────────────────────────────────────────
-   The hero image is a wide atmospheric layer. Keep the subject in the
-   middle/right of the frame and let the edges disappear into the page so
-   the copy owns the left side without a visible photo boundary. */
+   Full-bleed scene: the source image fills the entire hero, including the
+   navbar area. Readability comes from atmospheric gradients rather than
+   clipping the photo into a card or masking away its outer edges. */
 .lp-hero-visual .lp-visual-image {
   filter: saturate(0.94) brightness(0.9) contrast(1);
   object-position: 68% center;
-  -webkit-mask-image:
-    linear-gradient(
-      to right,
-      transparent 0%,
-      transparent 16%,
-      rgba(0,0,0,0.35) 28%,
-      black 43%,
-      black 78%,
-      rgba(0,0,0,0.72) 90%,
-      transparent 100%
-    ),
-    linear-gradient(
-      to bottom,
-      transparent 0%,
-      black 12%,
-      black 82%,
-      transparent 100%
-    );
-  mask-image:
-    linear-gradient(
-      to right,
-      transparent 0%,
-      transparent 16%,
-      rgba(0,0,0,0.35) 28%,
-      black 43%,
-      black 78%,
-      rgba(0,0,0,0.72) 90%,
-      transparent 100%
-    ),
-    linear-gradient(
-      to bottom,
-      transparent 0%,
-      black 12%,
-      black 82%,
-      transparent 100%
-    );
-  -webkit-mask-composite: source-in;
-  mask-composite: intersect;
+  -webkit-mask-image: none;
+  mask-image: none;
 }
 
 .lp-hero-visual .lp-visual-fade {
-  background:
-    linear-gradient(
-      to right,
-      var(--background) 0%,
-      var(--background) 18%,
-      rgba(11,13,16,0.92) 34%,
-      rgba(11,13,16,0.48) 54%,
-      transparent 78%,
-      rgba(11,13,16,0.18) 100%
-    ),
-    linear-gradient(
-      to bottom,
-      var(--background) 0%,
-      transparent 15%,
-      transparent 78%,
-      var(--background) 100%
-    );
+  background: none;
 }
 
 html.bw-mode .lp-hero-visual .lp-visual-image {
-  filter: saturate(0.8) brightness(0.98) contrast(0.98);
+  filter: saturate(0.82) brightness(0.96) contrast(0.98);
 }
 
 @media (max-width: 767px) {
   .lp-hero-visual .lp-visual-image {
     object-position: 64% center;
-    -webkit-mask-image:
-      linear-gradient(
-        to right,
-        transparent 0%,
-        black 18%,
-        black 86%,
-        transparent 100%
-      ),
-      linear-gradient(
-        to bottom,
-        transparent 0%,
-        black 8%,
-        black 86%,
-        transparent 100%
-      );
-    mask-image:
-      linear-gradient(
-        to right,
-        transparent 0%,
-        black 18%,
-        black 86%,
-        transparent 100%
-      ),
-      linear-gradient(
-        to bottom,
-        transparent 0%,
-        black 8%,
-        black 86%,
-        transparent 100%
-      );
   }
 }
