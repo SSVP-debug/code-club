@@ -4,7 +4,7 @@ import BWModeToggle from "../common/BWModeToggle";
 
 function LandingNav({ user }) {
   return (
-    <nav className="absolute inset-x-0 top-0 z-50 flex h-16 items-center justify-between border-b border-white/10 bg-transparent px-6 md:px-12">
+    <nav className="lp-hero-nav absolute inset-x-0 top-0 z-50 flex h-16 items-center justify-between border-b border-white/10 bg-transparent px-6 md:px-12">
       <Link
         to="/"
         className="flex items-center font-display text-lg font-semibold tracking-tight text-white"
