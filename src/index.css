@@ -561,3 +561,71 @@ html.bw-mode .lp-hero-nav > div > div {
   border-color: rgba(10,10,10,0.12);
   background: rgba(255,255,255,0.42);
 }
+
+
+/* White Mode hero refinement: keep the photograph, but give the left copy
+   a genuinely light editorial field. Utility classes elsewhere use explicit
+   white/black colors, so these rules intentionally win for the hero only. */
+html.bw-mode .lp-hero-visual .lp-visual-image {
+  filter: saturate(0.55) brightness(1.08) contrast(0.96);
+}
+
+html.bw-mode .lp-hero-overlay-x {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,0.995) 0%,
+      rgba(255,255,255,0.98) 24%,
+      rgba(255,255,255,0.9) 38%,
+      rgba(255,255,255,0.58) 52%,
+      rgba(255,255,255,0.12) 70%,
+      rgba(255,255,255,0.04) 100%
+    ) !important;
+}
+
+html.bw-mode .lp-hero-overlay-y {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,0.18) 0%,
+      transparent 18%,
+      transparent 72%,
+      rgba(255,255,255,0.98) 100%
+    ) !important;
+}
+
+html.bw-mode .lp-hero-nav {
+  border-bottom-color: rgba(10,10,10,0.1);
+  background: rgba(255,255,255,0.1);
+}
+
+html.bw-mode .lp-hero-nav a {
+  color: var(--foreground) !important;
+}
+
+html.bw-mode .lp-hero-nav .lp-hero-nav-logo {
+  color: var(--foreground) !important;
+}
+
+html.bw-mode .lp-hero-proof {
+  border-top-color: rgba(10,10,10,0.12);
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,0.96),
+      rgba(255,255,255,0.82),
+      rgba(255,255,255,0.64)
+    ) !important;
+}
+
+html.bw-mode .lp-hero-proof > div > div {
+  border-color: rgba(10,10,10,0.12) !important;
+}
+
+html.bw-mode .lp-hero-proof p:first-child {
+  color: var(--foreground) !important;
+}
+
+html.bw-mode .lp-hero-proof p:last-child {
+  color: var(--muted-foreground) !important;
+}
