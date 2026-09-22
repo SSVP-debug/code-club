@@ -1,13 +1,9 @@
 /**
  * Optional landing-page imagery.
  *
- * Visuals intentionally have no hard card/border treatment. When an image is
- * supplied, it dissolves into the landing background through CSS masking and
- * layered gradients. When src is absent, the reserved visual space remains
- * quiet and borderless so the section still has a deliberate composition.
- *
- * Keep this component presentational: it owns image treatment only, not
- * sourcing, loading, or page content.
+ * Images are treated as atmospheric layers rather than cards. The caller can
+ * control the focal point so people/faces stay inside the frame when the
+ * viewport crops a source image.
  */
 function LandingVisual({
   src,
@@ -20,6 +16,7 @@ function LandingVisual({
     left: "object-left",
     center: "object-center",
     right: "object-right",
+    top: "object-top",
   }[position] ?? "object-center";
 
   return (
