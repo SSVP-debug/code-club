@@ -567,19 +567,20 @@ html.bw-mode .lp-hero-nav > div > div {
    a genuinely light editorial field. Utility classes elsewhere use explicit
    white/black colors, so these rules intentionally win for the hero only. */
 html.bw-mode .lp-hero-visual .lp-visual-image {
-  filter: saturate(0.55) brightness(1.08) contrast(0.96);
+  filter: saturate(0.72) brightness(1.02) contrast(0.98);
 }
 
 html.bw-mode .lp-hero-overlay-x {
   background:
     linear-gradient(
       90deg,
-      rgba(255,255,255,0.995) 0%,
-      rgba(255,255,255,0.98) 24%,
-      rgba(255,255,255,0.9) 38%,
-      rgba(255,255,255,0.58) 52%,
-      rgba(255,255,255,0.12) 70%,
-      rgba(255,255,255,0.04) 100%
+      rgba(255,255,255,1) 0%,
+      rgba(255,255,255,0.99) 20%,
+      rgba(255,255,255,0.94) 34%,
+      rgba(255,255,255,0.68) 46%,
+      rgba(255,255,255,0.22) 58%,
+      rgba(255,255,255,0.02) 72%,
+      rgba(255,255,255,0) 100%
     ) !important;
 }
 
@@ -587,10 +588,10 @@ html.bw-mode .lp-hero-overlay-y {
   background:
     linear-gradient(
       180deg,
-      rgba(255,255,255,0.18) 0%,
+      rgba(255,255,255,0.12) 0%,
       transparent 18%,
-      transparent 72%,
-      rgba(255,255,255,0.98) 100%
+      transparent 76%,
+      rgba(255,255,255,0.9) 100%
     ) !important;
 }
 
