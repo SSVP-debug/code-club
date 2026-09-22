@@ -1,33 +1,21 @@
 import Button from "../ui/Button";
 import Reveal from "./Reveal";
+import LandingVisual from "./LandingVisual";
+import LANDING_IMAGES from "./landingImages";
 
-// Final CTA — Phase 3J, rebuilt (blueprint position 12).
-//
-// Closing beat of the narrative spine (Problem -> Product Demonstration
-// -> Verification -> Themed Practice -> Feature Constellation ->
-// Community -> Opportunities -> CTA). Introduces nothing new — it
-// restates the one mechanism the whole page has been arguing for
-// (hidden test cases, server-side, no exceptions) and asks for the same
-// action Hero already offered, once the visitor has the full argument
-// behind them.
-//
-// text-lp-h1 (the largest token in the type scale) used deliberately —
-// per this phase's typography brief, Final CTA gets "the strongest
-// existing landing typography without creating a new scale," which
-// means reusing Hero's own size rather than the spine sections' h2.
-//
-// Auth-aware behavior and copy kept identical to Hero's own primary CTA
-// (`user ? "/dashboard" : "/portal"`) rather than inventing new routing
-// logic — same destination, same fallback, still the "10 seconds" claim
-// grounded in a literal one-click Google sign-in (services/auth.js).
-// No fabricated urgency, member counts, or countdowns.
 function CtaSection({ user }) {
   return (
     <Reveal
       as="section"
-      className="border-t border-[var(--border-strong)] bg-[var(--surface)] px-6 py-24 md:px-12 md:py-32"
+      className="relative overflow-hidden border-t border-[var(--border-strong)] bg-[var(--surface)] px-6 py-24 md:px-12 md:py-32"
     >
-      <div className="mx-auto max-w-2xl rounded-3xl border border-verdict-accept/25 bg-verdict-accept/[0.05] px-6 py-12 text-center md:px-14 md:py-16">
+      <LandingVisual
+        src={LANDING_IMAGES.graduation}
+        alt=""
+        className="pointer-events-none absolute inset-0 h-full min-h-0 opacity-[0.72]"
+      />
+
+      <div className="relative z-10 mx-auto max-w-2xl rounded-3xl border border-verdict-accept/20 bg-[var(--surface)]/55 px-6 py-12 text-center backdrop-blur-[1px] md:px-14 md:py-16">
         <p className="mb-5 font-mono-ui text-lp-label uppercase tracking-lp-label text-[var(--muted-foreground)]">
           Get started
         </p>
