@@ -78,7 +78,6 @@ function AudienceGrid({ user }) {
                     className="h-full min-h-0 w-full"
                     position="center"
                   />
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[var(--background)] via-transparent to-transparent" />
                 </div>
 
                 <div className="relative px-6 pb-7 pt-1">
