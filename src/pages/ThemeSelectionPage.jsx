@@ -7,6 +7,7 @@ import { THEME_OPTIONS } from "../themes/themeOptions";
 import { DEFAULT_THEME, getTheme } from "../themes";
 import { THEME_ICONS, withAlpha } from "../themes/themeIcons";
 import ThemeFlowProgress from "../components/onboarding/ThemeFlowProgress";
+import { THEME_BACKGROUNDS } from "../themes/themeBackgrounds";
 
 export default function ThemeSelectionPage() {
     // Theme note: only this page's own chrome (root background, edge-fade
@@ -162,7 +163,7 @@ export default function ThemeSelectionPage() {
                                     "--tbg": colors.secondary,
                                 }}
                                 className={`
-        relative overflow-hidden
+        group relative overflow-hidden
         bg-[var(--tbg)] border border-[var(--tb)] rounded-2xl p-6
         transition-all duration-300
         flex-none w-80 snap-start
@@ -171,6 +172,22 @@ export default function ThemeSelectionPage() {
             : "hover:-translate-y-2 hover:scale-[1.02] hover:border-[var(--tp)] hover:shadow-[0_0_30px_-10px_var(--tp)]"}
     `}
                             >
+                                {/* Cinematic universe artwork — background only. UI content stays above it. */}
+                                <div
+                                    aria-hidden="true"
+                                    className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-[1.03]"
+                                    style={{
+                                        backgroundImage: THEME_BACKGROUNDS[theme.id]
+                                            ? `url(${THEME_BACKGROUNDS[theme.id]})`
+                                            : undefined,
+                                    }}
+                                />
+                                <div
+                                    aria-hidden="true"
+                                    className="absolute inset-0 z-0 bg-gradient-to-b from-black/20 via-black/60 to-black/95"
+                                />
+
+                                <div className="relative z-10">
                                 {/* Top accent stripe — each universe's own gradient, not a shared default */}
                                 <div
                                     aria-hidden="true"
@@ -251,6 +268,7 @@ export default function ThemeSelectionPage() {
                                         Enter Universe
                                     </button>
                                 )}
+                                </div>
                             </div>
                         );
                     })}
