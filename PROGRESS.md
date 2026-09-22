@@ -1933,3 +1933,122 @@ this additive split):
 - Updating `docs/adding-a-language.md`'s framing of `src/data/problems.js`
   as "the actual single source of truth" — still accurate today, since the
   inversion above hasn't happened yet.
+
+## TPO-2 Step 6 — CSV Roster Import (this session)
+
+Implemented CSV roster import for TPO cohorts, strictly scoped per the
+step's own boundaries: no frontend, no XLSX, no invitation email
+delivery, no cohort analytics/assignments, no TPO-3 privacy work.
+
+**New route:** `POST /api/tpo/cohorts/:cohortId/import` (multipart,
+field name `file`), same authorization chain as every other cohort
+route — `requireRole("tpo","admin")` → `requireVerified` →
+`resolveTpoInstitution` — no primary-only gate. `collegeId` is never
+accepted from the client, same discipline as the existing cohort/roster
+routes.
+
+**Key refactor — `cohortMembershipService.js`:** `addStudentToCohort()`
+already had the full matching/transition decision tree from Step 5, but
+an existing test asserts `addStudentToCohort.length === 4` (a structural
+proof it never gains a hidden collegeId/studentId parameter), so that
+signature could not simply grow an `importBatchId` argument. Extracted
+the decision tree into a new exported `upsertCohortMembership(cohort,
+collegeId, addedBy, rawEmail, importBatchId)`, which takes an
+already-resolved cohort (so the import service doesn't re-query `Cohort`
+on every row) and an optional `importBatchId`. `addStudentToCohort()` is
+now a thin wrapper: resolves the cohort, delegates. Its own contract to
+every existing caller is unchanged; added a non-breaking `reasonCode`
+field to error/conflict returns for machine-readable per-row import
+statuses. All 34 pre-existing `cohortMembershipService` tests, 20
+`tpoCohortStudents` route tests, and every other cohort-related test
+still pass unmodified.
+
+**New `services/cohortImportService.js`:** file-level validation (empty
+file, 2MB size cap, magic-byte content sniffing for XLSX/XLS/PDF/image
+uploads even if renamed to `.csv`, malformed-CSV-syntax rejection,
+missing-`email`-column rejection, 10,000-row cap) all happen before any
+database write, per the step's "do not partially write an import whose
+schema is fundamentally invalid" instruction. Row normalization
+(trim/lowercase, `zod`'s `z.string().email()` for format validation — no
+existing email-validation utility was found in the repo to reuse) and
+intra-file duplicate detection happen up front too, so a duplicate email
+appearing 3x in a CSV becomes exactly one `upsertCohortMembership` call,
+not three. Every row that does reach the database goes through
+`upsertCohortMembership()` — **no second membership-writing
+implementation exists**; confirmed via `grep -rn "CohortMembership.create"`
+across `services/` and `routes/`, one call site, inside
+`cohortMembershipService.js` itself. Rows are processed in bounded
+batches of 10 concurrent calls (`IMPORT_CONCURRENCY`), not one giant
+`Promise.all`, and never inside a MongoDB transaction (explicit
+partial-success workflow). A duplicate-key race (two overlapping imports
+touching the same `(cohortId, email)` pair) is caught and resolved by
+retrying `upsertCohortMembership` once, which converges safely since the
+retry will now find the row the other request just wrote.
+
+**Dependencies added:** `multer@^2.4.0` (memory storage — the file never
+touches disk) and `csv-parse@^6.2.1` (the sync API; handles real CSV
+quoting/escaping correctly, unlike a hand-rolled `split(",")` — this
+repo had no existing CSV parser or upload infrastructure to reuse,
+confirmed by the Section 1 audit).
+
+**New `middleware/csvUpload.js`:** the multer config. `fileFilter` does
+the extension-based half of "don't trust the filename extension alone";
+the content-based half (`detectDisallowedBinarySignature`, magic-byte
+sniffing) lives in `cohortImportService.js` against the real buffer,
+since that's real content a renamed file can't fake. A `handleCsvUpload`
+wrapper in `routes/tpo.js` converts multer's callback-style errors
+(`LIMIT_FILE_SIZE`, `LIMIT_UNEXPECTED_FILE`) into proper 400 JSON
+responses instead of falling through to the app's generic 500 handler.
+
+**Tests:**
+- `services/cohortImportService.test.js` — 40 tests: file validation,
+  header matching (case-insensitive/whitespace), row normalization,
+  intra-file duplicates, every `upsertCohortMembership` outcome→row-status
+  mapping, partial-success mixed CSVs, duplicate-key retry (success and
+  exhausted-retry paths), idempotency (same CSV run twice), importBatchId
+  stamping, and a bounded-concurrency observation test (max 10 in-flight
+  calls for a 47-row file).
+- `middleware/csvUpload.test.js` — 11 tests, `csvFileFilter` extension
+  gate + `csvUpload.limits` config.
+- `routes/tpoCohortImport.test.js` — 14 tests: route glue (service call
+  args, 200/400/404 mapping, missing-file 400), multer-error→HTTP mapping,
+  no-stack-trace-leak on unexpected service errors, and the authorization
+  matrix (unverified/non-TPO blocked, secondary TPO allowed, institution
+  resolved server-side so cross-college access is structurally
+  unreachable — no client-suppliable `collegeId` exists on this route at
+  all). This codebase deliberately avoids `supertest` for full HTTP-layer
+  tests (see `routes/compiler.test.js`'s own comment) — multer's real
+  parsing needs a genuine request stream it can't fake, so `multer` is
+  mocked as a pass-through here; its actual extension/size logic is
+  covered directly (without the mock) in the two files above.
+- `services/cohortImportService.integration.test.js` — 8 real-Mongo
+  tests (creates memberships, unique-index enforcement, idempotent
+  re-import, invited→active, removed→active, foreign-college rejection,
+  concurrent-import race → exactly one row, and a matched User's
+  unrelated fields left untouched). **Could not be executed in this
+  sandbox** — `mongodb-memory-server` needs `fastdl.mongodb.org`, which
+  this sandbox blocks (same known limitation as every other integration
+  tier in this project — see `learnings.md`). Syntax-checked
+  (`node --check`) only; needs a run in real CI or a local environment
+  before this step is considered fully verified.
+
+**Verification run this session:**
+- `validateProblemContracts.js` — clean (250 problems + 8 CCE missions).
+- `checkProblemsFolderDrift.js` — zero drift.
+- Full backend unit suite (excluding integration tier): **121/121 files,
+  1622/1622 tests pass.**
+- Full frontend suite: **66/66 files, 422/422 tests pass** (untouched by
+  this step; run for pipeline completeness).
+- `npm run lint` (repo root): clean except the pre-existing
+  `CollegeDetailDrawer.jsx` `react-hooks/set-state-in-effect` error,
+  already documented as a known gap, unrelated to this step.
+- Production build: succeeds.
+
+**Remaining blocker:** the integration tier above needs to actually run
+somewhere with real internet access (real CI, or locally) before Step 6
+can be called fully verified — same standing limitation this project has
+hit before with `mongodb-memory-server`.
+
+**Explicitly not touched, per the step's own scope boundaries:**
+frontend, XLSX/Excel import, invitation email sending, cohort analytics,
+cohort-scoped assignments, TPO-3 privacy behavior.

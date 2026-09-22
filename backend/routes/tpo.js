@@ -26,6 +26,9 @@ import {
 import { invalidateCachedUserByFirebaseUid } from "../utils/userAuthCache.js";
 import * as cohortService from "../services/cohortService.js";
 import * as cohortMembershipService from "../services/cohortMembershipService.js";
+import * as cohortImportService from "../services/cohortImportService.js";
+import multer from "multer";
+import { csvUpload } from "../middleware/csvUpload.js";
 
 const TPO_CACHE_TTL_SECONDS = 2 * 60; // 2 minutes — matches profile cache TTL
 const TPO_CACHE_PREFIX = "tpo:";
@@ -871,6 +874,73 @@ router.delete("/cohorts/:cohortId/students/:membershipId", requireRole("tpo", "a
   } catch (err) {
     (req.log || logger).error({ err }, "[TPO] cohort remove student error");
     return res.status(500).json({ error: "Failed to remove student from cohort." });
+  }
+});
+
+// ── POST /api/tpo/cohorts/:cohortId/import ──────────────────────────────────
+// CSV roster import (TPO-2 Step 6). Same authorization shape as every
+// other cohort/roster route above — requireRole → requireVerified →
+// resolveTpoInstitution, no primary-only gate (verified primary AND
+// secondary TPOs may both import). collegeId is never read from the
+// client here either, same discipline as POST /cohorts and POST
+// /cohorts/:cohortId/students above — only the URL's :cohortId and the
+// uploaded file matter. All parsing/validation/matching/write logic
+// lives in services/cohortImportService.js, which itself never writes a
+// membership row directly — every row goes through
+// cohortMembershipService.js's upsertCohortMembership(), the same
+// decision tree the single-add endpoint above uses.
+//
+// handleCsvUpload wraps csvUpload.single("file") (middleware/csvUpload.js)
+// so a multer-level rejection (wrong extension, oversized file, more
+// than one file) becomes a normal 400 JSON error response instead of
+// falling through to the app's generic 500 handler — multer reports
+// these via a callback-style error, not a thrown exception an
+// async-route-level try/catch would ever see.
+function handleCsvUpload(req, res, next) {
+  csvUpload.single("file")(req, res, (err) => {
+    if (!err) return next();
+
+    if (err instanceof multer.MulterError) {
+      if (err.code === "LIMIT_FILE_SIZE") {
+        const maxMb = Math.floor(cohortImportService.IMPORT_MAX_FILE_SIZE_BYTES / (1024 * 1024));
+        return res.status(400).json({ error: `The CSV file exceeds the ${maxMb}MB size limit.` });
+      }
+      if (err.code === "LIMIT_UNEXPECTED_FILE") {
+        return res.status(400).json({ error: err.message || "Only .csv files are accepted." });
+      }
+      return res.status(400).json({ error: "Invalid file upload." });
+    }
+
+    (req.log || logger).error({ err }, "[TPO] CSV upload error");
+    return res.status(500).json({ error: "Failed to process file upload." });
+  });
+}
+
+router.post("/cohorts/:cohortId/import", requireRole("tpo", "admin"), requireVerified, resolveTpoInstitution, handleCsvUpload, async (req, res) => {
+  if (b2bGate(req, res)) return;
+
+  if (!req.file) {
+    return res.status(400).json({ error: 'A CSV file is required (multipart field name "file").' });
+  }
+
+  try {
+    const result = await cohortImportService.importCohortRoster(
+      req.params.cohortId, req.tpoCollege._id, req.userDoc._id, req.file.buffer
+    );
+
+    if (result?.invalidId) {
+      return res.status(400).json({ error: "Invalid cohort ID." });
+    }
+    if (!result) {
+      return res.status(404).json({ error: "Cohort not found." });
+    }
+    if (result.fileError) {
+      return res.status(400).json({ error: result.fileError, reasonCode: result.reasonCode });
+    }
+    return res.status(200).json(result);
+  } catch (err) {
+    (req.log || logger).error({ err }, "[TPO] cohort CSV import error");
+    return res.status(500).json({ error: "Failed to import cohort roster." });
   }
 });
 

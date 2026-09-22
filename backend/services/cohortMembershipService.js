@@ -187,6 +187,18 @@ export async function getCohortRoster(cohortId, collegeId, {
  * `created: false, noop: false` — an existing invited/removed row was
  *   (re)activated or reactivated back to invited (see the "removed, no
  *   match found" case below).
+ *
+ * Deliberately kept at 4 parameters — see this file's own
+ * "signature only accepts email" test. The CSV import (TPO-2 Step 6)
+ * needs to run this same decision tree hundreds/thousands of times per
+ * request without re-resolving the Cohort document on every row, and
+ * needs to stamp an importBatchId the single-add UI flow never has — so
+ * the matching/transition logic below is factored into
+ * upsertCohortMembership(), which takes an already-resolved cohort and
+ * an optional importBatchId. This function is now a thin wrapper: it
+ * still resolves and validates the cohort itself (so its own contract
+ * to existing callers — including the { invalidId: true } / null
+ * behavior — is completely unchanged), then delegates.
  */
 export async function addStudentToCohort(cohortId, collegeId, addedBy, rawEmail) {
   if (!mongoose.isValidObjectId(cohortId)) {
@@ -196,9 +208,34 @@ export async function addStudentToCohort(cohortId, collegeId, addedBy, rawEmail)
   const cohort = await Cohort.findOne({ _id: cohortId, collegeId }).lean();
   if (!cohort) return null;
 
+  return upsertCohortMembership(cohort, collegeId, addedBy, rawEmail);
+}
+
+/**
+ * Shared membership decision tree (TPO-2 Step 5's matching + existing-
+ * membership rules), factored out of addStudentToCohort so the CSV
+ * import service (TPO-2 Step 6) can run it per-row without duplicating
+ * it — see addStudentToCohort's own comment for why this split exists.
+ *
+ * Takes an already-resolved `cohort` (a plain object with at least
+ * `_id`) rather than a cohortId, and an optional `importBatchId` to
+ * stamp on any row this call creates or mutates. Every other behavior —
+ * email normalization, institution matching, the invited/active/removed
+ * transition table, the never-create-a-second-row guarantee — is
+ * identical to what addStudentToCohort has always done; nothing here is
+ * import-specific except the importBatchId stamp itself.
+ *
+ * Returns the exact same result shapes addStudentToCohort's own doc
+ * comment describes, plus a `reasonCode` alongside `validationError` /
+ * `conflict` so callers that need a machine-readable status (the import
+ * service's per-row report) don't have to pattern-match error strings.
+ * reasonCode values: "invalid_email", "unlinked_account",
+ * "foreign_college", "already_member".
+ */
+export async function upsertCohortMembership(cohort, collegeId, addedBy, rawEmail, importBatchId = null) {
   const email = typeof rawEmail === "string" ? rawEmail.trim().toLowerCase() : "";
   if (!email) {
-    return { validationError: "email is required." };
+    return { validationError: "email is required.", reasonCode: "invalid_email" };
   }
 
   // ── Critical institution matching (TPO-2 Step 5, section 4) ──────────
@@ -221,22 +258,23 @@ export async function addStudentToCohort(cohortId, collegeId, addedBy, rawEmail)
       // live, ad hoc fallback in this request path.
       return {
         validationError: "This account hasn't been linked to an institution yet and can't be added to a cohort.",
+        reasonCode: "unlinked_account",
       };
     }
     if (userCollegeId.toString() !== collegeId.toString()) {
-      return { validationError: "This account belongs to a different institution." };
+      return { validationError: "This account belongs to a different institution.", reasonCode: "foreign_college" };
     }
   }
 
   const now = new Date();
 
   // ── Existing membership handling (TPO-2 Step 5, section 5) ───────────
-  const existing = await CohortMembership.findOne({ cohortId, email });
+  const existing = await CohortMembership.findOne({ cohortId: cohort._id, email });
   if (existing) {
     const previousStatus = existing.status;
 
     if (previousStatus === "active") {
-      return { conflict: true, membership: serializeMembership(existing.toObject()) };
+      return { conflict: true, reasonCode: "already_member", membership: serializeMembership(existing.toObject()) };
     }
 
     const targetStatus = user ? "active" : "invited";
@@ -258,6 +296,9 @@ export async function addStudentToCohort(cohortId, collegeId, addedBy, rawEmail)
     } else if (!existing.invitedAt) {
       existing.invitedAt = now;
     }
+    if (importBatchId) {
+      existing.importBatchId = importBatchId;
+    }
 
     await existing.save();
     return { membership: serializeMembership(existing.toObject()), previousStatus, created: false, noop: false };
@@ -265,7 +306,7 @@ export async function addStudentToCohort(cohortId, collegeId, addedBy, rawEmail)
 
   // Brand-new membership row.
   const created = await CohortMembership.create({
-    cohortId,
+    cohortId: cohort._id,
     collegeId,
     email,
     addedBy,
@@ -273,6 +314,7 @@ export async function addStudentToCohort(cohortId, collegeId, addedBy, rawEmail)
     status: user ? "active" : "invited",
     joinedAt: user ? now : null,
     invitedAt: user ? null : now,
+    importBatchId: importBatchId || null,
   });
   return { membership: serializeMembership(created.toObject()), created: true, noop: false };
 }
