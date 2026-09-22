@@ -452,3 +452,11 @@ html.bw-mode .lp-visual-image {
     transition: none;
   }
 }
+
+
+.lp-visual-on-surface .lp-visual-fade {
+  background:
+    radial-gradient(ellipse at center, transparent 34%, var(--surface) 100%),
+    linear-gradient(to right, var(--surface) 0%, transparent 16%, transparent 84%, var(--surface) 100%),
+    linear-gradient(to bottom, var(--surface) 0%, transparent 16%, transparent 84%, var(--surface) 100%);
+}
