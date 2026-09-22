@@ -1,27 +1,24 @@
 import Reveal from "./Reveal";
 
-/**
- * Proof Strip — now a row of individual stat cards rather than plain
- * hairline-divided columns, giving each number its own tinted box
- * instead of blending into one continuous strip. `stats` prop shape and
- * the live-fetch logic behind it (`useLiveStats` in LandingPage.jsx) are
- * completely unchanged — only the presentation changed here.
- */
 function StatsBar({ stats }) {
   return (
-    <Reveal as="section" className="px-6 py-14 md:px-12 md:py-16">
-      <div className="mx-auto grid max-w-4xl grid-cols-2 gap-3 md:grid-cols-4">
-        {stats.map((s) => (
-          <div
-            key={s.label}
-            className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-6 text-center"
-          >
-            <p className="mb-1 text-2xl font-bold text-[var(--accent-text)] md:text-3xl">{s.value}</p>
-            <p className="font-mono-ui text-lp-label uppercase tracking-lp-label text-[var(--muted-foreground)]">
-              {s.label}
-            </p>
-          </div>
-        ))}
+    <Reveal as="section" className="px-6 py-10 md:px-12 md:py-12">
+      <div className="mx-auto max-w-5xl border-y border-[var(--border)]">
+        <div className="grid grid-cols-2 md:grid-cols-4">
+          {stats.map((s, index) => (
+            <div
+              key={s.label}
+              className={`px-5 py-5 text-center md:py-6 ${index < stats.length - 1 ? "md:border-r md:border-[var(--border)]" : ""} ${index === 1 ? "border-r border-[var(--border)] md:border-r" : ""}`}
+            >
+              <p className="text-2xl font-bold tracking-tight text-[var(--accent-text)] md:text-3xl">
+                {s.value}
+              </p>
+              <p className="mt-1.5 font-mono-ui text-[10px] uppercase tracking-[0.18em] text-[var(--muted-foreground)]">
+                {s.label}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
     </Reveal>
   );
