@@ -104,6 +104,33 @@ describe("apiFetch", () => {
     expect(signOut).not.toHaveBeenCalled();
   });
 
+  // TPO-2 Step 7 (CSV roster import): apiFetch must support a FormData
+  // body without breaking multipart encoding.
+  it("omits the Content-Type header for a FormData body, letting the browser set its own multipart boundary", async () => {
+    getIdToken.mockResolvedValueOnce("cached-token");
+    global.fetch.mockResolvedValueOnce(jsonResponse({ ok: true }));
+
+    const formData = new FormData();
+    formData.append("file", new Blob(["email\na@b.com"], { type: "text/csv" }), "roster.csv");
+
+    await apiFetch("/api/tpo/cohorts/abc/import", { method: "POST", body: formData });
+
+    const [, options] = global.fetch.mock.calls[0];
+    expect(options.headers["Content-Type"]).toBeUndefined();
+    expect(options.headers.Authorization).toBe("Bearer cached-token");
+    expect(options.body).toBe(formData);
+  });
+
+  it("still sets Content-Type: application/json for a normal (non-FormData) body", async () => {
+    getIdToken.mockResolvedValueOnce("cached-token");
+    global.fetch.mockResolvedValueOnce(jsonResponse({ ok: true }));
+
+    await apiFetch("/api/things", { method: "POST", body: JSON.stringify({ a: 1 }) });
+
+    const [, options] = global.fetch.mock.calls[0];
+    expect(options.headers["Content-Type"]).toBe("application/json");
+  });
+
   it("returns null for a 204 response", async () => {
     getIdToken.mockResolvedValueOnce("cached-token");
     global.fetch.mockResolvedValueOnce(new Response(null, { status: 204 }));

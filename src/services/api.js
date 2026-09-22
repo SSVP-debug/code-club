@@ -42,14 +42,26 @@ export async function fetchAnnouncement() {
   }
 }
 
+// FormData bodies (the CSV roster import, TPO-2 Step 7) must NOT get a
+// manually-set "Content-Type: application/json" header — the browser
+// sets its own "multipart/form-data; boundary=..." header when it sees
+// a FormData body, and only the browser knows what boundary string it
+// picked, so setting Content-Type ourselves for a FormData body would
+// send a header that doesn't match the actual body encoding and the
+// server would fail to parse it. This is the only body shape apiFetch
+// callers pass that isn't already a JSON string.
+function isFormDataBody(body) {
+  return typeof FormData !== "undefined" && body instanceof FormData;
+}
+
 function doRequest(path, options, token) {
+  const headers = isFormDataBody(options.body)
+    ? { Authorization: `Bearer ${token}`, ...options.headers }
+    : { "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...options.headers };
+
   return fetch(`${API_URL}${path}`, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      ...options.headers,
-    },
+    headers,
   });
 }
 

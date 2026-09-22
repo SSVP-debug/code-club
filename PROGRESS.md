@@ -2052,3 +2052,128 @@ hit before with `mongodb-memory-server`.
 **Explicitly not touched, per the step's own scope boundaries:**
 frontend, XLSX/Excel import, invitation email sending, cohort analytics,
 cohort-scoped assignments, TPO-3 privacy behavior.
+
+## TPO-2 Step 7 — Frontend Cohorts Workflow (this session)
+
+Built the full TPO-facing cohort management UI against the already-shipped
+Step 4/5/6 backend, strictly frontend-only per this step's own scope
+boundaries.
+
+**Audit first:** read `TpoDashboardPage.jsx`, `TpoTeamPanel.jsx`,
+`Button.jsx`, `ConfirmDialog.jsx`, the existing inline `CreateAssignmentModal`
+modal pattern, and the Students tab's server-side search/sort/pagination
+implementation (debounce, URL-sync) before writing anything, per this
+step's own instruction. No new modal/pagination/debounce convention was
+introduced — every new component reuses these exactly.
+
+**Contract fix — `src/services/api.js`:** `apiFetch`'s `doRequest`
+unconditionally set `Content-Type: application/json`, which would have
+silently broken the CSV upload (a `FormData` body needs the browser's own
+multipart boundary header, not a manually-set JSON one). Added a check
+that omits `Content-Type` entirely for a `FormData` body, leaving every
+existing JSON call site unaffected. This is the one "genuine API contract
+bug" this step's audit surfaced — no other backend or shared-infra changes
+were made.
+
+**Tab:** Added "Cohorts" between Assignments and Team in
+`TpoDashboardPage.jsx` (`Overview / Students / Assignments / Cohorts /
+Team`) — a 3-line addition (VALID_TABS, the tab-button map, one
+conditional render), no changes to any other tab's logic.
+
+**New components (`src/components/tpo/`):**
+- `TpoCohortFormModal.jsx` — shared create/edit form. Fields match
+  `cohortService.js`'s own `EDITABLE_FIELDS` exactly; collegeId/createdBy/
+  status/archivedAt/archivedBy are never rendered as inputs. Client
+  validation mirrors `Cohort.js`'s own validators (maxlengths, graduating-
+  year range, non-negative integer headcount); backend validation errors
+  still surface via toast.
+- `TpoCohortsPanel.jsx` — cohort list (server-side search/status filter/
+  pagination, matching `GET /cohorts`' real `{items, total, page, limit}`
+  shape), empty/loading/error states, Create Cohort, and list↔detail
+  switching. Selected cohort persists in the URL (`?cohortId=`) for
+  deep-linking, same pattern `tab` already uses.
+- `TpoCohortDetail.jsx` — header (name/branch/academicYear/graduatingYear/
+  section/status), Edit (opens the form modal), Archive (hidden once
+  already archived, since there's no unarchive — confirmed via
+  `ConfirmDialog` with wording that only claims what the backend actually
+  guarantees: keeps the cohort and roster, doesn't delete anything).
+  Handles the idempotent `alreadyArchived` archive response distinctly
+  from a first-time archive.
+- `TpoCohortRoster.jsx` — roster list against `GET /cohorts/:id/students`'
+  real response shape (`students/total/page/limit/counts`), status filter
+  (Active/Invited/Removed, default Active, with live counts), debounced
+  server-side search, pagination, manual Add Student (handles active/
+  invited/already-member-409/foreign-college-400 distinctly, never
+  claiming an account was "created" for an invited/unmatched row), Remove
+  Student (via `ConfirmDialog`, explicit that this doesn't touch the
+  Code Club account), and the Import CSV trigger. An invited row with no
+  matched account shows "Unmatched", never a blank name.
+- `TpoCohortImportModal.jsx` — file picker (client-side extension check
+  only — the backend's own content-sniffing in `cohortImportService.js`
+  is the real gate), uploads via `multipart/form-data` field `file`,
+  simple "Importing…" busy state (no fake progress — the API gives none),
+  then renders the *actual* backend summary fields
+  (`totalRows/active/invited/alreadyMember/duplicates/errors`) and a
+  row-level table using the backend's own status vocabulary verbatim
+  (never inventing a new status name). Server errors show the backend's
+  already-clean message, never a raw stack trace.
+
+**Persistent filters (Section 20):** Selected cohort persists via
+`?cohortId=`; roster search/status/page persist via `?rosterQ=/
+rosterStatus=/rosterPage=` — separate param names from the Students tab's
+own `q/sort/page` and from each other, to avoid collision, using the same
+`useSearchParams` pattern `TpoDashboardPage.jsx` already established
+rather than a new state library.
+
+**Archived-cohort mismatch found and reported, not silently patched
+(Section 19):** confirmed by reading `cohortMembershipService.js` and
+`cohortImportService.js` that the backend does **not** currently block
+roster mutations (add student, CSV import) on an archived cohort —
+nothing in either file checks `cohort.status`. Per this step's explicit
+instruction, Add Student / Import CSV are **not** disabled in the UI for
+an archived cohort (disabling them would claim a restriction the API
+doesn't enforce, inventing a second lifecycle). Editing is likewise left
+enabled for the same reason. If blocking these on an archived cohort is
+the intended product behavior, that needs an explicit backend guard in a
+future step — not assumed here.
+
+**Tests:**
+- `src/services/api.test.js` — +2 tests (FormData Content-Type omission,
+  normal JSON path unaffected). 11/11 passing.
+- `TpoCohortFormModal.test.jsx` — 10/10 (create/edit validation, field
+  allowlist, success/error paths).
+- `TpoCohortImportModal.test.jsx` — 12/12 (file accept/reject, upload
+  wiring, busy-state/no-duplicate-submit, real summary fields, row-level
+  results, server-error display, reset flow).
+- `TpoCohortRoster.test.jsx` — 14/14 (default-active filter, Unmatched
+  label, removed-only-on-filter, debounced search, real pagination
+  contract, error/retry, all four manual-add result types, remove
+  confirm/success/error, import-modal trigger).
+- `TpoCohortDetail.test.jsx` — 10/10 (header fields, roster delegation,
+  error/retry, archive visibility/confirm-wording/idempotent response,
+  edit round-trip).
+- `TpoCohortsPanel.test.jsx` — 12/12 (loading/empty/error, status filter,
+  debounced search, real pagination contract, card→detail selection,
+  URL deep-link restore, create→refresh→auto-open-new-cohort).
+
+**Verification run this session:**
+- New cohort frontend tests: **58/58 passing** across the 5 new files.
+- Existing TPO dashboard/team tests: **26/26 passing**, unmodified.
+- Full frontend suite: **71/71 files, 482/482 tests pass** (up from
+  66/422 — the 5 new files + 2 added `api.test.js` cases).
+- Frontend production build: succeeds; verified the built
+  `TpoDashboardPage` chunk actually contains the new "cohorts" tab and
+  "Import CSV" string (not just a successful compile).
+- Full backend unit suite (regression check only — no backend files
+  touched this step): **121/121 files, 1622/1622 tests still pass.**
+- `npm run lint` (repo root): clean except the same pre-existing
+  `CollegeDetailDrawer.jsx` error already documented as a known gap.
+- Final `git diff`: confirms zero backend files modified this session;
+  only `src/services/api.js` (the FormData fix) and `src/pages/
+  TpoDashboardPage.jsx` (the tab wiring) among existing files, everything
+  else additive.
+
+**Explicitly not touched, per this step's own scope boundaries:** XLSX,
+email invitations, cohort analytics, placement dashboards, cohort-scoped
+assignments, profile visibility, reporting, billing, new TPO roles/
+permissions.
