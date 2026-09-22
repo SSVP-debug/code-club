@@ -4,6 +4,7 @@ import { THEME_OPTIONS } from "../themes/themeOptions";
 import { getTheme } from "../themes";
 import { THEME_ICONS, withAlpha } from "../themes/themeIcons";
 import ThemeFlowProgress from "../components/onboarding/ThemeFlowProgress";
+import { THEME_BACKGROUNDS } from "../themes/themeBackgrounds";
 
 export default function ThemeConfirmationPage() {
   const navigate = useNavigate();
@@ -23,14 +24,25 @@ export default function ThemeConfirmationPage() {
   const Icon = THEME_ICONS[themeId];
 
   return (
-    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex items-center justify-center px-6 relative">
+    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex items-center justify-center px-6 relative overflow-hidden">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-cover bg-center opacity-70"
+        style={{
+          backgroundImage: THEME_BACKGROUNDS[theme.id]
+            ? `url(${THEME_BACKGROUNDS[theme.id]})`
+            : undefined,
+        }}
+      />
+      <div aria-hidden="true" className="absolute inset-0 bg-black/65" />
+
       <div className="absolute top-6 left-6 sm:top-8 sm:left-8 animate-[fadeIn_.4s_ease-out]">
         <ThemeFlowProgress step={2} />
       </div>
 
       <div
         className="
-    max-w-2xl text-center
+    relative z-10 max-w-2xl text-center
     animate-[fadeIn_.4s_ease-out]
   "
       >
