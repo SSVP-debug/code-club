@@ -14,11 +14,11 @@
  *   /images/landing/graduation-caps.webp
  */
 export const LANDING_IMAGES = {
-  hero: "",
-  ecosystem: "",
-  tpo: "",
-  recruiter: "",
-  graduation: "",
+  hero: "/images/landing/hero-student.webp",
+  ecosystem: "/images/landing/ecosystem-campus.webp",
+  tpo: "/images/landing/tpo-placement.webp",
+  recruiter: "/images/landing/recruiter-interview.webp",
+  graduation: "/images/landing/graduation-caps.webp",
 };
 
 export default LANDING_IMAGES;
