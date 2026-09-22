@@ -1,17 +1,19 @@
+import codeHeistBackground from "../assets/themes/code-heist.webp";
+import breakingBugBackground from "../assets/themes/breaking-bug.webp";
+import ghostProtocolBackground from "../assets/themes/ghost-protocol.webp";
+import survivalCodeBackground from "../assets/themes/survival-code.webp";
+import debugDynastyBackground from "../assets/themes/debug-dynasty.webp";
+
 /**
- * Theme artwork contract.
+ * Cinematic artwork for each Code Club universe.
  *
- * These paths intentionally point to frontend assets. The generated artwork
- * should be split into five individual WebP/JPG files with these names and
- * placed under src/assets/themes/.
- *
- * The artwork is used ONLY as a background layer. Theme copy, icons, and
- * controls remain rendered in the foreground with a readability overlay.
+ * These are background layers only. Theme copy, icons, status labels,
+ * previews, and actions remain rendered by the UI above the artwork.
  */
 export const THEME_BACKGROUNDS = {
-  codeHeist: "/src/assets/themes/code-heist.webp",
-  breakingBug: "/src/assets/themes/breaking-bug.webp",
-  ghostProtocol: "/src/assets/themes/ghost-protocol.webp",
-  survivalCode: "/src/assets/themes/survival-code.webp",
-  debugDynasty: "/src/assets/themes/debug-dynasty.webp",
+  codeHeist: codeHeistBackground,
+  breakingBug: breakingBugBackground,
+  ghostProtocol: ghostProtocolBackground,
+  survivalCode: survivalCodeBackground,
+  debugDynasty: debugDynastyBackground,
 };
