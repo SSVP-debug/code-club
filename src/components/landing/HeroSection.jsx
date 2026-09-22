@@ -6,55 +6,59 @@ const TRUST_SIGNALS = "Free to use · No credit card · Google login in 10 sec";
 
 function HeroSection({ user }) {
   return (
-    <section className="relative overflow-hidden px-6 pt-24 pb-20 md:px-12 md:pb-28 md:pt-32 lg:pt-36">
-      <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
-        <div className="lp-reveal lp-in-view max-w-2xl text-center lg:text-left">
-          <p className="mb-6 inline-flex items-center justify-center gap-2 font-mono-ui text-lp-eyebrow uppercase tracking-lp-eyebrow text-[var(--muted-foreground)]">
-            <span className="h-1.5 w-1.5 rounded-full bg-verdict-pending" />
-            Placement season 2026 — batches open now
-          </p>
+    <section className="relative min-h-[680px] overflow-hidden px-6 pb-24 pt-28 md:min-h-[760px] md:px-12 md:pb-32 md:pt-32 lg:flex lg:items-center">
+      <LandingVisual
+        src={LANDING_IMAGES.hero}
+        alt=""
+        priority
+        className="pointer-events-none absolute inset-0 h-full min-h-0 opacity-[0.9]"
+        position="right"
+      />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_72%_42%,transparent_0%,rgba(11,13,16,0.18)_32%,rgba(11,13,16,0.82)_72%,var(--background)_100%)]" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[var(--background)] to-transparent" />
 
-          <h1 className="text-lp-h1 font-display font-bold tracking-tight text-[var(--foreground)]">
-            Every solve, <span className="text-[var(--accent-text)]">verified.</span>
-            <br />
-            Every profile, provable.
-          </h1>
+      <div className="relative z-10 mx-auto w-full max-w-6xl">
+        <div className="max-w-3xl">
+          <div className="lp-reveal lp-in-view">
+            <p className="mb-6 inline-flex items-center gap-2 font-mono-ui text-lp-eyebrow uppercase tracking-lp-eyebrow text-[var(--muted-foreground)]">
+              <span className="h-1.5 w-1.5 rounded-full bg-verdict-pending" />
+              Placement season 2026 — batches open now
+            </p>
 
-          <p className="mt-6 text-lg leading-relaxed text-[var(--muted-foreground)] lg:max-w-xl">
-            Code Club checks every submission server-side, so your solve
-            history means something to the people looking at it.
-          </p>
+            <h1 className="max-w-3xl text-lp-h1 font-display font-bold tracking-tight text-[var(--foreground)]">
+              Every solve, <span className="text-[var(--accent-text)]">verified.</span>
+              <br />
+              Every profile, provable.
+            </h1>
 
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
-            <Button
-              to={user ? "/dashboard" : "/portal"}
-              variant="theme"
-              size="lg"
-              className="shadow-lg shadow-verdict-accept/10"
-            >
-              {user ? "Go to Dashboard →" : "Start for Free →"}
-            </Button>
-            <Button
-              to={user ? "/problems" : "/login?role=student"}
-              variant="secondary"
-              size="lg"
-            >
-              Browse Problems
-            </Button>
+            <p className="mt-7 max-w-xl text-lg leading-relaxed text-[var(--muted-foreground)] md:text-xl">
+              Code Club checks every submission server-side, so your solve
+              history means something to the people looking at it.
+            </p>
+
+            <div className="mt-9 flex flex-wrap items-center gap-3">
+              <Button
+                to={user ? "/dashboard" : "/portal"}
+                variant="theme"
+                size="lg"
+                className="shadow-lg shadow-verdict-accept/10"
+              >
+                {user ? "Go to Dashboard →" : "Start for Free →"}
+              </Button>
+              <Button
+                to={user ? "/problems" : "/login?role=student"}
+                variant="secondary"
+                size="lg"
+              >
+                Browse Problems
+              </Button>
+            </div>
+
+            <p className="mt-5 font-mono-ui text-xs text-[var(--muted-foreground)]">
+              {TRUST_SIGNALS}
+            </p>
           </div>
-
-          <p className="mt-5 font-mono-ui text-xs text-[var(--muted-foreground)]">
-            {TRUST_SIGNALS}
-          </p>
         </div>
-
-        <LandingVisual
-          src={LANDING_IMAGES.hero}
-          alt="Student coding on a laptop"
-          priority
-          className="min-h-[300px] md:min-h-[400px] lg:min-h-[460px]"
-          position="center"
-        />
       </div>
     </section>
   );
