@@ -23,7 +23,6 @@ const ROLES = [
     cta: "Recruiter access",
     accent: "text-role-recruiter",
     image: LANDING_IMAGES.recruiter,
-    alt: "Recruiter interviewing a software candidate",
   },
   {
     id: "tpo",
@@ -34,7 +33,6 @@ const ROLES = [
     cta: "TPO dashboard",
     accent: "text-role-tpo",
     image: LANDING_IMAGES.tpo,
-    alt: "Placement officer speaking with college students",
   },
 ];
 
@@ -42,9 +40,9 @@ function AudienceGrid({ user }) {
   const destination = user ? "/dashboard" : "/portal";
 
   return (
-    <Reveal as="section" className="relative overflow-hidden bg-[var(--surface)] px-6 py-24 md:px-12 md:py-32">
+    <Reveal as="section" className="relative overflow-hidden bg-[var(--surface)] px-6 py-20 md:px-12 md:py-24">
       <div className="mx-auto max-w-6xl">
-        <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
+        <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
           <div>
             <p className="mb-4 font-mono-ui text-lp-label uppercase tracking-lp-label text-[var(--muted-foreground)]">
               Ecosystem
@@ -55,63 +53,56 @@ function AudienceGrid({ user }) {
               A wider ecosystem around it.
             </h2>
           </div>
-          <p className="max-w-xl text-[var(--muted-foreground)] lg:justify-self-end">
+          <p className="max-w-xl leading-relaxed text-[var(--muted-foreground)] lg:justify-self-end">
             Students build proof. Colleges, Training & Placement Officers,
             and recruiters can use that proof across the placement journey.
           </p>
         </div>
 
-        <div className="relative mt-14 h-[300px] overflow-hidden md:h-[430px]">
+        <div className="relative mt-10 h-[260px] overflow-hidden md:h-[320px]">
           <LandingVisual
             src={LANDING_IMAGES.ecosystem}
             alt="College student working in a library"
             className="lp-visual-on-surface absolute inset-0 h-full min-h-0"
             position="center"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-[var(--surface)] via-transparent to-[var(--surface)]/20" />
-          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[var(--surface)] to-transparent" />
-          <div className="absolute bottom-7 left-0 max-w-md">
-            <p className="font-mono-ui text-xs uppercase tracking-lp-label text-[var(--muted-foreground)]">
+          <div className="absolute inset-0 bg-gradient-to-r from-[var(--surface)]/95 via-transparent to-[var(--surface)]/10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[var(--surface)] via-transparent to-[var(--surface)]/20" />
+          <div className="absolute bottom-7 left-6 max-w-md md:left-8">
+            <p className="font-mono-ui text-[10px] uppercase tracking-[0.18em] text-[var(--muted-foreground)]">
               Build proof before placement day
             </p>
-            <p className="mt-2 text-lg font-medium text-[var(--foreground)]">
+            <p className="mt-2 text-lg font-medium leading-snug text-[var(--foreground)]">
               Your practice history becomes a visible signal of what you can actually do.
             </p>
           </div>
         </div>
 
-        <div className="mt-8 border-t border-[var(--border)]">
+        <div className="mt-10 border-t border-[var(--border)]">
           {ROLES.map((r) => {
             const Icon = r.Icon;
             return (
-              <div
-                key={r.id}
-                className="group relative overflow-hidden border-b border-[var(--border)] py-7 md:py-9"
-              >
+              <div key={r.id} className="group relative min-h-[156px] overflow-hidden border-b border-[var(--border)] py-6 md:min-h-[174px] md:py-7">
                 {r.image ? (
                   <>
                     <LandingVisual
                       src={r.image}
                       alt=""
-                      className="lp-visual-on-surface pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[44%] min-h-0 opacity-45 md:block"
+                      className="lp-visual-on-surface pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[34%] min-h-0 opacity-55 md:block"
                       position="center"
                     />
-                    <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[58%] bg-gradient-to-r from-[var(--surface)] via-[var(--surface)]/45 to-transparent md:block" />
+                    <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[48%] bg-gradient-to-r from-[var(--surface)] via-[var(--surface)]/35 to-transparent md:block" />
                   </>
                 ) : null}
 
-                <div className="relative z-10 grid gap-5 md:grid-cols-[110px_1fr_auto] md:items-center">
+                <div className="relative z-10 grid h-full gap-4 md:grid-cols-[90px_1fr_auto] md:items-center">
                   <div className="flex items-center gap-3 font-mono-ui text-xs text-[var(--muted-foreground)]">
                     <span>{r.index}</span>
                     <Icon size={17} className={r.accent} aria-hidden="true" />
                   </div>
                   <div className="max-w-2xl">
-                    <h3 className="text-xl font-display font-semibold text-[var(--foreground)]">
-                      {r.title}
-                    </h3>
-                    <p className="mt-2 text-[var(--muted-foreground)]">
-                      {r.body}
-                    </p>
+                    <h3 className="text-xl font-display font-semibold text-[var(--foreground)]">{r.title}</h3>
+                    <p className="mt-2 max-w-xl leading-relaxed text-[var(--muted-foreground)]">{r.body}</p>
                   </div>
                   <Link
                     to={destination}
