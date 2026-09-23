@@ -441,6 +441,63 @@ describe("TPO-4 cohort assignments — real Mongo integration", () => {
     expect(remindRes._json.error).toMatch(/archived/i);
   });
 
+  it("institution report overview route returns the canonical scoped report for a verified TPO", async () => {
+    const { college, tpo, studentA, studentB } = await seed();
+
+    await Assignment.create({
+      tpoId: tpo._id,
+      collegeId: college._id,
+      collegeDomain: "a.edu",
+      cohortId: null,
+      title: "Report Assignment",
+      problemSlugs: ["p1", "p2"],
+      dueDate: new Date("2026-10-01T00:00:00.000Z"),
+      createdAt: new Date("2026-09-20T00:00:00.000Z"),
+    });
+
+    const res = await runRoute(tpoRouter, "get", "/report/overview", {
+      userDoc: tpo,
+      query: {
+        from: "2026-09-01T00:00:00.000Z",
+        to: "2026-09-30T23:59:59.999Z",
+      },
+      body: {},
+      log: mockLog(),
+    });
+
+    expect(res._status).toBe(200);
+    expect(String(res._json.collegeId)).toBe(String(college._id));
+    expect(res._json.college).toBe(college.name);
+    expect(res._json.students.total).toBe(3);
+    expect(res._json.assignments.total).toBe(1);
+    expect(res._json.assignments.assignedStudents).toBe(3);
+    expect(res._json.range.from).toBe("2026-09-01T00:00:00.000Z");
+    expect(res._json.range.to).toBe("2026-09-30T23:59:59.999Z");
+    expect(studentA.emailDomain).toBe("a.edu");
+    expect(studentB.emailDomain).toBe("b.edu");
+  });
+
+  it("admin report requests require an explicit collegeId", async () => {
+    const { tpo } = await seed();
+    const admin = await User.create({
+      firebaseUid: "fb-report-admin",
+      email: "admin@codeclub.dev",
+      role: "admin",
+      roles: ["admin"],
+    });
+
+    const res = await runRoute(tpoRouter, "get", "/report/overview", {
+      userDoc: admin,
+      query: {},
+      body: {},
+      log: mockLog(),
+    });
+
+    expect(res._status).toBe(400);
+    expect(res._json.error).toMatch(/collegeId is required/i);
+    expect(tpo.role).toBe("tpo");
+  });
+
   it("legacy college-wide assignments remain visible to college students", async () => {
     const { tpo, studentA, outsider } = await seed();
 
