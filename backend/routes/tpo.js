@@ -1882,11 +1882,10 @@ router.get("/report/pdf", requireRole("tpo", "admin"),
             $or: [
               { "education.collegeId": college._id },
               {
-                "education.collegeId": { $in: [null, undefined] },
-                emailDomain: { $in: collegeDomains },
-              },
-              {
-                "education.collegeId": { $exists: false },
+                $or: [
+                  { "education.collegeId": null },
+                  { "education.collegeId": { $exists: false } },
+                ],
                 emailDomain: { $in: collegeDomains },
               },
             ],
