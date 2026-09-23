@@ -112,6 +112,7 @@ describe("toggleVote", () => {
     expect(FeatureRequestVote.findOneAndDelete).toHaveBeenCalledWith({
       featureRequestId,
       userId: submitterId,
+      createdAt: { $lt: expect.any(Date) },
     });
     expect(FeatureRequest.updateOne).toHaveBeenCalledWith(
       { _id: featureRequestId, voteCount: { $gt: 0 } },
