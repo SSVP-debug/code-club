@@ -56,6 +56,16 @@ const userSchema = new mongoose.Schema(
       default: true,
     },
 
+    // Separate from public/recruiter visibility. This is the student's
+    // explicit institutional-placement visibility preference for their own
+    // college TPO. Defaults to true so existing students remain visible
+    // after rollout; setting it false opts them out of TPO directory and
+    // dashboard visibility without changing public-profile visibility.
+    visibleToTpo: {
+      type: Boolean,
+      default: true,
+    },
+
     leetcodeUsername: String,
 
     // Solve-history stats, separate from leetcodeUsername above (which
