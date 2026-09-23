@@ -131,6 +131,8 @@ function SettingsPage() {
         setUsername: setCurrentUsername,
         leetcodeUsername,
         leetcodeStats,
+        visibleToTpo,
+        updateTpoVisibility,
         preferences,
         updatePreferences,
     } = useAppContext();
@@ -139,6 +141,7 @@ function SettingsPage() {
     const [savingUsername, setSavingUsername] = useState(false);
     const [savingBlankEditor, setSavingBlankEditor] = useState(false);
     const [savingHideDifficulty, setSavingHideDifficulty] = useState(false);
+    const [savingTpoVisibility, setSavingTpoVisibility] = useState(false);
     // Tracks which currentUsername the draft was last seeded from — the
     // "adjusting state when a prop changes" pattern, so a fresh value
     // (e.g. once appContext finishes hydrating) re-seeds the input during
@@ -340,6 +343,31 @@ function SettingsPage() {
                             ? "You're on the default experience no universe theming applied."
                             : "Clears your universe selection and switches to a clean, unthemed experience with plain labels (Dashboard, Problems, Profile)."}
                     </p>
+                </section>
+
+                <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
+                    <h2 className="text-xl font-semibold mb-2">Placement privacy</h2>
+                    <p className="text-[var(--muted-foreground)] text-sm mb-4">
+                        Control whether verified placement officers from your college can see your Code Club progress.
+                    </p>
+                    <ToggleRow
+                        label="Visible to my college TPO"
+                        description="When enabled, verified TPOs from your college can see you in their student directory and placement dashboard. Turning this off does not change your public profile or recruiter visibility."
+                        checked={visibleToTpo}
+                        saving={savingTpoVisibility}
+                        onToggle={async () => {
+                            const next = !visibleToTpo;
+                            setSavingTpoVisibility(true);
+                            try {
+                                await updateTpoVisibility(next);
+                                toast.success(next ? "Visible to your college TPO" : "Hidden from your college TPO");
+                            } catch (err) {
+                                toast.error(err.message || "Failed to save placement privacy");
+                            } finally {
+                                setSavingTpoVisibility(false);
+                            }
+                        }}
+                    />
                 </section>
 
                 <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
