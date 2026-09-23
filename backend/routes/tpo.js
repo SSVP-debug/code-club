@@ -1376,8 +1376,20 @@ router.get("/assignments", requireRole("tpo", "admin"), requireVerified, async (
     const collegeDomains = req.userDoc.role === "admin"
       ? []
       : await resolveCollegeDomains(req.userDoc);
-    const assignmentQuery = collegeDomains.length
-      ? { collegeDomain: { $in: collegeDomains } }
+    const college = req.userDoc.role === "admin"
+      ? null
+      : await getCollegeForTpo(req.userDoc);
+
+    const assignmentQuery = college
+      ? {
+          $or: [
+            { collegeId: college._id },
+            {
+              collegeId: null,
+              collegeDomain: { $in: collegeDomains },
+            },
+          ],
+        }
       : {};
     const assignments = await Assignment.find(assignmentQuery)
       .sort({ dueDate: -1 })
