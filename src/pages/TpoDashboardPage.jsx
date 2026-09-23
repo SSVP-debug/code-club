@@ -11,6 +11,7 @@ import { useIdentity } from "../hooks/useIdentity";
 import { GraduationCap, Users, Flame } from "lucide-react";
 import TpoTeamPanel from "../components/tpo/TpoTeamPanel";
 import TpoCohortsPanel from "../components/tpo/TpoCohortsPanel";
+import TpoReportsPanel from "../components/tpo/TpoReportsPanel";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const STUDENTS_PAGE_SIZE = 25; // matches the backend's default (backend/routes/tpo.js)
@@ -156,7 +157,7 @@ function CreateAssignmentModal({ onClose, onCreated }) {
 }
 
 export default function TpoDashboardPage() {
-  const VALID_TABS = ["overview", "students", "assignments", "cohorts", "team"];
+  const VALID_TABS = ["overview", "reports", "students", "assignments", "cohorts", "team"];
   const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthenticated } = useIdentity();
 
@@ -509,7 +510,7 @@ export default function TpoDashboardPage() {
             other, and wrapping to a second line pushes content down
             awkwardly for just one overflow tab. */}
         <div className="flex gap-2 mb-6 overflow-x-auto">
-          {["overview", "students", "assignments", "cohorts", "team"].map(t => (
+          {["overview", "reports", "students", "assignments", "cohorts", "team"].map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -553,6 +554,8 @@ export default function TpoDashboardPage() {
             </div>
           </div>
         )}
+
+        {tab === "reports" && <TpoReportsPanel />}
 
         {tab === "students" && (
           <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden">
