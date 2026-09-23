@@ -297,6 +297,62 @@ router.get("/me", requireRole("tpo", "admin"),
     });
   });
 
+
+// ── GET /api/tpo/college-directory ─────────────────────────────────────────
+// Student-facing directory of verified TPOs for the student's own college.
+// The client never supplies a collegeId: institution is resolved from the
+// student's verified college linkage, preventing cross-college enumeration.
+router.get("/college-directory", requireRole("student"), async (req, res) => {
+  if (b2bGate(req, res)) return;
+
+  try {
+    const education = req.userDoc.education || {};
+    if (!education.emailVerified) {
+      return res.status(403).json({ error: "Verify your college email to view your college TPO directory." });
+    }
+
+    let college = null;
+    if (education.collegeId) {
+      college = await College.findById(education.collegeId).lean();
+    }
+
+    if (!college && req.userDoc.emailDomain) {
+      college = await College.findOne({
+        domains: req.userDoc.emailDomain.toLowerCase(),
+        status: "verified",
+      }).lean();
+    }
+
+    if (!college || college.status !== "verified") {
+      return res.status(404).json({ error: "Your college is not linked to a verified institution yet." });
+    }
+
+    const members = await User.find({
+      role: "tpo",
+      status: "active",
+      "tpoProfile.collegeDomain": { $in: college.domains },
+      "tpoProfile.verified": true,
+    })
+      .select("_id displayName email tpoProfile.collegeName")
+      .sort({ displayName: 1, email: 1 })
+      .lean();
+
+    return res.json({
+      college: { id: college._id, name: college.name },
+      tpos: members.map((member) => ({
+        id: member._id,
+        name: member.displayName || "TPO",
+        email: member.email,
+        collegeName: member.tpoProfile?.collegeName || college.name,
+        isPrimary: college.primaryTpo?.toString() === member._id.toString(),
+      })),
+    });
+  } catch (err) {
+    (req.log || logger).error({ err }, "[TPO] college directory error");
+    return res.status(500).json({ error: "Failed to load your college TPO directory." });
+  }
+});
+
 // ── TPO TEAM MANAGEMENT (Phase 3) ───────────────────────────────────────────
 // GET  /api/tpo/team                      — list this college's TPO team
 // POST /api/tpo/team/invite                — primary adds an existing account
