@@ -38,7 +38,7 @@ vi.mock("../config/featureFlags.js", () => ({
 
 import College from "../models/College.js";
 import InstitutionBillingEvent from "../models/InstitutionBillingEvent.js";
-import { isValidInstitutionWebhookSignature, applyInstitutionWebhookEvent } from "./institutionBillingWebhook.js";
+import { isValidInstitutionWebhookSignature, applyInstitutionWebhookEvent } from "../services/institutionBillingWebhookService.js";
 
 function college(overrides = {}) {
   return {
