@@ -676,12 +676,14 @@ describe("GET /college-directory", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    College.findById.mockResolvedValue({
-      _id: "college-1",
-      name: "Report University",
-      status: "verified",
-      domains: ["report.edu", "legacy.report.edu"],
-      primaryTpo: "tpo-1",
+    College.findById.mockReturnValue({
+      lean: vi.fn().mockResolvedValue({
+        _id: "college-1",
+        name: "Report University",
+        status: "verified",
+        domains: ["report.edu", "legacy.report.edu"],
+        primaryTpo: "tpo-1",
+      }),
     });
     User.find.mockReturnValue({
       select: vi.fn().mockReturnValue({
