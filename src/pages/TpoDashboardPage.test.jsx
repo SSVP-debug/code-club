@@ -348,6 +348,53 @@ describe("TpoDashboardPage — assignments tab reminder", () => {
     await waitFor(() => screen.getByText("Week 3 — Arrays"));
   }
 
+  it("shows the assignment audience for cohort and college-wide assignments", async () => {
+    apiFetch.mockImplementation((url) => {
+      if (url === "/api/tpo/dashboard") return Promise.resolve(dashboardData);
+      if (url.startsWith("/api/tpo/students")) return Promise.resolve(studentsData);
+      if (url === "/api/tpo/assignments") {
+        return Promise.resolve({
+          assignments: [
+            {
+              _id: "cohort-assignment",
+              title: "CSE Week",
+              dueDate: "2026-10-01",
+              problemSlugs: ["two-sum"],
+              completedCount: 2,
+              totalStudents: 10,
+              completionPercent: 20,
+              isOverdue: false,
+              cohort: { name: "CSE 2027", branch: "CSE", graduatingYear: 2027 },
+            },
+            {
+              _id: "college-assignment",
+              title: "College Week",
+              dueDate: "2026-10-02",
+              problemSlugs: ["valid-parentheses"],
+              completedCount: 5,
+              totalStudents: 20,
+              completionPercent: 25,
+              isOverdue: false,
+              cohort: null,
+            },
+          ],
+        });
+      }
+      return Promise.reject(new Error(`Unexpected apiFetch call: ${url}`));
+    });
+    render(
+      <ThemeProvider>
+        <MemoryRouter initialEntries={["/tpo/dashboard?tab=assignments"]}>
+          <TpoDashboardPage />
+        </MemoryRouter>
+      </ThemeProvider>
+    );
+    await waitFor(() => expect(screen.getByText("CSE Week")).toBeInTheDocument());
+
+    expect(screen.getByText("CSE 2027 · CSE · 2027")).toBeInTheDocument();
+    expect(screen.getByText("Entire college")).toBeInTheDocument();
+  });
+
   it("creates a cohort-scoped assignment with the selected cohort", async () => {
     await loadAssignmentsTab();
     apiFetch.mockImplementation((url, opts) => {
