@@ -243,6 +243,46 @@ describe("TPO-4 cohort assignments — real Mongo integration", () => {
     expect(res._json.remindedCount).toBe(1);
   });
 
+  it("TPOs from every college domain can see the same college-wide assignment", async () => {
+    const { college, tpo, studentA } = await seed();
+
+    const tpoB = await User.create({
+      firebaseUid: "fb-tpo-4-b",
+      email: "tpo@b.edu",
+      role: "tpo",
+      roles: ["student", "tpo"],
+      tpoProfile: {
+        collegeDomain: "b.edu",
+        collegeName: college.name,
+        verified: true,
+        requestedAt: new Date(),
+        verifiedAt: new Date(),
+      },
+    });
+
+    await Assignment.create({
+      tpoId: tpo._id,
+      collegeDomain: "a.edu",
+      cohortId: null,
+      title: "Cross Domain College Assignment",
+      problemSlugs: ["p1"],
+      dueDate: new Date("2026-10-01T00:00:00.000Z"),
+    });
+
+    const res = await runRoute(tpoRouter, "get", "/assignments", {
+      userDoc: tpoB,
+      query: {},
+      log: mockLog(),
+    });
+
+    expect(res._status).toBe(200);
+    expect(res._json.assignments).toHaveLength(1);
+    expect(res._json.assignments[0].title).toBe("Cross Domain College Assignment");
+    expect(res._json.assignments[0].totalStudents).toBe(2);
+    expect(String(res._json.assignments[0].cohortId ?? "")).toBe("");
+    expect(studentA.emailDomain).toBe("a.edu");
+  });
+
   it("legacy college-wide assignments remain visible to college students", async () => {
     const { tpo, studentA, outsider } = await seed();
 
