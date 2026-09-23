@@ -63,7 +63,8 @@ function Navbar() {
       primary: [
         { to: "/dashboard", label: theme.words.dashboard },
         { to: "/problems", label: theme.words.problems },
-        { to: "/club", label: "Club" },\n        { to: "/college-tpos", label: "College TPOs" },
+        { to: "/club", label: "Club" },
+        { to: "/college-tpos", label: "College TPOs" },
       ],
       // Analytics & Certifications now live inside Profile (avatar → View Profile).
       // Leaderboard, Contests & Ambassador now live inside Club, above.
