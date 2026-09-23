@@ -12,6 +12,6 @@ export default defineConfig({
     include: ["**/*.integration.test.js"],
     exclude: ["node_modules", "problems"],
     testTimeout: 30_000,
-    hookTimeout: 60_000,
+    // MongoMemoryServer may need several minutes to download its binary on a fresh machine.\n    // Keep this timeout high enough for the one-time bootstrap; subsequent runs use the cache.\n    hookTimeout: 10 * 60_000,
   },
 });
