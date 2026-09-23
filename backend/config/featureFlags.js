@@ -19,6 +19,13 @@ export const MONETIZATION_ENABLED = process.env.MONETIZATION_ENABLED === "true";
 export const B2B_ENABLED = process.env.B2B_ENABLED === "true";
 
 /**
+ * B2B_BILLING_ENABLED controls institution subscription enforcement.
+ * It is intentionally separate from B2B_ENABLED: colleges can run free
+ * pilots while the commercial entitlement layer is being prepared.
+ */
+export const B2B_BILLING_ENABLED = process.env.B2B_BILLING_ENABLED === "true";
+
+/**
  * OPPORTUNITY_RADAR_ENABLED controls the public-facing Opportunity Radar
  * (/opportunities, /opportunities/:ccId). Admin management
  * (/admin/opportunities) always works regardless of this flag — admins
