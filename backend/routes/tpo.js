@@ -1,8 +1,11 @@
 import { Router } from "express";
+import mongoose from "mongoose";
 import { logger } from "../config/logger.js";
 import User from "../models/User.js";
 import { B2B_ENABLED } from "../config/featureFlags.js";
 import Assignment from "../models/Assignment.js";
+import Cohort from "../models/Cohort.js";
+import CohortMembership from "../models/CohortMembership.js";
 import { createRequire } from "module";
 import { requireRole } from "../middleware/roleGuard.js";
 import College from "../models/College.js";
@@ -1238,30 +1241,66 @@ router.post("/assignments", requireRole("tpo", "admin"), requireVerified, async 
   try {
 
 
-    const { title, problemSlugs, dueDate } = req.body;
+    const { title, problemSlugs, dueDate, cohortId } = req.body;
 
     if (!title || !Array.isArray(problemSlugs) || problemSlugs.length === 0 || !dueDate) {
       return res.status(400).json({ error: "title, problemSlugs (array), and dueDate are required." });
     }
 
+    // TPO-4: an assignment may target one institution-managed cohort.
+    // The cohort is always resolved through its College boundary; a TPO
+    // can never target another institution by supplying an arbitrary id.
+    let targetCohort = null;
+    if (cohortId !== undefined && cohortId !== null && cohortId !== "") {
+      if (!mongoose.isValidObjectId(cohortId)) {
+        return res.status(400).json({ error: "Invalid cohort ID." });
+      }
+
+      targetCohort = await Cohort.findById(cohortId).lean();
+      if (!targetCohort) {
+        return res.status(404).json({ error: "Cohort not found." });
+      }
+      if (targetCohort.status === "archived") {
+        return res.status(409).json({ error: "This cohort is archived and cannot receive new assignments." });
+      }
+
+      const callerCollege = await getCollegeForTpo(req.userDoc);
+      if (req.userDoc.role !== "admin") {
+        if (!callerCollege || String(callerCollege._id) !== String(targetCohort.collegeId)) {
+          return res.status(403).json({ error: "This cohort does not belong to your college." });
+        }
+      }
+    }
+
     const assignment = await Assignment.create({
       tpoId: req.userDoc._id,
       collegeDomain: req.userDoc.tpoProfile?.collegeDomain,
+      cohortId: targetCohort?._id ?? null,
       title,
       problemSlugs,
       dueDate: new Date(dueDate),
     });
 
-    // Fan out a notification to every student in the college. Fire-and-forget
-    // — a notification hiccup shouldn't fail assignment creation, which has
-    // already succeeded. Uses insertMany under the hood (via
-    // createNotificationBulk), so this stays cheap even for a large roster.
+    // Fan out only to the assignment audience. Legacy assignments with no
+    // cohortId remain college-wide for backward compatibility.
     const domain = req.userDoc.tpoProfile?.collegeDomain;
     if (domain) {
-      User.find({
+      const studentQuery = {
         emailDomain: domain.toLowerCase(),
         role: "student",
-      })
+      };
+
+      if (targetCohort) {
+        studentQuery._id = {
+          $in: (await CohortMembership.find({
+            cohortId: targetCohort._id,
+            status: "active",
+            studentId: { $ne: null },
+          }).distinct("studentId")),
+        };
+      }
+
+      User.find(studentQuery)
         .select("_id")
         .lean()
         .then((students) =>
