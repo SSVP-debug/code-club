@@ -1613,10 +1613,13 @@ studentAssignmentsRouter.get("/", async (req, res) => {
     const domain = req.userDoc.email.split("@")[1]?.toLowerCase();
     if (!domain) return res.json({ enabled: true, assignments: [] });
 
-    // A student receives legacy college-wide assignments plus assignments
-    // for every active cohort membership. This intentionally uses membership
-    // rather than visibleToTpo: TPO-3 privacy controls directory/dashboard
-    // visibility, while assignment targeting is an explicit cohort operation.
+    // A student receives canonical college-wide assignments via collegeId,
+    // with a collegeDomain fallback for legacy assignments that predate the
+    // migration. Cohort assignments remain membership-driven. This
+    // intentionally uses membership rather than visibleToTpo: TPO-3 privacy
+    // controls directory/dashboard visibility, while assignment targeting is
+    // an explicit cohort operation.
+    const studentCollege = await College.findByDomain(domain);
     const activeMemberships = await CohortMembership.find({
       studentId: req.userDoc._id,
       status: "active",
@@ -1625,9 +1628,16 @@ studentAssignmentsRouter.get("/", async (req, res) => {
       .lean();
     const activeCohortIds = activeMemberships.map((membership) => membership.cohortId);
 
+    const collegeWideAssignmentClauses = studentCollege
+      ? [
+          { collegeId: studentCollege._id, cohortId: null },
+          { collegeId: null, collegeDomain: domain, cohortId: null },
+        ]
+      : [{ collegeId: null, collegeDomain: domain, cohortId: null }];
+
     const assignments = await Assignment.find({
       $or: [
-        { collegeDomain: domain, cohortId: null },
+        ...collegeWideAssignmentClauses,
         ...(activeCohortIds.length ? [{ cohortId: { $in: activeCohortIds } }] : []),
       ],
     })
