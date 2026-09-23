@@ -146,3 +146,13 @@ Mounted at `/api/ambassador`.
 - **`/api/tpo`, `/api/billing`, `/api/interview`** were fully built but not mounted in `server.js` until this pass (Phase 8, Batch E) — previously every request to them 404'd despite live frontend pages calling them.
 - **`/api/billing/verify`'s persistence gap and `/api/billing/webhook`'s raw-body requirement** (previously listed here) are both resolved — see `docs/database-schema.md` and `docs/architecture.md` respectively, and `docs/phase8-progress.md` for the full resolved-items log.
 - **`GET /api/health/compiler`** always reports zeroed counters today — see `docs/phase8-progress.md`.
+
+## TPO-6 Institutional Billing
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/tpo/billing/status` | Returns the authenticated TPO's institution subscription state. Admins must supply `collegeId`. |
+| POST | `/api/admin/colleges/:collegeId/subscription` | Admin-only manual institution entitlement control. |
+| POST | `/api/admin/colleges/:collegeId/subscription/cancel` | Admin-only cancellation; paid access remains valid until expiry. |
+
+Institution subscription enforcement is controlled by `B2B_BILLING_ENABLED`, independently of `B2B_ENABLED`. When enabled, TPO operational routes require an active institution subscription; registration, billing status, student TPO directory access, and admin access remain available.
