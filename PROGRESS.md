@@ -2257,3 +2257,18 @@ Student-facing institutional support now includes:
 - blocked access until the student's college email is verified.
 
 FeatureRequest vote-race work remains a separate non-TPO test track and does not block the TPO product scope.
+
+
+## TPO-6 — Commercialization: Batch 1 — Institution Entitlement Foundation
+
+Implemented directly on main:
+- institution subscription state now lives on `College`, not on individual TPO users;
+- canonical subscription helper/service with lifecycle and expiry semantics;
+- separate `B2B_BILLING_ENABLED` flag so free pilots can continue while billing enforcement is off;
+- TPO billing-status API with institution-scoped response;
+- admin-only manual subscription grant/cancel controls;
+- TPO operational routes enforce an active institution entitlement when billing enforcement is enabled;
+- registration, student College TPO directory access, billing status, and admin access remain available without an active plan;
+- service-level tests cover active, cancellation, expiry, validation, write, and cancel behavior.
+
+**Status:** Batch 1 implementation complete. Payment-provider checkout/webhooks, institutional pricing, invoicing, and billing UI are the next TPO-6 batches.
