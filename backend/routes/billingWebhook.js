@@ -3,6 +3,9 @@ import crypto from "crypto";
 import User from "../models/User.js";
 import { logger } from "../config/logger.js";
 import { createNotification } from "../services/notificationService.js";
+import InstitutionBillingEvent from "../models/InstitutionBillingEvent.js";
+import { B2B_BILLING_ENABLED } from "../config/featureFlags.js";
+import { applyInstitutionWebhookEvent } from "./institutionBillingWebhook.js";
 
 const router = express.Router();
 
@@ -45,6 +48,73 @@ function getPaymentEntity(payload) {
 
 function getNotes(entity) {
   return entity?.notes || {};
+}
+
+function getInstitutionContext(payload) {
+  const payment = getPaymentEntity(payload);
+  const subscription = payload?.payload?.subscription?.entity || null;
+  const notes = payment?.notes || subscription?.notes || {};
+  return {
+    billingType: notes.billingType || null,
+    collegeId: notes.collegeId || null,
+  };
+}
+
+function getProviderEventId(req, payload) {
+  return req.headers["x-razorpay-event-id"] || payload?.id || null;
+}
+
+function getWebhookSecretCandidates() {
+  return [
+    process.env.RAZORPAY_WEBHOOK_SECRET,
+    process.env.RAZORPAY_B2B_WEBHOOK_SECRET,
+  ].filter(Boolean);
+}
+
+async function applyInstitutionEventWithIdempotency(req, payload) {
+  if (!B2B_BILLING_ENABLED) return false;
+
+  const context = getInstitutionContext(payload);
+  if (context.billingType !== "institution") return false;
+
+  const providerEventId = getProviderEventId(req, payload);
+  if (!providerEventId) {
+    const err = new Error("Missing webhook event id");
+    err.code = "MISSING_WEBHOOK_EVENT_ID";
+    throw err;
+  }
+
+  const eventRecord = await InstitutionBillingEvent.findOneAndUpdate(
+    { providerEventId },
+    {
+      $setOnInsert: {
+        providerEventId,
+        event: payload.event || "unknown",
+        status: "received",
+        receivedAt: new Date(),
+      },
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+
+  if (eventRecord.status === "processed") {
+    return true;
+  }
+
+  try {
+    await applyInstitutionWebhookEvent(payload);
+    await InstitutionBillingEvent.updateOne(
+      { _id: eventRecord._id },
+      { $set: { status: "processed", processedAt: new Date(), lastError: null } }
+    );
+    return true;
+  } catch (err) {
+    await InstitutionBillingEvent.updateOne(
+      { _id: eventRecord._id },
+      { $set: { status: "failed", lastError: err?.message || "Webhook processing failed" } }
+    ).catch(() => {});
+    throw err;
+  }
 }
 
 async function activateSubscription(user, planId) {
@@ -208,19 +278,24 @@ export async function applyWebhookEvent(payload) {
 router.post("/", async (req, res) => {
   try {
     const signature = req.headers["x-razorpay-signature"];
+    const secrets = getWebhookSecretCandidates();
 
-    if (!isValidSignature(req.body, signature, process.env.RAZORPAY_WEBHOOK_SECRET)) {
+    if (!secrets.length || !secrets.some((secret) => isValidSignature(req.body, signature, secret))) {
       return res.status(400).json({ success: false, message: "Invalid signature" });
     }
 
     const payload = JSON.parse(req.body.toString());
     logger.info({ event: payload.event }, "[BillingWebhook] received");
 
-    // Apply the event before responding (rather than responding first and
-    // processing in the background) so a handler failure surfaces as a
-    // non-2xx response — Razorpay retries webhooks on failure, and every
-    // handler above is written to be safely re-runnable, so relying on
-    // that retry is the correct way to get eventual delivery here.
+    // Institution webhooks use the same public endpoint but a distinct
+    // billingType marker and their own idempotency ledger. Razorpay documents
+    // duplicate delivery and recommends using x-razorpay-event-id.
+    if (await applyInstitutionEventWithIdempotency(req, payload)) {
+      return res.json({ success: true });
+    }
+
+    // Apply consumer events before responding so handler failures produce a
+    // non-2xx response and Razorpay can retry them safely.
     await applyWebhookEvent(payload);
 
     return res.json({ success: true });
