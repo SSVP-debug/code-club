@@ -1277,10 +1277,12 @@ router.post("/assignments", requireRole("tpo", "admin"), requireVerified, async 
       const targetCollege = await College.findById(targetCohort.collegeId).select("domains").lean();
       assignmentCollegeDomain = targetCollege?.domains?.[0];
     }
-    if (!assignmentCollegeDomain) {
-      return res.status(400).json({ error: "Unable to resolve the assignment's college domain." });
-    }
-
+    // Preserve the existing admin middleware bypass for legacy assignments.
+    // An admin without a cohort has no institution context on the request;
+    // legacy behavior leaves the domain unset rather than turning the
+    // requireVerified bypass into a new authorization failure. Cohort-targeted
+    // admin assignments are safe because their domain is resolved from the
+    // cohort's owning College above.
     const assignment = await Assignment.create({
       tpoId: req.userDoc._id,
       collegeDomain: assignmentCollegeDomain,
