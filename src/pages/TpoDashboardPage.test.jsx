@@ -348,6 +348,31 @@ describe("TpoDashboardPage — assignments tab reminder", () => {
     await waitFor(() => screen.getByText("Week 3 — Arrays"));
   }
 
+  it("creates a cohort-scoped assignment with the selected cohort", async () => {
+    await loadAssignmentsTab();
+    apiFetch.mockImplementation((url, opts) => {
+      if (url === "/api/tpo/cohorts?status=active&limit=100") {
+        return Promise.resolve({ items: [{ id: "cohort-1", name: "CSE 2027", branch: "CSE", graduatingYear: 2027 }] });
+      }
+      if (url === "/api/tpo/assignments" && opts?.method === "POST") {
+        expect(JSON.parse(opts.body)).toMatchObject({ title: "Cohort Week", problemSlugs: ["two-sum"], dueDate: "2026-10-01", cohortId: "cohort-1" });
+        return Promise.resolve({});
+      }
+      if (url === "/api/tpo/dashboard") return Promise.resolve(dashboardData);
+      if (url.startsWith("/api/tpo/students")) return Promise.resolve(studentsData);
+      return Promise.reject(new Error(`Unexpected apiFetch call: ${url}`));
+    });
+    fireEvent.click(screen.getByRole("button", { name: /new assignment/i }));
+    fireEvent.click(screen.getByRole("button", { name: /specific cohort/i }));
+    await waitFor(() => expect(screen.getByRole("option", { name: /cse 2027/i })).toBeInTheDocument());
+    fireEvent.change(screen.getByRole("combobox", { name: /assignment cohort/i }), { target: { value: "cohort-1" } });
+    fireEvent.change(screen.getByPlaceholderText(/assignment title/i), { target: { value: "Cohort Week" } });
+    fireEvent.change(screen.getByPlaceholderText(/problem slugs/i), { target: { value: "two-sum" } });
+    fireEvent.change(screen.getByDisplayValue(""), { target: { value: "2026-10-01" } });
+    fireEvent.click(screen.getByRole("button", { name: /^create$/i }));
+    await waitFor(() => expect(apiFetch).toHaveBeenCalledWith("/api/tpo/assignments", expect.objectContaining({ method: "POST" })));
+  });
+
   it("posts to the remind endpoint and shows a success toast with the count", async () => {
     await loadAssignmentsTab();
     apiFetch.mockResolvedValueOnce({ remindedCount: 2 });
