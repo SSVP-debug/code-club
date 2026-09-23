@@ -42,4 +42,28 @@ describe("User model — referralCode field (sparse-index regression)", () => {
     // document, which is what makes the sparse index skip it.
     expect(Object.prototype.hasOwnProperty.call(reloaded, "referralCode")).toBe(false);
   });
+
+  it("defaults visibleToTpo to true for existing and newly created users", async () => {
+    const created = await User.create({ firebaseUid: "fb-d", email: "d@test.com" });
+
+    expect(created.visibleToTpo).toBe(true);
+
+    const reloaded = await User.findById(created._id).lean();
+    expect(reloaded.visibleToTpo).toBe(true);
+  });
+
+  it("persists a TPO opt-out independently from public profile visibility", async () => {
+    const created = await User.create({
+      firebaseUid: "fb-e",
+      email: "e@test.com",
+      isProfilePublic: false,
+      visibleToTpo: false,
+    });
+
+    const reloaded = await User.findById(created._id).lean();
+
+    expect(reloaded.isProfilePublic).toBe(false);
+    expect(reloaded.visibleToTpo).toBe(false);
+  });
+
 });
