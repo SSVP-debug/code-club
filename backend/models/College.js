@@ -133,6 +133,8 @@ const collegeSchema = new mongoose.Schema(
       cancelledAt: { type: Date, default: null },
       provider: { type: String, enum: ["manual", "razorpay", "stripe"], default: "manual" },
       providerCustomerId: { type: String, default: null, trim: true },
+      providerOrderId: { type: String, default: null, trim: true },
+      providerPaymentId: { type: String, default: null, trim: true },
       providerSubscriptionId: { type: String, default: null, trim: true },
       lastPaymentAt: { type: Date, default: null },
     },
