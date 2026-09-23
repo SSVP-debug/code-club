@@ -30,6 +30,7 @@ import { invalidateCachedUserByFirebaseUid } from "../utils/userAuthCache.js";
 import * as cohortService from "../services/cohortService.js";
 import * as cohortMembershipService from "../services/cohortMembershipService.js";
 import * as cohortImportService from "../services/cohortImportService.js";
+import { getInstitutionReportOverview } from "../services/institutionReportService.js";
 import multer from "multer";
 import { csvUpload } from "../middleware/csvUpload.js";
 
@@ -1743,6 +1744,47 @@ studentAssignmentsRouter.get("/", async (req, res) => {
 // ── GET /api/tpo/report/pdf ─────────────────────────────────────────────────
 // Generates a class performance PDF — the document a TPO shows their
 // placement director to justify the Code Club subscription.
+// ── GET /api/tpo/report/overview ───────────────────────────────────────────
+// Canonical institution-scoped reporting metrics.
+router.get("/report/overview", requireRole("tpo", "admin"),
+  requireVerified, async (req, res) => {
+    if (b2bGate(req, res)) return;
+
+    try {
+      const domain = req.userDoc.tpoProfile?.collegeDomain;
+      if (!domain && req.userDoc.role !== "admin") {
+        return res.status(400).json({ error: "No college domain set on this TPO account." });
+      }
+
+      const college = req.userDoc.role === "admin"
+        ? (req.query.collegeId ? await College.findById(req.query.collegeId).lean() : null)
+        : await getCollegeForTpo(req.userDoc);
+
+      if (!college) {
+        return res.status(400).json({
+          error: req.userDoc.role === "admin"
+            ? "collegeId is required for admin report requests."
+            : "No college found for this TPO account.",
+        });
+      }
+
+      const report = await getInstitutionReportOverview({
+        college,
+        from: req.query.from,
+        to: req.query.to,
+      });
+
+      return res.json({ college: college.name, collegeId: college._id, ...report });
+    } catch (err) {
+      if (err?.code === "INVALID_DATE_RANGE") {
+        return res.status(400).json({ error: err.message });
+      }
+      (req.log || logger).error({ err }, "[TPO] report overview error");
+      return res.status(500).json({ error: "Failed to generate report overview." });
+    }
+  });
+
+
 router.get("/report/pdf", requireRole("tpo", "admin"),
   requireVerified, async (req, res) => {
     if (b2bGate(req, res)) return;
