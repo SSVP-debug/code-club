@@ -166,4 +166,4 @@ Institution subscription enforcement is controlled by `B2B_BILLING_ENABLED`, ind
 | POST | `/api/tpo/billing/create-order` | Creates a Razorpay institution order for the primary TPO's verified college. |
 | POST | `/api/tpo/billing/verify` | Verifies Razorpay HMAC, order metadata, amount/currency, and payment identity before activating the college plan. |
 
-Current launch catalog is maintained in `config/featureFlags.js` as `B2B_PRICING`. Payment-provider automation/webhooks remain a later TPO-6 batch; checkout verification is intentionally idempotent for an already-processed payment ID.
+Current launch catalog is maintained in `config/featureFlags.js` as `B2B_PRICING`. Institution checkout is backed by the shared Razorpay webhook endpoint (`/api/billing/webhook`) using `billingType: "institution"` and a separate `RAZORPAY_B2B_WEBHOOK_SECRET` when configured. Webhook delivery is idempotent via Razorpay's `x-razorpay-event-id`; failed processing is left retryable.
