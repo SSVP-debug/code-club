@@ -2272,3 +2272,19 @@ Implemented directly on main:
 - service-level tests cover active, cancellation, expiry, validation, write, and cancel behavior.
 
 **Status:** Batch 1 implementation complete. Payment-provider checkout/webhooks, institutional pricing, invoicing, and billing UI are the next TPO-6 batches.
+
+
+## TPO-6 — Batch 2 — Institutional Pricing + Razorpay Checkout
+
+Implemented:
+- separate institution pricing catalog (`B2B_PRICING`) with monthly/yearly INR plans;
+- primary-TPO-only purchase authority for a verified institution;
+- Razorpay order creation with institution, plan, purchaser, and billing-type metadata;
+- server-side Razorpay signature verification;
+- order metadata/amount/currency validation against the canonical institution and pricing catalog;
+- payment identity persisted on `College.subscription` for replay-safe verification;
+- institution billing UI inside the TPO dashboard with plan selection and Razorpay checkout;
+- subscription-required state now routes the TPO to billing instead of showing the generic dashboard-unavailable screen;
+- billing endpoints remain reachable while an institution has no active subscription so a primary TPO can purchase access.
+
+**Status:** Batch 2 implementation complete. Provider webhooks, recurring-renewal synchronization, invoices, and production billing operations remain for later batches.
