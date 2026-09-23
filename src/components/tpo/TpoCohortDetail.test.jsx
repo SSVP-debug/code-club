@@ -21,7 +21,9 @@ vi.mock("./TpoCohortFormModal", () => ({
   ),
 }));
 vi.mock("./TpoCohortRoster", () => ({
-  default: ({ cohortId }) => <div data-testid="roster-stub">roster-for-{cohortId}</div>,
+  default: ({ cohortId, cohortStatus }) => (
+    <div data-testid="roster-stub">roster-for-{cohortId}-status-{cohortStatus}</div>
+  ),
 }));
 
 const activeCohort = {
@@ -52,7 +54,13 @@ describe("TpoCohortDetail", () => {
     apiFetch.mockResolvedValueOnce(activeCohort);
     renderDetail();
     await waitFor(() => expect(screen.getByTestId("roster-stub")).toBeInTheDocument());
-    expect(screen.getByText("roster-for-c1")).toBeInTheDocument();
+    expect(screen.getByText("roster-for-c1-status-active")).toBeInTheDocument();
+  });
+
+  it("passes the cohort's archived status through to the roster, so it can freeze mutations (TPO-2 closure audit)", async () => {
+    apiFetch.mockResolvedValueOnce({ ...activeCohort, status: "archived" });
+    renderDetail();
+    await waitFor(() => expect(screen.getByText("roster-for-c1-status-archived")).toBeInTheDocument());
   });
 
   it("shows a retry-able error state if the cohort fails to load", async () => {

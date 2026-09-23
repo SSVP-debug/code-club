@@ -2177,3 +2177,66 @@ future step — not assumed here.
 email invitations, cohort analytics, placement dashboards, cohort-scoped
 assignments, profile visibility, reporting, billing, new TPO roles/
 permissions.
+
+## TPO-2 Final Closure Audit (this session)
+
+Full fresh audit of the College → Cohort → CohortMembership → Student
+stack across Steps 1–7, per the closure-audit brief. Not a re-read of
+prior step reports — re-verified by grepping/reading the actual current
+files.
+
+**Confirmed clean (no fix needed):** single Cohort/CohortMembership
+model each, single cohortService/cohortMembershipService/
+cohortImportService each, exactly one `CohortMembership.create` call
+site in the whole repo, no DELETE cohort route, no caching on any cohort
+route (deliberately, documented), `resolveTpoInstitution` used
+identically on all 9 cohort routes with no client-collegeId path for a
+non-admin TPO, `pickEditableFields` allowlist blocks
+collegeId/createdBy/status/archivedAt/archivedBy on create/update, and
+`backfillStudentCollegeIds.js` is idempotent/dry-run-safe/not wired into
+app startup.
+
+**Fixed during this audit — archive lifecycle (Section 7 decision):**
+Determined "archived = frozen roster" IS the intended TPO-2 semantics —
+the archive confirmation's own wording already says archiving "stops it
+being active," and a frozen/historical cohort growing new members
+contradicts that. Implemented the smallest guard:
+- `cohortMembershipService.js`: `addStudentToCohort` and
+  `removeCohortMembership` (which needed a new `Cohort.findOne` lookup
+  it didn't have before — its isolation previously relied solely on the
+  membership row's own denormalized `collegeId`) both now return
+  `{ archived: true }` before touching any membership data.
+- `cohortImportService.js`: `importCohortRoster` checks the same, before
+  parsing the file at all.
+- `routes/tpo.js`: all three routes (POST students, DELETE students,
+  POST import) map `{ archived: true }` → HTTP 409.
+- Cohort *metadata* editing (PATCH /cohorts/:id) is deliberately left
+  unrestricted — the guard's scope is roster mutations, not the cohort
+  record itself; nothing in the requirements said editing should freeze.
+- Frontend (`TpoCohortRoster.jsx`) updated to hide/disable Add Student,
+  Import CSV, and Remove for an archived cohort, reflecting the new
+  backend truth rather than the old "mismatch" note.
+- Tests added: `cohortMembershipService.test.js` (34→38),
+  `cohortImportService.test.js` (40→42), `tpoCohortStudents.test.js`
+  (+1), `tpoCohortImport.test.js` (+1), `TpoCohortRoster.test.jsx`
+  (14→17), `TpoCohortDetail.test.jsx` (10→11).
+
+**Verification this session:**
+- Backend unit suite: **121/121 files, 1631/1631 tests pass.**
+- Frontend suite: **71/71 files, 486/486 tests pass.**
+- Real-Mongo integration tier: **NOT EXECUTED** — `mongodb-memory-server`
+  still can't download its binary in this sandbox (403 from
+  `fastdl.mongodb.org`), confirmed by actually attempting the run this
+  session, not assumed from a prior note. All 5 cohort-related
+  integration files (39 tests total) reported as skipped, never counted
+  as passing.
+- `npm run lint`: clean except the same pre-existing
+  `CollegeDetailDrawer.jsx` error, unrelated to TPO-2, already documented
+  in this file from an earlier session.
+- Frontend production build: succeeds.
+- Final `git diff`: no unrelated files touched.
+
+See this session's full closure report (delivered to Bunny directly) for
+the complete acceptance matrix, security summary, and final
+recommendation. TPO-3 was explicitly NOT started, per this audit's own
+hard boundary.

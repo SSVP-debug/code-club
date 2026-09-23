@@ -432,7 +432,26 @@ describe("cohortMembershipService", () => {
       expect(CohortMembership.findOne).not.toHaveBeenCalled();
     });
 
+    it("returns null when the cohort itself doesn't exist in this institution", async () => {
+      Cohort.findOne.mockReturnValueOnce(leanResult(null));
+
+      const result = await removeCohortMembership(cohortId.toString(), membershipId.toString(), collegeId);
+
+      expect(result).toBeNull();
+      expect(CohortMembership.findOne).not.toHaveBeenCalled();
+    });
+
+    it("returns { archived: true } for an archived cohort, without ever touching CohortMembership", async () => {
+      Cohort.findOne.mockReturnValueOnce(leanResult({ _id: cohortId, collegeId, status: "archived" }));
+
+      const result = await removeCohortMembership(cohortId.toString(), membershipId.toString(), collegeId);
+
+      expect(result).toEqual({ archived: true });
+      expect(CohortMembership.findOne).not.toHaveBeenCalled();
+    });
+
     it("returns null when no membership matches (cohortId, membershipId, collegeId) together", async () => {
+      Cohort.findOne.mockReturnValueOnce(leanResult({ _id: cohortId, collegeId, status: "active" }));
       CohortMembership.findOne.mockReturnValueOnce(findOneResult(null));
 
       const result = await removeCohortMembership(cohortId.toString(), membershipId.toString(), collegeId);
@@ -441,6 +460,7 @@ describe("cohortMembershipService", () => {
     });
 
     it("scopes the lookup to _id + cohortId + collegeId together — cannot remove another institution's membership", async () => {
+      Cohort.findOne.mockReturnValueOnce(leanResult({ _id: cohortId, collegeId, status: "active" }));
       CohortMembership.findOne.mockReturnValueOnce(findOneResult(null));
 
       await removeCohortMembership(cohortId.toString(), membershipId.toString(), collegeId);
@@ -449,6 +469,7 @@ describe("cohortMembershipService", () => {
     });
 
     it("removes an active membership: sets status=removed and removedAt", async () => {
+      Cohort.findOne.mockReturnValueOnce(leanResult({ _id: cohortId, collegeId, status: "active" }));
       const doc = findOneResult(rawMembership({ status: "active" }));
       CohortMembership.findOne.mockReturnValueOnce(doc);
       const resolved = await doc;
@@ -462,6 +483,7 @@ describe("cohortMembershipService", () => {
     });
 
     it("removes an invited membership the same way, studentId stays null", async () => {
+      Cohort.findOne.mockReturnValueOnce(leanResult({ _id: cohortId, collegeId, status: "active" }));
       const doc = findOneResult(rawMembership({ status: "invited", studentId: null }));
       CohortMembership.findOne.mockReturnValueOnce(doc);
       const resolved = await doc;
@@ -474,6 +496,7 @@ describe("cohortMembershipService", () => {
     });
 
     it("repeat removal is idempotent: no-op, no save, alreadyRemoved: true", async () => {
+      Cohort.findOne.mockReturnValueOnce(leanResult({ _id: cohortId, collegeId, status: "active" }));
       const originalRemovedAt = new Date("2024-01-01");
       const doc = findOneResult(rawMembership({ status: "removed", removedAt: originalRemovedAt }));
       CohortMembership.findOne.mockReturnValueOnce(doc);
@@ -484,6 +507,32 @@ describe("cohortMembershipService", () => {
       expect(resolved.save).not.toHaveBeenCalled();
       expect(resolved.removedAt).toBe(originalRemovedAt); // untouched, not re-stamped
       expect(result.alreadyRemoved).toBe(true);
+    });
+  });
+
+  describe("archived-cohort roster guard (TPO-2 closure audit)", () => {
+    it("addStudentToCohort returns { archived: true } for an archived cohort, without ever calling CohortMembership/User", async () => {
+      Cohort.findOne.mockReturnValueOnce(leanResult({ _id: cohortId, collegeId, status: "archived" }));
+
+      const result = await addStudentToCohort(cohortId.toString(), collegeId, addedBy, "student@example.edu");
+
+      expect(result).toEqual({ archived: true });
+      expect(User.findOne).not.toHaveBeenCalled();
+      expect(CohortMembership.findOne).not.toHaveBeenCalled();
+      expect(CohortMembership.create).not.toHaveBeenCalled();
+    });
+
+    it("addStudentToCohort proceeds normally for a non-archived (active) cohort", async () => {
+      Cohort.findOne.mockReturnValueOnce(leanResult({ _id: cohortId, collegeId, status: "active" }));
+      User.findOne.mockResolvedValueOnce(null);
+      CohortMembership.findOne.mockReturnValueOnce(findOneResult(null));
+      CohortMembership.create.mockResolvedValueOnce({
+        toObject: () => rawMembership({ status: "invited", invitedAt: new Date() }),
+      });
+
+      const result = await addStudentToCohort(cohortId.toString(), collegeId, addedBy, "student@example.edu");
+
+      expect(result.created).toBe(true);
     });
   });
 });

@@ -838,6 +838,9 @@ router.post("/cohorts/:cohortId/students", requireRole("tpo", "admin"), requireV
     if (!result) {
       return res.status(404).json({ error: "Cohort not found." });
     }
+    if (result.archived) {
+      return res.status(409).json({ error: "This cohort is archived. Add students to an active cohort instead." });
+    }
     if (result.validationError) {
       return res.status(400).json({ error: result.validationError });
     }
@@ -867,6 +870,9 @@ router.delete("/cohorts/:cohortId/students/:membershipId", requireRole("tpo", "a
     }
     if (!result) {
       return res.status(404).json({ error: "Membership not found." });
+    }
+    if (result.archived) {
+      return res.status(409).json({ error: "This cohort is archived. Its roster can no longer be changed." });
     }
     // Idempotent, same pattern as cohort archive: a repeat removal is a
     // 200 no-op, never an error, and never re-stamps removedAt.
@@ -933,6 +939,9 @@ router.post("/cohorts/:cohortId/import", requireRole("tpo", "admin"), requireVer
     }
     if (!result) {
       return res.status(404).json({ error: "Cohort not found." });
+    }
+    if (result.archived) {
+      return res.status(409).json({ error: "This cohort is archived. Import into an active cohort instead." });
     }
     if (result.fileError) {
       return res.status(400).json({ error: result.fileError, reasonCode: result.reasonCode });

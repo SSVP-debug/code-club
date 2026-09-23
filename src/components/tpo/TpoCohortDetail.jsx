@@ -141,7 +141,7 @@ export default function TpoCohortDetail({ cohortId, onBack, onCohortChanged }) {
         </div>
       </div>
 
-      <TpoCohortRoster cohortId={cohortId} />
+      <TpoCohortRoster cohortId={cohortId} cohortStatus={cohort.status} />
 
       {showEditModal && (
         <TpoCohortFormModal cohort={cohort} onClose={() => setShowEditModal(false)} onSaved={handleEditSaved} />

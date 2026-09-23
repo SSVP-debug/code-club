@@ -207,6 +207,20 @@ export async function addStudentToCohort(cohortId, collegeId, addedBy, rawEmail)
 
   const cohort = await Cohort.findOne({ _id: cohortId, collegeId }).lean();
   if (!cohort) return null;
+  // Archived = frozen roster (TPO-2 closure audit, Section 7): a TPO
+  // archives a cohort precisely to stop managing it, and the frontend's
+  // own archive confirmation already tells them archiving "stops it
+  // being active" — so an archived cohort is not a valid target for a
+  // NEW membership. This is checked once here, before any matching work,
+  // rather than inside upsertCohortMembership, since that shared
+  // function is also called per-row from the CSV import loop and a
+  // per-row check there would just repeat the same answer for every row
+  // of one import — checking once per call site is both correct and
+  // cheaper. See cohortImportService.js's importCohortRoster for the
+  // same check at its own entry point.
+  if (cohort.status === "archived") {
+    return { archived: true };
+  }
 
   return upsertCohortMembership(cohort, collegeId, addedBy, rawEmail);
 }
@@ -328,11 +342,21 @@ export async function upsertCohortMembership(cohort, collegeId, addedBy, rawEmai
  * success, not an error, and never re-stamps removedAt.
  *
  * Returns { invalidId: true }, null (not found in this cohort/
- * institution), or { membership, alreadyRemoved }.
+ * institution), { archived: true } (the cohort is archived — a frozen
+ * roster cannot be mutated, same "archived = frozen" rule as
+ * addStudentToCohort above; checked here BEFORE touching
+ * CohortMembership at all, same ordering as the other two entry points),
+ * or { membership, alreadyRemoved }.
  */
 export async function removeCohortMembership(cohortId, membershipId, collegeId) {
   if (!mongoose.isValidObjectId(cohortId) || !mongoose.isValidObjectId(membershipId)) {
     return { invalidId: true };
+  }
+
+  const cohort = await Cohort.findOne({ _id: cohortId, collegeId }).lean();
+  if (!cohort) return null;
+  if (cohort.status === "archived") {
+    return { archived: true };
   }
 
   const membership = await CohortMembership.findOne({ _id: membershipId, cohortId, collegeId });

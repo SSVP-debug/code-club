@@ -219,6 +219,17 @@ describe("POST /cohorts/:cohortId/import (TPO-2 Step 6)", () => {
     expect(res.status).toHaveBeenCalledWith(404);
   });
 
+  it("409s for an archived cohort — a frozen roster cannot be imported into (TPO-2 closure audit)", async () => {
+    cohortImportService.importCohortRoster.mockResolvedValueOnce({ archived: true });
+
+    const res = await runRoute("post", "/cohorts/:cohortId/import", {
+      userDoc: primaryTpo, params: { cohortId: "cohort-1" }, file: fakeFile(),
+    });
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(cohortImportService.importCohortRoster).toHaveBeenCalled(); // rejected inside the service, not by the route itself
+  });
+
   it("400s with the reasonCode when the file itself is rejected (e.g. missing email column)", async () => {
     cohortImportService.importCohortRoster.mockResolvedValueOnce({
       fileError: "The CSV must include an 'email' column.", reasonCode: "missing_email_column",

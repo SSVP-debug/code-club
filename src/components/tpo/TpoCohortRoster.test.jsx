@@ -44,10 +44,10 @@ function rosterResponse(status, rows) {
   };
 }
 
-function renderRoster(cohortId = "c1") {
+function renderRoster(cohortId = "c1", cohortStatus = "active") {
   return render(
     <MemoryRouter initialEntries={["/tpo/dashboard?tab=cohorts"]}>
-      <TpoCohortRoster cohortId={cohortId} />
+      <TpoCohortRoster cohortId={cohortId} cohortStatus={cohortStatus} />
     </MemoryRouter>
   );
 }
@@ -280,5 +280,34 @@ describe("TpoCohortRoster", () => {
     await screen.findByRole("button", { name: /import csv/i });
     fireEvent.click(screen.getByRole("button", { name: /import csv/i }));
     expect(screen.getByTestId("import-modal-stub")).toBeInTheDocument();
+  });
+
+  describe("archived cohort (TPO-2 closure audit — frozen roster)", () => {
+    it("hides Add Student and disables Import CSV, with an explanatory note", async () => {
+      apiFetch.mockResolvedValue(rosterResponse("active", [activeRow]));
+      renderRoster("c1", "archived");
+
+      await waitFor(() => expect(screen.getByText("Alice Adams")).toBeInTheDocument());
+      expect(screen.queryByPlaceholderText(/add student by email/i)).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /import csv/i })).toBeDisabled();
+      expect(screen.getByText(/roster is frozen/i)).toBeInTheDocument();
+    });
+
+    it("does not offer a Remove action on any row", async () => {
+      apiFetch.mockResolvedValue(rosterResponse("active", [activeRow]));
+      renderRoster("c1", "archived");
+
+      await waitFor(() => expect(screen.getByText("Alice Adams")).toBeInTheDocument());
+      expect(screen.queryByRole("button", { name: /remove alice@example.edu/i })).not.toBeInTheDocument();
+    });
+
+    it("shows Add Student and an enabled Import CSV again for a non-archived cohort", async () => {
+      apiFetch.mockResolvedValue(rosterResponse("active", [activeRow]));
+      renderRoster("c1", "active");
+
+      await waitFor(() => expect(screen.getByText("Alice Adams")).toBeInTheDocument());
+      expect(screen.getByPlaceholderText(/add student by email/i)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /import csv/i })).not.toBeDisabled();
+    });
   });
 });

@@ -36,17 +36,19 @@ function statusBadgeClass(status) {
  * params (rosterQ/rosterStatus/rosterPage) so they don't collide with
  * that tab's q/sort/page or TpoCohortsPanel's own cohort-list params.
  *
- * Archived-cohort note: the backend currently does NOT block roster
- * mutations (add/remove/import) on an archived cohort — confirmed by
- * reading cohortMembershipService.js/cohortImportService.js, neither of
- * which checks cohort.status. Per this step's explicit "the frontend
- * must reflect backend truth, not invent a second lifecycle" /
- * "report the mismatch" instruction, Add Student / Import CSV are
- * therefore NOT disabled here for an archived cohort — disabling them
- * would claim a restriction the API doesn't actually enforce. See this
- * session's final response for the reported mismatch.
+ * Archived-cohort note (TPO-2 closure audit): the backend now DOES
+ * block roster mutations (add/remove/import) on an archived cohort —
+ * "archived" was decided to mean a frozen/historical roster (the
+ * archive confirmation itself already told the TPO archiving "stops it
+ * being active"), and cohortMembershipService.js/cohortImportService.js
+ * were updated to reject with `{ archived: true }` (mapped to HTTP 409)
+ * before doing any matching/parsing work. This component disables Add
+ * Student / Import CSV / Remove for an archived cohort to match that —
+ * not as a UI-invented rule, but reflecting the backend's own guard, so
+ * the disabled state and the 409 a stale client would get always agree.
  */
-export default function TpoCohortRoster({ cohortId }) {
+export default function TpoCohortRoster({ cohortId, cohortStatus }) {
+  const isArchived = cohortStatus === "archived";
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [statusFilter, setStatusFilter] = useState(() => {
@@ -192,23 +194,29 @@ export default function TpoCohortRoster({ cohortId }) {
   return (
     <div className="space-y-4">
       <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 flex flex-col sm:flex-row gap-3">
-        <form onSubmit={handleAddStudent} className="flex-1 flex gap-2">
-          <label htmlFor="cohort-add-email" className="sr-only">Add student by email</label>
-          <input
-            id="cohort-add-email"
-            value={addEmail}
-            onChange={(e) => setAddEmail(e.target.value)}
-            type="email"
-            placeholder="Add student by email…"
-            className={`flex-1 min-w-[160px] ${inputClass}`}
-            disabled={adding}
-          />
-          <Button type="submit" size="sm" loading={adding} disabled={adding || !addEmail.trim()}>
-            <UserPlus size={15} strokeWidth={2} aria-hidden="true" />
-            Add Student
-          </Button>
-        </form>
-        <Button size="sm" variant="secondary" onClick={() => setShowImportModal(true)}>
+        {isArchived ? (
+          <p className="flex-1 text-xs text-[var(--muted-foreground)] flex items-center">
+            This cohort is archived — its roster is frozen. Unarchiving isn't supported.
+          </p>
+        ) : (
+          <form onSubmit={handleAddStudent} className="flex-1 flex gap-2">
+            <label htmlFor="cohort-add-email" className="sr-only">Add student by email</label>
+            <input
+              id="cohort-add-email"
+              value={addEmail}
+              onChange={(e) => setAddEmail(e.target.value)}
+              type="email"
+              placeholder="Add student by email…"
+              className={`flex-1 min-w-[160px] ${inputClass}`}
+              disabled={adding}
+            />
+            <Button type="submit" size="sm" loading={adding} disabled={adding || !addEmail.trim()}>
+              <UserPlus size={15} strokeWidth={2} aria-hidden="true" />
+              Add Student
+            </Button>
+          </form>
+        )}
+        <Button size="sm" variant="secondary" onClick={() => setShowImportModal(true)} disabled={isArchived}>
           <Upload size={15} strokeWidth={2} aria-hidden="true" />
           Import CSV
         </Button>
@@ -290,7 +298,7 @@ export default function TpoCohortRoster({ cohortId }) {
                     {row.membershipStatus}
                   </span>
                   <span className="sm:w-24 flex sm:justify-end">
-                    {row.membershipStatus !== "removed" && (
+                    {row.membershipStatus !== "removed" && !isArchived && (
                       <Button
                         size="sm"
                         variant="danger"

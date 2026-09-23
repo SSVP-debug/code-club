@@ -257,6 +257,16 @@ describe("Cohort roster/membership routes (TPO-2 Step 5)", () => {
       expect(res.status).toHaveBeenCalledWith(404);
     });
 
+    it("409s for an archived cohort — a frozen roster cannot gain a new member (TPO-2 closure audit)", async () => {
+      cohortMembershipService.addStudentToCohort.mockResolvedValueOnce({ archived: true });
+
+      const res = await runRoute("post", "/cohorts/:cohortId/students", {
+        userDoc: primaryTpo, params: { cohortId: "cohort-1" }, body: { email: "student@a.edu" },
+      });
+
+      expect(res.status).toHaveBeenCalledWith(409);
+    });
+
     it("400s for an invalid cohort id", async () => {
       cohortMembershipService.addStudentToCohort.mockResolvedValueOnce({ invalidId: true });
 
@@ -334,6 +344,16 @@ describe("Cohort roster/membership routes (TPO-2 Step 5)", () => {
       });
 
       expect(res.status).toHaveBeenCalledWith(404);
+    });
+
+    it("409s for an archived cohort — a frozen roster cannot be mutated (TPO-2 closure audit)", async () => {
+      cohortMembershipService.removeCohortMembership.mockResolvedValueOnce({ archived: true });
+
+      const res = await runRoute("delete", "/cohorts/:cohortId/students/:membershipId", {
+        userDoc: primaryTpo, params: { cohortId: "cohort-1", membershipId: "m1" }, body: {},
+      });
+
+      expect(res.status).toHaveBeenCalledWith(409);
     });
 
     it("400s for a malformed cohort or membership id", async () => {
