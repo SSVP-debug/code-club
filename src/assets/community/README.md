@@ -1,7 +1,8 @@
-Community section assets.
+# Community imagery
 
-Add these two images beside this file:
-- pexels-diva-plavalaguna-6146697.jpg
-- pexels-yankrukov-8199223.jpg
+Place the optimized WebP assets in this directory:
 
-The CommunitySection imports them as the primary background and secondary student photo.
+- `community-hands.webp` — primary full-section background
+- `community-students.webp` — secondary student photo
+
+The Community landing section imports these files directly.
