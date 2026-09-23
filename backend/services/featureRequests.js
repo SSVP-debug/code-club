@@ -91,21 +91,15 @@ async function castVote(featureRequestId, userId) {
  * counter: only the caller that actually deletes the row decrements it.
  */
 export async function toggleVote({ featureRequestId, userId }) {
-  let created = false;
+  // Capture the invocation boundary so a vote created by a concurrent
+  // request cannot be mistaken for a pre-existing vote and removed.
+  const startedAt = new Date();
 
-  try {
-    await FeatureRequestVote.create({ featureRequestId, userId });
-    created = true;
-  } catch (err) {
-    if (err?.code !== 11000) throw err;
-  }
-
-  if (created) {
-    await FeatureRequest.updateOne({ _id: featureRequestId }, { $inc: { voteCount: 1 } });
-    return { voted: true };
-  }
-
-  const removed = await FeatureRequestVote.findOneAndDelete({ featureRequestId, userId });
+  const removed = await FeatureRequestVote.findOneAndDelete({
+    featureRequestId,
+    userId,
+    createdAt: { $lt: startedAt },
+  });
 
   if (removed) {
     await FeatureRequest.updateOne(
@@ -115,7 +109,17 @@ export async function toggleVote({ featureRequestId, userId }) {
     return { voted: false };
   }
 
-  // Another concurrent vote call created the row and still owns it.
+  try {
+    await FeatureRequestVote.create({ featureRequestId, userId });
+  } catch (err) {
+    // Another concurrent invocation created the vote after this call
+    // started. The user's resulting state is still "voted"; do not
+    // remove that other invocation's vote.
+    if (err?.code === 11000) return { voted: true };
+    throw err;
+  }
+
+  await FeatureRequest.updateOne({ _id: featureRequestId }, { $inc: { voteCount: 1 } });
   return { voted: true };
 }
 
