@@ -287,7 +287,7 @@ router.post("/register", async (req, res) => {
 export async function requireInstitutionSubscription(req, res, next) {
   if (!B2B_BILLING_ENABLED) return next();
   if (req.userDoc?.role === "admin" || req.userDoc?.role === "student") return next();
-  if (req.path === "/billing/status") return next();
+  if (req.path.startsWith("/billing/")) return next();
 
   try {
     const college = await getCollegeForTpo(req.userDoc);
