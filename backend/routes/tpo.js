@@ -524,10 +524,20 @@ router.get("/billing/status", requireRole("tpo", "admin"), requireVerified, asyn
     if (!college) return res.status(404).json({ error: "College not found." });
 
     const subscription = getInstitutionSubscription(college);
+    const isPrimary = req.userDoc.role === "admin"
+      ? true
+      : isPrimaryTpo(college, req.userDoc._id);
+    const now = Date.now();
+    const expiresAtMs = subscription.expiresAt ? new Date(subscription.expiresAt).getTime() : null;
+    const daysRemaining = expiresAtMs && expiresAtMs > now
+      ? Math.ceil((expiresAtMs - now) / (24 * 60 * 60 * 1000))
+      : 0;
+
     return res.json({
       billingEnabled: B2B_BILLING_ENABLED,
       collegeId: college._id,
       collegeName: college.name,
+      isPrimary,
       subscription: {
         plan: subscription.plan,
         status: subscription.status,
@@ -536,11 +546,45 @@ router.get("/billing/status", requireRole("tpo", "admin"), requireVerified, asyn
         cancelledAt: subscription.cancelledAt,
         provider: subscription.provider,
         isActive: subscription.isActive,
+        daysRemaining,
+        renewalRequired: !subscription.isActive || daysRemaining <= 7,
       },
     });
   } catch (err) {
     (req.log || logger).error({ err }, "[TPO] billing status error");
     return res.status(500).json({ error: "Failed to load institution billing status." });
+  }
+});
+
+router.post("/billing/cancel", requireRole("tpo"), requireVerified, async (req, res) => {
+  if (b2bGate(req, res)) return;
+  if (!B2B_BILLING_ENABLED) {
+    return res.status(409).json({ error: "Institution billing is not live yet." });
+  }
+
+  try {
+    const college = await resolvePayingCollege(req, res);
+    if (!college) return;
+
+    const subscription = getInstitutionSubscription(college);
+    if (!subscription.isActive) {
+      return res.status(409).json({ error: "There is no active institution subscription to cancel." });
+    }
+
+    college.subscription.status = "cancelled";
+    college.subscription.cancelledAt = new Date();
+    // Cancellation stops future renewal but preserves the already-paid period.
+    await college.save();
+
+    return res.json({
+      success: true,
+      status: "cancelled",
+      expiresAt: college.subscription.expiresAt,
+      message: "Institution subscription cancelled. Access remains active until the paid period ends.",
+    });
+  } catch (err) {
+    (req.log || logger).error({ err }, "[TPO] institution cancel error");
+    return res.status(500).json({ error: "Failed to cancel institution subscription." });
   }
 });
 
