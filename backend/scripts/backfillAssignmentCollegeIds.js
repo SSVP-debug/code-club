@@ -22,6 +22,8 @@ import connectDB from "../config/db.js";
 import mongoose from "mongoose";
 import Assignment from "../models/Assignment.js";
 import College from "../models/College.js";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 
 const BATCH_SIZE = 500;
 
@@ -204,7 +206,11 @@ async function runBackfillAssignmentCollegeIds() {
   return counts;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+const isMainModule =
+  process.argv[1] &&
+  path.resolve(fileURLToPath(import.meta.url)) === path.resolve(process.argv[1]);
+
+if (isMainModule) {
   runBackfillAssignmentCollegeIds()
     .then(() => process.exit(0))
     .catch((err) => {
