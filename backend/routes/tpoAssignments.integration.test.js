@@ -372,7 +372,7 @@ describe("TPO-4 cohort assignments — real Mongo integration", () => {
         type: "assignment_created",
         "meta.assignmentId": res._json._id,
       })
-        .select("userId")
+        .select("userId meta")
         .lean();
 
       if (notifications.length === 3) break;
