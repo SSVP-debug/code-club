@@ -285,6 +285,43 @@ describe("TPO-4 cohort assignments — real Mongo integration", () => {
     expect(studentA.emailDomain).toBe("a.edu");
   });
 
+  it("TPOs from every college domain can remind the same college-wide assignment", async () => {
+    const { college, tpo } = await seed();
+
+    const tpoB = await User.create({
+      firebaseUid: "fb-tpo-4-remind-b",
+      email: "tpo-remind@b.edu",
+      role: "tpo",
+      roles: ["student", "tpo"],
+      tpoProfile: {
+        collegeDomain: "b.edu",
+        collegeName: college.name,
+        verified: true,
+        requestedAt: new Date(),
+        verifiedAt: new Date(),
+      },
+    });
+
+    const assignment = await Assignment.create({
+      tpoId: tpo._id,
+      collegeId: college._id,
+      collegeDomain: "a.edu",
+      cohortId: null,
+      title: "Cross Domain Reminder Assignment",
+      problemSlugs: ["p1", "p2"],
+      dueDate: new Date("2026-10-01T00:00:00.000Z"),
+    });
+
+    const res = await handleRemindAssignment({
+      userDoc: tpoB,
+      params: { id: assignment._id.toString() },
+      log: mockLog(),
+    }, mockRes());
+
+    expect(res._status).toBe(200);
+    expect(res._json.remindedCount).toBe(1);
+  });
+
   it("legacy college-wide assignments remain visible to college students", async () => {
     const { tpo, studentA, outsider } = await seed();
 
