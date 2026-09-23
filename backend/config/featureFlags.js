@@ -40,6 +40,26 @@ export const OPPORTUNITY_RADAR_ENABLED = process.env.OPPORTUNITY_RADAR_ENABLED =
  * creation) and exposed via /api/billing/plans for frontend display.
  * All prices in paise (Razorpay's smallest unit) — 100 paise = ₹1.
  */
+/**
+ * Institutional B2B pricing — amounts in paise.
+ * These are intentionally separate from consumer PRICING because the
+ * institution is the paying entity and the entitlement belongs to College.
+ */
+export const B2B_PRICING = {
+  college_monthly: {
+    label: "College Monthly",
+    amountPaise: 99900,
+    interval: "monthly",
+    durationDays: 30,
+  },
+  college_yearly: {
+    label: "College Yearly",
+    amountPaise: 999900,
+    interval: "yearly",
+    durationDays: 365,
+  },
+};
+
 export const PRICING = {
   pro_monthly: {
     label: "Pro Monthly",
