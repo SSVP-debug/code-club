@@ -10,6 +10,7 @@ const { default: College } = await import("../models/College.js");
 const { default: Cohort } = await import("../models/Cohort.js");
 const { default: CohortMembership } = await import("../models/CohortMembership.js");
 const { default: Assignment } = await import("../models/Assignment.js");
+const { default: Notification } = await import("../models/Notification.js");
 
 function mockRes() {
   const res = {};
@@ -344,6 +345,49 @@ describe("TPO-4 cohort assignments — real Mongo integration", () => {
     expect(res._status).toBe(200);
     expect(res._json.assignments).toHaveLength(1);
     expect(String(res._json.assignments[0]._id)).toBe(String(assignment._id));
+  });
+
+  it("college-wide assignment notifications reach students across every college domain", async () => {
+    const { college, tpo, studentA, studentB, outsider } = await seed();
+
+    const res = await runRoute(tpoRouter, "post", "/assignments", {
+      userDoc: tpo,
+      body: {
+        title: "Cross Domain Notification Assignment",
+        problemSlugs: ["p1"],
+        dueDate: "2026-10-01T00:00:00.000Z",
+      },
+      query: {},
+      log: mockLog(),
+    });
+
+    expect(res._status).toBe(201);
+    const assignmentId = String(res._json._id);
+
+    // Notification fan-out is intentionally non-blocking in the route, so
+    // wait briefly for the background insertMany() to complete.
+    let notifications = [];
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      notifications = await Notification.find({
+        type: "assignment_created",
+        "meta.assignmentId": res._json._id,
+      })
+        .select("userId")
+        .lean();
+
+      if (notifications.length === 3) break;
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+
+    expect(notifications).toHaveLength(3);
+    expect(new Set(notifications.map((n) => String(n.userId))).size).toBe(3);
+
+    const notifiedIds = new Set(notifications.map((n) => String(n.userId)));
+    expect(notifiedIds).toEqual(
+      new Set([studentA, studentB, outsider].map((student) => String(student._id)))
+    );
+    expect(notifications.every((n) => String(n.meta.assignmentId) === assignmentId)).toBe(true);
+    expect(college.domains).toEqual(["a.edu", "b.edu"]);
   });
 
   it("legacy college-wide assignments remain visible to college students", async () => {
