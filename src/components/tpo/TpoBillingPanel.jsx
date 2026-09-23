@@ -192,6 +192,7 @@ export default function TpoBillingPanel({ onActivated }) {
               </div>
             ))}
           </div>
+          </div>
         </div>
       ) : active && status?.isPrimary ? (
         <div className="flex justify-end">
