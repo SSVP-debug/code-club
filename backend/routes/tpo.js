@@ -2,7 +2,7 @@ import { Router } from "express";
 import mongoose from "mongoose";
 import { logger } from "../config/logger.js";
 import User from "../models/User.js";
-import { B2B_ENABLED } from "../config/featureFlags.js";
+import { B2B_ENABLED, B2B_BILLING_ENABLED } from "../config/featureFlags.js";
 import Assignment from "../models/Assignment.js";
 import Cohort from "../models/Cohort.js";
 import CohortMembership from "../models/CohortMembership.js";
@@ -33,6 +33,7 @@ import * as cohortImportService from "../services/cohortImportService.js";
 import { getInstitutionReportOverview } from "../services/institutionReportService.js";
 import multer from "multer";
 import { csvUpload } from "../middleware/csvUpload.js";
+import { getInstitutionSubscription } from "../services/institutionSubscriptionService.js";
 
 const TPO_CACHE_TTL_SECONDS = 2 * 60; // 2 minutes — matches profile cache TTL
 const TPO_CACHE_PREFIX = "tpo:";
@@ -275,6 +276,44 @@ router.post("/register", async (req, res) => {
   } catch (err) {
     (req.log || logger).error({ err }, "[TPO] register error");
     return res.status(500).json({ error: "Failed to register as TPO." });
+  }
+});
+
+// ── GET /api/tpo/billing/status ────────────────────────────────────────────
+// Institution billing is intentionally separate from individual student
+// subscriptions. A TPO can inspect the college entitlement without seeing
+// provider secrets or payment identifiers.
+router.get("/billing/status", requireRole("tpo", "admin"), requireVerified, async (req, res) => {
+  if (b2bGate(req, res)) return;
+
+  try {
+    const college = req.userDoc.role === "admin"
+      ? (req.query.collegeId ? await College.findById(req.query.collegeId).lean() : null)
+      : await getCollegeForTpo(req.userDoc);
+
+    if (req.userDoc.role === "admin" && !req.query.collegeId) {
+      return res.status(400).json({ error: "collegeId is required." });
+    }
+    if (!college) return res.status(404).json({ error: "College not found." });
+
+    const subscription = getInstitutionSubscription(college);
+    return res.json({
+      billingEnabled: B2B_BILLING_ENABLED,
+      collegeId: college._id,
+      collegeName: college.name,
+      subscription: {
+        plan: subscription.plan,
+        status: subscription.status,
+        startedAt: subscription.startedAt,
+        expiresAt: subscription.expiresAt,
+        cancelledAt: subscription.cancelledAt,
+        provider: subscription.provider,
+        isActive: subscription.isActive,
+      },
+    });
+  } catch (err) {
+    (req.log || logger).error({ err }, "[TPO] billing status error");
+    return res.status(500).json({ error: "Failed to load institution billing status." });
   }
 });
 
