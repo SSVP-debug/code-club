@@ -1272,9 +1272,18 @@ router.post("/assignments", requireRole("tpo", "admin"), requireVerified, async 
       }
     }
 
+    let assignmentCollegeDomain = req.userDoc.tpoProfile?.collegeDomain?.toLowerCase();
+    if (!assignmentCollegeDomain && targetCohort) {
+      const targetCollege = await College.findById(targetCohort.collegeId).select("domains").lean();
+      assignmentCollegeDomain = targetCollege?.domains?.[0];
+    }
+    if (!assignmentCollegeDomain) {
+      return res.status(400).json({ error: "Unable to resolve the assignment's college domain." });
+    }
+
     const assignment = await Assignment.create({
       tpoId: req.userDoc._id,
-      collegeDomain: req.userDoc.tpoProfile?.collegeDomain,
+      collegeDomain: assignmentCollegeDomain,
       cohortId: targetCohort?._id ?? null,
       title,
       problemSlugs,
@@ -1283,22 +1292,23 @@ router.post("/assignments", requireRole("tpo", "admin"), requireVerified, async 
 
     // Fan out only to the assignment audience. Legacy assignments with no
     // cohortId remain college-wide for backward compatibility.
-    const domain = req.userDoc.tpoProfile?.collegeDomain;
-    if (domain) {
-      const studentQuery = {
-        emailDomain: domain.toLowerCase(),
-        role: "student",
-      };
-
-      if (targetCohort) {
-        studentQuery._id = {
-          $in: (await CohortMembership.find({
-            cohortId: targetCohort._id,
-            status: "active",
-            studentId: { $ne: null },
-          }).distinct("studentId")),
-        };
-      }
+    const domain = req.userDoc.tpoProfile?.collegeDomain?.toLowerCase();
+    if (targetCohort || domain) {
+      const studentQuery = targetCohort
+        ? {
+            role: "student",
+            _id: {
+              $in: await CohortMembership.find({
+                cohortId: targetCohort._id,
+                status: "active",
+                studentId: { $ne: null },
+              }).distinct("studentId"),
+            },
+          }
+        : {
+            emailDomain: domain,
+            role: "student",
+          };
 
       User.find(studentQuery)
         .select("_id")
@@ -1333,35 +1343,116 @@ router.get("/assignments", requireRole("tpo", "admin"), requireVerified, async (
   if (b2bGate(req, res)) return;
 
   try {
+    const domain = req.userDoc.tpoProfile?.collegeDomain?.toLowerCase();
+    if (!domain && req.userDoc.role !== "admin") {
+      return res.status(400).json({ error: "No college domain set on this TPO account." });
+    }
 
-
-    const assignments = await Assignment.find({
-      collegeDomain: req.userDoc.tpoProfile?.collegeDomain,
-    })
+    // TPO-4: legacy assignments remain college-wide. Cohort assignments
+    // are measured only against active members of their target cohort.
+    // Resolve all target cohorts/members in bounded bulk queries so the
+    // dashboard does not perform one membership/user query per assignment.
+    const assignmentQuery = domain
+      ? { collegeDomain: domain }
+      : {};
+    const assignments = await Assignment.find(assignmentQuery)
       .sort({ dueDate: -1 })
       .lean();
 
-    // Compute completion % per assignment
-    const domain = req.userDoc.tpoProfile?.collegeDomain;
-    if (!domain) return res.status(400).json({ error: "No college domain set on this TPO account." });
-    const students = await User.find({
-      emailDomain: domain.toLowerCase(),
-      role: "student",
-    }).select("solvedSlugs").lean();
+    const cohortIds = assignments
+      .filter((a) => a.cohortId)
+      .map((a) => a.cohortId);
 
-    const totalStudents = students.length || 1;
+    const [cohorts, cohortMemberships] = cohortIds.length
+      ? await Promise.all([
+          Cohort.find({ _id: { $in: cohortIds } })
+            .select("name academicYear graduatingYear branch section status collegeId")
+            .lean(),
+          CohortMembership.find({
+            cohortId: { $in: cohortIds },
+            status: "active",
+            studentId: { $ne: null },
+          })
+            .select("cohortId studentId")
+            .lean(),
+        ])
+      : [[], []];
 
-    const enriched = assignments.map(a => {
-      const completedCount = students.filter(s =>
-        a.problemSlugs.every(slug => (s.solvedSlugs || []).includes(slug))
-      ).length;
+    const cohortById = new Map(cohorts.map((cohort) => [String(cohort._id), cohort]));
+    const studentIdsByCohort = new Map();
+    for (const membership of cohortMemberships) {
+      const key = String(membership.cohortId);
+      if (!studentIdsByCohort.has(key)) studentIdsByCohort.set(key, new Set());
+      studentIdsByCohort.get(key).add(String(membership.studentId));
+    }
+
+    const legacyStudents = domain
+      ? await User.find({ emailDomain: domain, role: "student" })
+          .select("_id solvedSlugs")
+          .lean()
+      : [];
+
+    const cohortStudentIds = [...studentIdsByCohort.values()]
+      .flatMap((ids) => [...ids]);
+    const allStudentIds = [...new Set([
+      ...legacyStudents.map((s) => String(s._id)),
+      ...cohortStudentIds,
+    ])];
+
+    const cohortStudents = allStudentIds.length
+      ? await User.find({
+          _id: { $in: allStudentIds },
+          role: "student",
+        })
+          .select("_id solvedSlugs")
+          .lean()
+      : [];
+    const solvedByStudentId = new Map(
+      cohortStudents.map((student) => [String(student._id), student.solvedSlugs || []])
+    );
+
+    const legacyStudentIds = new Set(legacyStudents.map((s) => String(s._id)));
+
+    const enriched = assignments.map((assignment) => {
+      let audienceIds;
+      let cohort = null;
+
+      if (assignment.cohortId) {
+        const cohortKey = String(assignment.cohortId);
+        audienceIds = studentIdsByCohort.get(cohortKey) || new Set();
+        cohort = cohortById.get(cohortKey) || null;
+      } else {
+        audienceIds = legacyStudentIds;
+      }
+
+      const totalStudents = audienceIds.size;
+      let completedCount = 0;
+      for (const studentId of audienceIds) {
+        const solved = solvedByStudentId.get(studentId) || [];
+        if (assignment.problemSlugs.every((slug) => solved.includes(slug))) {
+          completedCount += 1;
+        }
+      }
 
       return {
-        ...a,
+        ...assignment,
+        cohort: cohort
+          ? {
+              _id: cohort._id,
+              name: cohort.name,
+              academicYear: cohort.academicYear,
+              graduatingYear: cohort.graduatingYear,
+              branch: cohort.branch,
+              section: cohort.section,
+              status: cohort.status,
+            }
+          : null,
         completedCount,
         totalStudents,
-        completionPercent: Math.round((completedCount / totalStudents) * 100),
-        isOverdue: new Date(a.dueDate) < new Date(),
+        completionPercent: totalStudents
+          ? Math.round((completedCount / totalStudents) * 100)
+          : 0,
+        isOverdue: new Date(assignment.dueDate) < new Date(),
       };
     });
 
@@ -1382,19 +1473,34 @@ export async function handleRemindAssignment(req, res) {
   if (b2bGate(req, res)) return;
 
   try {
-    const domain = req.userDoc.tpoProfile?.collegeDomain;
-    if (!domain) return res.status(400).json({ error: "No college domain set on this TPO account." });
+    const domain = req.userDoc.tpoProfile?.collegeDomain?.toLowerCase();
+    if (!domain && req.userDoc.role !== "admin") {
+      return res.status(400).json({ error: "No college domain set on this TPO account." });
+    }
 
-    const assignment = await Assignment.findOne({
-      _id: req.params.id,
-      collegeDomain: domain,
-    }).lean();
+    const assignmentQuery = { _id: req.params.id };
+    if (domain) assignmentQuery.collegeDomain = domain;
+
+    const assignment = await Assignment.findOne(assignmentQuery).lean();
     if (!assignment) return res.status(404).json({ error: "Assignment not found." });
 
-    const students = await User.find({
-      emailDomain: domain.toLowerCase(),
-      role: "student",
-    }).select("_id solvedSlugs").lean();
+    let students;
+    if (assignment.cohortId) {
+      const studentIds = await CohortMembership.find({
+        cohortId: assignment.cohortId,
+        status: "active",
+        studentId: { $ne: null },
+      }).distinct("studentId");
+      students = await User.find({
+        _id: { $in: studentIds },
+        role: "student",
+      }).select("_id solvedSlugs").lean();
+    } else {
+      students = await User.find({
+        emailDomain: domain,
+        role: "student",
+      }).select("_id solvedSlugs").lean();
+    }
 
     const incomplete = students.filter(s =>
       !assignment.problemSlugs.every(slug => (s.solvedSlugs || []).includes(slug))
@@ -1437,24 +1543,63 @@ studentAssignmentsRouter.get("/", async (req, res) => {
   try {
     if (!req.userDoc?.email) return res.json({ assignments: [] });
 
-    const domain = req.userDoc.email.split("@")[1];
-    const assignments = await Assignment.find({ collegeDomain: domain })
+    const domain = req.userDoc.email.split("@")[1]?.toLowerCase();
+    if (!domain) return res.json({ enabled: true, assignments: [] });
+
+    // A student receives legacy college-wide assignments plus assignments
+    // for every active cohort membership. This intentionally uses membership
+    // rather than visibleToTpo: TPO-3 privacy controls directory/dashboard
+    // visibility, while assignment targeting is an explicit cohort operation.
+    const activeMemberships = await CohortMembership.find({
+      studentId: req.userDoc._id,
+      status: "active",
+    })
+      .select("cohortId")
+      .lean();
+    const activeCohortIds = activeMemberships.map((membership) => membership.cohortId);
+
+    const assignments = await Assignment.find({
+      $or: [
+        { collegeDomain: domain, cohortId: null },
+        ...(activeCohortIds.length ? [{ cohortId: { $in: activeCohortIds } }] : []),
+      ],
+    })
       .sort({ dueDate: 1 })
       .lean();
 
+    const cohortIds = assignments.filter((a) => a.cohortId).map((a) => a.cohortId);
+    const cohorts = cohortIds.length
+      ? await Cohort.find({ _id: { $in: cohortIds } })
+          .select("name academicYear graduatingYear branch section status")
+          .lean()
+      : [];
+    const cohortById = new Map(cohorts.map((cohort) => [String(cohort._id), cohort]));
+
     const solvedSet = new Set(req.userDoc.solvedSlugs || []);
 
-    const enriched = assignments.map(a => {
-      const solvedCount = a.problemSlugs.filter(slug => solvedSet.has(slug)).length;
+    const enriched = assignments.map((assignment) => {
+      const solvedCount = assignment.problemSlugs.filter((slug) => solvedSet.has(slug)).length;
+      const cohort = assignment.cohortId ? cohortById.get(String(assignment.cohortId)) : null;
       return {
-        _id: a._id,
-        title: a.title,
-        dueDate: a.dueDate,
-        problemSlugs: a.problemSlugs,
+        _id: assignment._id,
+        title: assignment.title,
+        dueDate: assignment.dueDate,
+        problemSlugs: assignment.problemSlugs,
+        cohort: cohort
+          ? {
+              _id: cohort._id,
+              name: cohort.name,
+              academicYear: cohort.academicYear,
+              graduatingYear: cohort.graduatingYear,
+              branch: cohort.branch,
+              section: cohort.section,
+              status: cohort.status,
+            }
+          : null,
         solvedCount,
-        totalProblems: a.problemSlugs.length,
-        isComplete: solvedCount === a.problemSlugs.length,
-        isOverdue: new Date(a.dueDate) < new Date(),
+        totalProblems: assignment.problemSlugs.length,
+        isComplete: solvedCount === assignment.problemSlugs.length,
+        isOverdue: new Date(assignment.dueDate) < new Date(),
       };
     });
 
