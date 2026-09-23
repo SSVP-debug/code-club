@@ -173,7 +173,6 @@ export default function TpoBillingPanel({ onActivated }) {
             </div>
           )}
           <div>
-        <div>
           <div className="mb-4">
             <h3 className="text-lg font-bold text-[var(--foreground)]">Choose an institution plan</h3>
             <p className="text-sm text-[var(--muted-foreground)]">Only the primary TPO can purchase or manage the college subscription.</p>
