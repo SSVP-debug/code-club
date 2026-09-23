@@ -150,6 +150,7 @@ describe("TPO-5 Step 1 — institution report overview", () => {
       title: "In range",
       problemSlugs: ["p1"],
       dueDate: new Date("2026-09-20"),
+      createdAt: new Date("2026-09-20"),
     });
 
     await Assignment.create({
@@ -158,6 +159,7 @@ describe("TPO-5 Step 1 — institution report overview", () => {
       title: "Out of range",
       problemSlugs: ["p1"],
       dueDate: new Date("2026-08-20"),
+      createdAt: new Date("2026-08-20"),
     });
 
     const report = await getInstitutionReportOverview({
