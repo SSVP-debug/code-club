@@ -19,6 +19,7 @@ export default function TpoBillingPanel({ onActivated }) {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState(null);
+  const [cancelling, setCancelling] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -86,6 +87,21 @@ export default function TpoBillingPanel({ onActivated }) {
     }
   }
 
+  async function cancelSubscription() {
+    if (!window.confirm("Cancel this institution subscription? Access will remain available until the paid period ends.")) return;
+    setCancelling(true);
+    try {
+      await apiFetch("/api/tpo/billing/cancel", { method: "POST" });
+      toast.success("Institution subscription cancelled. Access remains active until expiry.");
+      await load();
+      onActivated?.();
+    } catch (err) {
+      toast.error(err.message || "Could not cancel the institution subscription.");
+    } finally {
+      setCancelling(false);
+    }
+  }
+
   if (loading) {
     return <div className="py-16 text-center text-sm text-[var(--muted-foreground)]">Loading institution billing…</div>;
   }
@@ -105,15 +121,33 @@ export default function TpoBillingPanel({ onActivated }) {
             {status?.subscription?.plan || "none"}
           </span>
           <span className={"px-3 py-1.5 rounded-full text-xs font-semibold " + (active ? "bg-verdict-accept/10 text-verdict-accept" : "bg-[var(--surface-elevated)] text-[var(--muted-foreground)]")}>
-            {active ? "Active" : "No active plan"}
+            {status?.subscription?.status === "cancelled" ? "Cancelled" : active ? "Active" : "No active plan"}
           </span>
           {status?.subscription?.expiresAt && (
             <span className="text-xs text-[var(--muted-foreground)]">
               Access until {new Date(status.subscription.expiresAt).toLocaleDateString()}
             </span>
           )}
+          {active && status?.subscription?.daysRemaining != null && (
+            <span className={"text-xs font-medium " + (status.subscription.daysRemaining <= 7 ? "text-amber-400" : "text-[var(--muted-foreground)]")}>
+              {status.subscription.daysRemaining} day{status.subscription.daysRemaining === 1 ? "" : "s"} remaining
+            </span>
+          )}
         </div>
       </div>
+
+      {active && status?.subscription?.renewalRequired && (
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-5">
+          <h3 className="font-bold text-[var(--foreground)]">
+            {status.subscription.daysRemaining === 0 ? "Subscription expired" : "Renewal coming up"}
+          </h3>
+          <p className="text-sm text-[var(--muted-foreground)] mt-1">
+            {status.subscription.daysRemaining === 0
+              ? "Choose a plan below to restore institutional access."
+              : "Your paid period ends soon. Renew before expiry to keep the TPO workspace uninterrupted."}
+          </p>
+        </div>
+      )}
 
       {!status?.billingEnabled ? (
         <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
@@ -121,6 +155,21 @@ export default function TpoBillingPanel({ onActivated }) {
           <p className="text-sm text-[var(--muted-foreground)] mt-2">
             Your college can continue using the TPO workspace during the pilot.
           </p>
+        </div>
+      ) : status?.subscription?.status === "cancelled" ? (
+        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
+          <h3 className="font-bold text-[var(--foreground)]">Subscription cancelled</h3>
+          <p className="text-sm text-[var(--muted-foreground)] mt-2">
+            Your institution keeps access until {status?.subscription?.expiresAt ? new Date(status.subscription.expiresAt).toLocaleDateString() : "the end of the paid period"}.
+          </p>
+          <p className="text-xs text-[var(--muted-foreground)] mt-2">
+            The primary TPO can purchase a new plan before or after expiry.
+          </p>
+          {status?.isPrimary && (
+            <Button className="mt-5" onClick={cancelSubscription} loading={cancelling} disabled={cancelling}>
+              Cancelled — no further renewal
+            </Button>
+          )}
         </div>
       ) : !active ? (
         <div>
@@ -143,6 +192,12 @@ export default function TpoBillingPanel({ onActivated }) {
               </div>
             ))}
           </div>
+        </div>
+      ) : active && status?.isPrimary ? (
+        <div className="flex justify-end">
+          <Button variant="secondary" onClick={cancelSubscription} loading={cancelling} disabled={cancelling}>
+            Cancel subscription
+          </Button>
         </div>
       ) : null}
     </div>
