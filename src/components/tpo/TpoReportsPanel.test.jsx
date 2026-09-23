@@ -41,7 +41,9 @@ describe("TpoReportsPanel", () => {
     render(<TpoReportsPanel />);
 
     expect(await screen.findByText("Institution Report")).toBeInTheDocument();
-    expect(screen.getByText("Report University")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Placement-preparation activity fors+Report University./)
+    ).toBeInTheDocument();
     expect(screen.getByText("120")).toBeInTheDocument();
     expect(screen.getByText("840")).toBeInTheDocument();
     expect(screen.getByText("75%")).toBeInTheDocument();
