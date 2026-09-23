@@ -82,6 +82,7 @@ Mounted at `/api/tpo`. All routes return `{ enabled: false, message }` while `B2
 |---|---|---|
 | POST | `/api/tpo/register` | Convert the caller's account to a TPO account (requires an institutional email domain — rejects gmail/yahoo/outlook). |
 | GET | `/api/tpo/me` | Current TPO's profile + college info. |
+| GET | `/api/tpo/college-directory` | Verified TPO directory for the authenticated student's own verified college. The server resolves the institution from the student session; no client-supplied collegeId is accepted. |
 | GET | `/api/tpo/students` | All students matched by the TPO's college email domain. |
 | GET | `/api/tpo/dashboard` | Aggregated class stats + a 0–100 "placement readiness score" heuristic. |
 | POST | `/api/tpo/assignments` | Create a problem-set assignment for the TPO's college. |
