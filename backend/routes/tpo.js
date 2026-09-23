@@ -279,6 +279,43 @@ router.post("/register", async (req, res) => {
   }
 });
 
+// ── TPO-6 entitlement enforcement ─────────────────────────────────────────
+// Registration and billing-status must remain reachable without a paid plan.
+// Students using the college TPO directory are also unaffected because this
+// router serves that student route as well. Admins retain platform-wide access.
+export async function requireInstitutionSubscription(req, res, next) {
+  if (!B2B_BILLING_ENABLED) return next();
+  if (req.userDoc?.role === "admin" || req.userDoc?.role === "student") return next();
+  if (req.path === "/billing/status") return next();
+
+  try {
+    const college = await getCollegeForTpo(req.userDoc);
+    if (!college) {
+      return res.status(404).json({
+        error: "Your TPO account is not linked to a verified college.",
+        code: "INSTITUTION_NOT_FOUND",
+      });
+    }
+
+    if (!getInstitutionSubscription(college).isActive) {
+      return res.status(402).json({
+        error: "Your institution needs an active Code Club subscription.",
+        code: "INSTITUTION_SUBSCRIPTION_REQUIRED",
+        collegeId: college._id,
+      });
+    }
+
+    return next();
+  } catch (err) {
+    (req.log || logger).error({ err }, "[TPO] institution entitlement check failed");
+    return res.status(500).json({ error: "Failed to verify institution subscription." });
+  }
+}
+
+// Apply entitlement enforcement after registration so a new TPO can
+// register/request approval before an institution has a paid plan.
+router.use(requireInstitutionSubscription);
+
 // ── GET /api/tpo/billing/status ────────────────────────────────────────────
 // Institution billing is intentionally separate from individual student
 // subscriptions. A TPO can inspect the college entitlement without seeing
