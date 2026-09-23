@@ -154,7 +154,13 @@ function mapOutcomeToRowResult(row, outcome) {
     return { row: row.row, email: row.email, status: "already_member" };
   }
   const membershipStatus = outcome?.membership?.membershipStatus;
-  return { row: row.row, email: row.email, status: membershipStatus === "active" ? "active" : "invited" };
+  const result = {
+    row: row.row,
+    email: row.email,
+    status: membershipStatus === "active" ? "active" : "invited",
+  };
+  if (outcome?.created === true) result.newlyCreated = true;
+  return result;
 }
 
 /**
@@ -203,7 +209,7 @@ function buildSummary(results) {
       summary.active += 1;
       summary.processed += 1;
     } else if (r.status === "invited") {
-      summary.invited += 1;
+      if (r.newlyCreated) summary.invited += 1;
       summary.processed += 1;
     } else if (r.status === "already_member") {
       summary.alreadyMember += 1;
