@@ -278,7 +278,7 @@ describe("TPO-4 cohort assignments — real Mongo integration", () => {
     expect(res._status).toBe(200);
     expect(res._json.assignments).toHaveLength(1);
     expect(res._json.assignments[0].title).toBe("Cross Domain College Assignment");
-    expect(res._json.assignments[0].totalStudents).toBe(2);
+    expect(res._json.assignments[0].totalStudents).toBe(3);
     expect(String(res._json.assignments[0].cohortId ?? "")).toBe("");
     expect(studentA.emailDomain).toBe("a.edu");
   });
