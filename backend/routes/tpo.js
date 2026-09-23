@@ -1,8 +1,9 @@
 import { Router } from "express";
 import mongoose from "mongoose";
+import crypto from "crypto";
 import { logger } from "../config/logger.js";
 import User from "../models/User.js";
-import { B2B_ENABLED, B2B_BILLING_ENABLED } from "../config/featureFlags.js";
+import { B2B_ENABLED, B2B_BILLING_ENABLED, B2B_PRICING } from "../config/featureFlags.js";
 import Assignment from "../models/Assignment.js";
 import Cohort from "../models/Cohort.js";
 import CohortMembership from "../models/CohortMembership.js";
@@ -315,6 +316,164 @@ export async function requireInstitutionSubscription(req, res, next) {
 // Apply entitlement enforcement after registration so a new TPO can
 // register/request approval before an institution has a paid plan.
 router.use(requireInstitutionSubscription);
+
+// ── TPO-6 Batch 2 — institutional checkout ────────────────────────────────
+function getRazorpayClient() {
+  if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) return null;
+  try {
+    const Razorpay = require("razorpay");
+    return new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+  } catch {
+    return null;
+  }
+}
+
+async function resolvePayingCollege(req, res) {
+  const college = await getCollegeForTpo(req.userDoc);
+  if (!college) {
+    res.status(404).json({ error: "Your TPO account is not linked to a verified college." });
+    return null;
+  }
+  if (college.status !== "verified") {
+    res.status(403).json({ error: "Your college must be verified before purchasing an institution plan." });
+    return null;
+  }
+  if (!isPrimaryTpo(college, req.userDoc._id)) {
+    res.status(403).json({ error: "Only the primary TPO can manage the institution subscription." });
+    return null;
+  }
+  return college;
+}
+
+router.get("/billing/plans", requireRole("tpo", "admin"), requireVerified, (req, res) => {
+  if (b2bGate(req, res)) return;
+  return res.json({
+    enabled: B2B_BILLING_ENABLED,
+    currency: "INR",
+    plans: Object.entries(B2B_PRICING).map(([id, plan]) => ({
+      id,
+      label: plan.label,
+      amountRupees: plan.amountPaise / 100,
+      interval: plan.interval,
+      durationDays: plan.durationDays,
+    })),
+  });
+});
+
+router.post("/billing/create-order", requireRole("tpo"), requireVerified, async (req, res) => {
+  if (b2bGate(req, res)) return;
+  if (!B2B_BILLING_ENABLED) {
+    return res.status(409).json({ error: "Institution billing is not live yet." });
+  }
+
+  try {
+    const college = await resolvePayingCollege(req, res);
+    if (!college) return;
+
+    const plan = B2B_PRICING[req.body?.planId];
+    if (!plan) return res.status(400).json({ error: "Invalid institution plan ID." });
+
+    const razorpay = getRazorpayClient();
+    if (!razorpay) {
+      return res.status(503).json({
+        error: "Payment provider not configured. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET.",
+      });
+    }
+
+    const order = await razorpay.orders.create({
+      amount: plan.amountPaise,
+      currency: "INR",
+      receipt: `cc_college_${college._id}_${Date.now()}`,
+      notes: {
+        collegeId: college._id.toString(),
+        planId: req.body.planId,
+        purchaserUserId: req.userDoc._id.toString(),
+        billingType: "institution",
+      },
+    });
+
+    return res.json({
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      keyId: process.env.RAZORPAY_KEY_ID,
+      planId: req.body.planId,
+      collegeId: college._id,
+    });
+  } catch (err) {
+    (req.log || logger).error({ err }, "[TPO] institution create-order error");
+    return res.status(500).json({ error: "Failed to create institution payment order." });
+  }
+});
+
+router.post("/billing/verify", requireRole("tpo"), requireVerified, async (req, res) => {
+  if (b2bGate(req, res)) return;
+  if (!B2B_BILLING_ENABLED) {
+    return res.status(409).json({ error: "Institution billing is not live yet." });
+  }
+
+  try {
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      planId,
+    } = req.body || {};
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !planId) {
+      return res.status(400).json({ error: "Missing payment verification fields." });
+    }
+
+    const plan = B2B_PRICING[planId];
+    if (!plan) return res.status(400).json({ error: "Invalid institution plan ID." });
+
+    const college = await resolvePayingCollege(req, res);
+    if (!college) return;
+
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || "")
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest("hex");
+
+    const signaturesMatch = crypto.timingSafeEqual(
+      Buffer.from(expectedSignature, "utf8"),
+      Buffer.from(razorpay_signature, "utf8")
+    );
+    if (!signaturesMatch) {
+      return res.status(400).json({ error: "Payment verification failed. Signature mismatch." });
+    }
+
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + plan.durationDays * 24 * 60 * 60 * 1000);
+
+    college.subscription = {
+      ...college.subscription?.toObject?.(),
+      plan: planId,
+      status: "active",
+      startedAt: now,
+      expiresAt,
+      cancelledAt: null,
+      provider: "razorpay",
+      providerCustomerId: college.subscription?.providerCustomerId || null,
+      providerSubscriptionId: null,
+      lastPaymentAt: now,
+    };
+    await college.save();
+
+    return res.json({
+      success: true,
+      collegeId: college._id,
+      plan: planId,
+      expiresAt,
+    });
+  } catch (err) {
+    (req.log || logger).error({ err }, "[TPO] institution verify error");
+    return res.status(500).json({ error: "Institution payment verification failed." });
+  }
+});
 
 // ── GET /api/tpo/billing/status ────────────────────────────────────────────
 // Institution billing is intentionally separate from individual student
