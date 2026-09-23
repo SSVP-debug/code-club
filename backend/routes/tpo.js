@@ -1514,8 +1514,27 @@ export async function handleRemindAssignment(req, res) {
       return res.status(400).json({ error: "No college domain set on this TPO account." });
     }
 
+    const college = req.userDoc.role === "admin"
+      ? null
+      : await getCollegeForTpo(req.userDoc);
+    const collegeDomains = college?.domains?.length
+      ? college.domains.map((d) => d.toLowerCase())
+      : domain
+        ? [domain]
+        : [];
+
     const assignmentQuery = { _id: req.params.id };
-    if (domain) assignmentQuery.collegeDomain = domain;
+    if (college) {
+      assignmentQuery.$or = [
+        { collegeId: college._id },
+        {
+          collegeId: null,
+          collegeDomain: { $in: collegeDomains },
+        },
+      ];
+    } else if (domain) {
+      assignmentQuery.collegeDomain = domain;
+    }
 
     const assignment = await Assignment.findOne(assignmentQuery).lean();
     if (!assignment) return res.status(404).json({ error: "Assignment not found." });
@@ -1532,8 +1551,14 @@ export async function handleRemindAssignment(req, res) {
         role: "student",
       }).select("_id solvedSlugs").lean();
     } else {
+      const audienceDomains = assignment.collegeId && college?.domains?.length
+        ? college.domains.map((d) => d.toLowerCase())
+        : domain
+          ? [domain]
+          : [];
+
       students = await User.find({
-        emailDomain: domain,
+        emailDomain: { $in: audienceDomains },
         role: "student",
       }).select("_id solvedSlugs").lean();
     }
