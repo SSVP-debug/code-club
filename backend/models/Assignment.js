@@ -32,6 +32,7 @@ const assignmentSchema = new mongoose.Schema(
     title:        { type: String, required: true, trim: true },
     problemSlugs: [{ type: String, required: true }],
     dueDate:      { type: Date, required: true },
+    status:       { type: String, enum: ["active", "archived"], default: "active", index: true },
     createdAt:    { type: Date, default: Date.now },
   },
   { timestamps: true }
