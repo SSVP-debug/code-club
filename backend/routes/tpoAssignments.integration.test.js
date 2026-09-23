@@ -134,7 +134,7 @@ describe("TPO-4 cohort assignments — real Mongo integration", () => {
   }
 
   it("creation targets exactly one active cohort and preserves the cohort reference", async () => {
-    const { tpo, cohort } = await seed();
+    const { college, tpo, cohort } = await seed();
 
     const res = await runRoute(tpoRouter, "post", "/assignments", {
       userDoc: tpo,
@@ -154,6 +154,7 @@ describe("TPO-4 cohort assignments — real Mongo integration", () => {
     const saved = await Assignment.findById(res._json._id).lean();
     expect(String(saved.cohortId)).toBe(String(cohort._id));
     expect(saved.collegeDomain).toBe("a.edu");
+    expect(String(saved.collegeId)).toBe(String(college._id));
   });
 
   it("TPO completion is calculated from the cohort roster, not the whole college", async () => {
