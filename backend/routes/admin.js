@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { setInstitutionSubscription, cancelInstitutionSubscription } from "../services/institutionSubscriptionService.js";
 import { requireAdmin } from "../middleware/roleGuard.js";
 import {
   getPendingQueue,
@@ -125,6 +126,47 @@ router.patch("/colleges/:collegeId", requireAdmin, renameCollege);
 // state; it just reloaded back into the still-impersonated session).
 router.post("/impersonate/stop", requireAdmin, stopImpersonation);
 router.post("/impersonate/:userId", requireAdmin, startImpersonation);
+
+// ── Institution billing (TPO-6) ───────────────────────────────────────────
+// Admin-only manual entitlement controls form the provider-independent
+// foundation. Payment-provider automation can call the same service later.
+router.post("/colleges/:collegeId/subscription", requireAdmin, async (req, res) => {
+  try {
+    const { plan, status, expiresAt, provider = "manual" } = req.body || {};
+    const college = await setInstitutionSubscription(req.params.collegeId, {
+      plan,
+      status: status || "active",
+      expiresAt: expiresAt ? new Date(expiresAt) : null,
+      provider,
+    });
+    return res.json({
+      success: true,
+      collegeId: college._id,
+      subscription: college.subscription,
+    });
+  } catch (err) {
+    const statusCode =
+      err.code === "INVALID_COLLEGE_ID" || err.code === "INVALID_PLAN" ? 400 :
+      err.code === "COLLEGE_NOT_FOUND" ? 404 : 500;
+    return res.status(statusCode).json({ error: err.message || "Failed to update institution subscription." });
+  }
+});
+
+router.post("/colleges/:collegeId/subscription/cancel", requireAdmin, async (req, res) => {
+  try {
+    const college = await cancelInstitutionSubscription(req.params.collegeId);
+    return res.json({
+      success: true,
+      collegeId: college._id,
+      subscription: college.subscription,
+    });
+  } catch (err) {
+    const statusCode =
+      err.code === "INVALID_COLLEGE_ID" ? 400 :
+      err.code === "COLLEGE_NOT_FOUND" ? 404 : 500;
+    return res.status(statusCode).json({ error: err.message || "Failed to cancel institution subscription." });
+  }
+});
 
 // ── User management actions ─────────────────────────────────────────────────
 router.post("/users/:id/suspend", requireAdmin, suspendUser);
