@@ -1505,6 +1505,55 @@ router.get("/assignments", requireRole("tpo", "admin"), requireVerified, async (
   }
 });
 
+// ── POST /api/tpo/assignments/:id/archive ──────────────────────────────────
+// Archives an assignment without deleting its history or completion data.
+// Archived assignments are retained for TPO reporting but are no longer
+// delivered to students or eligible for reminders.
+router.post("/assignments/:id/archive", requireRole("tpo", "admin"), requireVerified, async (req, res) => {
+  if (b2bGate(req, res)) return;
+
+  try {
+    const domain = req.userDoc.tpoProfile?.collegeDomain?.toLowerCase();
+    if (!domain && req.userDoc.role !== "admin") {
+      return res.status(400).json({ error: "No college domain set on this TPO account." });
+    }
+
+    const college = req.userDoc.role === "admin"
+      ? null
+      : await getCollegeForTpo(req.userDoc);
+    const collegeDomains = college?.domains?.length
+      ? college.domains.map((d) => d.toLowerCase())
+      : domain
+        ? [domain]
+        : [];
+
+    const assignmentQuery = { _id: req.params.id };
+    if (college) {
+      assignmentQuery.$or = [
+        { collegeId: college._id },
+        { collegeId: null, collegeDomain: { $in: collegeDomains } },
+      ];
+    } else if (domain) {
+      assignmentQuery.collegeDomain = domain;
+    }
+
+    const assignment = await Assignment.findOneAndUpdate(
+      assignmentQuery,
+      { $set: { status: "archived" } },
+      { new: true }
+    ).lean();
+
+    if (!assignment) {
+      return res.status(404).json({ error: "Assignment not found." });
+    }
+
+    return res.json(assignment);
+  } catch (err) {
+    (req.log || logger).error({ err }, "[TPO] archive assignment");
+    return res.status(500).json({ error: "Failed to archive assignment." });
+  }
+});
+
 // ── POST /api/tpo/assignments/:id/remind ────────────────────────────────────
 // Nudges every student on this college's roster who hasn't completed the
 // assignment yet. Reuses the same createNotificationBulk fan-out the
@@ -1544,6 +1593,9 @@ export async function handleRemindAssignment(req, res) {
 
     const assignment = await Assignment.findOne(assignmentQuery).lean();
     if (!assignment) return res.status(404).json({ error: "Assignment not found." });
+    if (assignment.status === "archived") {
+      return res.status(409).json({ error: "Archived assignments cannot be reminded." });
+    }
 
     let students;
     if (assignment.cohortId) {
@@ -1636,6 +1688,7 @@ studentAssignmentsRouter.get("/", async (req, res) => {
       : [{ collegeId: null, collegeDomain: domain, cohortId: null }];
 
     const assignments = await Assignment.find({
+      status: { $ne: "archived" },
       $or: [
         ...collegeWideAssignmentClauses,
         ...(activeCohortIds.length ? [{ cohortId: { $in: activeCohortIds } }] : []),
