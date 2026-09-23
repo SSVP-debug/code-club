@@ -1,4 +1,5 @@
 import Problem from "../models/Problem.js";
+import { recordPlacementVisibilityChange } from "../services/placementVisibilityAuditLog.js";
 import { invalidateProfileCache } from "./publicProfileController.js";
 import {
   normalizeGithubProfileUrl,
@@ -85,6 +86,8 @@ export async function getMe(req, res) {
 
 export async function updateMe(req, res) {
   if (!req.userDoc) return res.status(503).json({ error: "Database unavailable." });
+
+  const previousVisibleToTpo = req.userDoc.visibleToTpo ?? true;
 
   const {
     leetcodeUsername,
@@ -258,6 +261,14 @@ export async function updateMe(req, res) {
   }
 
   await req.userDoc.save();
+
+  if (visibleToTpo !== undefined && visibleToTpo !== previousVisibleToTpo) {
+    recordPlacementVisibilityChange({
+      userId: req.userDoc._id,
+      previousValue: previousVisibleToTpo,
+      newValue: visibleToTpo,
+    });
+  }
 
   // Public profile is cached for 2 minutes (see publicProfileController).
   // A student flipping "available for work" on, or adding a GitHub/resume
