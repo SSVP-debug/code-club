@@ -156,3 +156,14 @@ Mounted at `/api/ambassador`.
 | POST | `/api/admin/colleges/:collegeId/subscription/cancel` | Admin-only cancellation; paid access remains valid until expiry. |
 
 Institution subscription enforcement is controlled by `B2B_BILLING_ENABLED`, independently of `B2B_ENABLED`. When enabled, TPO operational routes require an active institution subscription; registration, billing status, student TPO directory access, and admin access remain available.
+
+
+### TPO-6 Batch 2 — Institution checkout
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/tpo/billing/plans` | Returns the institution plan catalog and INR prices. |
+| POST | `/api/tpo/billing/create-order` | Creates a Razorpay institution order for the primary TPO's verified college. |
+| POST | `/api/tpo/billing/verify` | Verifies Razorpay HMAC, order metadata, amount/currency, and payment identity before activating the college plan. |
+
+Current launch catalog is maintained in `config/featureFlags.js` as `B2B_PRICING`. Payment-provider automation/webhooks remain a later TPO-6 batch; checkout verification is intentionally idempotent for an already-processed payment ID.
