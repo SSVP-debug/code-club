@@ -1042,7 +1042,7 @@ router.get("/students", requireRole("tpo", "admin"),
         TPO_CACHE_TTL_SECONDS,
         async () => {
           const [aggResult] = await User.aggregate([
-            { $match: { emailDomain: { $in: collegeDomains }, role: "student", ...searchMatch } },
+            { $match: { emailDomain: { $in: collegeDomains }, role: "student", visibleToTpo: { $ne: false }, ...searchMatch } },
             // solvedCount computed here, once, in Mongo — the raw
             // `solvedSlugs` array itself is never selected/projected out
             // below, so it never crosses into Node for this endpoint.
@@ -1131,7 +1131,8 @@ router.get("/dashboard", requireRole("tpo", "admin"),
             { $match: { emailDomain: { $in: collegeDomains }, role: "student" } },
             {
               $facet: {
-                summary: [
+                visibleSummary: [
+                  { $match: { visibleToTpo: { $ne: false } } },
                   {
                     $group: {
                       _id: null,
@@ -1146,7 +1147,12 @@ router.get("/dashboard", requireRole("tpo", "admin"),
                     },
                   },
                 ],
+                optOutCount: [
+                  { $match: { visibleToTpo: false } },
+                  { $count: "count" },
+                ],
                 topicCoverage: [
+                  { $match: { visibleToTpo: { $ne: false } } },
                   { $unwind: "$topicStats" },
                   {
                     $group: {
@@ -1162,10 +1168,17 @@ router.get("/dashboard", requireRole("tpo", "admin"),
             },
           ]);
 
-          const summary = aggResult?.summary?.[0];
+          const summary = aggResult?.visibleSummary?.[0];
+          const optedOutStudents = aggResult?.optOutCount?.[0]?.count ?? 0;
 
           if (!summary || summary.totalStudents === 0) {
-            return { totalStudents: 0, message: "No students from your college have joined Code Club yet." };
+            return {
+              totalStudents: 0,
+              optedOutStudents,
+              message: optedOutStudents > 0
+                ? "All visible students from your college are currently opted out of TPO visibility."
+                : "No students from your college have joined Code Club yet.",
+            };
           }
 
           const { totalStudents, totalSolved, totalEasy, totalMedium, totalHard, activeThisWeek } = summary;
@@ -1188,6 +1201,7 @@ router.get("/dashboard", requireRole("tpo", "admin"),
             activePercent: Math.round((activeThisWeek / totalStudents) * 100),
             readinessScore,
             topicCoverage: aggResult?.topicCoverage ?? [],
+            optedOutStudents,
           };
         }
       );
