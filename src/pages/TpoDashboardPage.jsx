@@ -63,19 +63,33 @@ function ReadinessGauge({ score }) {
 
 function CreateAssignmentModal({ onClose, onCreated }) {
   const [title, setTitle] = useState("");
+  const [target, setTarget] = useState("college");
+  const [cohortId, setCohortId] = useState("");
+  const [cohorts, setCohorts] = useState([]);
+  const [loadingCohorts, setLoadingCohorts] = useState(false);
   const [slugsText, setSlugsText] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    if (target !== "cohort") return;
+    setLoadingCohorts(true);
+    apiFetch("/api/tpo/cohorts?status=active&limit=100")
+      .then((data) => setCohorts(data.items || []))
+      .catch(() => toast.error("Failed to load cohorts."))
+      .finally(() => setLoadingCohorts(false));
+  }, [target]);
+
   async function handleCreate() {
     const problemSlugs = slugsText.split(",").map(s => s.trim()).filter(Boolean);
     if (!title || problemSlugs.length === 0 || !dueDate) return;
+    if (target === "cohort" && !cohortId) return;
 
     setSaving(true);
     try {
       await apiFetch("/api/tpo/assignments", {
         method: "POST",
-        body: JSON.stringify({ title, problemSlugs, dueDate }),
+        body: JSON.stringify({ title, problemSlugs, dueDate, cohortId: target === "cohort" ? cohortId : null }),
       });
       onCreated();
       onClose();
@@ -96,6 +110,19 @@ function CreateAssignmentModal({ onClose, onCreated }) {
             placeholder="Assignment title (e.g. Week 3 — Arrays)"
             className="w-full bg-[var(--surface-elevated)] border border-[var(--border-strong)] rounded-xl px-3 py-2 text-sm text-[var(--foreground)] outline-none focus:border-[var(--theme-primary,#2dd4bf)]/50"
           />
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-widest">Target students</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => setTarget("college")} className={`rounded-xl border px-3 py-2 text-sm font-semibold ${target === "college" ? "border-[var(--theme-primary,#2dd4bf)] bg-[var(--theme-primary,#2dd4bf)]/10 text-[var(--foreground)]" : "border-[var(--border)] text-[var(--muted-foreground)]"}`}>Entire college</button>
+              <button type="button" onClick={() => setTarget("cohort")} className={`rounded-xl border px-3 py-2 text-sm font-semibold ${target === "cohort" ? "border-[var(--theme-primary,#2dd4bf)] bg-[var(--theme-primary,#2dd4bf)]/10 text-[var(--foreground)]" : "border-[var(--border)] text-[var(--muted-foreground)]"}`}>Specific cohort</button>
+            </div>
+            {target === "cohort" && (
+              <select value={cohortId} onChange={(e) => setCohortId(e.target.value)} disabled={loadingCohorts} aria-label="Assignment cohort" className="w-full bg-[var(--surface-elevated)] border border-[var(--border-strong)] rounded-xl px-3 py-2 text-sm text-[var(--foreground)]">
+                <option value="">{loadingCohorts ? "Loading cohorts…" : "Select a cohort"}</option>
+                {cohorts.map((cohort) => <option key={cohort.id || cohort._id} value={cohort.id || cohort._id}>{cohort.name}{cohort.branch ? ` · ${cohort.branch}` : ""}{cohort.graduatingYear ? ` · ${cohort.graduatingYear}` : ""}</option>)}
+              </select>
+            )}
+          </div>
           <textarea
             value={slugsText}
             onChange={e => setSlugsText(e.target.value)}
@@ -116,7 +143,7 @@ function CreateAssignmentModal({ onClose, onCreated }) {
           </Button>
           <Button
             onClick={handleCreate}
-            disabled={saving || !title || !slugsText || !dueDate}
+            disabled={saving || !title || !slugsText || !dueDate || (target === "cohort" && !cohortId)}
             loading={saving}
             className="flex-1"
           >
