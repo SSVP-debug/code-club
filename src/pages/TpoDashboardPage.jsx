@@ -12,6 +12,7 @@ import { GraduationCap, Users, Flame } from "lucide-react";
 import TpoTeamPanel from "../components/tpo/TpoTeamPanel";
 import TpoCohortsPanel from "../components/tpo/TpoCohortsPanel";
 import TpoReportsPanel from "../components/tpo/TpoReportsPanel";
+import TpoBillingPanel from "../components/tpo/TpoBillingPanel";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const STUDENTS_PAGE_SIZE = 25; // matches the backend's default (backend/routes/tpo.js)
@@ -157,7 +158,7 @@ function CreateAssignmentModal({ onClose, onCreated }) {
 }
 
 export default function TpoDashboardPage() {
-  const VALID_TABS = ["overview", "reports", "students", "assignments", "cohorts", "team"];
+  const VALID_TABS = ["overview", "reports", "students", "assignments", "cohorts", "team", "billing"];
   const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthenticated } = useIdentity();
 
@@ -185,6 +186,7 @@ export default function TpoDashboardPage() {
 
   const [showModal, setShowModal] = useState(false);
   const [pendingVerification, setPendingVerification] = useState(false);
+  const [subscriptionRequired, setSubscriptionRequired] = useState(false);
   // Student directory: search-as-typed (immediate, drives the input's own
   // value) vs. search-as-queried (debounced, what's actually sent to the
   // API) are deliberately separate — see the debounce effect below. All
@@ -228,6 +230,13 @@ export default function TpoDashboardPage() {
         "Your TPO account is pending verification."
       ) {
         setPendingVerification(true);
+        return;
+      }
+
+      if (err.status === 402 || err.body?.code === "INSTITUTION_SUBSCRIPTION_REQUIRED") {
+        setEnabled(true);
+        setSubscriptionRequired(true);
+        setLoading(false);
         return;
       }
 
@@ -440,6 +449,17 @@ export default function TpoDashboardPage() {
     );
   }
 
+  if (subscriptionRequired) {
+    return (
+      <DashboardLayout>
+        <PageMeta title="Institution Subscription · Code Club" path="/tpo/dashboard" />
+        <div className="max-w-6xl mx-auto py-8">
+          <TpoBillingPanel onActivated={() => { setSubscriptionRequired(false); setLoading(true); fetchAll(); }} />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   if (enabled === false) {
     return (
       <DashboardLayout>
@@ -510,7 +530,7 @@ export default function TpoDashboardPage() {
             other, and wrapping to a second line pushes content down
             awkwardly for just one overflow tab. */}
         <div className="flex gap-2 mb-6 overflow-x-auto">
-          {["overview", "reports", "students", "assignments", "cohorts", "team"].map(t => (
+          {["overview", "reports", "students", "assignments", "cohorts", "team", "billing"].map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -713,6 +733,8 @@ export default function TpoDashboardPage() {
         {tab === "cohorts" && <TpoCohortsPanel />}
 
         {tab === "team" && <TpoTeamPanel />}
+
+        {tab === "billing" && <TpoBillingPanel onActivated={() => fetchAll()} />}
       </div>
 
       {showModal && (
