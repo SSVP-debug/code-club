@@ -200,6 +200,8 @@ function AppContextProvider({ children }) {
   // Phase 9E — consolidated here instead of SettingsPage's own fetch
   // (single source of truth; also needed by ProfileCompletion).
   const [username, setUsername] = useState("");
+  // Institutional placement visibility is independent from public/recruiter visibility.
+  const [visibleToTpo, setVisibleToTpo] = useState(true);
   const [leetcodeUsername, setLeetcodeUsername] = useState("");
   const [leetcodeStats, setLeetcodeStats] = useState(null);
 
@@ -386,6 +388,7 @@ function AppContextProvider({ children }) {
         }
 
         setUsername(bootUser?.username || "");
+        setVisibleToTpo(bootUser?.visibleToTpo ?? true);
         setLeetcodeUsername(bootUser?.leetcodeUsername || "");
         setLeetcodeStats(bootUser?.leetcodeStats || null);
 
@@ -680,6 +683,22 @@ function AppContextProvider({ children }) {
   }
 
   // --------------------------------------------------
+  // INSTITUTIONAL PLACEMENT VISIBILITY
+  // --------------------------------------------------
+
+  async function updateTpoVisibility(nextVisible) {
+    if (typeof nextVisible !== "boolean") {
+      throw new Error("TPO visibility must be a boolean");
+    }
+    const result = await apiFetch("/api/users/me", {
+      method: "PATCH",
+      body: JSON.stringify({ visibleToTpo: nextVisible }),
+    });
+    setVisibleToTpo(result.visibleToTpo ?? nextVisible);
+    return result.visibleToTpo ?? nextVisible;
+  }
+
+  // --------------------------------------------------
   // DEVELOPER PROFILE (GitHub / LinkedIn / Resume / Featured Project)
   // --------------------------------------------------
 
@@ -778,6 +797,8 @@ function AppContextProvider({ children }) {
     unsaveProblem,
     username,
     setUsername,
+    visibleToTpo,
+    updateTpoVisibility,
     leetcodeUsername,
     setLeetcodeUsername,
     leetcodeStats,
