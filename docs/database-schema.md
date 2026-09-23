@@ -182,3 +182,16 @@ Recruiter-assigned timed skills tests for candidates.
 ## Not modeled as MongoDB collections (in-memory)
 
 - **Interview Mode sessions** (`backend/routes/interview.js`) are stored in a plain in-process `Map`, not MongoDB — acceptable for MVP-scale, low-volume usage per the file's own comment. They don't survive a backend restart, and won't be consistent across multiple Railway instances if you scale horizontally before this is moved to Redis or Mongo.
+
+### `College.subscription` (TPO-6)
+
+Institution billing state belongs to the College rather than an individual TPO account. This preserves entitlement when the primary TPO changes.
+
+| Field | Type | Notes |
+|---|---|---|
+| `plan` | String | `none`, `pilot`, `college_monthly`, `college_yearly`, `enterprise` |
+| `status` | String | `none`, `trialing`, `active`, `cancelled`, `expired` |
+| `startedAt`, `expiresAt`, `cancelledAt` | Date | Lifecycle timestamps; cancellation does not erase paid expiry. |
+| `provider` | String | `manual`, `razorpay`, or `stripe` |
+| `providerCustomerId`, `providerSubscriptionId` | String | Provider references; never expose these through TPO status responses. |
+| `lastPaymentAt` | Date | Last successful payment timestamp. |
