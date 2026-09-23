@@ -106,11 +106,7 @@ function LandingFooter({ user }) {
             Verified solves, a provable profile, and everywhere that leads —
             practice, community, and real placement opportunity.
           </p>
-          <p className="flex items-center gap-1.5 text-xs text-[var(--muted-foreground)]">
-            Made with
-            <Heart size={12} className="fill-current text-[var(--muted-foreground)]" aria-hidden="true" />
-            by developers, for developers
-          </p>
+          
         </div>
 
         <div className="lg:col-span-3">
