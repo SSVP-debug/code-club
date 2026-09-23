@@ -46,7 +46,7 @@ describe("TpoReportsPanel", () => {
         element?.textContent === "Placement-preparation activity for Report University."
       )
     ).toBeInTheDocument();
-    expect(screen.getByText("120")).toBeInTheDocument();
+    expect(screen.getAllByText("120")).toHaveLength(2);
     expect(screen.getByText("840")).toBeInTheDocument();
     expect(screen.getByText("75%")).toBeInTheDocument();
     expect(screen.getByText(/3 students opted out of TPO visibility/i)).toBeInTheDocument();
