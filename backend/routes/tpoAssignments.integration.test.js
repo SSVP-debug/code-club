@@ -91,21 +91,21 @@ describe("TPO-4 cohort assignments — real Mongo integration", () => {
 
     const studentA = await User.create({
       firebaseUid: "fb-student-a",
-      email: "a@student.a.edu",
+      email: "a@a.edu",
       role: "student",
       roles: ["student"],
       solvedSlugs: ["p1", "p2"],
     });
     const studentB = await User.create({
       firebaseUid: "fb-student-b",
-      email: "b@student.b.edu",
+      email: "b@b.edu",
       role: "student",
       roles: ["student"],
       solvedSlugs: ["p1"],
     });
     const outsider = await User.create({
       firebaseUid: "fb-outsider",
-      email: "outsider@student.a.edu",
+      email: "outsider@a.edu",
       role: "student",
       roles: ["student"],
       solvedSlugs: ["p1", "p2"],
@@ -171,8 +171,8 @@ describe("TPO-4 cohort assignments — real Mongo integration", () => {
     // Outsider has solved everything but is not a cohort member. If the
     // implementation accidentally used the whole college, completion would
     // be inflated. The correct audience is exactly A + B: one complete.
-    expect(outsider.emailDomain).toBe("student.a.edu");
-    expect(studentA.emailDomain).toBe("student.a.edu");
+    expect(outsider.emailDomain).toBe("a.edu");
+    expect(studentA.emailDomain).toBe("a.edu");
 
     const res = await runRoute(tpoRouter, "get", "/assignments", {
       userDoc: tpo,
