@@ -9,10 +9,19 @@ import mongoose from "mongoose";
  * assignments point at one institution-owned Cohort. Route/service code
  * is responsible for proving that the cohort belongs to the same College
  * before writing or reading it.
+ *
+ * collegeId is the canonical institution boundary. collegeDomain remains
+ * for backward compatibility while existing assignments are migrated.
  */
 const assignmentSchema = new mongoose.Schema(
   {
     tpoId:        { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    collegeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "College",
+      default: null,
+      index: true,
+    },
     collegeDomain:{ type: String, required: true, index: true },
     cohortId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -29,6 +38,7 @@ const assignmentSchema = new mongoose.Schema(
 );
 
 assignmentSchema.index({ collegeDomain: 1, dueDate: -1 });
+assignmentSchema.index({ collegeId: 1, dueDate: -1 });
 assignmentSchema.index({ cohortId: 1, dueDate: -1 });
 
 const Assignment = mongoose.model("Assignment", assignmentSchema);
