@@ -3,8 +3,8 @@ import Reveal from "./Reveal";
 import Button from "../ui/Button";
 import { WhatsappMark, DiscordMark } from "../icons/BrandIcons";
 import { WHATSAPP_LINK, DISCORD_INVITE_URL } from "../../config/site.js";
-import communityHands from "../../assets/community/pexels-diva-plavalaguna-6146697.jpg";
-import communityStudents from "../../assets/community/pexels-yankrukov-8199223.jpg";
+import communityHands from "../../assets/community/community-hands.webp";
+import communityStudents from "../../assets/community/community-students.webp";
 
 function CommunitySection() {
   const secondaryChannels = [
