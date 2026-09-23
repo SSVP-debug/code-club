@@ -113,6 +113,29 @@ const collegeSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
+
+    // ── Institutional subscription (TPO-6 Commercialization) ─────────────
+    // Billing belongs to the institution, not an individual TPO account.
+    // This keeps access intact when the primary TPO changes.
+    subscription: {
+      plan: {
+        type: String,
+        enum: ["none", "pilot", "college_monthly", "college_yearly", "enterprise"],
+        default: "none",
+      },
+      status: {
+        type: String,
+        enum: ["none", "trialing", "active", "cancelled", "expired"],
+        default: "none",
+      },
+      startedAt: { type: Date, default: null },
+      expiresAt: { type: Date, default: null },
+      cancelledAt: { type: Date, default: null },
+      provider: { type: String, enum: ["manual", "razorpay", "stripe"], default: "manual" },
+      providerCustomerId: { type: String, default: null, trim: true },
+      providerSubscriptionId: { type: String, default: null, trim: true },
+      lastPaymentAt: { type: Date, default: null },
+    },
   },
   {
     timestamps: true,
