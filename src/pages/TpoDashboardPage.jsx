@@ -677,7 +677,15 @@ export default function TpoDashboardPage() {
                         Due {new Date(a.dueDate).toLocaleDateString()}
                       </span>
                     </div>
-                    <p className="text-xs text-[var(--muted-foreground)] mb-3">{a.problemSlugs.length} problems</p>
+                    <div className="flex items-center gap-2 flex-wrap mb-3">
+                      <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-[var(--surface-elevated)] text-[var(--muted-foreground)] border border-[var(--border)]">
+                        <Users size={12} strokeWidth={2} aria-hidden="true" />
+                        {a.cohort
+                          ? [a.cohort.name, a.cohort.branch, a.cohort.graduatingYear].filter(Boolean).join(" · ")
+                          : "Entire college"}
+                      </span>
+                      <span className="text-xs text-[var(--muted-foreground)]">{a.problemSlugs.length} problems</span>
+                    </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <div className="flex-1 min-w-[80px] h-2 bg-[var(--surface-elevated)] rounded-full overflow-hidden">
                         <div className="h-full bg-[var(--theme-primary,#2dd4bf)]" style={{ width: `${a.completionPercent}%` }} />
