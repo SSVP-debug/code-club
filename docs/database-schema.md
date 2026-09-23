@@ -195,3 +195,6 @@ Institution billing state belongs to the College rather than an individual TPO a
 | `provider` | String | `manual`, `razorpay`, or `stripe` |
 | `providerCustomerId`, `providerSubscriptionId` | String | Provider references; never expose these through TPO status responses. |
 | `lastPaymentAt` | Date | Last successful payment timestamp. |
+
+
+TPO-6 Batch 2 additionally persists `providerOrderId` and `providerPaymentId` on `College.subscription`. These provider identifiers are internal payment reconciliation fields and are not returned by the TPO billing-status API.
