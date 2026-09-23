@@ -322,6 +322,30 @@ describe("TPO-4 cohort assignments — real Mongo integration", () => {
     expect(res._json.remindedCount).toBe(1);
   });
 
+  it("students from every college domain receive the same college-wide assignment", async () => {
+    const { college, tpo, studentB } = await seed();
+
+    const assignment = await Assignment.create({
+      tpoId: tpo._id,
+      collegeId: college._id,
+      collegeDomain: "a.edu",
+      cohortId: null,
+      title: "Canonical College Assignment",
+      problemSlugs: ["p1"],
+      dueDate: new Date("2026-10-01T00:00:00.000Z"),
+    });
+
+    const res = await runRoute(studentAssignmentsRouter, "get", "/", {
+      userDoc: studentB,
+      query: {},
+      log: mockLog(),
+    });
+
+    expect(res._status).toBe(200);
+    expect(res._json.assignments).toHaveLength(1);
+    expect(String(res._json.assignments[0]._id)).toBe(String(assignment._id));
+  });
+
   it("legacy college-wide assignments remain visible to college students", async () => {
     const { tpo, studentA, outsider } = await seed();
 
