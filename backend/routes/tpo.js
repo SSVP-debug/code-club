@@ -1311,7 +1311,13 @@ router.post("/assignments", requireRole("tpo", "admin"), requireVerified, async 
     // Fan out only to the assignment audience. Legacy assignments with no
     // cohortId remain college-wide for backward compatibility.
     const domain = req.userDoc.tpoProfile?.collegeDomain?.toLowerCase();
-    if (targetCohort || domain) {
+    const assignmentCollegeDomains = callerCollege?.domains?.length
+      ? callerCollege.domains.map((d) => d.toLowerCase())
+      : domain
+        ? [domain]
+        : [];
+
+    if (targetCohort || assignmentCollegeDomains.length) {
       const studentQuery = targetCohort
         ? {
             role: "student",
@@ -1324,7 +1330,7 @@ router.post("/assignments", requireRole("tpo", "admin"), requireVerified, async 
             },
           }
         : {
-            emailDomain: domain,
+            emailDomain: { $in: assignmentCollegeDomains },
             role: "student",
           };
 
