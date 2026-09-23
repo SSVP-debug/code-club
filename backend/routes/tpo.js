@@ -438,12 +438,41 @@ router.post("/billing/verify", requireRole("tpo"), requireVerified, async (req, 
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
 
-    const signaturesMatch = crypto.timingSafeEqual(
-      Buffer.from(expectedSignature, "utf8"),
-      Buffer.from(razorpay_signature, "utf8")
-    );
+    const expectedBuffer = Buffer.from(expectedSignature, "utf8");
+    const receivedBuffer = Buffer.from(String(razorpay_signature), "utf8");
+    const signaturesMatch =
+      expectedBuffer.length === receivedBuffer.length &&
+      crypto.timingSafeEqual(expectedBuffer, receivedBuffer);
     if (!signaturesMatch) {
       return res.status(400).json({ error: "Payment verification failed. Signature mismatch." });
+    }
+
+    const razorpay = getRazorpayClient();
+    if (!razorpay) {
+      return res.status(503).json({ error: "Payment provider not configured." });
+    }
+
+    const order = await razorpay.orders.fetch(razorpay_order_id);
+    const orderNotes = order?.notes || {};
+    if (
+      orderNotes.billingType !== "institution" ||
+      orderNotes.collegeId !== college._id.toString() ||
+      orderNotes.purchaserUserId !== req.userDoc._id.toString() ||
+      orderNotes.planId !== planId ||
+      Number(order.amount) !== Number(plan.amountPaise) ||
+      order.currency !== "INR"
+    ) {
+      return res.status(400).json({ error: "Payment order does not match this institution purchase." });
+    }
+
+    if (college.subscription?.providerPaymentId === razorpay_payment_id) {
+      return res.json({
+        success: true,
+        collegeId: college._id,
+        plan: college.subscription.plan,
+        expiresAt: college.subscription.expiresAt,
+        alreadyProcessed: true,
+      });
     }
 
     const now = new Date();
@@ -458,6 +487,8 @@ router.post("/billing/verify", requireRole("tpo"), requireVerified, async (req, 
       cancelledAt: null,
       provider: "razorpay",
       providerCustomerId: college.subscription?.providerCustomerId || null,
+      providerOrderId: razorpay_order_id,
+      providerPaymentId: razorpay_payment_id,
       providerSubscriptionId: null,
       lastPaymentAt: now,
     };
