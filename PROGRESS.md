@@ -2240,3 +2240,20 @@ See this session's full closure report (delivered to Bunny directly) for
 the complete acceptance matrix, security summary, and final
 recommendation. TPO-3 was explicitly NOT started, per this audit's own
 hard boundary.
+
+
+## TPO Product Closure — September 2026
+
+TPO-1 through TPO-4 are complete and hardened. TPO-5 reporting now includes:
+- canonical institution-scoped overview service and API;
+- Reports dashboard with date-range filtering and explicit TPO opt-out disclosure;
+- PDF export aligned with the canonical report metrics, institution boundary, multi-domain colleges, and TPO visibility policy;
+- admin PDF targeting via explicit collegeId.
+
+Student-facing institutional support now includes:
+- GET /api/tpo/college-directory, which resolves the student's own verified college server-side and returns only active, verified TPOs from that institution;
+- /college-tpos page and Student navigation entry: "College TPOs";
+- primary/secondary TPO indication and direct email contact;
+- blocked access until the student's college email is verified.
+
+FeatureRequest vote-race work remains a separate non-TPO test track and does not block the TPO product scope.
