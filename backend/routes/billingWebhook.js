@@ -5,7 +5,7 @@ import { logger } from "../config/logger.js";
 import { createNotification } from "../services/notificationService.js";
 import InstitutionBillingEvent from "../models/InstitutionBillingEvent.js";
 import { B2B_BILLING_ENABLED } from "../config/featureFlags.js";
-import { applyInstitutionWebhookEvent } from "./institutionBillingWebhook.js";
+import { applyInstitutionWebhookEvent } from "../services/institutionBillingWebhookService.js";
 
 const router = express.Router();
 
