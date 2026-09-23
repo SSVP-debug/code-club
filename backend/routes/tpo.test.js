@@ -6,6 +6,9 @@ vi.mock("../config/featureFlags.js", () => ({
 vi.mock("../models/User.js", () => ({
   default: { find: vi.fn(), aggregate: vi.fn() },
 }));
+vi.mock("../models/College.js", () => ({
+  default: { find: vi.fn(), findById: vi.fn(), findOne: vi.fn() },
+}));
 vi.mock("../utils/cache.js", () => ({
   // Bypass real caching — treat every call as a cache MISS, so each test's
   // aggregate call is actually exercised instead of hitting a previous
@@ -41,6 +44,7 @@ vi.mock("../services/tpoTeamService.js", () => ({
 }));
 
 import User from "../models/User.js";
+import College from "../models/College.js";
 import Assignment from "../models/Assignment.js";
 import { createNotificationBulk } from "../services/notificationService.js";
 import { getSettings } from "../services/settingsService.js";
@@ -660,5 +664,71 @@ describe("multi-domain college scoping (GET /students, GET /dashboard)", () => {
     const match = pipeline.find((s) => s.$match)?.$match;
     expect(resolveCollegeDomains).toHaveBeenCalledWith(multiDomainTpo);
     expect(match.emailDomain).toEqual({ $in: ["mit.edu"] }); // default mock: just the TPO's own domain
+  });
+});
+
+describe("GET /college-directory", () => {
+  const verifiedStudent = {
+    role: "student",
+    emailDomain: "report.edu",
+    education: { emailVerified: true, collegeId: "college-1" },
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    College.findById.mockResolvedValue({
+      _id: "college-1",
+      name: "Report University",
+      status: "verified",
+      domains: ["report.edu", "legacy.report.edu"],
+      primaryTpo: "tpo-1",
+    });
+    User.find.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        sort: vi.fn().mockReturnValue({
+          lean: vi.fn().mockResolvedValue([
+            {
+              _id: "tpo-1",
+              displayName: "Primary Officer",
+              email: "primary@report.edu",
+              tpoProfile: { collegeName: "Report University" },
+            },
+            {
+              _id: "tpo-2",
+              displayName: "Secondary Officer",
+              email: "secondary@report.edu",
+              tpoProfile: { collegeName: "Report University" },
+            },
+          ]),
+        }),
+      }),
+    });
+  });
+
+  it("returns only verified active TPOs from the student's own institution", async () => {
+    const res = await runRoute("get", "/college-directory", { userDoc: verifiedStudent });
+
+    expect(res.json).toHaveBeenCalledWith({
+      college: { id: "college-1", name: "Report University" },
+      tpos: [
+        expect.objectContaining({ id: "tpo-1", isPrimary: true }),
+        expect.objectContaining({ id: "tpo-2", isPrimary: false }),
+      ],
+    });
+    expect(User.find).toHaveBeenCalledWith({
+      role: "tpo",
+      status: "active",
+      "tpoProfile.collegeDomain": { $in: ["report.edu", "legacy.report.edu"] },
+      "tpoProfile.verified": true,
+    });
+  });
+
+  it("blocks students who have not verified their college email", async () => {
+    const res = await runRoute("get", "/college-directory", {
+      userDoc: { role: "student", education: { emailVerified: false } },
+    });
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(User.find).not.toHaveBeenCalled();
   });
 });
