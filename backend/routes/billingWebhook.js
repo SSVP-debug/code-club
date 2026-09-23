@@ -84,18 +84,28 @@ async function applyInstitutionEventWithIdempotency(req, payload) {
     throw err;
   }
 
-  const eventRecord = await InstitutionBillingEvent.findOneAndUpdate(
-    { providerEventId },
-    {
-      $setOnInsert: {
-        providerEventId,
-        event: payload.event || "unknown",
-        status: "received",
-        receivedAt: new Date(),
+  let eventRecord;
+  try {
+    eventRecord = await InstitutionBillingEvent.findOneAndUpdate(
+      { providerEventId },
+      {
+        $setOnInsert: {
+          providerEventId,
+          event: payload.event || "unknown",
+          status: "received",
+          receivedAt: new Date(),
+        },
       },
-    },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
-  );
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+  } catch (err) {
+    // Two deliveries of the same Razorpay event can race. The unique index
+    // is the final arbiter; if the loser gets E11000, read the winner and
+    // continue through the same processed/failed state machine.
+    if (err?.code !== 11000) throw err;
+    eventRecord = await InstitutionBillingEvent.findOne({ providerEventId });
+    if (!eventRecord) throw err;
+  }
 
   if (eventRecord.status === "processed") {
     return true;
