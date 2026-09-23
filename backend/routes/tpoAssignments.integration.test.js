@@ -390,6 +390,57 @@ describe("TPO-4 cohort assignments — real Mongo integration", () => {
     expect(college.domains).toEqual(["a.edu", "b.edu"]);
   });
 
+  it("archived assignments stay in TPO history but leave student delivery and reminders", async () => {
+    const { tpo, studentA } = await seed();
+
+    const assignment = await Assignment.create({
+      tpoId: tpo._id,
+      collegeId: (await College.findOne({ name: "Cohort Test University" }))._id,
+      collegeDomain: "a.edu",
+      cohortId: null,
+      title: "Archive Me",
+      problemSlugs: ["p1"],
+      dueDate: new Date("2026-10-01T00:00:00.000Z"),
+    });
+
+    const archiveRes = await runRoute(tpoRouter, "post", "/assignments/:id/archive".replace(":id", assignment._id.toString()), {
+      userDoc: tpo,
+      params: { id: assignment._id.toString() },
+      body: {},
+      query: {},
+      log: mockLog(),
+    });
+
+    expect(archiveRes._status).toBe(200);
+    expect(archiveRes._json.status).toBe("archived");
+
+    const saved = await Assignment.findById(assignment._id).lean();
+    expect(saved.status).toBe("archived");
+
+    const tpoRes = await runRoute(tpoRouter, "get", "/assignments", {
+      userDoc: tpo,
+      query: {},
+      log: mockLog(),
+    });
+    expect(tpoRes._json.assignments).toHaveLength(1);
+    expect(tpoRes._json.assignments[0].status).toBe("archived");
+
+    const studentRes = await runRoute(studentAssignmentsRouter, "get", "/", {
+      userDoc: studentA,
+      query: {},
+      log: mockLog(),
+    });
+    expect(studentRes._json.assignments).toHaveLength(0);
+
+    const remindRes = await handleRemindAssignment({
+      userDoc: tpo,
+      params: { id: assignment._id.toString() },
+      log: mockLog(),
+    }, mockRes());
+    expect(remindRes._status).toBe(409);
+    expect(remindRes._json.error).toMatch(/archived/i);
+  });
+
   it("legacy college-wide assignments remain visible to college students", async () => {
     const { tpo, studentA, outsider } = await seed();
 
