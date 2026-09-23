@@ -107,6 +107,7 @@ export default function TpoBillingPanel({ onActivated }) {
   }
 
   const active = status?.subscription?.isActive;
+  const cancelled = status?.subscription?.status === "cancelled";
 
   return (
     <div className="space-y-6">
@@ -156,22 +157,22 @@ export default function TpoBillingPanel({ onActivated }) {
             Your college can continue using the TPO workspace during the pilot.
           </p>
         </div>
-      ) : status?.subscription?.status === "cancelled" ? (
-        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
-          <h3 className="font-bold text-[var(--foreground)]">Subscription cancelled</h3>
-          <p className="text-sm text-[var(--muted-foreground)] mt-2">
-            Your institution keeps access until {status?.subscription?.expiresAt ? new Date(status.subscription.expiresAt).toLocaleDateString() : "the end of the paid period"}.
-          </p>
-          <p className="text-xs text-[var(--muted-foreground)] mt-2">
-            The primary TPO can purchase a new plan before or after expiry.
-          </p>
-          {status?.isPrimary && (
-            <Button className="mt-5" onClick={cancelSubscription} loading={cancelling} disabled={cancelling}>
-              Cancelled — no further renewal
-            </Button>
+      ) : (!active || cancelled) ? (
+        <div>
+          {cancelled && (
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 mb-4">
+              <h3 className="font-bold text-[var(--foreground)]">Subscription cancelled</h3>
+              <p className="text-sm text-[var(--muted-foreground)] mt-2">
+                Access remains available until {status?.subscription?.expiresAt ? new Date(status.subscription.expiresAt).toLocaleDateString() : "the end of the paid period"}.
+              </p>
+              {status?.isPrimary && (
+                <p className="text-xs text-[var(--muted-foreground)] mt-2">
+                  You can purchase a new plan now to continue without an interruption.
+                </p>
+              )}
+            </div>
           )}
-        </div>
-      ) : !active ? (
+          <div>
         <div>
           <div className="mb-4">
             <h3 className="text-lg font-bold text-[var(--foreground)]">Choose an institution plan</h3>
