@@ -263,6 +263,7 @@ describe("TPO-4 cohort assignments — real Mongo integration", () => {
 
     await Assignment.create({
       tpoId: tpo._id,
+      collegeId: college._id,
       collegeDomain: "a.edu",
       cohortId: null,
       title: "Cross Domain College Assignment",
