@@ -403,7 +403,7 @@ describe("TPO-4 cohort assignments — real Mongo integration", () => {
       dueDate: new Date("2026-10-01T00:00:00.000Z"),
     });
 
-    const archiveRes = await runRoute(tpoRouter, "post", "/assignments/:id/archive".replace(":id", assignment._id.toString()), {
+    const archiveRes = await runRoute(tpoRouter, "post", "/assignments/:id/archive", {
       userDoc: tpo,
       params: { id: assignment._id.toString() },
       body: {},
