@@ -39,6 +39,7 @@ function serializeUser(userDoc) {
     displayName: userDoc.displayName,
     username: userDoc.username || "",
     isProfilePublic: userDoc.isProfilePublic,
+    visibleToTpo: userDoc.visibleToTpo ?? true,
 
     // Active application role vs authorized roles — see models/User.js's
     // role/roles comment. Included here so any caller of GET /api/me gets
@@ -93,7 +94,15 @@ export async function updateMe(req, res) {
     recruiterSnapshot,
     preferences,
     developerProfile,
+    visibleToTpo,
   } = req.body;
+
+  if (visibleToTpo !== undefined) {
+    if (typeof visibleToTpo !== "boolean") {
+      return res.status(400).json({ error: "visibleToTpo must be a boolean" });
+    }
+    req.userDoc.visibleToTpo = visibleToTpo;
+  }
 
   if (leetcodeUsername !== undefined) {
     req.userDoc.leetcodeUsername = leetcodeUsername;
