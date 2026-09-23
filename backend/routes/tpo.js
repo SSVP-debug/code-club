@@ -1853,62 +1853,87 @@ router.get("/report/pdf", requireRole("tpo", "admin"),
     }
 
     try {
+      let college;
+      if (req.userDoc.role === "admin") {
+        if (!req.query.collegeId) return res.status(400).json({ error: "collegeId is required." });
+        college = await College.findById(req.query.collegeId).lean();
+      } else {
+        college = await getCollegeForTpo(req.userDoc);
+      }
 
+      if (!college || college.status !== "verified") {
+        return res.status(404).json({ error: "Verified college not found." });
+      }
 
-      const domain = req.userDoc.tpoProfile?.collegeDomain;
-      if (!domain) return res.status(400).json({ error: "No college domain set on this TPO account." });
-      // Multi-domain college fix (TPO-1 closure) — see the matching
-      // comment in GET /students above.
-      const collegeDomains = await resolveCollegeDomains(req.userDoc);
+      // The PDF summary uses the same canonical institution report service
+      // as the dashboard. Student rankings use the same institution boundary
+      // and TPO visibility policy, so opted-out students never leak into PDF.
+      const report = await getInstitutionReportOverview({
+        college,
+        from: req.query.from,
+        to: req.query.to,
+      });
+
+      const collegeDomains = college.domains.map((d) => d.toLowerCase());
       const students = await User.find({
-        emailDomain: { $in: collegeDomains },
-        role: "student",
+        $and: [
+          { role: "student", visibleToTpo: { $ne: false } },
+          {
+            $or: [
+              { "education.collegeId": college._id },
+              {
+                "education.collegeId": { $in: [null, undefined] },
+                emailDomain: { $in: collegeDomains },
+              },
+              {
+                "education.collegeId": { $exists: false },
+                emailDomain: { $in: collegeDomains },
+              },
+            ],
+          },
+        ],
       })
-        .select("displayName totalXP solvedSlugs solvedDifficulty currentStreak topicStats")
+        .select("displayName totalXP solvedSlugs currentStreak")
         .sort({ totalXP: -1 })
         .lean();
 
-      const totalStudents = students.length;
-      const totalSolved = students.reduce((sum, s) => sum + (s.solvedSlugs?.length ?? 0), 0);
-      const avgSolved = totalStudents ? Math.round((totalSolved / totalStudents) * 10) / 10 : 0;
-      const activeCount = students.filter(s => (s.currentStreak ?? 0) > 0).length;
+      const collegeName = college.name || "College";
+      const domainLabel = collegeDomains.join(", ");
 
       const doc = new PDFDocument({ size: "A4", margin: 50 });
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename="${(req.userDoc.tpoProfile?.collegeName || "college").replace(/[^a-z0-9]/gi, "_")}_codeclub_report.pdf"`);
+      res.setHeader("Content-Disposition", `attachment; filename="${collegeName.replace(/[^a-z0-9]/gi, "_")}_codeclub_report.pdf"`);
       doc.pipe(res);
 
-      // Header
       doc.rect(0, 0, doc.page.width, 90).fill("#18181b");
       doc.fontSize(22).fillColor("#22c55e").font("Helvetica-Bold").text("Code Club", 50, 24);
-      doc.fontSize(11).fillColor("#a1a1aa").font("Helvetica").text("Class Performance Report", 50, 52);
+      doc.fontSize(11).fillColor("#a1a1aa").font("Helvetica").text("Institution Performance Report", 50, 52);
       doc.fontSize(10).fillColor("#71717a")
         .text(new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }), doc.page.width - 200, 52, { align: "right", width: 150 });
 
-      doc.fontSize(18).fillColor("#000").font("Helvetica-Bold").text(req.userDoc.tpoProfile?.collegeName || "College", 50, 110);
-      doc.fontSize(10).fillColor("#71717a").font("Helvetica").text(domain, 50, 134);
+      doc.fontSize(18).fillColor("#000").font("Helvetica-Bold").text(collegeName, 50, 110);
+      doc.fontSize(9).fillColor("#71717a").font("Helvetica").text(domainLabel, 50, 134);
+      doc.fontSize(9).fillColor("#71717a")
+        .text(`Report period: ${new Date(report.range.from).toLocaleDateString("en-IN")} — ${new Date(report.range.to).toLocaleDateString("en-IN")}`, 50, 148);
 
-      // Summary stats
-      let sy = 165;
+      let sy = 175;
       const summary = [
-        { label: "Total Students", value: totalStudents },
-        { label: "Avg Problems Solved", value: avgSolved },
-        { label: "Active This Week", value: `${activeCount} (${totalStudents ? Math.round(activeCount / totalStudents * 100) : 0}%)` },
-        { label: "Total Problems Solved", value: totalSolved },
+        { label: "Visible Students", value: report.students.total },
+        { label: "Avg Problems Solved", value: report.problems.averageSolved },
+        { label: "Active Students", value: `${report.students.active} (${report.students.activePercent}%)` },
+        { label: "Total Problems Solved", value: report.problems.totalSolved },
       ];
       let sx = 50;
-      summary.forEach(s => {
+      summary.forEach((item) => {
         doc.rect(sx, sy, 120, 50).fill("#f4f4f5");
-        doc.fontSize(18).fillColor("#16a34a").font("Helvetica-Bold").text(String(s.value), sx + 10, sy + 8);
-        doc.fontSize(8).fillColor("#71717a").font("Helvetica").text(s.label, sx + 10, sy + 30, { width: 100 });
+        doc.fontSize(18).fillColor("#16a34a").font("Helvetica-Bold").text(String(item.value), sx + 10, sy + 8);
+        doc.fontSize(8).fillColor("#71717a").font("Helvetica").text(item.label, sx + 10, sy + 30, { width: 100 });
         sx += 130;
       });
 
-      // Student table
       let ty = sy + 75;
       doc.fontSize(12).fillColor("#000").font("Helvetica-Bold").text("STUDENT RANKINGS", 50, ty);
       ty += 22;
-
       doc.fontSize(8).fillColor("#71717a").font("Helvetica-Bold");
       doc.text("Rank", 50, ty); doc.text("Name", 90, ty); doc.text("Solved", 320, ty);
       doc.text("Streak", 380, ty); doc.text("XP", 450, ty);
@@ -1916,25 +1941,30 @@ router.get("/report/pdf", requireRole("tpo", "admin"),
       doc.moveTo(50, ty).lineTo(doc.page.width - 50, ty).strokeColor("#e4e4e7").stroke();
       ty += 8;
 
-      students.slice(0, 40).forEach((s, i) => {
+      students.slice(0, 40).forEach((student, i) => {
         if (ty > doc.page.height - 60) { doc.addPage(); ty = 50; }
         doc.fontSize(8).fillColor("#3f3f46").font("Helvetica");
         doc.text(String(i + 1), 50, ty);
-        doc.text(s.displayName || "—", 90, ty, { width: 220 });
-        doc.text(String(s.solvedSlugs?.length ?? 0), 320, ty);
-        doc.text(String(s.currentStreak ?? 0), 380, ty);
-        doc.text(String(s.totalXP ?? 0), 450, ty);
+        doc.text(student.displayName || "—", 90, ty, { width: 220 });
+        doc.text(String(student.solvedSlugs?.length ?? 0), 320, ty);
+        doc.text(String(student.currentStreak ?? 0), 380, ty);
+        doc.text(String(student.totalXP ?? 0), 450, ty);
         ty += 16;
       });
 
-      // Footer
       const footerY = doc.page.height - 40;
-      doc.fontSize(8).fillColor("#a1a1aa").text(`Generated by Code Club · ${SITE_URL.replace("https://","")}`, 50, footerY, { align: "center", width: doc.page.width - 100 });
+      doc.fontSize(8).fillColor("#a1a1aa")
+        .text(`Generated by Code Club · ${SITE_URL.replace("https://","")}`, 50, footerY, { align: "center", width: doc.page.width - 100 });
 
       doc.end();
     } catch (err) {
       (req.log || logger).error({ err }, "[TPO] report PDF error");
-      if (!res.headersSent) res.status(500).json({ error: "Failed to generate report." });
+      if (!res.headersSent) {
+        if (err?.code === "INVALID_DATE_RANGE") {
+          return res.status(400).json({ error: "Invalid report date range." });
+        }
+        res.status(500).json({ error: "Failed to generate report." });
+      }
     }
   });
 
