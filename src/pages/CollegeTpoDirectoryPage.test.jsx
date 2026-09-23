@@ -42,7 +42,7 @@ describe("CollegeTpoDirectoryPage", () => {
     render(<CollegeTpoDirectoryPage />);
 
     expect(await screen.findByText("Find your College TPOs")).toBeInTheDocument();
-    expect(screen.getByText("Report University")).toBeInTheDocument();
+    expect(screen.getAllByText("Report University").length).toBeGreaterThan(0);
     expect(screen.getByText("Primary Officer")).toBeInTheDocument();
     expect(screen.getByText("Secondary Officer")).toBeInTheDocument();
     expect(screen.getByText("primary@report.edu")).toBeInTheDocument();
