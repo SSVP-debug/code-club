@@ -1352,10 +1352,16 @@ router.get("/assignments", requireRole("tpo", "admin"), requireVerified, async (
 
     // TPO-4: legacy assignments remain college-wide. Cohort assignments
     // are measured only against active members of their target cohort.
+    // Multi-domain colleges must share the same assignment feed across all
+    // domains owned by the institution, not only the domain the current
+    // TPO registered with.
     // Resolve all target cohorts/members in bounded bulk queries so the
     // dashboard does not perform one membership/user query per assignment.
-    const assignmentQuery = domain
-      ? { collegeDomain: domain }
+    const collegeDomains = req.userDoc.role === "admin"
+      ? []
+      : await resolveCollegeDomains(req.userDoc);
+    const assignmentQuery = collegeDomains.length
+      ? { collegeDomain: { $in: collegeDomains } }
       : {};
     const assignments = await Assignment.find(assignmentQuery)
       .sort({ dueDate: -1 })
@@ -1388,8 +1394,8 @@ router.get("/assignments", requireRole("tpo", "admin"), requireVerified, async (
       studentIdsByCohort.get(key).add(String(membership.studentId));
     }
 
-    const legacyStudents = domain
-      ? await User.find({ emailDomain: domain, role: "student" })
+    const legacyStudents = collegeDomains.length
+      ? await User.find({ emailDomain: { $in: collegeDomains }, role: "student" })
           .select("_id solvedSlugs")
           .lean()
       : [];
