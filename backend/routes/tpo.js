@@ -1251,6 +1251,7 @@ router.post("/assignments", requireRole("tpo", "admin"), requireVerified, async 
     // The cohort is always resolved through its College boundary; a TPO
     // can never target another institution by supplying an arbitrary id.
     let targetCohort = null;
+    let callerCollege = null;
     if (cohortId !== undefined && cohortId !== null && cohortId !== "") {
       if (!mongoose.isValidObjectId(cohortId)) {
         return res.status(400).json({ error: "Invalid cohort ID." });
@@ -1264,7 +1265,7 @@ router.post("/assignments", requireRole("tpo", "admin"), requireVerified, async 
         return res.status(409).json({ error: "This cohort is archived and cannot receive new assignments." });
       }
 
-      const callerCollege = await getCollegeForTpo(req.userDoc);
+      callerCollege = await getCollegeForTpo(req.userDoc);
       if (req.userDoc.role !== "admin") {
         if (!callerCollege || String(callerCollege._id) !== String(targetCohort.collegeId)) {
           return res.status(403).json({ error: "This cohort does not belong to your college." });
@@ -1272,10 +1273,19 @@ router.post("/assignments", requireRole("tpo", "admin"), requireVerified, async 
       }
     }
 
+    if (req.userDoc.role !== "admin" && !callerCollege) {
+      callerCollege = await getCollegeForTpo(req.userDoc);
+    }
+
     let assignmentCollegeDomain = req.userDoc.tpoProfile?.collegeDomain?.toLowerCase();
+    let assignmentCollegeId = callerCollege?._id ?? null;
+
     if (!assignmentCollegeDomain && targetCohort) {
-      const targetCollege = await College.findById(targetCohort.collegeId).select("domains").lean();
+      const targetCollege = await College.findById(targetCohort.collegeId)
+        .select("_id domains")
+        .lean();
       assignmentCollegeDomain = targetCollege?.domains?.[0];
+      assignmentCollegeId = targetCollege?._id ?? assignmentCollegeId;
     }
     // Preserve the existing admin middleware bypass for legacy assignments.
     // An admin without a cohort has no institution context on the request;
@@ -1283,14 +1293,20 @@ router.post("/assignments", requireRole("tpo", "admin"), requireVerified, async 
     // requireVerified bypass into a new authorization failure. Cohort-targeted
     // admin assignments are safe because their domain is resolved from the
     // cohort's owning College above.
-    const assignment = await Assignment.create({
+    const assignmentPayload = {
       tpoId: req.userDoc._id,
       collegeDomain: assignmentCollegeDomain,
       cohortId: targetCohort?._id ?? null,
       title,
       problemSlugs,
       dueDate: new Date(dueDate),
-    });
+    };
+
+    if (assignmentCollegeId) {
+      assignmentPayload.collegeId = assignmentCollegeId;
+    }
+
+    const assignment = await Assignment.create(assignmentPayload);
 
     // Fan out only to the assignment audience. Legacy assignments with no
     // cohortId remain college-wide for backward compatibility.
