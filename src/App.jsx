@@ -59,7 +59,7 @@ const FeatureRequestsPage = lazy(() => import("./pages/FeatureRequestsPage"));
 const PricingPage = lazy(() => import("./pages/PricingPage"));
 const InterviewModePage = lazy(() => import("./pages/InterviewModePage"));
 const TpoSignupPage = lazy(() => import("./pages/TpoSignupPage"));
-const TpoDashboardPage = lazy(() => import("./pages/TpoDashboardPage"));
+const TpoDashboardPage = lazy(() => import("./pages/TpoDashboardPage"));\nconst CollegeTpoDirectoryPage = lazy(() => import("./pages/CollegeTpoDirectoryPage"));
 const AdminLayout = lazy(() => import("./layouts/AdminLayout"));
 const AdminOverviewPage = lazy(() => import("./pages/admin/AdminOverviewPage"));
 const AdminUsersPage = lazy(() => import("./pages/admin/AdminUsersPage"));
@@ -153,6 +153,15 @@ function App() {
           element={
             <ProtectedRoute>
               <ThemeGate><Analytics /></ThemeGate>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/college-tpos"
+          element={
+            <ProtectedRoute>
+              <ThemeGate><CollegeTpoDirectoryPage /></ThemeGate>
             </ProtectedRoute>
           }
         />
