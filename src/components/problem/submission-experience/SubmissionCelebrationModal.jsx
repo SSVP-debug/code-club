@@ -62,7 +62,8 @@ function SubmissionCelebrationModal({ submitInfo, problem, nextBestProblem }) {
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      data-universe-result="accepted-celebration"
+      className="universe-celebration fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label="Submission accepted"
@@ -70,7 +71,7 @@ function SubmissionCelebrationModal({ submitInfo, problem, nextBestProblem }) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-sm rounded-3xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl shadow-black/50 p-6 animate-celebration-pop-in"
+        className="universe-celebration__card relative w-full max-w-sm rounded-3xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl shadow-black/50 p-6 animate-celebration-pop-in"
       >
         <button
           type="button"
@@ -83,7 +84,7 @@ function SubmissionCelebrationModal({ submitInfo, problem, nextBestProblem }) {
 
         {/* ── Success state + celebration animation (subtle: one soft ring,
             no screen-filling effects) ────────────────────────────────── */}
-        <div className="flex flex-col items-center text-center pt-1">
+        <div className="universe-celebration__hero flex flex-col items-center text-center pt-1">
           <div className="relative w-16 h-16 mb-3">
             <span
               className="absolute inset-0 rounded-full animate-celebration-ring"

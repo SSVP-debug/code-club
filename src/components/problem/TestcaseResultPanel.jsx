@@ -204,10 +204,10 @@ export default function TestcaseResultPanel({
   const allPassed = passCount === results.length;
 
   return (
-    <div className="space-y-4">
+    <div className="universe-test-results space-y-4">
 
       {/* ── Summary + meta ───────────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
+      <div className="universe-test-results__summary flex items-center justify-between">
         <span
           className={`text-sm font-semibold font-mono-ui flex items-center gap-1.5 ${allPassed ? "text-verdict-accept" : "text-verdict-reject"
             }`}
@@ -231,7 +231,7 @@ export default function TestcaseResultPanel({
       </div>
 
       {/* ── Example tabs ─────────────────────────────────────────────── */}
-      <div className="flex gap-2 flex-wrap relative"
+      <div className="universe-test-results__tabs flex gap-2 flex-wrap relative"
         style={{ zIndex: 9999 }}>
         {results.map((r, i) => {
           const isActive = safeTab === i;
@@ -272,7 +272,8 @@ export default function TestcaseResultPanel({
 
         {/* Status Banner */}
         <div
-          className={`
+          data-universe-test-status={active.error ? "runtime-error" : active.passed ? "passed" : "wrong-answer"}
+          className={`universe-test-results__status
       rounded-xl
       px-4 py-3
       font-medium

@@ -149,8 +149,9 @@ function ProblemEditor({
           />
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="universe-editor__actions flex items-center gap-3">
           <button
+            data-universe-action="run"
             onClick={onRun}
             disabled={running || submitting}
             className="px-5 py-2 rounded-xl text-sm font-semibold border border-[var(--border-strong)] text-[var(--foreground)] hover:bg-[var(--surface-elevated)] transition-all disabled:opacity-50"
@@ -161,6 +162,7 @@ function ProblemEditor({
 
           <button
             data-testid="submit-code-button"
+            data-universe-action="submit"
             onClick={onSubmit}
             disabled={running || submitting}
             className={`px-6 py-2 rounded-xl text-sm font-bold transition-all disabled:opacity-50 ${submitting

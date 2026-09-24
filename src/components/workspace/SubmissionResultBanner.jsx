@@ -19,6 +19,24 @@ const FLAVOR_MESSAGES = {
         runtimeError: "The escape route failed.",
         compileError: "The Professor rejected the plan.",
     },
+    ghostProtocol: {
+        accepted: "Trace cleared. Payload verified.",
+        wrongAnswer: "Trace exposed a mismatch in the payload.",
+        runtimeError: "The process dropped from the network.",
+        compileError: "The payload could not be compiled.",
+    },
+    survivalCode: {
+        accepted: "Round cleared. You stay in the game.",
+        wrongAnswer: "This round exposed a weakness.",
+        runtimeError: "The run crashed under pressure.",
+        compileError: "The build failed before the round began.",
+    },
+    debugDynasty: {
+        accepted: "Build verified. Release is green.",
+        wrongAnswer: "Verification found a failing case.",
+        runtimeError: "The build crashed at runtime.",
+        compileError: "The build pipeline rejected the code.",
+    },
 };
 
 const DEFAULT_FLAVOR = {
@@ -94,7 +112,8 @@ export default function SubmissionResultBanner({
 
     return (
         <div
-            className={`
+            data-universe-result={isAccepted ? "accepted" : isWrongAnswer ? "wrong-answer" : isRuntime ? "runtime-error" : isCompile ? "compile-error" : "judge-error"}
+            className={`universe-result-banner
     mb-4 rounded-2xl border p-4
     animate-[fadeIn_.25s_ease-out]
     ${isAccepted
