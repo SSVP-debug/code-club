@@ -1639,3 +1639,308 @@ html.bw-mode .lp-final-cta-copy p {
     transition: none;
   }
 }
+
+
+/* ── U7: Submission + result immersion ───────────────────────────────────
+   Verdict semantics stay conventional and readable. Universe identity is
+   expressed through framing, labels, geometry and restrained glow — never
+   by replacing the actual verdict signal or relying on color alone. */
+.universe-editor__actions button[data-universe-action] {
+  position: relative;
+}
+
+.universe-editor__actions button[data-universe-action]::before {
+  content: attr(data-universe-action);
+  position: absolute;
+  left: 10px;
+  top: -7px;
+  padding: 0 4px;
+  background: var(--surface);
+  color: color-mix(in srgb, var(--theme-primary) 52%, var(--theme-muted));
+  font: 700 6px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 150ms ease, transform 150ms ease;
+  pointer-events: none;
+}
+
+.universe-editor__actions button[data-universe-action]:hover::before,
+.universe-editor__actions button[data-universe-action]:focus-visible::before {
+  opacity: 0.8;
+  transform: translateY(0);
+}
+
+.universe-result-banner {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  border-color: color-mix(in srgb, var(--theme-primary) 24%, var(--border)) !important;
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--theme-glow) 6%, transparent);
+}
+
+.universe-result-banner::before {
+  content: "VERDICT";
+  position: absolute;
+  top: 9px;
+  right: 12px;
+  color: color-mix(in srgb, var(--theme-primary) 42%, var(--theme-muted));
+  font: 700 7px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.18em;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.universe-result-banner[data-universe-result="accepted"] {
+  border-color: color-mix(in srgb, var(--theme-primary) 42%, var(--border)) !important;
+  box-shadow:
+    0 0 28px color-mix(in srgb, var(--theme-glow) 10%, transparent),
+    inset 3px 0 0 var(--theme-primary);
+}
+
+.universe-result-banner[data-universe-result="wrong-answer"] {
+  box-shadow: inset 3px 0 0 var(--color-verdict-reject);
+}
+
+.universe-result-banner[data-universe-result="runtime-error"] {
+  box-shadow: inset 3px 0 0 var(--color-verdict-reject);
+}
+
+.universe-result-banner[data-universe-result="compile-error"] {
+  box-shadow: inset 3px 0 0 var(--color-verdict-pending);
+}
+
+.universe-test-results {
+  position: relative;
+}
+
+.universe-test-results__summary {
+  min-height: 28px;
+}
+
+.universe-test-results__summary::before {
+  content: "CHECKPOINT";
+  color: color-mix(in srgb, var(--theme-primary) 48%, var(--theme-muted));
+  font: 700 7px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.universe-test-results__tabs::before {
+  content: "TEST MATRIX";
+  align-self: center;
+  color: color-mix(in srgb, var(--theme-primary) 46%, var(--theme-muted));
+  font: 700 7px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.14em;
+}
+
+.universe-test-results__status {
+  position: relative;
+  overflow: hidden;
+}
+
+.universe-test-results__status::after {
+  content: attr(data-universe-test-status);
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: currentColor;
+  font: 700 7px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.universe-celebration__card {
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--theme-primary) 32%, var(--border));
+  box-shadow:
+    0 28px 80px rgba(0,0,0,0.55),
+    0 0 42px color-mix(in srgb, var(--theme-glow) 11%, transparent);
+}
+
+.universe-celebration__card::before {
+  content: "VERIFIED";
+  position: absolute;
+  top: 14px;
+  left: 18px;
+  color: color-mix(in srgb, var(--theme-primary) 48%, var(--theme-muted));
+  font: 700 7px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.18em;
+  pointer-events: none;
+}
+
+.universe-celebration__hero {
+  position: relative;
+}
+
+.universe-celebration__hero::after {
+  content: var(--universe-motif);
+  position: absolute;
+  right: 0;
+  top: 0;
+  color: color-mix(in srgb, var(--theme-primary) 14%, transparent);
+  font: 700 7px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+/* Motif-specific verdict language. */
+[data-theme="codeHeist"] .universe-result-banner,
+[data-theme="codeHeist"] .universe-test-results__status {
+  border-radius: 7px;
+}
+
+[data-theme="codeHeist"] .universe-result-banner::before {
+  content: "VAULT / ACCESS";
+  letter-spacing: 0.2em;
+}
+
+[data-theme="codeHeist"] .universe-test-results__summary::before {
+  content: "SECURITY CHECK";
+}
+
+[data-theme="codeHeist"] .universe-test-results__tabs::before {
+  content: "VAULT TESTS";
+}
+
+[data-theme="codeHeist"] .universe-celebration__card::before {
+  content: "TARGET SECURED";
+}
+
+[data-theme="breakingBug"] .universe-result-banner::before {
+  content: "SPECIMEN / VERDICT";
+}
+
+[data-theme="breakingBug"] .universe-test-results__summary::before {
+  content: "LAB CHECK";
+}
+
+[data-theme="breakingBug"] .universe-test-results__tabs::before {
+  content: "SPECIMEN SET";
+}
+
+[data-theme="breakingBug"] .universe-celebration__card::before {
+  content: "BATCH VERIFIED";
+}
+
+[data-theme="ghostProtocol"] .universe-result-banner {
+  border-radius: 3px;
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0,255,65,0.012) 0 1px,
+    transparent 1px 4px
+  );
+}
+
+[data-theme="ghostProtocol"] .universe-result-banner::before {
+  content: "TRACE / VERDICT";
+  text-shadow: 0 0 9px rgba(0,255,65,0.16);
+}
+
+[data-theme="ghostProtocol"] .universe-test-results__summary::before {
+  content: "TRACE CHECK";
+  text-shadow: 0 0 8px rgba(0,255,65,0.14);
+}
+
+[data-theme="ghostProtocol"] .universe-test-results__tabs::before {
+  content: "TRACE MATRIX";
+}
+
+[data-theme="ghostProtocol"] .universe-celebration__card {
+  border-radius: 4px;
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0,255,65,0.01) 0 1px,
+    transparent 1px 5px
+  );
+}
+
+[data-theme="ghostProtocol"] .universe-celebration__card::before {
+  content: "TRACE CLEARED";
+}
+
+[data-theme="survivalCode"] .universe-result-banner {
+  border-radius: 5px;
+}
+
+[data-theme="survivalCode"] .universe-result-banner::before {
+  content: "ROUND / STATUS";
+}
+
+[data-theme="survivalCode"] .universe-test-results__summary::before {
+  content: "ROUND CHECK";
+}
+
+[data-theme="survivalCode"] .universe-test-results__tabs::before {
+  content: "TRIAL MATRIX";
+}
+
+[data-theme="survivalCode"] .universe-celebration__card {
+  border-radius: 8px;
+}
+
+[data-theme="survivalCode"] .universe-celebration__card::before {
+  content: "ROUND CLEARED";
+}
+
+[data-theme="debugDynasty"] .universe-result-banner {
+  border-radius: 13px;
+}
+
+[data-theme="debugDynasty"] .universe-result-banner::before {
+  content: "BUILD / VERDICT";
+}
+
+[data-theme="debugDynasty"] .universe-test-results__summary::before {
+  content: "BUILD CHECK";
+}
+
+[data-theme="debugDynasty"] .universe-test-results__tabs::before {
+  content: "RELEASE MATRIX";
+}
+
+[data-theme="debugDynasty"] .universe-celebration__card {
+  border-radius: 16px;
+}
+
+[data-theme="debugDynasty"] .universe-celebration__card::before {
+  content: "RELEASE VERIFIED";
+}
+
+@media (max-width: 767px) {
+  .universe-editor__actions button[data-universe-action]::before,
+  .universe-test-results__summary::before {
+    display: none;
+  }
+
+  .universe-test-results__tabs::before {
+    content: "";
+    width: 4px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--theme-primary);
+    margin-right: 2px;
+  }
+
+  .universe-test-results__status::after {
+    display: none;
+  }
+
+  .universe-result-banner {
+    border-radius: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .universe-editor__actions button[data-universe-action]::before,
+  .universe-result-banner,
+  .universe-celebration__card {
+    transition: none;
+    animation: none;
+  }
+}
