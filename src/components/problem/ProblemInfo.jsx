@@ -10,7 +10,7 @@ function ProblemInfo({ problem, variant = "full" }) {
   if (!problem) return null;
 
   return (
-    <div className="space-y-8 pb-8">
+    <div className="space-y-8 pb-8 universe-problem-info">
       {/* Description */}
       <section>
         <h3 className="text-lg font-semibold text-[var(--foreground)] mb-3">Description</h3>
@@ -91,7 +91,7 @@ function ProblemInfo({ problem, variant = "full" }) {
               still enforced by the backend either way; a proactive
               locked/upgrade state here is tracked as a follow-up once
               usePremium() lands. */}
-          <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/40 p-5 flex items-center justify-between gap-4 flex-wrap">
+          <section data-universe-section="interview" className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/40 p-5 flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-[var(--theme-primary,#2dd4bf)]/10 text-[var(--theme-primary,#2dd4bf)] flex items-center justify-center flex-shrink-0">
                 <MessageSquareText size={20} strokeWidth={2} aria-hidden="true" />
