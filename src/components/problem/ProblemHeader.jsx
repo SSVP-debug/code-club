@@ -29,9 +29,9 @@ function ProblemHeader({ problem, isSolved }) {
   const companies = problem.companies ?? [];
 
   return (
-    <div className="mb-5">
+    <div className="mb-5 universe-problem-header">
       {/* Title row */}
-      <div className="flex items-center gap-4 flex-wrap">
+      <div className="flex items-center gap-4 flex-wrap" data-universe-section="title">
         <h1 className="text-2xl xl:text-3xl font-bold text-[var(--foreground)] leading-tight">
           {problem.title}
         </h1>
@@ -43,7 +43,7 @@ function ProblemHeader({ problem, isSolved }) {
       </div>
 
       {/* Meta row: difficulty + topic + time */}
-      <div className="flex items-center gap-3 mt-3 flex-wrap">
+      <div className="flex items-center gap-3 mt-3 flex-wrap" data-universe-section="metadata">
         {!hideDifficulty && (
           <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
             problem.difficulty === "Easy"
@@ -73,7 +73,7 @@ function ProblemHeader({ problem, isSolved }) {
 
       {/* Company tags row shown only when companies are present */}
       {companies.length > 0 && (
-        <div className="flex items-center gap-2 mt-3 flex-wrap">
+        <div className="flex items-center gap-2 mt-3 flex-wrap" data-universe-section="companies">
           <span className="text-[10px] text-[var(--muted-foreground)] uppercase tracking-widest font-semibold">
             Asked at
           </span>
