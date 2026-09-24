@@ -1156,15 +1156,14 @@ html.bw-mode .lp-final-cta-copy p {
 }
 
 .universe-workspace__body {
-  padding-top: 46px;
+  min-height: 0;
 }
 
 .universe-workspace-header {
-  position: absolute;
-  top: 8px;
-  left: 12px;
-  right: 12px;
+  position: relative;
+  flex: 0 0 auto;
   z-index: 30;
+  margin: 8px 12px 0;
   min-height: 34px;
   display: flex;
   align-items: center;
@@ -1398,13 +1397,11 @@ html.bw-mode .lp-final-cta-copy p {
 
 @media (max-width: 767px) {
   .universe-workspace__body {
-    padding-top: 48px;
+    min-height: 0;
   }
 
   .universe-workspace-header {
-    left: 8px;
-    right: 8px;
-    top: 6px;
+    margin: 6px 8px 0;
     gap: 8px;
     padding: 6px 8px;
   }
