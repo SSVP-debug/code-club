@@ -36,6 +36,7 @@ function AchievementGallery({
 
   return (
     <SectionCard
+      className="universe-achievement-gallery"
       title={theme.words.achievements}
       icon={<Trophy size={18} strokeWidth={2} />}
       accented
@@ -45,6 +46,11 @@ function AchievementGallery({
     >
 
 
+
+      <div className="universe-achievement-gallery__summary" aria-label={`${unlocked.size} of ${displayList.length} achievements unlocked`}>
+        <span>{unlocked.size} / {displayList.length} unlocked</span>
+        <span>{displayList.length ? Math.round((unlocked.size / displayList.length) * 100) : 0}% milestone progress</span>
+      </div>
 
       {achievements.length === 0 ? (
         <EmptyState
@@ -65,7 +71,8 @@ function AchievementGallery({
             return (
               <div
                 key={achievement.key}
-                className={`rounded-xl p-4 ${isUnlocked
+                data-universe-achievement={isUnlocked ? "unlocked" : "locked"}
+                className={`universe-achievement-card rounded-xl p-4 ${isUnlocked
                   ? "bg-[var(--surface-elevated)]"
                   : "bg-[var(--surface)] opacity-50"
                   }`}
