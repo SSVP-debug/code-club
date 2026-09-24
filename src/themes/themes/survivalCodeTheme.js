@@ -39,6 +39,18 @@ export const survivalCodeTheme = createTheme({
     animation: "pulse",
   },
 
+  visual: {
+    codename: "ARENA 456",
+    eyebrow: "SURVIVAL TRIAL // ROUND 07",
+    heroTitle: "STAY IN THE GAME",
+    heroDescription: "Every problem is a round. Every accepted solution keeps you alive.",
+    status: "TRIAL IN PROGRESS",
+    artifact: "PLAYER // 456",
+    motif: "arena",
+    panelStyle: "arena",
+    emblem: "triangle",
+  },
+
   words: {
     run:                  "Green Light",
     submit:               "Stake Your Life",
