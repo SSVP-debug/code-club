@@ -911,7 +911,7 @@ html.bw-mode .lp-final-cta-copy p {
 }
 [data-theme="codeHeist"] .universe-card {
   border-radius: 8px;
-  background-image: linear-gradient(135deg, rgba(250,204,21,0.025), transparent 45%);
+  background-image: linear-gradient(135deg, rgba(239,68,68,0.025), transparent 45%);
 }
 [data-theme="codeHeist"] .universe-card::after {
   content: "CLASSIFIED";
@@ -920,7 +920,7 @@ html.bw-mode .lp-final-cta-copy p {
   bottom: 10px;
   font: 700 7px/1 ui-monospace, monospace;
   letter-spacing: 0.18em;
-  color: rgba(250,204,21,0.22);
+  color: rgba(239,68,68,0.22);
   pointer-events: none;
 }
 
@@ -1325,7 +1325,7 @@ html.bw-mode .lp-final-cta-copy p {
 
 [data-theme="codeHeist"] .universe-workspace-header {
   border-radius: 5px;
-  border-color: rgba(250,204,21,0.25);
+  border-color: rgba(239,68,68,0.25);
 }
 
 [data-theme="codeHeist"] .universe-workspace-header__icon {
@@ -2202,9 +2202,9 @@ html.bw-mode .lp-final-cta-copy p {
 /* Motif-specific profile language. */
 [data-theme="codeHeist"] .universe-profile-hero {
   border-radius: 7px;
-  border-color: rgba(250,204,21,0.28);
+  border-color: rgba(239,68,68,0.28);
   background:
-    linear-gradient(135deg, rgba(250,204,21,0.06), #090a0d 62%);
+    linear-gradient(135deg, rgba(239,68,68,0.06), #090a0d 62%);
 }
 
 [data-theme="codeHeist"] .universe-profile-hero__emblem {
@@ -2497,7 +2497,7 @@ html.bw-mode .lp-final-cta-copy p {
 
 [data-theme="codeHeist"] .universe-analytics-hero {
   border-radius: 7px;
-  background: linear-gradient(135deg, rgba(250,204,21,.06), #090a0d 64%);
+  background: linear-gradient(135deg, rgba(239,68,68,.06), #090a0d 64%);
 }
 [data-theme="codeHeist"] .universe-analytics-hero__emblem {
   border-radius: 4px;
