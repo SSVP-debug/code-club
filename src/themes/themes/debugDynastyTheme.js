@@ -18,6 +18,25 @@ export const debugDynastyTheme = createTheme({
     secondary: "#0a0f1e",
     border:    "#1e3a5f",
     accent:    "#60a5fa",
+    background: "#070b14",
+    surface: "#0e1421",
+    surfaceElevated: "#151d2d",
+    muted: "#9ba9bf",
+    glow: "#3b82f6",
+    gradient: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+  },
+
+  background: "debugDynasty",
+
+  atmosphere: {
+    artworkOpacity: 0.085,
+    artworkPosition: "center",
+    overlayOpacity: 0.82,
+    glowOpacity: 0.11,
+    gridOpacity: 0.06,
+    scanlineOpacity: 0,
+    vignetteOpacity: 0.78,
+    animation: "none",
   },
 
   words: {
