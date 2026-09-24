@@ -29,14 +29,26 @@ export const survivalCodeTheme = createTheme({
   background: "survivalCode",
 
   atmosphere: {
-    artworkOpacity: 0.09,
+    artworkOpacity: 0.18,
     artworkPosition: "center",
-    overlayOpacity: 0.80,
-    glowOpacity: 0.13,
-    gridOpacity: 0.04,
+    overlayOpacity: 0.64,
+    glowOpacity: 0.17,
+    gridOpacity: 0.06,
     scanlineOpacity: 0,
-    vignetteOpacity: 0.78,
+    vignetteOpacity: 0.68,
     animation: "pulse",
+  },
+
+  visual: {
+    codename: "ARENA 456",
+    eyebrow: "SURVIVAL TRIAL // ROUND 07",
+    heroTitle: "STAY IN THE GAME",
+    heroDescription: "Every problem is a round. Every accepted solution keeps you alive.",
+    status: "TRIAL IN PROGRESS",
+    artifact: "PLAYER // 456",
+    motif: "arena",
+    panelStyle: "arena",
+    emblem: "triangle",
   },
 
   words: {

@@ -25,14 +25,26 @@ export const codeHeistTheme = createTheme({
     background: "codeHeist",
 
     atmosphere: {
-        artworkOpacity: 0.12,
+        artworkOpacity: 0.20,
         artworkPosition: "center",
-        overlayOpacity: 0.74,
-        glowOpacity: 0.16,
-        gridOpacity: 0.08,
-        scanlineOpacity: 0.025,
-        vignetteOpacity: 0.74,
+        overlayOpacity: 0.58,
+        glowOpacity: 0.20,
+        gridOpacity: 0.10,
+        scanlineOpacity: 0.04,
+        vignetteOpacity: 0.62,
         animation: "scan",
+    },
+
+    visual: {
+        codename: "OPERATION 042",
+        eyebrow: "CLASSIFIED HEIST OPERATION",
+        heroTitle: "CRACK THE SYSTEM",
+        heroDescription: "Scope the target, breach the vault, and leave no loose ends.",
+        status: "SECURE CHANNEL",
+        artifact: "VAULT // CC-042",
+        motif: "heist",
+        panelStyle: "vault",
+        emblem: "vault",
     },
 
     words: {

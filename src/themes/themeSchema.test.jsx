@@ -49,3 +49,24 @@ describe("theme schema", () => {
     expect(theme.background).toBe("custom");
   });
 });
+
+
+describe("universe visual identity", () => {
+  it("provides visual metadata without requiring a theme-specific component contract", () => {
+    const theme = createTheme({
+      id: "demo",
+      name: "Demo",
+      description: "Demo",
+      colors: {},
+      words: {},
+      visual: {
+        codename: "NODE 01",
+        motif: "terminal",
+      },
+    });
+
+    expect(theme.visual.codename).toBe("NODE 01");
+    expect(theme.visual.motif).toBe("terminal");
+    expect(theme.visual.panelStyle).toBe("standard");
+  });
+});

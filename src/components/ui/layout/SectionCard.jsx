@@ -29,7 +29,7 @@ function SectionCard({
 
   return (
     <div
-      className={`relative overflow-hidden bg-[var(--surface)] rounded-2xl p-4 sm:p-6 border ${
+      className={`universe-card relative overflow-hidden bg-[var(--surface)] rounded-2xl p-4 sm:p-6 border ${
         accented ? "border-[var(--theme-border,#27272a)]" : "border-[var(--border)]"
       } ${className}`}
     >

@@ -22,6 +22,18 @@ const DEFAULT_ATMOSPHERE = {
     animation: "none",
 };
 
+const DEFAULT_VISUAL = {
+    codename: "",
+    eyebrow: "",
+    heroTitle: "",
+    heroDescription: "",
+    status: "",
+    artifact: "",
+    motif: "neutral",
+    panelStyle: "standard",
+    emblem: null,
+};
+
 export function createTheme(config) {
     const colors = {
         ...DEFAULT_COLORS,
@@ -33,12 +45,18 @@ export function createTheme(config) {
         ...(config.atmosphere ?? {}),
     };
 
+    const visual = {
+        ...DEFAULT_VISUAL,
+        ...(config.visual ?? {}),
+    };
+
     return {
         id: config.id,
         name: config.name,
         description: config.description,
         colors,
         atmosphere,
+        visual,
         background: config.background ?? null,
         words: { ...config.words },
         emptyStates: config.emptyStates ?? {},

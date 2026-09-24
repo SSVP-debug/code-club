@@ -600,6 +600,7 @@ html.bw-mode .lp-final-cta-copy p {
 
 .universe-atmosphere__artwork,
 .universe-atmosphere__glow,
+.universe-atmosphere__overlay,
 .universe-atmosphere__grid,
 .universe-atmosphere__scanlines,
 .universe-atmosphere__vignette {
@@ -614,6 +615,15 @@ html.bw-mode .lp-final-cta-copy p {
   opacity: var(--universe-artwork-opacity, 0);
   filter: saturate(0.88) brightness(0.72) contrast(0.98);
   transform: translateZ(0);
+}
+
+.universe-atmosphere__overlay {
+  opacity: var(--universe-overlay-opacity, 0);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--universe-bg) 76%, transparent),
+    color-mix(in srgb, var(--universe-bg) 90%, transparent)
+  );
 }
 
 .universe-atmosphere__glow {
@@ -694,5 +704,371 @@ html.bw-mode .lp-final-cta-copy p {
 
   .universe-atmosphere__grid {
     background-size: 64px 64px;
+  }
+}
+
+
+/* ── U3: Universe visual identity ────────────────────────────────────────
+   The universe is now a visual language, not a recolor. The dashboard hero,
+   navigation, cards and atmospheric layers share a motif-specific treatment.
+   All decoration is CSS-only and remains semantic/accessible. */
+.universe-identity {
+  position: relative;
+  isolation: isolate;
+  min-height: 188px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 28%, var(--border));
+  border-radius: 18px;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--theme-background) 96%, transparent), color-mix(in srgb, var(--theme-surface) 88%, transparent)),
+    var(--theme-background);
+}
+
+.universe-identity__artwork,
+.universe-identity__wash,
+.universe-identity__texture {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.universe-identity__artwork {
+  z-index: -3;
+  background-position: 72% center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: 0.42;
+  filter: saturate(0.72) brightness(0.58) contrast(1.05);
+  transform: scale(1.015);
+}
+
+.universe-identity__wash {
+  z-index: -2;
+  background:
+    linear-gradient(90deg, var(--theme-background) 0%, color-mix(in srgb, var(--theme-background) 94%, transparent) 36%, color-mix(in srgb, var(--theme-background) 48%, transparent) 72%, color-mix(in srgb, var(--theme-background) 12%, transparent) 100%),
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-background) 20%, transparent), color-mix(in srgb, var(--theme-background) 78%, transparent));
+}
+
+.universe-identity__texture {
+  z-index: -1;
+  opacity: 0.55;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--theme-primary) 12%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--theme-primary) 12%, transparent) 1px, transparent 1px);
+  background-size: 42px 42px;
+  -webkit-mask-image: linear-gradient(to right, black, transparent 78%);
+  mask-image: linear-gradient(to right, black, transparent 78%);
+}
+
+.universe-identity__content {
+  min-height: 188px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 22px;
+  padding: 28px 30px;
+}
+
+.universe-identity__emblem-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+}
+
+.universe-identity__emblem {
+  width: 68px;
+  height: 68px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 62%, transparent);
+  color: var(--theme-primary);
+  background: color-mix(in srgb, var(--theme-primary) 10%, var(--theme-surface));
+  box-shadow:
+    0 0 0 5px color-mix(in srgb, var(--theme-primary) 5%, transparent),
+    0 12px 36px color-mix(in srgb, var(--theme-glow) 12%, transparent);
+}
+
+.universe-identity__emblem-label,
+.universe-identity__codename,
+.universe-identity__status,
+.universe-identity__eyebrow {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.universe-identity__emblem-label {
+  max-width: 100px;
+  color: var(--theme-muted);
+  font-size: 8px;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.universe-identity__copy {
+  min-width: 0;
+}
+
+.universe-identity__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--theme-primary);
+  font-size: 9px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.universe-identity__signal {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 12px currentColor;
+}
+
+.universe-identity__title {
+  font-size: clamp(1.25rem, 1.05rem + 0.8vw, 1.8rem);
+  line-height: 1.1;
+  font-weight: 750;
+  color: var(--foreground);
+}
+
+.universe-identity__codename {
+  color: var(--theme-muted);
+  font-size: 9px;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 20%, var(--border));
+  padding: 5px 8px;
+  background: color-mix(in srgb, var(--theme-background) 70%, transparent);
+}
+
+.universe-identity__hero-title {
+  margin-top: 9px;
+  color: var(--theme-primary);
+  font-size: clamp(1rem, 0.9rem + 0.5vw, 1.25rem);
+  font-weight: 750;
+  letter-spacing: 0.045em;
+}
+
+.universe-identity__description {
+  margin-top: 4px;
+  max-width: 640px;
+  color: var(--theme-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.universe-identity__status {
+  align-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 2px;
+  color: var(--theme-muted);
+  font-size: 8px;
+  white-space: nowrap;
+}
+
+.universe-identity__status svg:last-child {
+  color: var(--theme-primary);
+}
+
+/* The default experience deliberately stays calm. */
+.universe-identity--default {
+  min-height: 104px;
+  display: flex;
+  align-items: center;
+  padding: 22px 28px;
+  border-color: var(--border);
+}
+
+.universe-identity--default .universe-identity__content {
+  min-height: auto;
+  display: flex;
+  padding: 0;
+}
+
+.universe-identity--default .universe-identity__emblem {
+  width: 48px;
+  height: 48px;
+  border-radius: 13px;
+}
+
+/* Heist: dossier/vault geometry + surveillance framing. */
+[data-theme="codeHeist"] .universe-identity {
+  border-radius: 8px;
+  border-color: color-mix(in srgb, #b91c1c 38%, var(--border));
+  background-color: #090a0d;
+}
+[data-theme="codeHeist"] .universe-identity__emblem {
+  border-radius: 4px;
+  border-color: #facc15;
+}
+[data-theme="codeHeist"] .universe-identity__texture {
+  background-size: 34px 34px;
+  opacity: 0.7;
+}
+[data-theme="codeHeist"] .universe-card {
+  border-radius: 8px;
+  background-image: linear-gradient(135deg, rgba(250,204,21,0.025), transparent 45%);
+}
+[data-theme="codeHeist"] .universe-card::after {
+  content: "CLASSIFIED";
+  position: absolute;
+  right: 14px;
+  bottom: 10px;
+  font: 700 7px/1 ui-monospace, monospace;
+  letter-spacing: 0.18em;
+  color: rgba(250,204,21,0.22);
+  pointer-events: none;
+}
+
+/* Breaking Bug: laboratory labels, specimen glass and controlled panels. */
+[data-theme="breakingBug"] .universe-identity {
+  border-radius: 12px;
+  border-color: color-mix(in srgb, #22c55e 34%, var(--border));
+}
+[data-theme="breakingBug"] .universe-identity__artwork {
+  background-position: 64% center;
+  filter: saturate(0.8) brightness(0.5) contrast(1.04);
+}
+[data-theme="breakingBug"] .universe-identity__emblem {
+  border-radius: 16px 16px 22px 22px;
+}
+[data-theme="breakingBug"] .universe-card {
+  border-radius: 12px;
+  background-image: linear-gradient(115deg, rgba(34,197,94,0.035), transparent 42%);
+}
+[data-theme="breakingBug"] .universe-card::after {
+  content: "LAB // ACTIVE";
+  position: absolute;
+  right: 14px;
+  bottom: 10px;
+  font: 700 7px/1 ui-monospace, monospace;
+  letter-spacing: 0.16em;
+  color: rgba(34,197,94,0.18);
+  pointer-events: none;
+}
+
+/* Ghost Protocol: terminal grid + hard intelligence-console edges. */
+[data-theme="ghostProtocol"] .universe-identity {
+  border-radius: 3px;
+  border-color: rgba(0,255,65,0.24);
+}
+[data-theme="ghostProtocol"] .universe-identity__artwork {
+  background-position: 70% center;
+  filter: saturate(0.55) brightness(0.38) contrast(1.16);
+}
+[data-theme="ghostProtocol"] .universe-identity__texture {
+  background-size: 24px 24px;
+  opacity: 0.8;
+}
+[data-theme="ghostProtocol"] .universe-card {
+  border-radius: 4px;
+  background-image: repeating-linear-gradient(0deg, rgba(0,255,65,0.018) 0 1px, transparent 1px 4px);
+}
+[data-theme="ghostProtocol"] .universe-card::after {
+  content: "TRACE: 0";
+  position: absolute;
+  right: 14px;
+  bottom: 10px;
+  font: 700 7px/1 ui-monospace, monospace;
+  letter-spacing: 0.16em;
+  color: rgba(0,255,65,0.18);
+  pointer-events: none;
+}
+
+/* Survival Code: arena warning geometry and high-pressure status styling. */
+[data-theme="survivalCode"] .universe-identity {
+  border-radius: 4px;
+  border-color: rgba(255,45,120,0.34);
+}
+[data-theme="survivalCode"] .universe-identity__artwork {
+  background-position: center;
+  filter: saturate(0.78) brightness(0.5) contrast(1.08);
+}
+[data-theme="survivalCode"] .universe-identity__emblem {
+  border-radius: 50%;
+  box-shadow: 0 0 0 5px rgba(255,45,120,0.05), 0 0 34px rgba(255,45,120,0.13);
+}
+[data-theme="survivalCode"] .universe-card {
+  border-radius: 5px;
+  background-image: linear-gradient(135deg, rgba(255,45,120,0.04), transparent 50%);
+}
+[data-theme="survivalCode"] .universe-card::after {
+  content: "TRIAL // LIVE";
+  position: absolute;
+  right: 14px;
+  bottom: 10px;
+  font: 700 7px/1 ui-monospace, monospace;
+  letter-spacing: 0.16em;
+  color: rgba(255,45,120,0.2);
+  pointer-events: none;
+}
+
+/* Debug Dynasty: startup command center / product launch language. */
+[data-theme="debugDynasty"] .universe-identity {
+  border-radius: 14px;
+  border-color: rgba(59,130,246,0.32);
+}
+[data-theme="debugDynasty"] .universe-identity__artwork {
+  background-position: 68% center;
+  filter: saturate(0.65) brightness(0.48) contrast(1.08);
+}
+[data-theme="debugDynasty"] .universe-identity__emblem {
+  border-radius: 18px;
+}
+[data-theme="debugDynasty"] .universe-card {
+  border-radius: 14px;
+  background-image: linear-gradient(135deg, rgba(59,130,246,0.04), transparent 52%);
+}
+[data-theme="debugDynasty"] .universe-card::after {
+  content: "BUILD // SHIP";
+  position: absolute;
+  right: 14px;
+  bottom: 10px;
+  font: 700 7px/1 ui-monospace, monospace;
+  letter-spacing: 0.16em;
+  color: rgba(59,130,246,0.2);
+  pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  .universe-identity {
+    min-height: 220px;
+  }
+
+  .universe-identity__content {
+    min-height: 220px;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    padding: 22px 20px;
+    gap: 15px;
+  }
+
+  .universe-identity__status {
+    grid-column: 2;
+    margin-top: -6px;
+  }
+
+  .universe-identity__artwork {
+    opacity: 0.28;
+    background-position: center;
+  }
+
+  .universe-identity__description {
+    font-size: 0.82rem;
+  }
+
+  .universe-identity__emblem {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .universe-identity__artwork {
+    transform: none;
   }
 }

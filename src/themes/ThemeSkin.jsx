@@ -39,6 +39,7 @@ function UniverseAtmosphere({ theme }) {
         />
       )}
       <div className="universe-atmosphere__glow" />
+      <div className="universe-atmosphere__overlay" />
       <div className="universe-atmosphere__grid" />
       <div className="universe-atmosphere__scanlines" />
       <div className="universe-atmosphere__vignette" />
@@ -64,6 +65,7 @@ export default function ThemeSkin({ children }) {
   return (
     <div
       data-theme={themeId}
+      data-universe-motif={theme.visual?.motif ?? "neutral"}
       style={{
         display: "contents",
         "--theme-primary": primary,
@@ -76,6 +78,8 @@ export default function ThemeSkin({ children }) {
         "--theme-muted": muted,
         "--theme-glow": glow,
         "--theme-gradient": gradient,
+        "--universe-motif": theme.visual?.motif ?? "neutral",
+        "--universe-panel-style": theme.visual?.panelStyle ?? "standard",
         "--background": background,
         "--foreground": "#f4f4f5",
         "--surface": surface,
