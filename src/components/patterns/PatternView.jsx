@@ -32,8 +32,9 @@ function PatternView({ problems, topicStats, setSelectedTopic, setActiveView }) 
   const focusAreas = topicRows.filter((row) => row.pct < 100).slice(0, FOCUS_COUNT);
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
+    <div className="universe-patterns flex flex-col gap-6">
+      <div className="universe-patterns__header">
+        <div className="universe-patterns__eyebrow">PATTERN INTELLIGENCE</div>
         <h2 className="text-2xl font-bold text-[var(--foreground)]">Learn by Pattern</h2>
         <p className="text-[var(--muted-foreground)] mt-1 text-sm">
           Master one topic at a time ranked by where you have the most room to grow.
@@ -41,7 +42,7 @@ function PatternView({ problems, topicStats, setSelectedTopic, setActiveView }) 
       </div>
 
       {focusAreas.length > 0 && (
-        <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-5">
+        <div className="universe-patterns__focus bg-amber-500/5 border border-amber-500/20 rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle size={15} className="text-amber-400" />
             <p className="text-xs uppercase tracking-widest text-amber-400 font-semibold">
@@ -70,7 +71,7 @@ function PatternView({ problems, topicStats, setSelectedTopic, setActiveView }) 
       )}
 
       <div>
-        <p className="text-[10px] uppercase tracking-widest text-[var(--muted-foreground)] mb-3">
+        <p className="universe-patterns__all-label text-[10px] uppercase tracking-widest text-[var(--muted-foreground)] mb-3">
           All Topics
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
