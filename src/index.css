@@ -1439,3 +1439,203 @@ html.bw-mode .lp-final-cta-copy p {
     transition: none;
   }
 }
+
+
+/* ── U6: Problem content immersion ───────────────────────────────────────
+   The statement and validation surfaces now inherit the universe language.
+   Content hierarchy stays conventional; the universe is expressed through
+   labels, separators, borders and result-state chrome rather than rewriting
+   the learning content itself. */
+.universe-problem-header {
+  position: relative;
+  padding-bottom: 15px;
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-border) 55%, var(--border));
+}
+
+.universe-problem-header::before {
+  content: "PROBLEM BRIEF";
+  display: block;
+  margin-bottom: 9px;
+  color: color-mix(in srgb, var(--theme-primary) 62%, var(--theme-muted));
+  font: 700 8px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.universe-problem-info {
+  position: relative;
+}
+
+.universe-problem-info > section {
+  position: relative;
+  padding-top: 2px;
+}
+
+.universe-problem-info > section[data-universe-section]::before {
+  content: attr(data-universe-section);
+  display: block;
+  margin-bottom: 7px;
+  color: color-mix(in srgb, var(--theme-primary) 42%, var(--theme-muted));
+  font: 700 7px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.universe-problem-info > section[data-universe-section] h3 {
+  margin-top: 0;
+}
+
+.universe-problem-info > section[data-universe-section="brief"]::before {
+  content: "MISSION BRIEF";
+}
+
+.universe-problem-info > section[data-universe-section="examples"]::before {
+  content: "FIELD EXAMPLES";
+}
+
+.universe-problem-info > section[data-universe-section="constraints"]::before {
+  content: "OPERATING LIMITS";
+}
+
+.universe-problem-info > section[data-universe-section="companies"]::before {
+  content: "ORIGIN SIGNAL";
+}
+
+.universe-problem-info > section[data-universe-section="interview"]::before {
+  content: "INTERVIEW SIMULATION";
+}
+
+.universe-problem-info section + section {
+  border-top: 1px solid color-mix(in srgb, var(--theme-border) 24%, transparent);
+  padding-top: 22px;
+}
+
+.universe-problem-info code {
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 12%, var(--border));
+}
+
+.universe-problem-info [data-universe-section="examples"] > div > div {
+  position: relative;
+}
+
+.universe-problem-info [data-universe-section="examples"] > div > div > div {
+  border-color: color-mix(in srgb, var(--theme-primary) 13%, var(--border-strong));
+}
+
+.universe-workspace-panel {
+  position: relative;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 18%, var(--border));
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+}
+
+.universe-workspace-panel__tabs {
+  position: relative;
+  background: color-mix(in srgb, var(--surface-elevated) 42%, transparent);
+}
+
+.universe-workspace-panel__tabs::before {
+  content: "VALIDATION";
+  align-self: center;
+  margin: 0 9px 0 7px;
+  color: color-mix(in srgb, var(--theme-primary) 55%, var(--theme-muted));
+  font: 700 7px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.universe-workspace-panel__tabs button {
+  position: relative;
+}
+
+.universe-workspace-panel__tabs button span {
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.universe-workspace-panel__content {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-primary) 2%, transparent),
+      transparent 24%
+    );
+}
+
+/* Motif-specific content treatment. */
+[data-theme="codeHeist"] .universe-problem-header::before,
+[data-theme="codeHeist"] .universe-workspace-panel__tabs::before {
+  letter-spacing: 0.22em;
+}
+
+[data-theme="codeHeist"] .universe-problem-info section + section {
+  border-top-style: dashed;
+}
+
+[data-theme="breakingBug"] .universe-problem-header::before {
+  color: #22c55e;
+}
+
+[data-theme="breakingBug"] .universe-problem-info > section[data-universe-section="examples"] > div > div > div {
+  border-radius: 10px;
+}
+
+[data-theme="ghostProtocol"] .universe-problem-header,
+[data-theme="ghostProtocol"] .universe-workspace-panel {
+  border-color: rgba(0,255,65,0.18);
+  border-radius: 3px;
+}
+
+[data-theme="ghostProtocol"] .universe-problem-header::before,
+[data-theme="ghostProtocol"] .universe-workspace-panel__tabs::before {
+  text-shadow: 0 0 9px rgba(0,255,65,0.18);
+}
+
+[data-theme="ghostProtocol"] .universe-workspace-panel__content {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(0,255,65,0.012) 0 1px,
+      transparent 1px 4px
+    );
+}
+
+[data-theme="survivalCode"] .universe-problem-header {
+  border-bottom-width: 2px;
+}
+
+[data-theme="survivalCode"] .universe-workspace-panel {
+  border-radius: 5px;
+}
+
+[data-theme="debugDynasty"] .universe-problem-header {
+  border-radius: 8px;
+}
+
+[data-theme="debugDynasty"] .universe-workspace-panel {
+  border-radius: 12px;
+}
+
+@media (max-width: 767px) {
+  .universe-problem-header {
+    padding-bottom: 12px;
+  }
+
+  .universe-problem-info section + section {
+    padding-top: 18px;
+  }
+
+  .universe-workspace-panel__tabs::before {
+    content: "";
+    width: 4px;
+    height: 4px;
+    margin-right: 3px;
+    border-radius: 999px;
+    background: var(--theme-primary);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .universe-workspace-panel__tabs button span {
+    transition: none;
+  }
+}
