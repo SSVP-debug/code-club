@@ -1072,3 +1072,75 @@ html.bw-mode .lp-final-cta-copy p {
     transform: none;
   }
 }
+
+
+/* ── U4: Dashboard universe stages ───────────────────────────────────────
+   Dashboard content now reads like one continuous workspace. Stage labels
+   are intentionally quiet: they provide hierarchy without turning the
+   learning dashboard into a game HUD. */
+.universe-dashboard-row {
+  position: relative;
+  isolation: isolate;
+}
+
+.universe-dashboard-row::before {
+  content: attr(data-universe-label);
+  display: block;
+  margin: 0 0 8px 2px;
+  color: color-mix(in srgb, var(--theme-primary) 58%, var(--theme-muted));
+  font: 700 8px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.universe-dashboard-row::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 3px;
+  height: 1px;
+  z-index: -1;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--theme-primary) 28%, transparent),
+    color-mix(in srgb, var(--theme-border) 55%, transparent) 34%,
+    transparent 82%
+  );
+}
+
+[data-theme="codeHeist"] .universe-dashboard-row::before {
+  font-size: 7px;
+  letter-spacing: 0.22em;
+}
+
+[data-theme="ghostProtocol"] .universe-dashboard-row::before {
+  text-shadow: 0 0 10px color-mix(in srgb, var(--theme-primary) 32%, transparent);
+}
+
+[data-theme="survivalCode"] .universe-dashboard-row::after {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--theme-primary) 38%, transparent),
+    transparent 70%
+  );
+}
+
+[data-theme="debugDynasty"] .universe-dashboard-row::before {
+  letter-spacing: 0.14em;
+}
+
+[data-theme="breakingBug"] .universe-dashboard-row::after {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--theme-primary) 22%, transparent),
+    transparent 58%
+  );
+}
+
+@media (max-width: 767px) {
+  .universe-dashboard-row::before {
+    margin-bottom: 7px;
+    font-size: 7px;
+  }
+}
