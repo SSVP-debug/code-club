@@ -52,6 +52,7 @@ import MissionHeader from "./code-club-edition/MissionHeader";
 import ProblemEditor from "./ProblemEditor";
 import WorkspacePanel from "./WorkspacePanel";
 import ProblemUnderstandOverlay from "./ProblemUnderstandOverlay";
+import UniverseWorkspaceHeader from "./UniverseWorkspaceHeader";
 import SubmissionCelebrationModal from "./submission-experience/SubmissionCelebrationModal";
 import Button from "../ui/Button";
 import MobileTabBar from "./MobileTabBar";
