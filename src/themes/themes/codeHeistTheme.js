@@ -35,6 +35,18 @@ export const codeHeistTheme = createTheme({
         animation: "scan",
     },
 
+    visual: {
+        codename: "OPERATION 042",
+        eyebrow: "CLASSIFIED HEIST OPERATION",
+        heroTitle: "CRACK THE SYSTEM",
+        heroDescription: "Scope the target, breach the vault, and leave no loose ends.",
+        status: "SECURE CHANNEL",
+        artifact: "VAULT // CC-042",
+        motif: "heist",
+        panelStyle: "vault",
+        emblem: "vault",
+    },
+
     words: {
         run: "Open Vault",
         submit: "Execute Heist",
