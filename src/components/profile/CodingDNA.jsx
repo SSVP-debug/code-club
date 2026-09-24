@@ -80,6 +80,7 @@ function CodingDNA({ submissions = [], topicStats = {}, solvedDifficulty = {}, l
 
   return (
     <SectionCard
+      className="universe-coding-dna"
       title="Coding DNA"
       icon={<Dna size={18} strokeWidth={2} />}
       accented
