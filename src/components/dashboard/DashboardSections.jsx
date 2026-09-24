@@ -1,6 +1,6 @@
 import RankProgressSection from "./sections/RankProgressSection";
 import DailyChallengeSection from "./sections/DailyChallengeSection";
-import WelcomeBanner from "./sections/WelcomeBanner";
+import UniverseIdentityBanner from "./sections/UniverseIdentityBanner";
 import ContinueLearningSection from "./sections/ContinueLearningSection";
 import WeeklyGoalSection from "./sections/WeeklyGoalSection";
 import RecentAchievementCard from "./sections/RecentAchievementCard";
@@ -48,7 +48,7 @@ import ContestCountdownCard from "./sections/ContestCountdownCard";
 function DashboardSections() {
   return (
     <div className="space-y-6">
-      <WelcomeBanner />
+      <UniverseIdentityBanner />
 
       <AdvancedStatsSection />
 
