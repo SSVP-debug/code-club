@@ -2588,3 +2588,238 @@ html.bw-mode .lp-final-cta-copy p {
     transition: none;
   }
 }
+
+
+/* ── U10: Achievements + Journey + Milestones immersion ───────────────── */
+.universe-achievement-gallery {
+  position: relative;
+}
+
+.universe-achievement-gallery__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: -2px 0 16px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 13%, var(--border));
+  background: color-mix(in srgb, var(--theme-primary) 3%, var(--surface-elevated));
+  color: var(--theme-muted);
+  font: 700 7px/1.2 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.universe-achievement-gallery__summary span:first-child {
+  color: var(--theme-primary);
+}
+
+.universe-achievement-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid transparent;
+  transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.universe-achievement-card[data-universe-achievement="unlocked"] {
+  border-color: color-mix(in srgb, var(--theme-primary) 17%, var(--border));
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--theme-primary) 58%, transparent);
+}
+
+.universe-achievement-card[data-universe-achievement="unlocked"]::after {
+  content: "VERIFIED";
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  color: color-mix(in srgb, var(--theme-primary) 55%, var(--theme-muted));
+  font: 700 6px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: .15em;
+  opacity: .75;
+}
+
+.universe-achievement-card[data-universe-achievement="locked"] {
+  border-color: color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.universe-achievement-card[data-universe-achievement="unlocked"]:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--theme-glow) 6%, transparent);
+}
+
+.universe-journey-timeline {
+  position: relative;
+}
+
+.universe-journey-timeline__summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: -2px 0 18px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-primary) 12%, var(--border));
+  color: var(--theme-muted);
+  font: 700 7px/1.2 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.universe-journey-timeline__summary span:first-child {
+  color: var(--theme-primary);
+}
+
+.universe-journey-event {
+  position: relative;
+}
+
+.universe-journey-event__node {
+  position: relative;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 25%, var(--border));
+  color: var(--theme-primary);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--theme-glow) 5%, transparent);
+}
+
+.universe-journey-event[data-universe-event="origin"] .universe-journey-event__node {
+  border-color: color-mix(in srgb, var(--theme-primary) 40%, var(--border));
+}
+
+.universe-journey-event:not(:last-child) .universe-journey-event__node::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 5px);
+  width: 1px;
+  height: 9px;
+  background: color-mix(in srgb, var(--theme-primary) 24%, var(--surface-elevated));
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.universe-journey-event p:first-of-type {
+  position: relative;
+}
+
+.universe-journey-event[data-universe-event="milestone"] p:first-of-type::after {
+  content: "MILESTONE";
+  margin-left: 8px;
+  color: color-mix(in srgb, var(--theme-primary) 45%, var(--theme-muted));
+  font: 700 6px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: .12em;
+  vertical-align: middle;
+}
+
+[data-theme="codeHeist"] .universe-achievement-gallery__summary,
+[data-theme="codeHeist"] .universe-journey-timeline__summary {
+  border-style: dashed;
+  border-radius: 4px;
+}
+
+[data-theme="codeHeist"] .universe-achievement-card {
+  border-radius: 6px;
+}
+
+[data-theme="codeHeist"] .universe-achievement-card[data-universe-achievement="unlocked"]::after {
+  content: "SECURED";
+}
+
+[data-theme="codeHeist"] .universe-journey-event[data-universe-event="milestone"] p:first-of-type::after {
+  content: "HEIST MILESTONE";
+}
+
+[data-theme="breakingBug"] .universe-achievement-gallery__summary,
+[data-theme="breakingBug"] .universe-journey-timeline__summary {
+  border-radius: 10px;
+}
+
+[data-theme="breakingBug"] .universe-achievement-card {
+  border-radius: 10px;
+}
+
+[data-theme="breakingBug"] .universe-achievement-card[data-universe-achievement="unlocked"]::after {
+  content: "VERIFIED SPECIMEN";
+}
+
+[data-theme="breakingBug"] .universe-journey-event[data-universe-event="milestone"] p:first-of-type::after {
+  content: "LAB MILESTONE";
+}
+
+[data-theme="ghostProtocol"] .universe-achievement-gallery__summary,
+[data-theme="ghostProtocol"] .universe-journey-timeline__summary {
+  border-radius: 2px;
+  background:
+    repeating-linear-gradient(0deg, rgba(0,255,65,.01) 0 1px, transparent 1px 4px),
+    color-mix(in srgb, var(--theme-primary) 3%, var(--surface));
+}
+
+[data-theme="ghostProtocol"] .universe-achievement-card {
+  border-radius: 2px;
+}
+
+[data-theme="ghostProtocol"] .universe-achievement-card[data-universe-achievement="unlocked"]::after {
+  content: "TRACE VERIFIED";
+  text-shadow: 0 0 8px rgba(0,255,65,.12);
+}
+
+[data-theme="ghostProtocol"] .universe-journey-event[data-universe-event="milestone"] p:first-of-type::after {
+  content: "TRACE MILESTONE";
+}
+
+[data-theme="survivalCode"] .universe-achievement-gallery__summary,
+[data-theme="survivalCode"] .universe-journey-timeline__summary {
+  border-radius: 5px;
+}
+
+[data-theme="survivalCode"] .universe-achievement-card {
+  border-radius: 7px;
+}
+
+[data-theme="survivalCode"] .universe-achievement-card[data-universe-achievement="unlocked"]::after {
+  content: "ROUND CLEARED";
+}
+
+[data-theme="survivalCode"] .universe-journey-event[data-universe-event="milestone"] p:first-of-type::after {
+  content: "ROUND MILESTONE";
+}
+
+[data-theme="debugDynasty"] .universe-achievement-gallery__summary,
+[data-theme="debugDynasty"] .universe-journey-timeline__summary {
+  border-radius: 12px;
+}
+
+[data-theme="debugDynasty"] .universe-achievement-card {
+  border-radius: 12px;
+}
+
+[data-theme="debugDynasty"] .universe-achievement-card[data-universe-achievement="unlocked"]::after {
+  content: "RELEASE VERIFIED";
+}
+
+[data-theme="debugDynasty"] .universe-journey-event[data-universe-event="milestone"] p:first-of-type::after {
+  content: "RELEASE MILESTONE";
+}
+
+@media (max-width: 767px) {
+  .universe-achievement-gallery__summary,
+  .universe-journey-timeline__summary {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .universe-achievement-card[data-universe-achievement="unlocked"]::after {
+    display: none;
+  }
+
+  .universe-journey-event[data-universe-event="milestone"] p:first-of-type::after {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .universe-achievement-card {
+    transition: none;
+  }
+
+  .universe-achievement-card[data-universe-achievement="unlocked"]:hover {
+    transform: none;
+  }
+}
