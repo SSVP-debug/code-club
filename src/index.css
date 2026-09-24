@@ -2823,3 +2823,220 @@ html.bw-mode .lp-final-cta-copy p {
     transform: none;
   }
 }
+
+
+/* ── U11: Learning + Patterns + Coach immersion ────────────────────────── */
+.universe-learning {
+  position: relative;
+}
+
+.universe-learning__header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 11px;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 20%, var(--border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--theme-primary) 4%, var(--surface));
+}
+
+.universe-learning__identity {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.universe-learning__emblem {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  color: var(--theme-primary);
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 32%, var(--border));
+  background: color-mix(in srgb, var(--theme-primary) 8%, var(--surface-elevated));
+}
+
+.universe-learning__eyebrow,
+.universe-learning__status,
+.universe-learning__stage-label,
+.universe-ai-coach__signal,
+.universe-patterns__eyebrow,
+.universe-patterns__all-label {
+  color: color-mix(in srgb, var(--theme-primary) 48%, var(--theme-muted));
+  font: 700 7px/1.2 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+
+.universe-learning__eyebrow {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.universe-learning__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.universe-learning__description {
+  margin-top: -2px;
+  padding: 0 2px;
+}
+
+.universe-learning__stage-label {
+  padding: 4px 2px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-primary) 11%, var(--border));
+  padding-bottom: 7px;
+}
+
+.universe-learning .bg-\[var\(--surface\)\] {
+  box-shadow: 0 7px 22px color-mix(in srgb, var(--theme-glow) 3%, transparent);
+}
+
+.universe-ai-coach {
+  position: relative;
+  border-color: color-mix(in srgb, var(--theme-primary) 25%, var(--border));
+}
+
+.universe-ai-coach__signal {
+  margin: -2px 0 10px;
+  color: var(--theme-primary);
+  opacity: .8;
+}
+
+.universe-ai-coach__topic {
+  position: relative;
+}
+
+.universe-ai-coach__topic[data-universe-coach-action="practice"]::after {
+  content: "NEXT REP";
+  position: absolute;
+  right: 10px;
+  bottom: 5px;
+  color: color-mix(in srgb, var(--theme-primary) 35%, var(--theme-muted));
+  font: 700 5px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: .13em;
+  opacity: .7;
+  pointer-events: none;
+}
+
+.universe-patterns {
+  position: relative;
+}
+
+.universe-patterns__header {
+  position: relative;
+  padding-bottom: 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-primary) 12%, var(--border));
+}
+
+.universe-patterns__eyebrow {
+  margin-bottom: 5px;
+}
+
+.universe-patterns__focus {
+  position: relative;
+  border-color: color-mix(in srgb, var(--theme-primary) 18%, var(--border)) !important;
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--theme-primary) 50%, transparent);
+}
+
+.universe-patterns__focus > div:first-child p {
+  color: var(--theme-primary);
+}
+
+.universe-patterns__all-label {
+  color: var(--theme-muted);
+}
+
+/* Motif-specific learning language. */
+[data-theme="codeHeist"] .universe-learning__header,
+[data-theme="codeHeist"] .universe-patterns__header {
+  border-radius: 5px;
+  border-style: dashed;
+}
+[data-theme="codeHeist"] .universe-learning__emblem {
+  border-radius: 4px;
+}
+[data-theme="codeHeist"] .universe-learning__stage-label::after,
+[data-theme="codeHeist"] .universe-ai-coach__signal::after {
+  content: " / VAULT";
+  opacity: .7;
+}
+
+[data-theme="breakingBug"] .universe-learning__header {
+  border-radius: 11px;
+}
+[data-theme="breakingBug"] .universe-learning__emblem {
+  border-radius: 12px 12px 16px 16px;
+}
+[data-theme="breakingBug"] .universe-learning__stage-label::after,
+[data-theme="breakingBug"] .universe-ai-coach__signal::after {
+  content: " / LAB";
+  opacity: .7;
+}
+
+[data-theme="ghostProtocol"] .universe-learning__header,
+[data-theme="ghostProtocol"] .universe-patterns__header {
+  border-radius: 2px;
+  background:
+    repeating-linear-gradient(0deg, rgba(0,255,65,.01) 0 1px, transparent 1px 4px),
+    color-mix(in srgb, var(--theme-primary) 3%, var(--surface));
+}
+[data-theme="ghostProtocol"] .universe-learning__emblem {
+  border-radius: 0;
+}
+[data-theme="ghostProtocol"] .universe-learning__stage-label::after,
+[data-theme="ghostProtocol"] .universe-ai-coach__signal::after {
+  content: " / TRACE";
+  opacity: .7;
+  text-shadow: 0 0 8px rgba(0,255,65,.12);
+}
+
+[data-theme="survivalCode"] .universe-learning__header {
+  border-radius: 5px;
+}
+[data-theme="survivalCode"] .universe-learning__emblem {
+  border-radius: 50%;
+}
+[data-theme="survivalCode"] .universe-learning__stage-label::after,
+[data-theme="survivalCode"] .universe-ai-coach__signal::after {
+  content: " / ROUND";
+  opacity: .7;
+}
+
+[data-theme="debugDynasty"] .universe-learning__header {
+  border-radius: 13px;
+}
+[data-theme="debugDynasty"] .universe-learning__emblem {
+  border-radius: 15px;
+}
+[data-theme="debugDynasty"] .universe-learning__stage-label::after,
+[data-theme="debugDynasty"] .universe-ai-coach__signal::after {
+  content: " / BUILD";
+  opacity: .7;
+}
+
+@media (max-width: 767px) {
+  .universe-learning__header {
+    align-items: flex-start;
+  }
+  .universe-learning__status {
+    display: none;
+  }
+  .universe-ai-coach__topic[data-universe-coach-action="practice"]::after {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .universe-learning .universe-card,
+  .universe-ai-coach__topic {
+    transition: none;
+  }
+}
