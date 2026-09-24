@@ -14,6 +14,25 @@ export const codeHeistTheme = createTheme({
         secondary: "#18181b",
         border: "#3f3f46",
         accent: "#eab308",
+        background: "#090a0d",
+        surface: "#111318",
+        surfaceElevated: "#181a20",
+        muted: "#a1a1aa",
+        glow: "#facc15",
+        gradient: "linear-gradient(135deg, #facc15 0%, #a16207 100%)",
+    },
+
+    background: "codeHeist",
+
+    atmosphere: {
+        artworkOpacity: 0.12,
+        artworkPosition: "center",
+        overlayOpacity: 0.74,
+        glowOpacity: 0.16,
+        gridOpacity: 0.08,
+        scanlineOpacity: 0.025,
+        vignetteOpacity: 0.74,
+        animation: "scan",
     },
 
     words: {
