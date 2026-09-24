@@ -250,12 +250,7 @@ export default function WorkspacePanel({
 
     return (
         /* h-full fills the flex-1 wrapper. flex flex-col: tab bar fixed, content flex-1. */
-        <div className="
-h-full
-flex
-flex-col
-overflow-hidden
-">
+        <div className="universe-workspace-panel h-full flex flex-col overflow-hidden">
 
             {/* ── Tab bar — flex-shrink-0, always visible ───────────────────── */}
             <div
