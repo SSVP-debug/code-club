@@ -104,10 +104,12 @@ function ProblemEditor({
   }
 
   return (
-    <div className={
+    <div
+      data-universe-panel="editor"
+      className={
       isFullscreen
-        ? "fixed inset-0 z-50 flex flex-col bg-[var(--surface)] shadow-2xl"
-        : "flex flex-col h-full bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden shadow-xl"
+        ? "universe-editor fixed inset-0 z-50 flex flex-col bg-[var(--surface)] shadow-2xl"
+        : "universe-editor flex flex-col h-full bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden shadow-xl"
     }>
       {/* ── Editor Header ────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--border)] bg-[var(--surface)]/50">
