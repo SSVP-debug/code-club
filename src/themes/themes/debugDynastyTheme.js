@@ -29,13 +29,13 @@ export const debugDynastyTheme = createTheme({
   background: "debugDynasty",
 
   atmosphere: {
-    artworkOpacity: 0.085,
+    artworkOpacity: 0.16,
     artworkPosition: "center",
-    overlayOpacity: 0.82,
-    glowOpacity: 0.11,
-    gridOpacity: 0.06,
+    overlayOpacity: 0.68,
+    glowOpacity: 0.14,
+    gridOpacity: 0.08,
     scanlineOpacity: 0,
-    vignetteOpacity: 0.78,
+    vignetteOpacity: 0.68,
     animation: "none",
   },
 
