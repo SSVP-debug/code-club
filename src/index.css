@@ -1144,3 +1144,298 @@ html.bw-mode .lp-final-cta-copy p {
     font-size: 7px;
   }
 }
+
+
+/* ── U5: Problems workspace universe identity ─────────────────────────────
+   The coding surface now carries the same universe language as the dashboard.
+   The treatment stays structural: one identity strip, motif-specific edges,
+   and restrained editor chrome. Monaco itself remains untouched so syntax
+   colors and accessibility are not coupled to product theming. */
+.universe-workspace {
+  --workspace-accent: var(--theme-primary);
+}
+
+.universe-workspace__body {
+  padding-top: 46px;
+}
+
+.universe-workspace-header {
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  right: 12px;
+  z-index: 30;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 24%, var(--border));
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(12px);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--theme-glow) 7%, transparent);
+}
+
+.universe-workspace-header--default {
+  justify-content: flex-start;
+  color: var(--muted-foreground);
+}
+
+.universe-workspace-header__identity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.universe-workspace-header__icon {
+  width: 25px;
+  height: 25px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  color: var(--theme-primary);
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 35%, var(--border));
+  background: color-mix(in srgb, var(--theme-primary) 8%, var(--surface-elevated));
+}
+
+.universe-workspace-header__eyebrow {
+  color: var(--theme-muted);
+  font: 700 7px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.universe-workspace-header__title {
+  margin-top: 2px;
+  color: var(--foreground);
+  font: 700 9px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.universe-workspace-header__signal {
+  display: flex;
+  gap: 3px;
+  margin-left: 2px;
+}
+
+.universe-workspace-header__signal span {
+  width: 3px;
+  height: 12px;
+  background: var(--theme-primary);
+  opacity: 0.35;
+}
+
+.universe-workspace-header__signal span:nth-child(2) {
+  opacity: 0.65;
+}
+
+.universe-workspace-header__signal span:nth-child(3) {
+  opacity: 0.95;
+}
+
+.universe-workspace-header__stages {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.universe-workspace-stage {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--theme-muted);
+  font: 700 7px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+
+.universe-workspace-stage__dot {
+  width: 15px;
+  height: 15px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--theme-muted) 35%, transparent);
+  font-size: 7px;
+}
+
+.universe-workspace-stage.is-complete,
+.universe-workspace-stage.is-active {
+  opacity: 1;
+}
+
+.universe-workspace-stage.is-complete {
+  color: var(--theme-primary);
+}
+
+.universe-workspace-stage.is-complete .universe-workspace-stage__dot {
+  border-color: color-mix(in srgb, var(--theme-primary) 45%, transparent);
+  background: color-mix(in srgb, var(--theme-primary) 10%, transparent);
+}
+
+.universe-workspace-stage.is-active {
+  color: var(--foreground);
+}
+
+.universe-workspace-stage.is-active .universe-workspace-stage__dot {
+  border-color: var(--theme-primary);
+  color: var(--theme-primary);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--theme-glow) 20%, transparent);
+}
+
+.universe-workspace-header__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--theme-primary);
+  font: 700 7px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.universe-editor {
+  position: relative;
+  border-color: color-mix(in srgb, var(--theme-primary) 22%, var(--border)) !important;
+  box-shadow:
+    0 18px 45px color-mix(in srgb, var(--theme-glow) 7%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--theme-primary) 5%, transparent);
+}
+
+.universe-editor > div:first-child {
+  border-bottom-color: color-mix(in srgb, var(--theme-primary) 18%, var(--border)) !important;
+}
+
+.universe-editor > div:first-child::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  margin-right: 1px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--theme-primary);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--theme-glow) 38%, transparent);
+}
+
+[data-theme="codeHeist"] .universe-workspace-header {
+  border-radius: 5px;
+  border-color: rgba(250,204,21,0.25);
+}
+
+[data-theme="codeHeist"] .universe-workspace-header__icon {
+  border-radius: 3px;
+}
+
+[data-theme="codeHeist"] .universe-editor {
+  border-radius: 8px;
+}
+
+[data-theme="breakingBug"] .universe-workspace-header {
+  border-radius: 9px;
+}
+
+[data-theme="breakingBug"] .universe-workspace-header__icon {
+  border-radius: 8px;
+}
+
+[data-theme="breakingBug"] .universe-editor {
+  border-radius: 12px;
+}
+
+[data-theme="ghostProtocol"] .universe-workspace-header {
+  border-radius: 2px;
+  border-color: rgba(0,255,65,0.2);
+  background: rgba(5,7,5,0.92);
+}
+
+[data-theme="ghostProtocol"] .universe-workspace-header__icon,
+[data-theme="ghostProtocol"] .universe-workspace-stage__dot {
+  border-radius: 0;
+}
+
+[data-theme="ghostProtocol"] .universe-workspace-header__title {
+  text-shadow: 0 0 10px rgba(0,255,65,0.16);
+}
+
+[data-theme="ghostProtocol"] .universe-editor {
+  border-radius: 3px;
+  box-shadow:
+    0 16px 42px rgba(0,0,0,0.3),
+    inset 0 0 28px rgba(0,255,65,0.018);
+}
+
+[data-theme="survivalCode"] .universe-workspace-header {
+  border-radius: 4px;
+  border-color: rgba(255,45,120,0.27);
+}
+
+[data-theme="survivalCode"] .universe-workspace-header__icon {
+  border-radius: 50%;
+}
+
+[data-theme="survivalCode"] .universe-editor {
+  border-radius: 5px;
+}
+
+[data-theme="debugDynasty"] .universe-workspace-header {
+  border-radius: 10px;
+}
+
+[data-theme="debugDynasty"] .universe-workspace-header__icon {
+  border-radius: 8px;
+}
+
+[data-theme="debugDynasty"] .universe-editor {
+  border-radius: 13px;
+}
+
+@media (max-width: 767px) {
+  .universe-workspace__body {
+    padding-top: 48px;
+  }
+
+  .universe-workspace-header {
+    left: 8px;
+    right: 8px;
+    top: 6px;
+    gap: 8px;
+    padding: 6px 8px;
+  }
+
+  .universe-workspace-header__signal,
+  .universe-workspace-header__status {
+    display: none;
+  }
+
+  .universe-workspace-header__stages {
+    gap: 4px;
+  }
+
+  .universe-workspace-stage {
+    font-size: 0;
+  }
+
+  .universe-workspace-stage__dot {
+    width: 16px;
+    height: 16px;
+  }
+
+  .universe-editor {
+    border-radius: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .universe-workspace-header__icon,
+  .universe-workspace-stage__dot,
+  .universe-editor {
+    transition: none;
+  }
+}
