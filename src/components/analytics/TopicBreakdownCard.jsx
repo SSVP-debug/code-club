@@ -10,7 +10,7 @@ function TopicBreakdownCard({ topicStats, strongestTopic }) {
   const max = entries.length > 0 ? entries[0][1] : 0;
 
   return (
-    <SectionCard title="Topic Breakdown" icon={<ListTree size={18} strokeWidth={2} />} accented>
+    <SectionCard className="universe-analytics-card--topic" title="Topic Breakdown" icon={<ListTree size={18} strokeWidth={2} />} accented>
       {entries.length === 0 ? (
         <EmptyState
           icon={<ListTree size={28} strokeWidth={1.75} />}
