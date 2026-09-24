@@ -31,7 +31,7 @@ function SkillRadar({ topicStats = {}, accentColor = "#2dd4bf" }) {
   }, [topicStats]);
 
   return (
-    <SectionCard title="Skill Radar" icon={<RadarIcon size={18} strokeWidth={2} />}>
+    <SectionCard className="universe-skill-radar" title="Skill Radar" icon={<RadarIcon size={18} strokeWidth={2} />}>
       {radarData.length < 3 ? (
         <EmptyState
           icon={<RadarIcon size={28} strokeWidth={1.75} />}
