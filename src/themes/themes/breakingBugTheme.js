@@ -25,13 +25,13 @@ export const breakingBugTheme = createTheme({
     background: "breakingBug",
 
     atmosphere: {
-        artworkOpacity: 0.10,
+        artworkOpacity: 0.18,
         artworkPosition: "center",
-        overlayOpacity: 0.78,
-        glowOpacity: 0.13,
-        gridOpacity: 0.03,
+        overlayOpacity: 0.62,
+        glowOpacity: 0.16,
+        gridOpacity: 0.05,
         scanlineOpacity: 0,
-        vignetteOpacity: 0.70,
+        vignetteOpacity: 0.62,
         animation: "none",
     },
 
