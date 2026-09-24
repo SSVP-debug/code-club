@@ -1,4 +1,4 @@
-import { Activity, Bug, FlaskConical, LockKeyhole, Radio, Rocket, Shield, Terminal, Triangle } from "lucide-react";
+import { Activity, FlaskConical, LockKeyhole, Rocket, Shield, Terminal, Triangle } from "lucide-react";
 import { useTheme } from "../../hooks/useTheme";
 
 const EMBLEMS = {
