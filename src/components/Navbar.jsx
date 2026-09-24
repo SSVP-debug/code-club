@@ -158,7 +158,7 @@ function Navbar() {
   const navReady = isBackendReady;
 
   return (
-    <nav className="bg-[var(--surface)] text-[var(--foreground)] border-b border-[var(--border)] relative z-50">
+    <nav className="universe-navbar bg-[var(--surface)] text-[var(--foreground)] border-b border-[var(--border)] relative z-50">
       <div className="px-4 sm:px-8 py-4 flex items-center justify-between">
 
         {/* Brand */}
