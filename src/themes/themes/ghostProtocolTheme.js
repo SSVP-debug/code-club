@@ -29,13 +29,13 @@ export const ghostProtocolTheme = createTheme({
   background: "ghostProtocol",
 
   atmosphere: {
-    artworkOpacity: 0.08,
+    artworkOpacity: 0.16,
     artworkPosition: "center",
-    overlayOpacity: 0.84,
-    glowOpacity: 0.10,
-    gridOpacity: 0.08,
-    scanlineOpacity: 0.055,
-    vignetteOpacity: 0.80,
+    overlayOpacity: 0.68,
+    glowOpacity: 0.14,
+    gridOpacity: 0.10,
+    scanlineOpacity: 0.075,
+    vignetteOpacity: 0.70,
     animation: "scan",
   },
 
