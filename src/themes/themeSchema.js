@@ -37,17 +37,10 @@ export function createTheme(config) {
         id: config.id,
         name: config.name,
         description: config.description,
-
         colors,
-
         atmosphere,
-
         background: config.background ?? null,
-
-        words: {
-            ...config.words,
-        },
-
+        words: { ...config.words },
         emptyStates: config.emptyStates ?? {},
         dashboard: config.dashboard ?? {},
         profile: config.profile ?? {},
@@ -55,54 +48,15 @@ export function createTheme(config) {
 }
 
 export const THEME_WORD_KEYS = [
-    "dashboard",
-    "problems",
-    "analytics",
-    "profile",
-
-    "run",
-    "submit",
-
-    "accepted",
-    "wrongAnswer",
-    "runtimeError",
-    "compileError",
-    "judgeError",
-
-    "testcases",
-    "debug",
-
-    "rank",
-    "level",
-    "nextMilestone",
-
-    "acceptanceRate",
-    "averageRuntime",
-    "favoriteLanguage",
-    "totalSubmissions",
-
-    "dailyChallenge",
-    "difficulty",
-    "solveChallenge",
-
-    "aiInsights",
-    "strongestTopic",
-    "weakestTopic",
-    "recommendation",
-    "coachNote",
-
-    "achievements",
-    "noAchievements",
-    "achievementIcon",
-    "welcomeTagline",
-
-    "publicProfile",
-    "totalSolved",
-    "easySolved",
-    "mediumSolved",
-    "hardSolved",
-    "topics",
-    "joined",
-    "recentActivity",
-    "connectLeetcode"
+    "dashboard", "problems", "analytics", "profile",
+    "run", "submit",
+    "accepted", "wrongAnswer", "runtimeError", "compileError", "judgeError",
+    "testcases", "debug",
+    "rank", "level", "nextMilestone",
+    "acceptanceRate", "averageRuntime", "favoriteLanguage", "totalSubmissions",
+    "dailyChallenge", "difficulty", "solveChallenge",
+    "aiInsights", "strongestTopic", "weakestTopic", "recommendation", "coachNote",
+    "achievements", "noAchievements", "achievementIcon", "welcomeTagline",
+    "publicProfile", "totalSolved", "easySolved", "mediumSolved", "hardSolved",
+    "topics", "joined", "recentActivity", "connectLeetcode"
 ];
