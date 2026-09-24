@@ -14,6 +14,25 @@ export const breakingBugTheme = createTheme({
         secondary: "#18181b",
         border: "#3f3f46",
         accent: "#16a34a",
+        background: "#07100b",
+        surface: "#0f1812",
+        surfaceElevated: "#162219",
+        muted: "#a7b8ab",
+        glow: "#22c55e",
+        gradient: "linear-gradient(135deg, #22c55e 0%, #15803d 100%)",
+    },
+
+    background: "breakingBug",
+
+    atmosphere: {
+        artworkOpacity: 0.10,
+        artworkPosition: "center",
+        overlayOpacity: 0.78,
+        glowOpacity: 0.13,
+        gridOpacity: 0.03,
+        scanlineOpacity: 0,
+        vignetteOpacity: 0.70,
+        animation: "none",
     },
 
     words: {
