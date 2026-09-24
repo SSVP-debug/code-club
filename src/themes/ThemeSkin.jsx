@@ -39,6 +39,7 @@ function UniverseAtmosphere({ theme }) {
         />
       )}
       <div className="universe-atmosphere__glow" />
+      <div className="universe-atmosphere__overlay" />
       <div className="universe-atmosphere__grid" />
       <div className="universe-atmosphere__scanlines" />
       <div className="universe-atmosphere__vignette" />
