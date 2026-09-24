@@ -52,7 +52,7 @@ export default function ThemeSelectionPage() {
                     </button>
                 </header>
 
-                <section className="mx-auto w-full max-w-3xl pb-10 pt-16 text-center sm:pt-20">
+                <section className="mx-auto w-full max-w-3xl pb-8 pt-12 text-center sm:pt-14">
                     <p className="mb-4 text-[10px] font-mono-ui uppercase tracking-[0.3em] text-teal-400">
                         Your Code Club Universe
                     </p>
@@ -67,7 +67,7 @@ export default function ThemeSelectionPage() {
 
                 <section
                     aria-label="Code Club universes"
-                    className="grid flex-1 grid-cols-1 gap-5 pb-10 sm:grid-cols-2 xl:grid-cols-3"
+                    className="grid flex-1 grid-cols-1 gap-4 pb-8 sm:grid-cols-2 xl:grid-cols-3"
                 >
                     {THEME_OPTIONS.map((theme) => {
                         const colors = getTheme(theme.id).colors;
@@ -79,13 +79,13 @@ export default function ThemeSelectionPage() {
                             <article
                                 key={theme.id}
                                 className={[
-                                    "group relative flex min-h-[430px] flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] transition duration-300",
+                                    "group relative flex min-h-[390px] flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] transition duration-300",
                                     isLocked
-                                        ? "opacity-70"
+                                        ? "opacity-80"
                                         : "hover:-translate-y-1 hover:border-[var(--border-strong)] hover:shadow-2xl hover:shadow-black/25",
                                 ].join(" ")}
                             >
-                                <div className="relative h-56 shrink-0 overflow-hidden">
+                                <div className="relative h-48 shrink-0 overflow-hidden">
                                     <img
                                         src={THEME_BACKGROUNDS[theme.id]}
                                         alt=""
@@ -115,7 +115,7 @@ export default function ThemeSelectionPage() {
                                     )}
 
                                     {isLocked && (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/35">
                                             <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/60 px-4 py-2 text-xs font-semibold text-white backdrop-blur-md">
                                                 <Lock size={13} aria-hidden="true" />
                                                 Unlock at {theme.unlockXP.toLocaleString()} XP
@@ -133,8 +133,8 @@ export default function ThemeSelectionPage() {
                                         {theme.description}
                                     </p>
 
-                                    <div className="mt-auto pt-6">
-                                        <div className="mb-4 flex items-center gap-2 text-[11px] font-mono-ui uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
+                                    <div className="mt-auto pt-5">
+                                        <div className="mb-3 flex items-center gap-2 text-[11px] font-mono-ui uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
                                             <span
                                                 className="h-1.5 w-1.5 rounded-full"
                                                 style={{ backgroundColor: colors.primary }}
