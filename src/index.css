@@ -587,3 +587,112 @@ html.bw-mode .lp-final-cta-copy p {
     opacity: 0.78;
   }
 }
+
+/* ── Code Club Universe System — U2 atmosphere ──────────────────────────
+   One fixed decorative layer sits behind the student-facing shell. It uses
+   static artwork, CSS gradients and opacity rather than canvas/video effects.
+   Decorative layers never carry product information and are hidden from AT. */
+.universe-atmosphere {
+  background: var(--universe-bg, var(--background));
+  pointer-events: none;
+  contain: paint;
+}
+
+.universe-atmosphere__artwork,
+.universe-atmosphere__glow,
+.universe-atmosphere__grid,
+.universe-atmosphere__scanlines,
+.universe-atmosphere__vignette {
+  position: absolute;
+  inset: 0;
+}
+
+.universe-atmosphere__artwork {
+  background-position: var(--universe-artwork-position, center);
+  background-repeat: no-repeat;
+  background-size: cover;
+  opacity: var(--universe-artwork-opacity, 0);
+  filter: saturate(0.88) brightness(0.72) contrast(0.98);
+  transform: translateZ(0);
+}
+
+.universe-atmosphere__glow {
+  opacity: var(--universe-glow-opacity, 0);
+  background:
+    radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--universe-glow) 36%, transparent), transparent 34%),
+    radial-gradient(circle at 84% 74%, color-mix(in srgb, var(--universe-primary) 22%, transparent), transparent 30%);
+}
+
+.universe-atmosphere__grid {
+  opacity: var(--universe-grid-opacity, 0);
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--universe-primary) 24%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--universe-primary) 24%, transparent) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: linear-gradient(to bottom, black, transparent 88%);
+  mask-image: linear-gradient(to bottom, black, transparent 88%);
+}
+
+.universe-atmosphere__scanlines {
+  opacity: var(--universe-scanline-opacity, 0);
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 3px,
+    color-mix(in srgb, var(--universe-primary) 12%, transparent) 4px
+  );
+}
+
+.universe-atmosphere__vignette {
+  opacity: var(--universe-vignette-opacity, 0);
+  background:
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--universe-bg) 72%, transparent),
+      transparent 28%,
+      transparent 72%,
+      color-mix(in srgb, var(--universe-bg) 82%, transparent)
+    ),
+    radial-gradient(ellipse at center, transparent 44%, var(--universe-bg) 100%);
+}
+
+.universe-atmosphere[data-animation="scan"] .universe-atmosphere__scanlines {
+  animation: universe-scan 12s linear infinite;
+}
+
+.universe-atmosphere[data-animation="pulse"] .universe-atmosphere__glow {
+  animation: universe-pulse 7s ease-in-out infinite;
+}
+
+@keyframes universe-scan {
+  from { background-position: 0 0; }
+  to { background-position: 0 48px; }
+}
+
+@keyframes universe-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: var(--universe-glow-opacity, 0);
+  }
+  50% {
+    transform: scale(1.035);
+    opacity: calc(var(--universe-glow-opacity, 0) * 1.15);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .universe-atmosphere[data-animation="scan"] .universe-atmosphere__scanlines,
+  .universe-atmosphere[data-animation="pulse"] .universe-atmosphere__glow {
+    animation: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .universe-atmosphere__artwork {
+    opacity: calc(var(--universe-artwork-opacity, 0) * 0.8);
+  }
+
+  .universe-atmosphere__grid {
+    background-size: 64px 64px;
+  }
+}
