@@ -25,13 +25,13 @@ export const codeHeistTheme = createTheme({
     background: "codeHeist",
 
     atmosphere: {
-        artworkOpacity: 0.12,
+        artworkOpacity: 0.20,
         artworkPosition: "center",
-        overlayOpacity: 0.74,
-        glowOpacity: 0.16,
-        gridOpacity: 0.08,
-        scanlineOpacity: 0.025,
-        vignetteOpacity: 0.74,
+        overlayOpacity: 0.58,
+        glowOpacity: 0.20,
+        gridOpacity: 0.10,
+        scanlineOpacity: 0.04,
+        vignetteOpacity: 0.62,
         animation: "scan",
     },
 
