@@ -600,6 +600,7 @@ html.bw-mode .lp-final-cta-copy p {
 
 .universe-atmosphere__artwork,
 .universe-atmosphere__glow,
+.universe-atmosphere__overlay,
 .universe-atmosphere__grid,
 .universe-atmosphere__scanlines,
 .universe-atmosphere__vignette {
@@ -614,6 +615,15 @@ html.bw-mode .lp-final-cta-copy p {
   opacity: var(--universe-artwork-opacity, 0);
   filter: saturate(0.88) brightness(0.72) contrast(0.98);
   transform: translateZ(0);
+}
+
+.universe-atmosphere__overlay {
+  opacity: var(--universe-overlay-opacity, 0);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--universe-bg) 76%, transparent),
+    color-mix(in srgb, var(--universe-bg) 90%, transparent)
+  );
 }
 
 .universe-atmosphere__glow {
