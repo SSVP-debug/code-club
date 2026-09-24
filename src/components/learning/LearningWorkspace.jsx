@@ -3,6 +3,8 @@ import DailyMissionCard from "./DailyMissionCard";
 import LearningProgressCard from "./LearningProgressCard";
 import AICoachCard from "./AICoachCard";
 import ContestCountdownCard from "../dashboard/sections/ContestCountdownCard";
+import { useTheme } from "../../hooks/useTheme";
+import { Activity, FlaskConical, LockKeyhole, Rocket, Shield, Terminal, Triangle } from "lucide-react";
 
 function LearningWorkspace({
   problems = [],
@@ -15,21 +17,37 @@ function LearningWorkspace({
   currentStreak = 0,
   onPracticeTopic = () => {},
 }) {
+  const { theme } = useTheme();
+  const visual = theme.visual ?? {};
+  const emblemMap = { heist: LockKeyhole, lab: FlaskConical, terminal: Terminal, arena: Triangle, startup: Rocket, neutral: Shield };
+  const Emblem = emblemMap[visual.emblem ?? visual.motif] ?? Shield;
+  const isDefault = theme.id === "default";
+
   return (
-    <div className="p-4 flex flex-col gap-4">
+    <div className="universe-learning p-4 flex flex-col gap-4" data-universe-learning={theme.id}>
 
       {/* Panel header */}
-      <div className="flex items-center gap-2 pt-1">
-        <h2 className="text-sm font-bold text-[var(--foreground)]">Where am I</h2>
+      <div className="universe-learning__header">
+        <div className="universe-learning__identity">
+          <div className="universe-learning__emblem" aria-hidden="true"><Emblem size={17} strokeWidth={1.8} /></div>
+          <div>
+            <span className="universe-learning__eyebrow">{isDefault ? "CODE CLUB LEARNING" : visual.eyebrow}</span>
+            <h2 className="text-sm font-bold text-[var(--foreground)]">{isDefault ? "Where am I" : visual.heroTitle}</h2>
+          </div>
+        </div>
+        <span className="universe-learning__status"><Activity size={10} /> {isDefault ? "LEARNING HUB" : visual.status}</span>
+      </div>
         <span className="text-[9px] font-bold bg-[var(--theme-primary,#2dd4bf)] text-black px-1.5 py-0.5 rounded-full uppercase tracking-wide">
           NEW
         </span>
       </div>
-      <p className="text-[var(--muted-foreground)] text-xs -mt-3">
-        Your learning hub. Track, reflect and improve.
+      <p className="universe-learning__description text-[var(--muted-foreground)] text-xs">
+        {isDefault ? "Your learning hub. Track, reflect and improve." : visual.heroDescription}
       </p>
 
-      {/* Stats row — 3 cards with clear borders */}
+      <div className="universe-learning__stage-label">MISSION CONTROL / LEARNING SIGNAL</div>
+
+      {/* Stats row — 3 cards with clear borders */
       <div className="grid grid-cols-3 gap-2">
         {[
           { label: "Solved",   value: solvedCount,        color: "text-[var(--foreground)]"      },
