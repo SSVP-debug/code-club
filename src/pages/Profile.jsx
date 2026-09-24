@@ -13,6 +13,7 @@ import CollapsibleGroup from "../components/ui/layout/CollapsibleGroup";
 import EmptyState from "../components/ui/feedback/EmptyState";
 import ContentSlot from "../components/ui/slots/ContentSlot";
 import ProfileQuickNav from "../components/profile/ProfileQuickNav";
+import UniverseProfileHeader from "../components/profile/UniverseProfileHeader";
 import AchievementGallery from "../components/dashboard/sections/AchievementGallery";
 import ActivityHeatmap from "../components/profile/ActivityHeatmap";
 import SkillRadar from "../components/profile/SkillRadar";
@@ -138,9 +139,17 @@ function Profile() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-3xl space-y-8">
+      <div className="max-w-3xl space-y-8 universe-profile">
 
-        <h1 className="text-4xl font-bold">Profile</h1>
+        <UniverseProfileHeader
+          level={level}
+          rank={rank}
+          current={current}
+          needed={needed}
+          percent={percent}
+          solved={solvedProblems.length}
+          streak={currentStreak}
+        />
 
         <ProfileQuickNav items={quickNavItems} />
 
