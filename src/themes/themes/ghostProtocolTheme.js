@@ -39,6 +39,18 @@ export const ghostProtocolTheme = createTheme({
     animation: "scan",
   },
 
+  visual: {
+    codename: "NODE 07",
+    eyebrow: "CLASSIFIED NETWORK ACCESS",
+    heroTitle: "GO UNDERGROUND",
+    heroDescription: "Trace the signal, breach the target, and disappear without a trace.",
+    status: "SIGNAL ENCRYPTED",
+    artifact: "GHOST // NODE-07",
+    motif: "terminal",
+    panelStyle: "terminal",
+    emblem: "terminal",
+  },
+
   words: {
     run:                  "Probe System",
     submit:               "Deploy Exploit",
