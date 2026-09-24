@@ -77,6 +77,35 @@ export default function ThemeSelectionPage() {
                     </p>
                 </section>
 
+                <div className="mb-6 flex justify-center">
+                    <div
+                        role="group"
+                        aria-label="Filter universes"
+                        className="inline-flex rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 shadow-sm"
+                    >
+                        {[["all", "All"], ["available", "Available"], ["locked", "Locked"]].map(([value, label]) => {
+                            const active = filter === value;
+
+                            return (
+                                <button
+                                    key={value}
+                                    type="button"
+                                    aria-pressed={active}
+                                    onClick={() => setFilter(value)}
+                                    className={[
+                                        "rounded-full px-4 py-2 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400",
+                                        active
+                                            ? "bg-[var(--foreground)] text-[var(--background)] shadow-sm"
+                                            : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]",
+                                    ].join(" ")}
+                                >
+                                    {label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
                 <section
                     aria-label="Code Club universes"
                     className="grid flex-1 grid-cols-1 gap-4 pb-8 sm:grid-cols-2 xl:grid-cols-3"
