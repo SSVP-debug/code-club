@@ -26,6 +26,7 @@ import RecentSubmissionsCard from "../components/analytics/RecentSubmissionsCard
 import SolveVelocityChart from "../components/analytics/SolveVelocityChart";
 import TopicCoverageRadar from "../components/analytics/TopicCoverageRadar";
 import AIInsightsSection from "../components/dashboard/sections/AIInsightsSection";
+import UniverseAnalyticsHeader from "../components/analytics/UniverseAnalyticsHeader";
 
 function Analytics() {
   const { theme } = useTheme();
@@ -43,11 +44,8 @@ function Analytics() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-4xl font-bold">{theme.words.analytics}</h1>
-          <p className="text-[var(--muted-foreground)] mt-2">Your coding performance at a glance</p>
-        </div>
+      <div className="space-y-8 universe-analytics">
+        <UniverseAnalyticsHeader stats={stats} currentStreak={currentStreak} />
 
         {/* ── Identity: Rank, Level, XP progress ──────────────────────── */}
         <AnalyticsIdentityCard
@@ -71,19 +69,28 @@ function Analytics() {
         <AIInsightsSection />
 
         {/* ── Where your solves are going ──────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <TopicBreakdownCard topicStats={topicStats} strongestTopic={stats.strongestTopic} />
-          <LanguageUsageCard languageStats={stats.languageStats} favoriteLanguage={stats.favoriteLanguage} />
+        <div className="universe-analytics-stage">
+          <div className="universe-analytics-stage__label">SIGNAL / DISTRIBUTION</div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <TopicBreakdownCard topicStats={topicStats} strongestTopic={stats.strongestTopic} />
+            <LanguageUsageCard languageStats={stats.languageStats} favoriteLanguage={stats.favoriteLanguage} />
+          </div>
         </div>
 
         {/* ── Trends ────────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <SolveVelocityChart velocityData={stats.velocityData} />
-          <TopicCoverageRadar radarData={stats.radarData} />
+        <div className="universe-analytics-stage">
+          <div className="universe-analytics-stage__label">TRAJECTORY / COVERAGE</div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <SolveVelocityChart velocityData={stats.velocityData} />
+            <TopicCoverageRadar radarData={stats.radarData} />
+          </div>
         </div>
 
         {/* ── History ───────────────────────────────────────────────────── */}
-        <RecentSubmissionsCard submissions={submissions} />
+        <div className="universe-analytics-stage">
+          <div className="universe-analytics-stage__label">SYSTEM LOG</div>
+          <RecentSubmissionsCard submissions={submissions} />
+        </div>
       </div>
     </DashboardLayout>
   );
