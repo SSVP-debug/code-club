@@ -35,6 +35,18 @@ export const breakingBugTheme = createTheme({
         animation: "none",
     },
 
+    visual: {
+        codename: "LAB 09",
+        eyebrow: "RESTRICTED RESEARCH PROGRAM",
+        heroTitle: "RUN THE REACTION",
+        heroDescription: "Treat every bug like a specimen. Observe, isolate, and solve.",
+        status: "EXPERIMENT ACTIVE",
+        artifact: "SPECIMEN // BB-09",
+        motif: "lab",
+        panelStyle: "lab",
+        emblem: "flask",
+    },
+
     words: {
         run: "Cook",
         submit: "Publish Research",
