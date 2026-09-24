@@ -18,6 +18,25 @@ export const survivalCodeTheme = createTheme({
     secondary: "#0f0f0f",
     border:    "#3d1a2e",
     accent:    "#00d4aa",   // teal
+    background: "#0a080c",
+    surface: "#130f16",
+    surfaceElevated: "#1c1420",
+    muted: "#b7a7b8",
+    glow: "#ff2d78",
+    gradient: "linear-gradient(135deg, #ff2d78 0%, #00d4aa 100%)",
+  },
+
+  background: "survivalCode",
+
+  atmosphere: {
+    artworkOpacity: 0.09,
+    artworkPosition: "center",
+    overlayOpacity: 0.80,
+    glowOpacity: 0.13,
+    gridOpacity: 0.04,
+    scanlineOpacity: 0,
+    vignetteOpacity: 0.78,
+    animation: "pulse",
   },
 
   words: {
