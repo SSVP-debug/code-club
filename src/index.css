@@ -2351,3 +2351,240 @@ html.bw-mode .lp-final-cta-copy p {
     transition: none;
   }
 }
+
+
+/* ── U9: Analytics + Coding DNA immersion ─────────────────────────────── */
+.universe-analytics {
+  position: relative;
+}
+
+.universe-analytics-hero {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 28%, var(--border));
+  border-radius: 16px;
+  padding: 22px 24px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 7%, var(--surface)), var(--surface) 64%);
+  box-shadow: 0 18px 45px color-mix(in srgb, var(--theme-glow) 6%, transparent);
+}
+
+.universe-analytics-hero--default {
+  border-color: var(--border);
+  background: var(--surface);
+  box-shadow: none;
+}
+
+.universe-analytics-hero__wash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .35;
+  background:
+    radial-gradient(circle at 90% 15%, color-mix(in srgb, var(--theme-glow) 18%, transparent), transparent 34%),
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--theme-primary) 2%, transparent) 0 1px, transparent 1px 44px);
+}
+
+.universe-analytics-hero__top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.universe-analytics-hero__identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.universe-analytics-hero__emblem {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  color: var(--theme-primary);
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 42%, var(--border));
+  background: color-mix(in srgb, var(--theme-primary) 9%, var(--surface-elevated));
+}
+
+.universe-analytics-hero__eyebrow,
+.universe-analytics-hero__metrics span {
+  color: color-mix(in srgb, var(--theme-primary) 52%, var(--theme-muted));
+  font: 700 7px/1.2 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: .17em;
+  text-transform: uppercase;
+}
+
+.universe-analytics-hero h1 {
+  margin-top: 6px;
+  color: var(--foreground);
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -.025em;
+}
+
+.universe-analytics-hero__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--theme-primary);
+  font: 700 7px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.universe-analytics-hero__metrics {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 20px;
+  border-top: 1px solid color-mix(in srgb, var(--theme-primary) 15%, var(--border));
+}
+
+.universe-analytics-hero__metrics > div {
+  padding: 13px 12px 2px;
+  border-right: 1px solid color-mix(in srgb, var(--theme-primary) 11%, var(--border));
+}
+
+.universe-analytics-hero__metrics > div:last-child {
+  border-right: 0;
+}
+
+.universe-analytics-hero__metrics strong {
+  display: block;
+  margin-top: 5px;
+  color: var(--foreground);
+  font-size: 17px;
+}
+
+.universe-analytics-stage {
+  position: relative;
+}
+
+.universe-analytics-stage__label {
+  margin: 0 0 8px 2px;
+  color: color-mix(in srgb, var(--theme-primary) 40%, var(--theme-muted));
+  font: 700 7px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.universe-analytics .universe-card {
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--theme-glow) 3%, transparent);
+}
+
+.universe-analytics-card--topic {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-primary) 2%, var(--surface)), var(--surface));
+}
+
+.universe-coding-dna {
+  border-color: color-mix(in srgb, var(--theme-primary) 25%, var(--border));
+}
+
+.universe-coding-dna .bg-\[var\(--surface-elevated\)\] {
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 10%, var(--border));
+}
+
+.universe-skill-radar {
+  overflow: hidden;
+}
+
+[data-theme="codeHeist"] .universe-analytics-hero {
+  border-radius: 7px;
+  background: linear-gradient(135deg, rgba(250,204,21,.06), #090a0d 64%);
+}
+[data-theme="codeHeist"] .universe-analytics-hero__emblem {
+  border-radius: 4px;
+}
+[data-theme="codeHeist"] .universe-analytics-stage__label {
+  letter-spacing: .2em;
+}
+[data-theme="codeHeist"] .universe-analytics-stage:nth-of-type(2) .universe-analytics-stage__label::after {
+  content: " / VAULT PATTERN";
+}
+
+[data-theme="breakingBug"] .universe-analytics-hero {
+  border-radius: 12px;
+}
+[data-theme="breakingBug"] .universe-analytics-hero__emblem {
+  border-radius: 15px 15px 20px 20px;
+}
+[data-theme="breakingBug"] .universe-analytics-stage__label::after {
+  content: " / LAB";
+  opacity: .7;
+}
+
+[data-theme="ghostProtocol"] .universe-analytics-hero {
+  border-radius: 3px;
+  background:
+    repeating-linear-gradient(0deg, rgba(0,255,65,.012) 0 1px, transparent 1px 4px),
+    #050705;
+}
+[data-theme="ghostProtocol"] .universe-analytics-hero__emblem {
+  border-radius: 0;
+}
+[data-theme="ghostProtocol"] .universe-analytics-hero h1,
+[data-theme="ghostProtocol"] .universe-analytics-hero__status {
+  text-shadow: 0 0 9px rgba(0,255,65,.15);
+}
+[data-theme="ghostProtocol"] .universe-analytics-stage__label {
+  text-shadow: 0 0 8px rgba(0,255,65,.12);
+}
+[data-theme="ghostProtocol"] .universe-analytics-stage__label::after {
+  content: " / TRACE";
+  opacity: .7;
+}
+
+[data-theme="survivalCode"] .universe-analytics-hero {
+  border-radius: 5px;
+}
+[data-theme="survivalCode"] .universe-analytics-hero__emblem {
+  border-radius: 50%;
+}
+[data-theme="survivalCode"] .universe-analytics-stage__label::after {
+  content: " / ROUND";
+  opacity: .7;
+}
+
+[data-theme="debugDynasty"] .universe-analytics-hero {
+  border-radius: 14px;
+}
+[data-theme="debugDynasty"] .universe-analytics-hero__emblem {
+  border-radius: 17px;
+}
+[data-theme="debugDynasty"] .universe-analytics-stage__label::after {
+  content: " / BUILD";
+  opacity: .7;
+}
+
+@media (max-width: 767px) {
+  .universe-analytics-hero {
+    padding: 18px;
+  }
+  .universe-analytics-hero__top {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .universe-analytics-hero__metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .universe-analytics-hero__metrics > div:nth-child(2) {
+    border-right: 0;
+  }
+  .universe-analytics-hero__metrics > div:nth-child(-n+2) {
+    border-bottom: 1px solid color-mix(in srgb, var(--theme-primary) 11%, var(--border));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .universe-analytics-hero,
+  .universe-analytics .universe-card {
+    transition: none;
+  }
+}
