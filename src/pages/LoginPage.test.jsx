@@ -103,7 +103,7 @@ describe("LoginPage — post-login redirect (Gate 3 P0-1)", () => {
     await waitFor(() =>
       expect(navigateMock).toHaveBeenCalledWith("/recruiter/dashboard?tab=candidates")
     );
-  
+  });
 
   it("renders the selected role identity and Google authentication surface", async () => {
     searchParamsValue = new URLSearchParams({ role: "student" });
@@ -114,5 +114,5 @@ describe("LoginPage — post-login redirect (Gate 3 P0-1)", () => {
     expect(document.body.textContent).toContain("Student access");
     expect(document.body.textContent).toContain("Continue with Google");
     expect(document.body.textContent).toContain("Secure Google authentication");
-  });});
+  });
 });
