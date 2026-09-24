@@ -428,7 +428,7 @@ function ProblemsPage() {
 
   return (
     <ThemeSkin>
-    <div className="h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] overflow-hidden">
+    <div className="relative isolate h-screen flex flex-col bg-transparent text-[var(--foreground)] overflow-hidden">
 
       {/* Slim topbar — replaces global Navbar */}
       <ProblemsTopbar
