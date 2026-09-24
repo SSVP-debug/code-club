@@ -3,21 +3,22 @@ import PageMeta from "../components/seo/PageMeta";
 import { SITE_DOMAIN } from "../config/site.js";
 import { useGuest } from "../hooks/useGuest";
 import { GraduationCap, Briefcase, Building2 } from "lucide-react";
+import LANDING_IMAGES from "../components/landing/landingImages";
 
 // ── Role cards ───────────────────────────────────────────────────────────
-// `accessId` is shown as a terminal-style path tag on each card — a small
-// nod to the themed-universe / hacker vernacular already used across the
-// product (Code Heist, Ghost Protocol, etc.) instead of a generic
-// "select your role" chooser.
-// Icons intentionally match the same Student/Recruiter/TPO icon mapping
-// used on the landing page's audience section, so the persona identity
-// stays consistent across the marketing site and the product.
+// The portal deliberately reuses the same approved audience photography
+// as the landing page. This keeps the journey visually continuous:
+// landing persona → access persona → authenticated experience.
+// `accessId` remains the real destination used by Guest Mode; the image
+// fields are presentation-only.
 const ROLES = [
   {
     id: "student",
     label: "Student",
     accent: "teal",
     Icon: GraduationCap,
+    image: LANDING_IMAGES.ecosystem,
+    imageAlt: "Students collaborating on a college campus",
     tagline: "Solve, climb, get interview-ready.",
     description:
       "Practice DSA across themed universes, track XP and streaks, and run live AI mock interviews before the real one.",
@@ -28,6 +29,8 @@ const ROLES = [
     label: "Recruiter",
     accent: "sky",
     Icon: Briefcase,
+    image: LANDING_IMAGES.recruiter,
+    imageAlt: "Recruiter interviewing a candidate",
     tagline: "Find signal, not just resumes.",
     description:
       "Search verified candidates by real solve history, send skills tests, and check profile signatures before you reach out.",
@@ -38,6 +41,8 @@ const ROLES = [
     label: "TPO",
     accent: "violet",
     Icon: Building2,
+    image: LANDING_IMAGES.tpo,
+    imageAlt: "Training and placement discussion",
     tagline: "See placement readiness at a glance.",
     description:
       "Track every student on your campus domain — solve velocity, streaks, and who's actually interview-ready this season.",
@@ -116,58 +121,70 @@ export default function PortalPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full max-w-5xl">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full max-w-6xl">
             {ROLES.map((role) => {
               const accent = ACCENT_CLASSES[role.accent];
               return (
-                <div
+                <article
                   key={role.id}
-                  className={`group relative flex flex-col justify-between bg-[var(--surface)] border border-[var(--border-strong)] rounded-2xl p-6 transition-all duration-200 hover:-translate-y-1 ${accent.border} ${accent.shadow}`}
+                  className={`group relative overflow-hidden bg-[var(--surface)] border border-[var(--border-strong)] rounded-2xl transition-all duration-300 hover:-translate-y-1 ${accent.border} ${accent.shadow}`}
                 >
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
+                  <div className="relative h-52 sm:h-56 overflow-hidden">
+                    <img
+                      src={role.image}
+                      alt={role.imageAlt}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                    />
+                    <div
+                      className="absolute inset-0 bg-gradient-to-t from-[var(--surface)] via-[var(--surface)]/15 to-transparent"
+                      aria-hidden="true"
+                    />
+                    <div
+                      className={`absolute left-5 bottom-4 w-12 h-12 rounded-xl flex items-center justify-center border backdrop-blur-sm ${accent.badge}`}
+                      aria-hidden="true"
+                    >
+                      <role.Icon size={22} strokeWidth={2} />
+                    </div>
+                  </div>
+
+                  <div className="relative px-5 pb-5 pt-1">
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <h2 className="text-2xl font-bold tracking-tight">{role.label}</h2>
                       <span
-                        className={`w-12 h-12 rounded-xl flex items-center justify-center border ${accent.badge}`}
-                        aria-hidden="true"
+                        className={`shrink-0 text-[10px] font-mono-ui px-2 py-1 rounded-md border ${accent.badge}`}
                       >
-                        <role.Icon size={22} strokeWidth={2} />
-                      </span>
-                      <span
-                        className={`text-[10px] font-mono-ui px-2 py-1 rounded-md border ${accent.badge}`}
-                      >
-                        {role.accessId}
+                        {role.id}
                       </span>
                     </div>
-                    <h2 className="text-xl font-bold mb-1">{role.label}</h2>
+
                     <p className="text-sm text-[var(--muted-foreground)] italic mb-3">
                       {role.tagline}
                     </p>
-                    <p className="text-sm text-[var(--muted-foreground)] leading-relaxed">
+                    <p className="text-sm text-[var(--muted-foreground)] leading-relaxed min-h-[72px]">
                       {role.description}
                     </p>
-                  </div>
 
-                  <div className="mt-6 flex flex-col gap-2">
-                    <Link
-                      to={`/login?role=${role.id}`}
-                      className={`inline-flex items-center justify-center gap-2 font-semibold text-sm text-white rounded-xl px-4 py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] ${accent.border} ${accent.button}`}
-                    >
-                      Enter as {role.label} →
-                    </Link>
-                    {/* Guest Mode: explores the real {role.label} portal
-                        with no account — see Guest Mode spec. Kept as a
-                        clearly secondary action (smaller, outlined, no
-                        accent fill) so "Enter as {role.label}" remains
-                        the obvious primary choice for a returning user. */}
-                    <button
-                      type="button"
-                      onClick={() => handleGuestEnter(role.id, role.accessId)}
-                      className="inline-flex items-center justify-center gap-2 font-medium text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] rounded-xl px-4 py-2 border border-[var(--border-strong)] hover:border-[var(--muted-foreground)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] focus-visible:ring-[var(--muted-foreground)]"
-                    >
-                      Continue as Guest
-                    </button>
+                    <div className="mt-5 flex flex-col gap-2">
+                      <Link
+                        to={`/login?role=${role.id}`}
+                        className={`inline-flex items-center justify-center gap-2 font-semibold text-sm text-white rounded-xl px-4 py-2.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] ${accent.border} ${accent.button}`}
+                      >
+                        Enter as {role.label} →
+                      </Link>
+                      {/* Guest Mode: same behavior as before; only the
+                          presentation of the role card has changed. */}
+                      <button
+                        type="button"
+                        onClick={() => handleGuestEnter(role.id, role.accessId)}
+                        className="inline-flex items-center justify-center gap-2 font-medium text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] rounded-xl px-4 py-2 border border-[var(--border-strong)] hover:border-[var(--muted-foreground)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] focus-visible:ring-[var(--muted-foreground)]"
+                      >
+                        Continue as Guest
+                      </button>
+                    </div>
                   </div>
-                </div>
+                </article>
               );
             })}
           </div>

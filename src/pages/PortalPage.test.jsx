@@ -45,6 +45,18 @@ describe("PortalPage — Guest Mode", () => {
     expect(screen.getByRole("link", { name: "Enter as Recruiter →" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Enter as TPO →" })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Continue as Guest" })).toHaveLength(3);
+    expect(screen.getByRole("img", { name: "Students collaborating on a college campus" })).toHaveAttribute(
+      "src",
+      "/images/landing/ecosystem-campus.webp"
+    );
+    expect(screen.getByRole("img", { name: "Recruiter interviewing a candidate" })).toHaveAttribute(
+      "src",
+      "/images/landing/recruiter-interview.webp"
+    );
+    expect(screen.getByRole("img", { name: "Training and placement discussion" })).toHaveAttribute(
+      "src",
+      "/images/landing/tpo-placement.webp"
+    );
   });
 
   it("real login links point at /login?role=<id>, unaffected by Guest Mode", () => {
