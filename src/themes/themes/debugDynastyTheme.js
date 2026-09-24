@@ -39,6 +39,18 @@ export const debugDynastyTheme = createTheme({
     animation: "none",
   },
 
+  visual: {
+    codename: "SERIES 01",
+    eyebrow: "STARTUP // ENGINEERING COMMAND",
+    heroTitle: "BUILD. SHIP. REPEAT.",
+    heroDescription: "Turn hard problems into working systems and ship the next release.",
+    status: "SYSTEM ONLINE",
+    artifact: "BUILD // CC-001",
+    motif: "startup",
+    panelStyle: "startup",
+    emblem: "rocket",
+  },
+
   words: {
     run:                  "Compile & Ship",
     submit:               "Push to Prod",
