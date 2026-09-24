@@ -60,6 +60,32 @@ describe("ThemeSelectionPage — universe library", () => {
         expect(screen.getByText("Unlock at 2,000 XP")).toBeInTheDocument();
     });
 
+    it("filters universes by availability state", () => {
+        render(
+            <MemoryRouter>
+                <ThemeSelectionPage />
+            </MemoryRouter>
+        );
+
+        expect(screen.getAllByRole("article")).toHaveLength(5);
+
+        fireEvent.click(screen.getByRole("button", { name: "Available" }));
+        expect(screen.getAllByRole("article")).toHaveLength(2);
+        expect(screen.getByText("Code Heist")).toBeInTheDocument();
+        expect(screen.getByText("Breaking Bug")).toBeInTheDocument();
+        expect(screen.queryByText("Ghost Protocol")).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("button", { name: "Locked" }));
+        expect(screen.getAllByRole("article")).toHaveLength(3);
+        expect(screen.getByText("Ghost Protocol")).toBeInTheDocument();
+        expect(screen.getByText("Survival Code")).toBeInTheDocument();
+        expect(screen.getByText("Debug Dynasty")).toBeInTheDocument();
+        expect(screen.queryByText("Code Heist")).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("button", { name: "All" }));
+        expect(screen.getAllByRole("article")).toHaveLength(5);
+    });
+
     it("selects an unlocked universe and preserves the destination", () => {
         render(
             <MemoryRouter initialEntries={["/theme-selection?next=%2Fproblems"]}>
