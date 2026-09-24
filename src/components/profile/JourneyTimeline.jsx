@@ -46,6 +46,7 @@ function JourneyTimeline({ joinedDate, achievements = [] }) {
 
   return (
     <SectionCard
+      className="universe-journey-timeline"
       title="Journey Timeline"
       icon={<Compass size={18} strokeWidth={2} />}
       accented
@@ -53,6 +54,13 @@ function JourneyTimeline({ joinedDate, achievements = [] }) {
       defaultOpen={false}
       storageKey="profile-collapse-journey"
     >
+      {events.length > 0 && (
+        <div className="universe-journey-timeline__summary">
+          <span>{events.length} recorded milestones</span>
+          <span>Chronological journey</span>
+        </div>
+      )}
+
       {events.length === 0 ? (
         <EmptyState
           icon={<Compass size={28} strokeWidth={1.75} />}
@@ -63,9 +71,9 @@ function JourneyTimeline({ joinedDate, achievements = [] }) {
       ) : (
         <div className="space-y-0">
           {events.map((event, i) => (
-            <div key={event.key} className="flex gap-4">
+            <div key={event.key} className="universe-journey-event flex gap-4" data-universe-event={event.key === "joined" ? "origin" : "milestone"}>
               <div className="flex flex-col items-center">
-                <div className="w-8 h-8 rounded-full bg-[var(--surface-elevated)] flex items-center justify-center text-sm flex-shrink-0">
+                <div className="universe-journey-event__node w-8 h-8 rounded-full bg-[var(--surface-elevated)] flex items-center justify-center text-sm flex-shrink-0">
                   {event.icon}
                 </div>
                 {i < events.length - 1 && (
