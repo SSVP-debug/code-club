@@ -43,7 +43,7 @@ function LearningWorkspace({
 
       <div className="universe-learning__stage-label">MISSION CONTROL / LEARNING SIGNAL</div>
 
-      {/* Stats row — 3 cards with clear borders */
+      {/* Stats row — 3 cards with clear borders */}}
       <div className="grid grid-cols-3 gap-2">
         {[
           { label: "Solved",   value: solvedCount,        color: "text-[var(--foreground)]"      },
