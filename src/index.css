@@ -1941,3 +1941,413 @@ html.bw-mode .lp-final-cta-copy p {
     animation: none;
   }
 }
+
+
+/* ── U8: Profile + progress immersion ───────────────────────────────────
+   Profile becomes the persistent coding-identity surface. Existing stats,
+   activity and recruiter data remain unchanged; the universe is expressed
+   through hierarchy, framing and progress chrome. */
+.universe-profile {
+  position: relative;
+}
+
+.universe-profile-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 178px;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 28%, var(--border));
+  border-radius: 16px;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--theme-primary) 7%, var(--surface)),
+      var(--surface) 58%
+    );
+  box-shadow:
+    0 18px 45px color-mix(in srgb, var(--theme-glow) 6%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--theme-primary) 8%, transparent);
+}
+
+.universe-profile-hero--default {
+  min-height: auto;
+  padding: 20px 24px;
+  border-color: var(--border);
+  background: var(--surface);
+  box-shadow: none;
+}
+
+.universe-profile-hero__wash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.34;
+  background:
+    radial-gradient(
+      circle at 85% 18%,
+      color-mix(in srgb, var(--theme-glow) 18%, transparent),
+      transparent 32%
+    ),
+    repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--theme-primary) 2%, transparent) 0 1px,
+      transparent 1px 42px
+    );
+}
+
+.universe-profile-hero__content {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px 20px;
+  padding: 22px 24px;
+}
+
+.universe-profile-hero__identity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.universe-profile-hero__emblem {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  color: var(--theme-primary);
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 42%, var(--border));
+  background: color-mix(in srgb, var(--theme-primary) 9%, var(--surface-elevated));
+  box-shadow: 0 0 24px color-mix(in srgb, var(--theme-glow) 8%, transparent);
+}
+
+.universe-profile-hero__eyebrow,
+.universe-profile-hero__label {
+  color: color-mix(in srgb, var(--theme-primary) 56%, var(--theme-muted));
+  font: 700 7px/1.2 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.universe-profile-hero__codename {
+  margin-top: 5px;
+  color: var(--foreground);
+  font: 700 14px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.universe-profile-hero__status {
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  gap: 5px;
+  color: var(--theme-primary);
+  font: 700 7px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.universe-profile-hero__signal {
+  position: absolute;
+  top: 21px;
+  right: 24px;
+  display: flex;
+  gap: 3px;
+  transform: translateY(-1px);
+}
+
+.universe-profile-hero__signal span {
+  width: 3px;
+  height: 12px;
+  background: var(--theme-primary);
+  opacity: 0.3;
+}
+
+.universe-profile-hero__signal span:nth-child(2) {
+  opacity: 0.58;
+}
+
+.universe-profile-hero__signal span:nth-child(3) {
+  opacity: 0.9;
+}
+
+.universe-profile-hero__progress {
+  grid-column: 1 / -1;
+  padding-top: 5px;
+}
+
+.universe-profile-hero__progress-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.universe-profile-hero__progress-head > div {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+}
+
+.universe-profile-hero__progress-head strong {
+  color: var(--foreground);
+  font-size: 11px;
+}
+
+.universe-profile-hero__xp {
+  color: var(--theme-muted);
+  font: 700 8px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.universe-profile-hero__bar {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-primary) 8%, var(--surface-elevated));
+}
+
+.universe-profile-hero__bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--theme-primary);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--theme-glow) 24%, transparent);
+  transition: width 350ms ease;
+}
+
+.universe-profile-hero__stats {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 16px;
+  color: var(--theme-muted);
+  font: 700 7px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.universe-profile-hero__stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Every existing profile card now reads as part of the same identity surface. */
+.universe-profile > [data-slot^="profile-"] {
+  position: relative;
+}
+
+.universe-profile > [data-slot^="profile-"]::before {
+  content: attr(data-slot);
+  display: block;
+  margin: 0 0 7px 2px;
+  color: color-mix(in srgb, var(--theme-primary) 38%, var(--theme-muted));
+  font: 700 7px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.universe-profile > [data-slot="profile-identity"]::before {
+  content: "IDENTITY";
+}
+
+.universe-profile > [data-slot="profile-professional-presence"]::before,
+.universe-profile > [data-slot="profile-featured-project"]::before {
+  content: "PROFESSIONAL SIGNAL";
+}
+
+.universe-profile > [data-slot="profile-completion"]::before {
+  content: "NEXT OBJECTIVE";
+}
+
+.universe-profile > [data-slot="profile-recruiter-snapshot"]::before {
+  content: "RECRUITER SIGNAL";
+}
+
+.universe-profile > [data-slot="profile-heatmap-radar"]::before {
+  content: "ACTIVITY / SKILL SIGNAL";
+}
+
+.universe-profile > [data-slot="profile-coding-dna"]::before {
+  content: "CODING DNA";
+}
+
+.universe-profile > [data-slot="profile-pinned-problems"]::before {
+  content: "SHOWCASE";
+}
+
+.universe-profile > [data-slot="profile-insights"]::before {
+  content: "INTELLIGENCE";
+}
+
+.universe-profile > [data-slot="profile-achievements"]::before {
+  content: "MILESTONES";
+}
+
+.universe-profile > [data-slot="profile-journey"]::before {
+  content: "JOURNEY";
+}
+
+.universe-profile > [data-slot="profile-activity"]::before {
+  content: "RECENT SIGNAL";
+}
+
+.universe-profile > [data-slot="profile-submissions"]::before {
+  content: "SUBMISSION LOG";
+}
+
+/* Motif-specific profile language. */
+[data-theme="codeHeist"] .universe-profile-hero {
+  border-radius: 7px;
+  border-color: rgba(250,204,21,0.28);
+  background:
+    linear-gradient(135deg, rgba(250,204,21,0.06), #090a0d 62%);
+}
+
+[data-theme="codeHeist"] .universe-profile-hero__emblem {
+  border-radius: 4px;
+}
+
+[data-theme="codeHeist"] .universe-profile > [data-slot^="profile-"]::before {
+  letter-spacing: 0.2em;
+}
+
+[data-theme="codeHeist"] .universe-profile > [data-slot="profile-activity"]::before {
+  content: "SURVEILLANCE LOG";
+}
+
+[data-theme="codeHeist"] .universe-profile > [data-slot="profile-submissions"]::before {
+  content: "ACCESS LOG";
+}
+
+[data-theme="breakingBug"] .universe-profile-hero {
+  border-radius: 12px;
+  border-color: rgba(34,197,94,0.26);
+}
+
+[data-theme="breakingBug"] .universe-profile-hero__emblem {
+  border-radius: 15px 15px 20px 20px;
+}
+
+[data-theme="breakingBug"] .universe-profile > [data-slot="profile-activity"]::before {
+  content: "LAB ACTIVITY";
+}
+
+[data-theme="breakingBug"] .universe-profile > [data-slot="profile-submissions"]::before {
+  content: "EXPERIMENT LOG";
+}
+
+[data-theme="ghostProtocol"] .universe-profile-hero {
+  border-radius: 3px;
+  border-color: rgba(0,255,65,0.22);
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(0,255,65,0.012) 0 1px,
+      transparent 1px 4px
+    ),
+    #050705;
+}
+
+[data-theme="ghostProtocol"] .universe-profile-hero__emblem {
+  border-radius: 0;
+}
+
+[data-theme="ghostProtocol"] .universe-profile-hero__codename,
+[data-theme="ghostProtocol"] .universe-profile-hero__status {
+  text-shadow: 0 0 9px rgba(0,255,65,0.15);
+}
+
+[data-theme="ghostProtocol"] .universe-profile > [data-slot^="profile-"]::before {
+  text-shadow: 0 0 8px rgba(0,255,65,0.13);
+}
+
+[data-theme="ghostProtocol"] .universe-profile > [data-slot="profile-activity"]::before {
+  content: "TRACE LOG";
+}
+
+[data-theme="ghostProtocol"] .universe-profile > [data-slot="profile-submissions"]::before {
+  content: "PACKET LOG";
+}
+
+[data-theme="survivalCode"] .universe-profile-hero {
+  border-radius: 5px;
+  border-color: rgba(255,45,120,0.3);
+}
+
+[data-theme="survivalCode"] .universe-profile-hero__emblem {
+  border-radius: 50%;
+}
+
+[data-theme="survivalCode"] .universe-profile > [data-slot="profile-completion"]::before {
+  content: "NEXT ROUND";
+}
+
+[data-theme="survivalCode"] .universe-profile > [data-slot="profile-activity"]::before {
+  content: "ROUND LOG";
+}
+
+[data-theme="survivalCode"] .universe-profile > [data-slot="profile-submissions"]::before {
+  content: "TRIAL LOG";
+}
+
+[data-theme="debugDynasty"] .universe-profile-hero {
+  border-radius: 14px;
+  border-color: rgba(59,130,246,0.3);
+}
+
+[data-theme="debugDynasty"] .universe-profile-hero__emblem {
+  border-radius: 17px;
+}
+
+[data-theme="debugDynasty"] .universe-profile > [data-slot="profile-completion"]::before {
+  content: "NEXT RELEASE";
+}
+
+[data-theme="debugDynasty"] .universe-profile > [data-slot="profile-activity"]::before {
+  content: "SHIPMENT LOG";
+}
+
+[data-theme="debugDynasty"] .universe-profile > [data-slot="profile-submissions"]::before {
+  content: "BUILD LOG";
+}
+
+@media (max-width: 767px) {
+  .universe-profile-hero__content {
+    grid-template-columns: 1fr;
+    padding: 18px;
+  }
+
+  .universe-profile-hero__status {
+    grid-column: 1;
+    justify-self: start;
+  }
+
+  .universe-profile-hero__signal {
+    top: 18px;
+    right: 18px;
+  }
+
+  .universe-profile-hero__progress-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .universe-profile-hero__stats {
+    flex-wrap: wrap;
+  }
+
+  .universe-profile > [data-slot^="profile-"]::before {
+    font-size: 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .universe-profile-hero__bar span {
+    transition: none;
+  }
+}
