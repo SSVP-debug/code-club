@@ -1,5 +1,6 @@
 
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useMemo, useState } from "react";
 import { ArrowRight, Check, Lock } from "lucide-react";
 import { useTheme } from "../hooks/useTheme";
 import { useAppContext } from "../hooks/useAppContext";
@@ -14,9 +15,20 @@ export default function ThemeSelectionPage() {
     const [searchParams] = useSearchParams();
     const { setTheme, themeId: currentThemeId } = useTheme();
     const { totalXP = 0 } = useAppContext();
+    const [filter, setFilter] = useState("all");
     const nextPath = searchParams.get("next")
         ? decodeURIComponent(searchParams.get("next"))
         : "/dashboard";
+
+    const filteredThemes = useMemo(() => {
+        if (filter === "available") {
+            return THEME_OPTIONS.filter((theme) => totalXP >= (theme.unlockXP || 0));
+        }
+        if (filter === "locked") {
+            return THEME_OPTIONS.filter((theme) => totalXP < (theme.unlockXP || 0));
+        }
+        return THEME_OPTIONS;
+    }, [filter, totalXP]);
 
     const handleSelect = (themeId) => {
         const theme = THEME_OPTIONS.find((item) => item.id === themeId);
@@ -69,7 +81,7 @@ export default function ThemeSelectionPage() {
                     aria-label="Code Club universes"
                     className="grid flex-1 grid-cols-1 gap-4 pb-8 sm:grid-cols-2 xl:grid-cols-3"
                 >
-                    {THEME_OPTIONS.map((theme) => {
+                    {filteredThemes.map((theme) => {
                         const colors = getTheme(theme.id).colors;
                         const Icon = THEME_ICONS[theme.id];
                         const isLocked = totalXP < (theme.unlockXP || 0);
