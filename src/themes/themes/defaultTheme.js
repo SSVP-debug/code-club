@@ -44,6 +44,18 @@ export const defaultTheme = createTheme({
         animation: "none",
     },
 
+    visual: {
+        codename: "",
+        eyebrow: "",
+        heroTitle: "",
+        heroDescription: "",
+        status: "",
+        artifact: "",
+        motif: "neutral",
+        panelStyle: "standard",
+        emblem: "compass",
+    },
+
     words: {
         run: "Run",
         submit: "Submit",
