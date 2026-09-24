@@ -6,7 +6,8 @@ import { apiFetch } from "../services/api";
 import { getPostLoginDestination, VALID_PORTAL_ROLES } from "../utils/roleRedirect";
 import { getSafeNextPath } from "../utils/authRedirect";
 import { AUTH_GATE_MESSAGES } from "../utils/authGateMessages";
-import { GraduationCap, Briefcase, Building2, Flame, Search, Users } from "lucide-react";
+import { GraduationCap, Briefcase, Building2, ShieldCheck } from "lucide-react";
+import LANDING_IMAGES from "../components/landing/landingImages";
 
 // JARVIS pass, spec §1: "LOGIN → AUTHENTICATING → ... should feel like one
 // continuous experience... the user should never wait just to watch an
@@ -41,72 +42,65 @@ const ROLE_COPY = {
   },
 };
 
-// Left-panel copy — deliberately distinct from ROLE_COPY (the form-side
-// heading above): this is the "why," not the "sign in as." Colors and the
-// stat line reuse the exact teal/sky/violet accents and mock numbers from
-// the landing page's role-preview cards (AudienceGrid.jsx) and /portal's
-// role cards, so the color someone tapped on /portal follows them straight
-// through to this screen instead of resetting to a generic brand panel.
-const LEFT_PANEL_COPY = {
+// Authentication is the bridge between the persona chosen on /portal and
+// the real product. Keep the role-specific message concise; the detailed
+// product promise belongs on the landing/portal surfaces, not inside the
+// sign-in form.
+const ROLE_AUTH = {
   student: {
     Icon: GraduationCap,
     accent: "teal",
+    image: LANDING_IMAGES.ecosystem,
+    eyebrow: "Student access",
     heading: "Turn practice into proof.",
     description:
-      "Every solve is verified server-side no self-reported skills, just a real solve history recruiters can check.",
-    StatIcon: Flame,
-    stat: "1,240 XP · 14-day streak",
+      "Your verified solve history, progress, and interview practice continue from here.",
   },
   recruiter: {
     Icon: Briefcase,
     accent: "sky",
-    heading: "Skip the resume guesswork.",
+    image: LANDING_IMAGES.recruiter,
+    eyebrow: "Recruiter access",
+    heading: "Find signal, not just resumes.",
     description:
-      "Search candidates by real solve history and verified topic strength, then send skills tests directly.",
-    StatIcon: Search,
-    stat: "142 verified candidates found this week",
+      "Continue to verified candidate search, skills tests, and recruiter tools.",
   },
   tpo: {
     Icon: Building2,
     accent: "violet",
+    image: LANDING_IMAGES.tpo,
+    eyebrow: "TPO access",
     heading: "See readiness, not guesses.",
     description:
-      "Track your whole batch's solve velocity, streaks, and topic coverage — one dashboard, not spreadsheets.",
-    StatIcon: Users,
-    stat: "78% of your batch is placement-ready",
+      "Continue to campus placement insights, student readiness, and TPO tools.",
   },
 };
 
-const DEFAULT_LEFT_PANEL = {
+const DEFAULT_AUTH = {
   Icon: GraduationCap,
-  accent: "default",
+  accent: "teal",
+  image: LANDING_IMAGES.ecosystem,
+  eyebrow: "Code Club access",
   heading: "Practice that becomes proof.",
   description:
-    "Solve real interview problems, practice live AI mock interviews, and build a verified solve history recruiters actually check.",
-  StatIcon: Flame,
-  stat: "High-quality DSA problems · Multi-language",
+    "Sign in to continue to your Code Club workspace.",
 };
 
 const ACCENT_PANEL = {
   teal: {
-    bg: "bg-gradient-to-br from-teal-500/10 via-[var(--surface)] to-[var(--surface)]",
-    ring: "border-teal-500/25 bg-teal-500/10 text-teal-400",
     text: "text-teal-300",
+    soft: "bg-teal-400/10 border-teal-400/20 text-teal-300",
+    button: "hover:border-teal-400/40",
   },
   sky: {
-    bg: "bg-gradient-to-br from-sky-500/10 via-[var(--surface)] to-[var(--surface)]",
-    ring: "border-sky-500/25 bg-sky-500/10 text-sky-400",
     text: "text-sky-300",
+    soft: "bg-sky-400/10 border-sky-400/20 text-sky-300",
+    button: "hover:border-sky-400/40",
   },
   violet: {
-    bg: "bg-gradient-to-br from-violet-500/10 via-[var(--surface)] to-[var(--surface)]",
-    ring: "border-violet-500/25 bg-violet-500/10 text-violet-400",
     text: "text-violet-300",
-  },
-  default: {
-    bg: "bg-gradient-to-br from-verdict-accept/10 via-[var(--surface)] to-[var(--surface)]",
-    ring: "border-verdict-accept/25 bg-verdict-accept/10 text-verdict-accept",
-    text: "text-verdict-accept",
+    soft: "bg-violet-400/10 border-violet-400/20 text-violet-300",
+    button: "hover:border-violet-400/40",
   },
 };
 
@@ -124,8 +118,8 @@ function LoginPage() {
     heading: "Welcome to Code Club",
     sub: "Continue your DSA journey",
   };
-  const leftPanel = LEFT_PANEL_COPY[roleIntent] || DEFAULT_LEFT_PANEL;
-  const panelAccent = ACCENT_PANEL[leftPanel.accent];
+  const authVisual = ROLE_AUTH[roleIntent] || DEFAULT_AUTH;
+  const panelAccent = ACCENT_PANEL[authVisual.accent];
 
   // Apply referral code after login if present in URL
   async function applyReferralIfPresent() {
@@ -246,58 +240,95 @@ function LoginPage() {
   const busy = status !== "idle";
 
   return (
-    <div className="min-h-screen grid md:grid-cols-2 bg-[var(--background)] text-[var(--foreground)]">
-      {/* Left — role-colored brand panel. Hidden below md: on a small
-          screen the form is the job, not the illustration. The accent
-          color and stat line are the same ones tapped on /portal and
-          shown in the landing page's role-preview cards, so the color
-          someone chose follows them all the way to sign-in. */}
-      <div
-        className={`hidden md:flex flex-col justify-between p-12 border-r border-[var(--border)] ${panelAccent.bg}`}
-      >
-        <Link to="/" className="flex items-center gap-2 w-fit">
-          <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-verdict-accept" />
-          <span className="text-[11px] font-mono-ui uppercase tracking-[0.25em] text-[var(--muted-foreground)]">
-            Code Club
-          </span>
-        </Link>
+    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] md:grid md:grid-cols-[1.08fr_0.92fr]">
+      {/* Persona panel: the same approved image family used by /portal.
+          The image is atmospheric, while the copy explains what continues
+          after authentication. */}
+      <aside className="relative hidden min-h-screen overflow-hidden border-r border-[var(--border)] md:block">
+        <img
+          src={authVisual.image}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover"
+          style={{ objectPosition: "center" }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#080b0e]/95 via-[#080b0e]/72 to-[#080b0e]/25" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#080b0e]/95 via-transparent to-[#080b0e]/35" />
 
-        <div className="max-w-sm">
-          <span
-            className={`inline-flex w-14 h-14 rounded-2xl items-center justify-center border mb-6 ${panelAccent.ring}`}
-            aria-hidden="true"
-          >
-            <leftPanel.Icon size={26} strokeWidth={2} />
-          </span>
-          <h2 className="text-3xl font-bold tracking-tight mb-4 leading-tight">
-            {leftPanel.heading}
-          </h2>
-          <p className="text-[var(--muted-foreground)] leading-relaxed">{leftPanel.description}</p>
-        </div>
-
-        <div className="flex items-center gap-2 font-mono-ui text-xs text-[var(--muted-foreground)]">
-          <leftPanel.StatIcon size={14} className={panelAccent.text} strokeWidth={2.2} aria-hidden="true" />
-          <span className={panelAccent.text}>{leftPanel.stat}</span>
-        </div>
-      </div>
-
-      {/* Right — the actual sign-in form. Logic untouched from before;
-          just re-laid-out into the right-hand column. */}
-      <div className="flex items-center justify-center px-4 py-16">
-        <div className="w-[400px] max-w-full animate-fadeIn" style={{ animationDuration: "0.35s" }}>
-          {/* Brand mark repeats here too — the split panel is hidden on
-              mobile, so this is the only brand mark on small screens. */}
-          <div className="flex md:hidden items-center justify-center gap-1.5 mb-6">
+        <div className="relative z-10 flex min-h-screen flex-col justify-between p-10 lg:p-14">
+          <Link to="/" className="flex items-center gap-2 w-fit">
             <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-verdict-accept" />
-            <span className="text-[11px] font-mono-ui uppercase tracking-[0.25em] text-[var(--muted-foreground)]">
+            <span className="text-[11px] font-mono-ui uppercase tracking-[0.25em] text-white/70">
               Code Club
+            </span>
+          </Link>
+
+          <div className="max-w-xl pb-4">
+            <div className={`mb-5 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-mono-ui uppercase tracking-[0.18em] ${panelAccent.soft}`}>
+              <authVisual.Icon size={13} strokeWidth={2.2} aria-hidden="true" />
+              {authVisual.eyebrow}
+            </div>
+            <h2 className="max-w-lg text-4xl font-black tracking-tight leading-[1.04] lg:text-5xl">
+              {authVisual.heading}
+            </h2>
+            <p className="mt-5 max-w-md text-sm leading-7 text-white/70 lg:text-base">
+              {authVisual.description}
+            </p>
+            <div className="mt-7 flex items-center gap-2 text-xs font-mono-ui text-white/55">
+              <ShieldCheck size={14} className={panelAccent.text} aria-hidden="true" />
+              Secure sign-in · Your role is preserved
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Authentication surface: intentionally quieter than the portal.
+          One clear action, no fake metrics, and the selected role remains
+          visible so the user always knows which access path they chose. */}
+      <main className="flex min-h-screen items-center justify-center px-5 py-10 sm:px-8">
+        <div className="w-full max-w-[430px] animate-fadeIn" style={{ animationDuration: "0.35s" }}>
+          <div className="mb-8 flex items-center justify-between md:hidden">
+            <Link to="/" className="flex items-center gap-2">
+              <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-verdict-accept" />
+              <span className="text-[11px] font-mono-ui uppercase tracking-[0.25em] text-[var(--muted-foreground)]">
+                Code Club
+              </span>
+            </Link>
+            <span className={`rounded-full border px-3 py-1 text-[10px] font-mono-ui uppercase tracking-[0.16em] ${panelAccent.soft}`}>
+              {authVisual.eyebrow}
             </span>
           </div>
 
-          <div className="bg-[var(--surface)] border border-[var(--border)] p-10 rounded-2xl shadow-2xl shadow-black/40 text-center">
-            <h1 className="text-3xl font-bold mb-3">{copy.heading}</h1>
+          <div className="mb-8">
+            <p className="text-xs font-mono-ui uppercase tracking-[0.22em] text-[var(--muted-foreground)]">
+              Authentication
+            </p>
+            <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">{copy.heading}</h1>
+            <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">{copy.sub}</p>
+          </div>
 
-            <p className="text-[var(--muted-foreground)] mb-8">{copy.sub}</p>
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/70 p-5 shadow-2xl shadow-black/20 backdrop-blur-sm sm:p-6">
+            <div className="mb-5 flex items-center justify-between gap-4 rounded-xl border border-[var(--border-strong)] bg-[var(--background)]/40 px-4 py-3">
+              <div className="flex items-center gap-3">
+                <span className={`flex h-9 w-9 items-center justify-center rounded-lg border ${panelAccent.soft}`}>
+                  <authVisual.Icon size={17} strokeWidth={2} aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="text-xs font-semibold text-[var(--foreground)]">
+                    {authVisual.eyebrow}
+                  </p>
+                  <p className="text-[11px] text-[var(--muted-foreground)]">
+                    Access selected
+                  </p>
+                </div>
+              </div>
+              <a
+                href="/portal"
+                className="text-[11px] font-medium text-[var(--muted-foreground)] underline underline-offset-2 hover:text-[var(--foreground)]"
+              >
+                Change
+              </a>
+            </div>
 
             {/* Session expired banner — shown when api.js redirects here after 401 */}
             {sessionExpired && (
@@ -334,24 +365,28 @@ function LoginPage() {
             <button
               onClick={handleGoogleLogin}
               disabled={busy}
-              className="w-full flex items-center justify-center gap-2.5 bg-[var(--foreground)] text-[var(--background)] py-3 rounded-xl font-semibold hover:opacity-90 transition disabled:opacity-70 disabled:cursor-not-allowed"
+              className="group w-full flex items-center justify-center gap-3 rounded-xl bg-[var(--foreground)] px-4 py-3.5 font-semibold text-[var(--background)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
             >
+              {!busy && (
+                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                  <path fill="#4285F4" d="M21.6 12.23c0-.78-.07-1.53-.2-2.23H12v4.22h5.38a4.6 4.6 0 0 1-2 3.02v2.5h3.24c1.9-1.75 2.98-4.33 2.98-7.51Z"/>
+                  <path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.62-2.44l-3.24-2.5c-.9.6-2.05.96-3.38.96-2.6 0-4.8-1.76-5.59-4.13H3.06v2.58A10 10 0 0 0 12 22Z"/>
+                  <path fill="#FBBC05" d="M6.41 13.89A6 6 0 0 1 6.1 12c0-.66.11-1.3.31-1.89V7.53H3.06A10 10 0 0 0 2 12c0 1.61.39 3.14 1.06 4.47l3.35-2.58Z"/>
+                  <path fill="#EA4335" d="M12 5.98c1.47 0 2.79.5 3.83 1.49l2.87-2.87C16.96 2.94 14.7 2 12 2a10 10 0 0 0-8.94 5.53l3.35 2.58C7.2 7.74 9.4 5.98 12 5.98Z"/>
+                </svg>
+              )}
               {busy && (
                 <span
                   aria-hidden="true"
-                  className="h-3.5 w-3.5 rounded-full border-2 border-[var(--background)]/30 border-t-[var(--background)] animate-spin"
+                  className="h-4 w-4 rounded-full border-2 border-[var(--background)]/30 border-t-[var(--background)] animate-spin"
                 />
               )}
               {busy ? STATUS_COPY[status] : "Continue with Google"}
             </button>
 
-            {/* Real-state system-status language (JARVIS pass §1) — mirrors the
-                admin command bar's mono-ui labels, not decoration on its own:
-                only rendered while `status` reflects an actual in-flight
-                promise (Google popup, referral apply, /api/init). */}
             {busy && (
               <p
-                className="mt-3 text-[11px] font-mono-ui uppercase tracking-widest text-[var(--muted-foreground)]"
+                className="mt-3 text-center text-[11px] font-mono-ui uppercase tracking-widest text-[var(--muted-foreground)]"
                 role="status"
                 aria-live="polite"
               >
@@ -359,15 +394,29 @@ function LoginPage() {
               </p>
             )}
 
-            <p className="mt-6 text-xs text-[var(--muted-foreground)]">
-              Not the right account type?{" "}
-              <a href="/portal" className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] underline">
-                Choose your access
-              </a>
+            <p className="mt-5 text-center text-[11px] leading-5 text-[var(--muted-foreground)]">
+              By continuing, you use your Google account to authenticate with Code Club.
             </p>
+
+            <div className="mt-5 border-t border-[var(--border)] pt-5">
+              <p className="text-center text-xs text-[var(--muted-foreground)]">
+                Not the right account type?{" "}
+                <a
+                  href="/portal"
+                  className="font-medium text-[var(--foreground)] underline underline-offset-2"
+                >
+                  Choose your access
+                </a>
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 flex items-center justify-center gap-2 text-[11px] text-[var(--muted-foreground)]">
+            <ShieldCheck size={13} aria-hidden="true" />
+            Secure Google authentication
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
