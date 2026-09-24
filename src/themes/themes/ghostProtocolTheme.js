@@ -18,6 +18,25 @@ export const ghostProtocolTheme = createTheme({
     secondary: "#0d0d0d",   // near-black
     border:    "#1a2e1a",   // dark green border
     accent:    "#00cc33",
+    background: "#050705",
+    surface: "#0b0f0b",
+    surfaceElevated: "#101710",
+    muted: "#8ca58f",
+    glow: "#00ff41",
+    gradient: "linear-gradient(135deg, #00ff41 0%, #008f11 100%)",
+  },
+
+  background: "ghostProtocol",
+
+  atmosphere: {
+    artworkOpacity: 0.08,
+    artworkPosition: "center",
+    overlayOpacity: 0.84,
+    glowOpacity: 0.10,
+    gridOpacity: 0.08,
+    scanlineOpacity: 0.055,
+    vignetteOpacity: 0.80,
+    animation: "scan",
   },
 
   words: {
