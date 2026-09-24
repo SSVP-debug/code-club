@@ -131,7 +131,7 @@ function ProblemWorkspaceLayout({ problem, slug, solver, nextBestProblem, editio
   const resultsTabEnabled = WORKSPACE_V2_ENABLED ? hasResults : true;
 
   return (
-    <div className="relative h-full w-full universe-workspace">
+    <div className="relative h-full w-full flex flex-col universe-workspace">
       <UniverseWorkspaceHeader stage={stage} isSolved={isSolved} />
       <div
         // `inert` (native attribute) removes the whole subtree from the
@@ -142,8 +142,8 @@ function ProblemWorkspaceLayout({ problem, slug, solver, nextBestProblem, editio
         inert={stage === "understand"}
         className={
           (isDesktop
-            ? "h-full flex overflow-hidden bg-[var(--background)] px-3 py-2 gap-3"
-            : "flex flex-col h-full overflow-hidden") +
+            ? "flex-1 min-h-0 flex overflow-hidden bg-[var(--background)] px-3 py-2 gap-3"
+            : "flex-1 min-h-0 flex flex-col overflow-hidden") +
           (stage === "understand" ? " blur-sm brightness-75 scale-[0.99] transition-all duration-300" : " transition-all duration-300")
         }
       >
