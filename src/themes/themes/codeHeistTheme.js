@@ -10,16 +10,16 @@ export const codeHeistTheme = createTheme({
         "Crack vaults, bypass security systems and become a legendary hacker.",
 
     colors: {
-        primary: "#facc15",
+        primary: "#ef4444",
         secondary: "#18181b",
         border: "#3f3f46",
-        accent: "#eab308",
+        accent: "#dc2626",
         background: "#090a0d",
         surface: "#111318",
         surfaceElevated: "#181a20",
         muted: "#a1a1aa",
-        glow: "#facc15",
-        gradient: "linear-gradient(135deg, #facc15 0%, #a16207 100%)",
+        glow: "#ef4444",
+        gradient: "linear-gradient(135deg, #ef4444 0%, #991b1b 100%)",
     },
 
     background: "codeHeist",
