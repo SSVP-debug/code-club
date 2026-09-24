@@ -196,4 +196,177 @@ describe("TPO-5 Step 1 — institution report overview", () => {
       })
     ).rejects.toMatchObject({ code: "INVALID_DATE_RANGE" });
   });
+
+  it("slices solved/streak/topic numbers per cohort and separates unassigned students", async () => {
+    const college = await College.create({
+      domains: ["breakdown.edu"],
+      name: "Breakdown University",
+      status: "verified",
+    });
+
+    const [tpo, studentA, studentB, studentC, optedOutInCohort, unassignedStudent] = await User.create([
+      {
+        firebaseUid: "breakdown-tpo",
+        email: "tpo@breakdown.edu",
+        role: "tpo",
+        roles: ["tpo"],
+      },
+      {
+        firebaseUid: "breakdown-student-a",
+        email: "a@breakdown.edu",
+        role: "student",
+        roles: ["student"],
+        solvedSlugs: ["p1", "p2"],
+        solvedDifficulty: { easy: 1, medium: 1, hard: 0 },
+        currentStreak: 2,
+        topicStats: { Arrays: 3, Graphs: 1 },
+        visibleToTpo: true,
+      },
+      {
+        firebaseUid: "breakdown-student-b",
+        email: "b@breakdown.edu",
+        role: "student",
+        roles: ["student"],
+        solvedSlugs: ["p1"],
+        solvedDifficulty: { easy: 1, medium: 0, hard: 0 },
+        currentStreak: 0,
+        topicStats: { Arrays: 2 },
+        visibleToTpo: true,
+      },
+      {
+        firebaseUid: "breakdown-student-c",
+        email: "c@breakdown.edu",
+        role: "student",
+        roles: ["student"],
+        solvedSlugs: ["p1", "p2", "p3"],
+        solvedDifficulty: { easy: 1, medium: 1, hard: 1 },
+        currentStreak: 5,
+        topicStats: { "Dynamic Programming": 4 },
+        visibleToTpo: true,
+      },
+      {
+        firebaseUid: "breakdown-opted-out",
+        email: "out@breakdown.edu",
+        role: "student",
+        roles: ["student"],
+        solvedSlugs: ["p1", "p2", "p3", "p4"],
+        visibleToTpo: false,
+      },
+      {
+        firebaseUid: "breakdown-unassigned",
+        email: "solo@breakdown.edu",
+        role: "student",
+        roles: ["student"],
+        solvedSlugs: ["p1"],
+        currentStreak: 1,
+        visibleToTpo: true,
+      },
+    ]);
+
+    const cohortA = await Cohort.create({
+      collegeId: college._id,
+      name: "CSE 2027",
+      academicYear: "2024-2025",
+      graduatingYear: 2027,
+      branch: "CSE",
+      createdBy: tpo._id,
+    });
+
+    const cohortB = await Cohort.create({
+      collegeId: college._id,
+      name: "ECE 2027",
+      academicYear: "2024-2025",
+      graduatingYear: 2027,
+      branch: "ECE",
+      createdBy: tpo._id,
+    });
+
+    await CohortMembership.create([
+      {
+        cohortId: cohortA._id,
+        collegeId: college._id,
+        studentId: studentA._id,
+        email: studentA.email,
+        status: "active",
+        addedBy: tpo._id,
+      },
+      {
+        cohortId: cohortA._id,
+        collegeId: college._id,
+        studentId: studentB._id,
+        email: studentB.email,
+        status: "active",
+        addedBy: tpo._id,
+      },
+      {
+        cohortId: cohortB._id,
+        collegeId: college._id,
+        studentId: studentC._id,
+        email: studentC.email,
+        status: "active",
+        addedBy: tpo._id,
+      },
+      // Opted-out student's membership must not leak into cohortB's stats.
+      {
+        cohortId: cohortB._id,
+        collegeId: college._id,
+        studentId: optedOutInCohort._id,
+        email: optedOutInCohort.email,
+        status: "active",
+        addedBy: tpo._id,
+      },
+    ]);
+
+    const report = await getInstitutionReportOverview({
+      college,
+      from: "2026-09-01",
+      to: "2026-09-30T23:59:59.999Z",
+    });
+
+    // The pre-existing `cohorts` summary object keeps its own exact shape —
+    // the breakdown lives in its own top-level key instead.
+    expect(report.cohorts).toEqual({
+      total: 2,
+      active: 2,
+      archived: 0,
+      activeMemberships: 4,
+    });
+
+    expect(report.cohortBreakdown).toHaveLength(2);
+
+    const [breakdownA, breakdownB] = report.cohortBreakdown;
+
+    expect(breakdownA).toMatchObject({
+      name: "CSE 2027",
+      branch: "CSE",
+      graduatingYear: 2027,
+      status: "active",
+      memberCount: 2,
+      totalSolved: 3,
+      averageSolved: 1.5,
+      difficulty: { easy: 2, medium: 1, hard: 0 },
+      active: 1,
+      activePercent: 50,
+    });
+    expect(breakdownA.topTopics).toEqual(
+      expect.arrayContaining([
+        { topic: "Arrays", totalSolves: 5 },
+        { topic: "Graphs", totalSolves: 1 },
+      ])
+    );
+
+    expect(breakdownB).toMatchObject({
+      name: "ECE 2027",
+      branch: "ECE",
+      memberCount: 1,
+      totalSolved: 3,
+      averageSolved: 3,
+      difficulty: { easy: 1, medium: 1, hard: 1 },
+      active: 1,
+      activePercent: 100,
+      topTopics: [{ topic: "Dynamic Programming", totalSolves: 4 }],
+    });
+
+    expect(report.unassignedStudents).toEqual({ count: 1 });
+  });
 });

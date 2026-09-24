@@ -42,6 +42,56 @@ function DifficultyBars({ difficulty }) {
   );
 }
 
+function CohortBreakdownSection({ cohorts, unassignedCount }) {
+  if (!cohorts || cohorts.length === 0) return null;
+
+  return (
+    <section className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6">
+      <h3 className="text-sm font-semibold text-[var(--muted-foreground)] uppercase tracking-widest mb-5">
+        Cohort Breakdown
+      </h3>
+      <div className="space-y-3">
+        {cohorts.map((cohort) => (
+          <div
+            key={cohort.cohortId}
+            className="bg-[var(--surface-elevated)] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+          >
+            <div>
+              <p className="text-sm font-semibold text-[var(--foreground)]">
+                {cohort.name}
+                {cohort.section ? ` · ${cohort.section}` : ""}
+              </p>
+              <p className="text-xs text-[var(--muted-foreground)] mt-1">
+                {cohort.branch} · Batch {cohort.graduatingYear} · {cohort.memberCount} student{cohort.memberCount === 1 ? "" : "s"}
+              </p>
+              {cohort.topTopics?.length ? (
+                <p className="text-xs text-[var(--muted-foreground)] mt-1">
+                  Top topics: {cohort.topTopics.map((t) => t.topic).join(", ")}
+                </p>
+              ) : null}
+            </div>
+            <div className="flex gap-4 text-right shrink-0">
+              <div>
+                <p className="text-lg font-black text-[var(--foreground)]">{cohort.averageSolved}</p>
+                <p className="text-[10px] text-[var(--muted-foreground)] uppercase tracking-widest">Avg solved</p>
+              </div>
+              <div>
+                <p className="text-lg font-black text-[var(--foreground)]">{cohort.activePercent}%</p>
+                <p className="text-[10px] text-[var(--muted-foreground)] uppercase tracking-widest">Active</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      {unassignedCount > 0 ? (
+        <p className="text-xs text-[var(--muted-foreground)] mt-4">
+          {unassignedCount} visible student{unassignedCount === 1 ? "" : "s"} not yet assigned to a cohort.
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
 export default function TpoReportsPanel() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -98,7 +148,7 @@ export default function TpoReportsPanel() {
 
   if (!report) return null;
 
-  const { students, problems, cohorts, assignments } = report;
+  const { students, problems, cohorts, assignments, cohortBreakdown, unassignedStudents } = report;
 
   return (
     <div className="space-y-6">
@@ -187,6 +237,8 @@ export default function TpoReportsPanel() {
           </div>
         </section>
       </div>
+
+      <CohortBreakdownSection cohorts={cohortBreakdown} unassignedCount={unassignedStudents?.count || 0} />
 
       {students.optedOut > 0 ? (
         <div className="border border-[var(--border)] bg-[var(--surface)] rounded-2xl px-5 py-4">

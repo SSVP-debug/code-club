@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import Cohort from "../models/Cohort.js";
 import CohortMembership from "../models/CohortMembership.js";
 import Assignment from "../models/Assignment.js";
+import { topicStatsToObject } from "../utils/topicStats.js";
 
 function parseDate(value, fallback) {
   if (!value) return fallback;
@@ -70,7 +71,9 @@ export async function getInstitutionReportOverview({
   );
   const activeStudents = visibleStudents.filter((student) => (student.currentStreak || 0) > 0).length;
 
-  const cohorts = await Cohort.find({ collegeId }).select("_id status").lean();
+  const cohorts = await Cohort.find({ collegeId })
+    .select("_id name academicYear graduatingYear branch section status")
+    .lean();
   const activeCohorts = cohorts.filter((cohort) => cohort.status !== "archived").length;
 
   const cohortIds = cohorts.map((cohort) => cohort._id);
@@ -100,6 +103,75 @@ export async function getInstitutionReportOverview({
   const solvedByStudent = new Map(
     visibleStudents.map((student) => [String(student._id), new Set(student.solvedSlugs || [])])
   );
+
+  // ── Per-cohort breakdown ─────────────────────────────────────────────────
+  // A TPO managing several cohorts needs these same solved/streak/topic
+  // numbers sliced per cohort, not just as one college-wide total. Reuses
+  // the students/cohorts/memberships already loaded above — no extra
+  // queries. Kept as its own top-level `cohortBreakdown` key (a sibling of
+  // `cohorts`, not nested inside it) so the existing `cohorts` summary
+  // object's shape — asserted elsewhere with `toEqual` — is untouched.
+  const studentsById = new Map(visibleStudents.map((student) => [String(student._id), student]));
+  const membershipsByCohort = new Map();
+  for (const membership of memberships) {
+    const key = String(membership.cohortId);
+    if (!membershipsByCohort.has(key)) membershipsByCohort.set(key, []);
+    membershipsByCohort.get(key).push(String(membership.studentId));
+  }
+
+  const cohortBreakdown = cohorts
+    .map((cohort) => {
+      const cohortKey = String(cohort._id);
+      const memberIds = (membershipsByCohort.get(cohortKey) || []).filter((studentId) =>
+        visibleStudentIds.has(studentId)
+      );
+      const members = memberIds.map((studentId) => studentsById.get(studentId)).filter(Boolean);
+
+      const memberCount = members.length;
+      const totalSolved = members.reduce((sum, student) => sum + (student.solvedSlugs?.length || 0), 0);
+      const totalEasy = members.reduce((sum, student) => sum + (student.solvedDifficulty?.easy || 0), 0);
+      const totalMedium = members.reduce((sum, student) => sum + (student.solvedDifficulty?.medium || 0), 0);
+      const totalHard = members.reduce((sum, student) => sum + (student.solvedDifficulty?.hard || 0), 0);
+      const activeMembers = members.filter((student) => (student.currentStreak || 0) > 0).length;
+
+      // topicStats is stored as a Mongoose Map (topic -> solve count), which
+      // .lean() surfaces as a plain object, not an array — see
+      // utils/topicStats.js, the same helper the rest of the codebase uses
+      // to read it.
+      const topicTotals = new Map();
+      for (const student of members) {
+        const stats = topicStatsToObject(student.topicStats);
+        for (const [topic, count] of Object.entries(stats)) {
+          topicTotals.set(topic, (topicTotals.get(topic) || 0) + (count || 0));
+        }
+      }
+      const topTopics = [...topicTotals.entries()]
+        .map(([topic, totalSolves]) => ({ topic, totalSolves }))
+        .sort((a, b) => b.totalSolves - a.totalSolves)
+        .slice(0, 5);
+
+      return {
+        cohortId: cohortKey,
+        name: cohort.name,
+        academicYear: cohort.academicYear,
+        graduatingYear: cohort.graduatingYear,
+        branch: cohort.branch,
+        section: cohort.section ?? null,
+        status: cohort.status,
+        memberCount,
+        totalSolved,
+        averageSolved: memberCount ? Math.round((totalSolved / memberCount) * 10) / 10 : 0,
+        difficulty: { easy: totalEasy, medium: totalMedium, hard: totalHard },
+        active: activeMembers,
+        activePercent: memberCount ? Math.round((activeMembers / memberCount) * 100) : 0,
+        topTopics,
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const unassignedVisibleCount = visibleStudents.filter(
+    (student) => !cohortStudentIds.has(String(student._id))
+  ).length;
 
   let assignedStudents = 0;
   let completedAssignments = 0;
@@ -151,6 +223,10 @@ export async function getInstitutionReportOverview({
       active: activeCohorts,
       archived: cohorts.length - activeCohorts,
       activeMemberships: cohortStudentIds.size,
+    },
+    cohortBreakdown,
+    unassignedStudents: {
+      count: unassignedVisibleCount,
     },
     assignments: {
       total: assignments.length,

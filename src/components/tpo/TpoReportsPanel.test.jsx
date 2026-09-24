@@ -86,4 +86,45 @@ describe("TpoReportsPanel", () => {
     expect(await screen.findByText("Failed to load report.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /try again/i })).toBeInTheDocument();
   });
+
+  it("renders the per-cohort breakdown and unassigned-student note when present", async () => {
+    apiFetch.mockResolvedValueOnce({
+      ...report,
+      cohortBreakdown: [
+        {
+          cohortId: "cohort-1",
+          name: "CSE 2027",
+          academicYear: "2024-2025",
+          graduatingYear: 2027,
+          branch: "CSE",
+          section: null,
+          status: "active",
+          memberCount: 40,
+          totalSolved: 320,
+          averageSolved: 8,
+          difficulty: { easy: 160, medium: 120, hard: 40 },
+          active: 28,
+          activePercent: 70,
+          topTopics: [{ topic: "Arrays", totalSolves: 90 }],
+        },
+      ],
+      unassignedStudents: { count: 5 },
+    });
+
+    render(<TpoReportsPanel />);
+
+    expect(await screen.findByText("Cohort Breakdown")).toBeInTheDocument();
+    expect(screen.getByText(/CSE 2027/)).toBeInTheDocument();
+    expect(screen.getByText(/CSE · Batch 2027 · 40 students/)).toBeInTheDocument();
+    expect(screen.getByText(/Top topics: Arrays/)).toBeInTheDocument();
+    expect(screen.getByText("70%")).toBeInTheDocument();
+    expect(screen.getByText(/5 visible students not yet assigned to a cohort/)).toBeInTheDocument();
+  });
+
+  it("does not render a cohort breakdown section when the report has none", async () => {
+    render(<TpoReportsPanel />);
+
+    await screen.findByText("Institution Report");
+    expect(screen.queryByText("Cohort Breakdown")).not.toBeInTheDocument();
+  });
 });
