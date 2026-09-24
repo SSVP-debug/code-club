@@ -259,7 +259,7 @@ overflow-hidden
 
             {/* ── Tab bar — flex-shrink-0, always visible ───────────────────── */}
             <div
-                className="flex items-center border-b border-[var(--border-strong)] px-1 pt-1 flex-shrink-0"
+                className="universe-workspace-panel__tabs flex items-center border-b border-[var(--border-strong)] px-1 pt-1 flex-shrink-0"
             >
 
                 {TABS.map((tab) => {
@@ -318,7 +318,7 @@ overflow-hidden
                             Long testcase lists or error output scroll here only.
         custom-scrollbar:   project's existing thin scrollbar style.
       */}
-            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+            <div className="universe-workspace-panel__content flex-1 min-h-0 overflow-y-auto custom-scrollbar">
                 {activeTab === "testcases" ? (
                     <div className="p-4">
                         <TestcaseResultPanel
