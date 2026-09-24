@@ -37,10 +37,6 @@ function LearningWorkspace({
         </div>
         <span className="universe-learning__status"><Activity size={10} /> {isDefault ? "LEARNING HUB" : visual.status}</span>
       </div>
-        <span className="text-[9px] font-bold bg-[var(--theme-primary,#2dd4bf)] text-black px-1.5 py-0.5 rounded-full uppercase tracking-wide">
-          NEW
-        </span>
-      </div>
       <p className="universe-learning__description text-[var(--muted-foreground)] text-xs">
         {isDefault ? "Your learning hub. Track, reflect and improve." : visual.heroDescription}
       </p>
