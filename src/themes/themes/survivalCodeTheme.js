@@ -29,13 +29,13 @@ export const survivalCodeTheme = createTheme({
   background: "survivalCode",
 
   atmosphere: {
-    artworkOpacity: 0.09,
+    artworkOpacity: 0.18,
     artworkPosition: "center",
-    overlayOpacity: 0.80,
-    glowOpacity: 0.13,
-    gridOpacity: 0.04,
+    overlayOpacity: 0.64,
+    glowOpacity: 0.17,
+    gridOpacity: 0.06,
     scanlineOpacity: 0,
-    vignetteOpacity: 0.78,
+    vignetteOpacity: 0.68,
     animation: "pulse",
   },
 
