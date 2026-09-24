@@ -50,7 +50,9 @@ function DashboardSections() {
     <div className="space-y-6">
       <UniverseIdentityBanner />
 
-      <AdvancedStatsSection />
+      <div className="universe-dashboard-row" data-universe-row="intel" data-universe-label="INTEL">
+        <AdvancedStatsSection />
+      </div>
 
       {/* Default grid stretch (no items-start) is intentional here: with
           DailyChallengeSection's title/description now line-clamped, its
@@ -58,25 +60,33 @@ function DashboardSections() {
           other three cards stretch to match it is what makes the row look
           even, instead of the tallest card dragging the others up
           unboundedly. */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="universe-dashboard-row" data-universe-row="mission" data-universe-label="MISSION CONTROL">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <ContinueLearningSection />
         <DailyChallengeSection />
         <WeeklyGoalSection />
         <ContestCountdownCard />
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <ActivityHeatmapCard />
-        <TopicProgressCard />
+      <div className="universe-dashboard-row" data-universe-row="patterns" data-universe-label="PATTERNS">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <ActivityHeatmapCard />
+          <TopicProgressCard />
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <RankProgressSection />
-        <AIInsightsSection />
-        <RecentAchievementCard />
+      <div className="universe-dashboard-row" data-universe-row="momentum" data-universe-label="MOMENTUM">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <RankProgressSection />
+          <AIInsightsSection />
+          <RecentAchievementCard />
+        </div>
       </div>
 
-      <ProfileShareCard />
+      <div className="universe-dashboard-row" data-universe-row="profile" data-universe-label="IDENTITY">
+        <ProfileShareCard />
+      </div>
     </div>
   );
 }
