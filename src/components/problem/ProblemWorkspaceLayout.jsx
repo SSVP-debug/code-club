@@ -52,6 +52,7 @@ import MissionHeader from "./code-club-edition/MissionHeader";
 import ProblemEditor from "./ProblemEditor";
 import WorkspacePanel from "./WorkspacePanel";
 import ProblemUnderstandOverlay from "./ProblemUnderstandOverlay";
+import UniverseWorkspaceHeader from "./UniverseWorkspaceHeader";
 import SubmissionCelebrationModal from "./submission-experience/SubmissionCelebrationModal";
 import Button from "../ui/Button";
 import MobileTabBar from "./MobileTabBar";
@@ -130,7 +131,8 @@ function ProblemWorkspaceLayout({ problem, slug, solver, nextBestProblem, editio
   const resultsTabEnabled = WORKSPACE_V2_ENABLED ? hasResults : true;
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-full w-full universe-workspace">
+      <UniverseWorkspaceHeader stage={stage} isSolved={isSolved} />
       <div
         // `inert` (native attribute) removes the whole subtree from the
         // tab order and from find-in-page/AT focus while the overlay is
