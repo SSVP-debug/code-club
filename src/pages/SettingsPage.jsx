@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useTheme } from "../hooks/useTheme";
 import { useAppContext } from "../hooks/useAppContext";
@@ -119,6 +119,7 @@ function ToggleRow({ label, description, checked, saving, onToggle }) {
 }
 
 function SettingsPage() {
+    const navigate = useNavigate();
     const { theme, themeId, setTheme } = useTheme();
     const isDefaultTheme = themeId === DEFAULT_THEME;
 
@@ -225,7 +226,13 @@ function SettingsPage() {
         });
     }
 
-    // ── Theme handler (unchanged) ────────────────────────────────────────────
+    // ── Theme handlers ───────────────────────────────────────────────────────
+    const handleChangeTheme = () => {
+        // Reuse the existing selector so the catalog, XP unlock rules,
+        // previews, and confirmation flow stay defined in one place.
+        navigate(`/theme-selection?next=${encodeURIComponent("/settings")}`);
+    };
+
     const handleResetTheme = () => {
         if (isDefaultTheme) return;
 
@@ -326,9 +333,16 @@ function SettingsPage() {
                         Current Universe
                     </p>
 
-                    <p className="font-semibold mt-2">
-                        {theme.name}
-                    </p>
+                    <div className="mt-3 flex flex-wrap items-center gap-3">
+                        <p className="font-semibold">{theme.name}</p>
+                        <button
+                            type="button"
+                            onClick={handleChangeTheme}
+                            className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[var(--theme-primary,#2dd4bf)] text-[var(--theme-background,#0b0d10)] font-semibold text-sm hover:opacity-90 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary,#2dd4bf)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)]"
+                        >
+                            Change Universe
+                        </button>
+                    </div>
 
                     <button
                         onClick={handleResetTheme}
