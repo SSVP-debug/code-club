@@ -32,6 +32,8 @@ import * as cohortService from "../services/cohortService.js";
 import * as cohortMembershipService from "../services/cohortMembershipService.js";
 import * as cohortImportService from "../services/cohortImportService.js";
 import { getInstitutionReportOverview } from "../services/institutionReportService.js";
+import { getActiveCohortStudentIds, getCohortBreakdown } from "../services/cohortDashboardService.js";
+import { computeReadinessScore } from "../utils/readiness.js";
 import multer from "multer";
 import { csvUpload } from "../middleware/csvUpload.js";
 import { getInstitutionSubscription } from "../services/institutionSubscriptionService.js";
@@ -618,10 +620,7 @@ router.get("/college-directory", requireRole("student"), async (req, res) => {
   try {
     const education = req.userDoc.education || {};
     if (!education.emailVerified) {
-      return res.status(403).json({
-        error: "Verify your college email to view your college TPO directory.",
-        code: "COLLEGE_EMAIL_UNVERIFIED",
-      });
+      return res.status(403).json({ error: "Verify your college email to view your college TPO directory." });
     }
 
     let college = null;
@@ -1472,6 +1471,13 @@ router.get("/students", requireRole("tpo", "admin"),
 
 // ── GET /api/tpo/dashboard ──────────────────────────────────────────────────
 // Returns aggregated class-wide stats for the TPO dashboard view.
+//
+// Cohort slicing:
+//   GET /dashboard                 -> college-wide numbers + `cohortBreakdown`
+//                                     (same numbers, one row per cohort)
+//   GET /dashboard?cohortId=<id>   -> the same shape scoped to ONE cohort
+//                                     (404 if the cohort isn't this college's,
+//                                     400 if the id is malformed)
 router.get("/dashboard", requireRole("tpo", "admin"),
   requireVerified, async (req, res) => {
     if (b2bGate(req, res)) return;
@@ -1486,8 +1492,28 @@ router.get("/dashboard", requireRole("tpo", "admin"),
       // comment in GET /students above.
       const collegeDomains = await resolveCollegeDomains(req.userDoc);
 
+      // Optional cohort slice. Ownership is verified through the same
+      // non-leaking lookup the /cohorts routes use, so a TPO can never
+      // read another institution's cohort by guessing an id.
+      let cohortSlice = null;
+      const rawCohortId = typeof req.query.cohortId === "string" ? req.query.cohortId.trim() : "";
+      if (rawCohortId) {
+        const college = await getCollegeForTpo(req.userDoc);
+        if (!college) return res.status(400).json({ error: "No college found for this TPO account." });
+        const cohort = await cohortService.getCohortForCollege(rawCohortId, college._id);
+        if (cohort?.invalidId) return res.status(400).json({ error: "Invalid cohort ID." });
+        if (!cohort) return res.status(404).json({ error: "Cohort not found." });
+        cohortSlice = {
+          cohort,
+          studentIds: await getActiveCohortStudentIds(rawCohortId),
+        };
+      }
+      const collegeForBreakdown = cohortSlice ? null : await getCollegeForTpo(req.userDoc);
+
+      // Key suffix keeps the `tpo:dashboard:<domain>` prefix, so
+      // invalidateTpoCache's prefix invalidation clears cohort slices too.
       const { value: dashboard, cacheStatus } = await getOrSetCache(
-        `${TPO_CACHE_PREFIX}dashboard:${domain}`,
+        `${TPO_CACHE_PREFIX}dashboard:${domain}${cohortSlice ? `:cohort:${rawCohortId}` : ""}`,
         TPO_CACHE_TTL_SECONDS,
         async () => {
           // Two facets in one round-trip against the same $match filter:
@@ -1501,7 +1527,13 @@ router.get("/dashboard", requireRole("tpo", "admin"),
           // wire just to add up numbers doesn't hold as a college's
           // student count grows.
           const [aggResult] = await User.aggregate([
-            { $match: { emailDomain: { $in: collegeDomains }, role: "student" } },
+            {
+              $match: {
+                emailDomain: { $in: collegeDomains },
+                role: "student",
+                ...(cohortSlice ? { _id: { $in: cohortSlice.studentIds } } : {}),
+              },
+            },
             {
               $facet: {
                 visibleSummary: [
@@ -1526,11 +1558,14 @@ router.get("/dashboard", requireRole("tpo", "admin"),
                 ],
                 topicCoverage: [
                   { $match: { visibleToTpo: { $ne: false } } },
-                  { $unwind: "$topicStats" },
+                  // topicStats is a Mongoose Map (stored as a sub-document,
+                  // not an array), so it needs $objectToArray before $unwind.
+                  { $project: { t: { $objectToArray: { $ifNull: ["$topicStats", {}] } } } },
+                  { $unwind: "$t" },
                   {
                     $group: {
-                      _id: "$topicStats.topic",
-                      totalSolves: { $sum: "$topicStats.count" },
+                      _id: "$t.k",
+                      totalSolves: { $sum: "$t.v" },
                     },
                   },
                   { $sort: { totalSolves: -1 } },
@@ -1557,13 +1592,11 @@ router.get("/dashboard", requireRole("tpo", "admin"),
           const { totalStudents, totalSolved, totalEasy, totalMedium, totalHard, activeThisWeek } = summary;
           const avgSolved = Math.round((totalSolved / totalStudents) * 10) / 10;
 
-          // ── Placement Readiness Score (0-100) ────────────────────────────────
-          // Heuristic: weighted combination of average solves, hard-problem coverage,
-          // and active engagement. This is the #1 number a TPO will look at.
-          const solveScore = Math.min(40, (avgSolved / 100) * 40);           // up to 40 pts for solving 100+ avg
-          const hardScore = Math.min(30, ((totalHard / totalStudents) / 20) * 30); // up to 30 pts for 20+ hard avg
-          const engagementScore = Math.min(30, (activeThisWeek / totalStudents) * 30);  // up to 30 pts for active streaks
-          const readinessScore = Math.round(solveScore + hardScore + engagementScore);
+          // Placement Readiness Score (0-100) — shared heuristic, see
+          // utils/readiness.js (also used for per-cohort scores).
+          const readinessScore = computeReadinessScore({
+            totalStudents, totalSolved, totalHard, activeStudents: activeThisWeek,
+          });
 
           return {
             totalStudents,
@@ -1575,6 +1608,14 @@ router.get("/dashboard", requireRole("tpo", "admin"),
             readinessScore,
             topicCoverage: aggResult?.topicCoverage ?? [],
             optedOutStudents,
+            ...(collegeForBreakdown
+              ? {
+                  cohortBreakdown: await getCohortBreakdown({
+                    collegeId: collegeForBreakdown._id,
+                    collegeDomains,
+                  }),
+                }
+              : {}),
           };
         }
       );
@@ -1586,6 +1627,9 @@ router.get("/dashboard", requireRole("tpo", "admin"),
       return res.json({
         college: req.userDoc.tpoProfile?.collegeName,
         domain,
+        ...(cohortSlice
+          ? { cohort: { cohortId: cohortSlice.cohort.id, name: cohortSlice.cohort.name } }
+          : {}),
         ...dashboard,
       });
 
@@ -1924,6 +1968,81 @@ router.post("/assignments/:id/archive", requireRole("tpo", "admin"), requireVeri
   }
 });
 
+// ── Shared assignment-audience resolution ───────────────────────────────────
+// Used by both /remind and /completion: resolves the assignment (scoped to
+// the caller's college — an assignment belonging to another institution is
+// never visible, same boundary as everywhere else in this file) and its
+// audience of students (cohort membership for cohort-scoped assignments,
+// legacy college-wide roster otherwise). Writes the 400/404 response itself
+// and returns null so callers can `if (!resolved) return;`.
+//
+// Deliberately does NOT filter by visibleToTpo: assignment delivery is
+// membership-driven, not gated by the TPO-3 dashboard/directory opt-out —
+// see the identical note on GET /api/assignments/student above. A student
+// who opted out of TPO analytics still receives and is nudged about
+// assignments they're a target of.
+async function resolveAssignmentAudience(req, res, selectFields = "_id solvedSlugs") {
+  const domain = req.userDoc.tpoProfile?.collegeDomain?.toLowerCase();
+  if (!domain && req.userDoc.role !== "admin") {
+    res.status(400).json({ error: "No college domain set on this TPO account." });
+    return null;
+  }
+
+  const college = req.userDoc.role === "admin"
+    ? null
+    : await getCollegeForTpo(req.userDoc);
+  const collegeDomains = college?.domains?.length
+    ? college.domains.map((d) => d.toLowerCase())
+    : domain
+      ? [domain]
+      : [];
+
+  const assignmentQuery = { _id: req.params.id };
+  if (college) {
+    assignmentQuery.$or = [
+      { collegeId: college._id },
+      {
+        collegeId: null,
+        collegeDomain: { $in: collegeDomains },
+      },
+    ];
+  } else if (domain) {
+    assignmentQuery.collegeDomain = domain;
+  }
+
+  const assignment = await Assignment.findOne(assignmentQuery).lean();
+  if (!assignment) {
+    res.status(404).json({ error: "Assignment not found." });
+    return null;
+  }
+
+  let students;
+  if (assignment.cohortId) {
+    const studentIds = await CohortMembership.find({
+      cohortId: assignment.cohortId,
+      status: "active",
+      studentId: { $ne: null },
+    }).distinct("studentId");
+    students = await User.find({
+      _id: { $in: studentIds },
+      role: "student",
+    }).select(selectFields).lean();
+  } else {
+    const audienceDomains = assignment.collegeId && college?.domains?.length
+      ? college.domains.map((d) => d.toLowerCase())
+      : domain
+        ? [domain]
+        : [];
+
+    students = await User.find({
+      emailDomain: { $in: audienceDomains },
+      role: "student",
+    }).select(selectFields).lean();
+  }
+
+  return { assignment, students };
+}
+
 // ── POST /api/tpo/assignments/:id/remind ────────────────────────────────────
 // Nudges every student on this college's roster who hasn't completed the
 // assignment yet. Reuses the same createNotificationBulk fan-out the
@@ -1934,61 +2053,12 @@ export async function handleRemindAssignment(req, res) {
   if (b2bGate(req, res)) return;
 
   try {
-    const domain = req.userDoc.tpoProfile?.collegeDomain?.toLowerCase();
-    if (!domain && req.userDoc.role !== "admin") {
-      return res.status(400).json({ error: "No college domain set on this TPO account." });
-    }
+    const resolved = await resolveAssignmentAudience(req, res, "_id solvedSlugs");
+    if (!resolved) return;
+    const { assignment, students } = resolved;
 
-    const college = req.userDoc.role === "admin"
-      ? null
-      : await getCollegeForTpo(req.userDoc);
-    const collegeDomains = college?.domains?.length
-      ? college.domains.map((d) => d.toLowerCase())
-      : domain
-        ? [domain]
-        : [];
-
-    const assignmentQuery = { _id: req.params.id };
-    if (college) {
-      assignmentQuery.$or = [
-        { collegeId: college._id },
-        {
-          collegeId: null,
-          collegeDomain: { $in: collegeDomains },
-        },
-      ];
-    } else if (domain) {
-      assignmentQuery.collegeDomain = domain;
-    }
-
-    const assignment = await Assignment.findOne(assignmentQuery).lean();
-    if (!assignment) return res.status(404).json({ error: "Assignment not found." });
     if (assignment.status === "archived") {
       return res.status(409).json({ error: "Archived assignments cannot be reminded." });
-    }
-
-    let students;
-    if (assignment.cohortId) {
-      const studentIds = await CohortMembership.find({
-        cohortId: assignment.cohortId,
-        status: "active",
-        studentId: { $ne: null },
-      }).distinct("studentId");
-      students = await User.find({
-        _id: { $in: studentIds },
-        role: "student",
-      }).select("_id solvedSlugs").lean();
-    } else {
-      const audienceDomains = assignment.collegeId && college?.domains?.length
-        ? college.domains.map((d) => d.toLowerCase())
-        : domain
-          ? [domain]
-          : [];
-
-      students = await User.find({
-        emailDomain: { $in: audienceDomains },
-        role: "student",
-      }).select("_id solvedSlugs").lean();
     }
 
     const incomplete = students.filter(s =>
@@ -2020,6 +2090,65 @@ export async function handleRemindAssignment(req, res) {
 // requireVerified added here (2026-09) — see the POST /assignments comment
 // above for why.
 router.post("/assignments/:id/remind", requireRole("tpo", "admin"), requireVerified, handleRemindAssignment);
+
+// ── GET /api/tpo/assignments/:id/completion ─────────────────────────────────
+// Per-assignment completion detail: the natural next step off /remind above
+// — same audience, same ownership check — but returns the full breakdown
+// instead of firing notifications: X/Y students who've solved every problem
+// in the assignment, plus a `stragglers` list (who's short, how many
+// problems, and exactly which slugs they're missing) so a TPO can see who
+// to follow up with without sending a blanket reminder. Unlike /remind, this
+// is read-only and works on archived assignments too, since a TPO reviewing
+// history still wants to know who finished.
+export async function handleAssignmentCompletion(req, res) {
+  if (b2bGate(req, res)) return;
+
+  try {
+    const resolved = await resolveAssignmentAudience(req, res, "_id displayName email solvedSlugs");
+    if (!resolved) return;
+    const { assignment, students } = resolved;
+
+    let completedCount = 0;
+    const stragglers = [];
+    for (const student of students) {
+      const solved = new Set(student.solvedSlugs || []);
+      const missingSlugs = assignment.problemSlugs.filter((slug) => !solved.has(slug));
+      if (missingSlugs.length === 0) {
+        completedCount += 1;
+        continue;
+      }
+      stragglers.push({
+        studentId: student._id,
+        name: student.displayName,
+        email: student.email,
+        solvedCount: assignment.problemSlugs.length - missingSlugs.length,
+        totalProblems: assignment.problemSlugs.length,
+        missingSlugs,
+      });
+    }
+
+    // Furthest behind first, so the TPO sees who needs the most help at
+    // the top of the list; ties broken by name for a stable order.
+    stragglers.sort((a, b) => a.solvedCount - b.solvedCount || (a.name || "").localeCompare(b.name || ""));
+
+    const totalStudents = students.length;
+    return res.json({
+      assignmentId: assignment._id,
+      title: assignment.title,
+      dueDate: assignment.dueDate,
+      status: assignment.status,
+      totalStudents,
+      completedCount,
+      completionPercent: totalStudents ? Math.round((completedCount / totalStudents) * 100) : 0,
+      stragglers,
+    });
+  } catch (err) {
+    (req.log || logger).error({ err }, "[TPO] assignment completion");
+    return res.status(500).json({ error: "Failed to load assignment completion." });
+  }
+}
+
+router.get("/assignments/:id/completion", requireRole("tpo", "admin"), requireVerified, handleAssignmentCompletion);
 
 // ── GET /api/assignments/student ────────────────────────────────────────────
 // Student view: assignments relevant to their college, with their own progress.

@@ -3,7 +3,7 @@ import { startTestMongo, clearTestMongo, stopTestMongo } from "../test/mongoMemo
 
 process.env.B2B_ENABLED = "true";
 
-const { default: tpoRouter, studentAssignmentsRouter, handleRemindAssignment } =
+const { default: tpoRouter, studentAssignmentsRouter, handleRemindAssignment, handleAssignmentCompletion } =
   await import("./tpo.js");
 const { default: User } = await import("../models/User.js");
 const { default: College } = await import("../models/College.js");
@@ -243,6 +243,66 @@ describe("TPO-4 cohort assignments — real Mongo integration", () => {
 
     expect(res._status).toBe(200);
     expect(res._json.remindedCount).toBe(1);
+  });
+
+  it("completion view is scoped to the cohort roster and lists non-completers as stragglers with their missing slugs", async () => {
+    const { tpo, cohort, studentA, studentB, outsider } = await seed();
+
+    const assignment = await Assignment.create({
+      tpoId: tpo._id,
+      collegeDomain: "a.edu",
+      cohortId: cohort._id,
+      title: "Cohort Progress",
+      problemSlugs: ["p1", "p2"],
+      dueDate: new Date("2026-10-01T00:00:00.000Z"),
+    });
+
+    // studentA solved p1+p2 (complete); studentB solved only p1 (straggler).
+    // outsider has solved everything too but isn't a cohort member — must
+    // not appear anywhere in the response, complete or straggling.
+    const res = await handleAssignmentCompletion({
+      userDoc: tpo,
+      params: { id: assignment._id.toString() },
+      log: mockLog(),
+    }, mockRes());
+
+    expect(res._status).toBe(200);
+    expect(res._json.totalStudents).toBe(2);
+    expect(res._json.completedCount).toBe(1);
+    expect(res._json.completionPercent).toBe(50);
+    expect(res._json.stragglers).toHaveLength(1);
+    expect(res._json.stragglers[0]).toMatchObject({
+      studentId: studentB._id.toString(),
+      solvedCount: 1,
+      totalProblems: 2,
+      missingSlugs: ["p2"],
+    });
+    expect(res._json.stragglers.map((s) => s.studentId)).not.toContain(outsider._id.toString());
+    expect(res._json.stragglers.map((s) => s.studentId)).not.toContain(studentA._id.toString());
+  });
+
+  it("completion view works on an archived assignment, unlike /remind", async () => {
+    const { tpo, cohort } = await seed();
+
+    const assignment = await Assignment.create({
+      tpoId: tpo._id,
+      collegeDomain: "a.edu",
+      cohortId: cohort._id,
+      title: "Old Assignment",
+      problemSlugs: ["p1", "p2"],
+      dueDate: new Date("2026-01-01T00:00:00.000Z"),
+      status: "archived",
+    });
+
+    const res = await handleAssignmentCompletion({
+      userDoc: tpo,
+      params: { id: assignment._id.toString() },
+      log: mockLog(),
+    }, mockRes());
+
+    expect(res._status).toBe(200);
+    expect(res._json.status).toBe("archived");
+    expect(res._json.totalStudents).toBe(2);
   });
 
   it("TPOs from every college domain can see the same college-wide assignment", async () => {

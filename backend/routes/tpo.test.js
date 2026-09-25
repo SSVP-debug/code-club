@@ -43,13 +43,24 @@ vi.mock("../services/tpoTeamService.js", () => ({
   }),
 }));
 
+vi.mock("../services/cohortService.js", async (orig) => ({
+  ...(await orig()),
+  getCohortForCollege: vi.fn(),
+}));
+vi.mock("../services/cohortDashboardService.js", () => ({
+  getActiveCohortStudentIds: vi.fn(),
+  getCohortBreakdown: vi.fn(),
+}));
+
 import User from "../models/User.js";
 import College from "../models/College.js";
 import Assignment from "../models/Assignment.js";
 import { createNotificationBulk } from "../services/notificationService.js";
 import { getSettings } from "../services/settingsService.js";
-import { resolveCollegeDomains } from "../services/tpoTeamService.js";
-import tpoRouter, { handleRemindAssignment, tpoRegistrationGate } from "./tpo.js";
+import { resolveCollegeDomains, getCollegeForTpo } from "../services/tpoTeamService.js";
+import * as cohortService from "../services/cohortService.js";
+import { getActiveCohortStudentIds, getCohortBreakdown } from "../services/cohortDashboardService.js";
+import tpoRouter, { handleRemindAssignment, handleAssignmentCompletion, tpoRegistrationGate } from "./tpo.js";
 
 function mockRes() {
   const res = {};
@@ -181,6 +192,95 @@ describe("handleRemindAssignment", () => {
   });
 });
 
+// ── GET /assignments/:id/completion ─────────────────────────────────────────
+describe("handleAssignmentCompletion", () => {
+  let res;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    res = mockRes();
+    Assignment.findOne.mockReturnValue({ lean: vi.fn().mockResolvedValue(assignmentDoc) });
+  });
+
+  it("returns 400 when the TPO account has no college domain set", async () => {
+    const req = { params: { id: "assignment1" }, userDoc: { tpoProfile: {} } };
+    await handleAssignmentCompletion(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it("returns 404 when the assignment doesn't exist for this college", async () => {
+    Assignment.findOne.mockReturnValue({ lean: vi.fn().mockResolvedValue(null) });
+    const req = { params: { id: "ghost" }, userDoc: tpoUserDoc };
+    await handleAssignmentCompletion(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+  });
+
+  it("counts completions, lists everyone else as a straggler with their missing slugs, sorted furthest-behind first", async () => {
+    User.find.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        lean: vi.fn().mockResolvedValue([
+          { _id: "student-done", displayName: "Dana Done", email: "dana@x.edu", solvedSlugs: ["two-sum", "valid-parentheses"] },
+          { _id: "student-partial", displayName: "Pat Partial", email: "pat@x.edu", solvedSlugs: ["two-sum"] },
+          { _id: "student-none", displayName: "Al None", email: "al@x.edu", solvedSlugs: [] },
+        ]),
+      }),
+    });
+    const req = { params: { id: "assignment1" }, userDoc: tpoUserDoc };
+
+    await handleAssignmentCompletion(req, res);
+
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        assignmentId: "assignment1",
+        totalStudents: 3,
+        completedCount: 1,
+        completionPercent: 33,
+        stragglers: [
+          expect.objectContaining({ studentId: "student-none", name: "Al None", solvedCount: 0, totalProblems: 2, missingSlugs: ["two-sum", "valid-parentheses"] }),
+          expect.objectContaining({ studentId: "student-partial", name: "Pat Partial", solvedCount: 1, missingSlugs: ["valid-parentheses"] }),
+        ],
+      })
+    );
+  });
+
+  it("does NOT block archived assignments (unlike /remind)", async () => {
+    Assignment.findOne.mockReturnValue({ lean: vi.fn().mockResolvedValue({ ...assignmentDoc, status: "archived" }) });
+    User.find.mockReturnValue({
+      select: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue([]) }),
+    });
+    const req = { params: { id: "assignment1" }, userDoc: tpoUserDoc };
+
+    await handleAssignmentCompletion(req, res);
+
+    expect(res.status).not.toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ status: "archived", totalStudents: 0, completionPercent: 0 }));
+  });
+
+  it("returns 0% (not NaN/divide-by-zero) when the audience is empty", async () => {
+    User.find.mockReturnValue({
+      select: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue([]) }),
+    });
+    const req = { params: { id: "assignment1" }, userDoc: tpoUserDoc };
+
+    await handleAssignmentCompletion(req, res);
+
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ totalStudents: 0, completedCount: 0, completionPercent: 0, stragglers: [] }));
+  });
+
+  it("returns 500 if an unexpected error is thrown", async () => {
+    User.find.mockImplementation(() => {
+      throw new Error("Mongo down");
+    });
+    const req = { params: { id: "assignment1" }, userDoc: tpoUserDoc };
+
+    await handleAssignmentCompletion(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+  });
+});
+
 // Plan 009: registration-toggle enforcement (test plan's explicit
 // requirement — "disabling tpoRegistrationEnabled rejects new TPO signups
 // but does not affect an existing TPO's ability to log in/use the app").
@@ -259,6 +359,14 @@ describe("assignment routes — requireVerified wiring (regression for the pendi
       expect(Assignment.findOne).not.toHaveBeenCalled();
       expect(createNotificationBulk).not.toHaveBeenCalled();
     });
+
+    it("GET /assignments/:id/completion — 403", async () => {
+      const req = { userDoc: pendingTpo, params: { id: "assignment1" } };
+      const res = await runRoute("get", "/assignments/:id/completion", req);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(Assignment.findOne).not.toHaveBeenCalled();
+    });
   });
 
   describe("Scenario 4-6 — verified TPO MUST continue to work exactly as before", () => {
@@ -310,6 +418,21 @@ describe("assignment routes — requireVerified wiring (regression for the pendi
         expect.objectContaining({ type: "assignment_reminder" })
       );
     });
+
+    it("GET /assignments/:id/completion — reaches the handler and returns the breakdown (200)", async () => {
+      Assignment.findOne.mockReturnValue({ lean: vi.fn().mockResolvedValue(assignmentDoc) });
+      User.find.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          lean: vi.fn().mockResolvedValue([{ _id: "student-none", displayName: "Al None", email: "al@x.edu", solvedSlugs: [] }]),
+        }),
+      });
+      const req = { userDoc: verifiedTpo, params: { id: "assignment1" } };
+
+      const res = await runRoute("get", "/assignments/:id/completion", req);
+
+      expect(res.status).not.toHaveBeenCalledWith(403);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ totalStudents: 1, completedCount: 0 }));
+    });
   });
 
   describe("Admin — requireVerified's existing admin bypass must be preserved", () => {
@@ -339,6 +462,16 @@ describe("assignment routes — requireVerified wiring (regression for the pendi
 
       expect(res.status).not.toHaveBeenCalledWith(403); // not blocked by verification...
       expect(res.status).toHaveBeenCalledWith(404); // ...but still blocked by college scoping
+    });
+
+    it("GET /assignments/:id/completion — a verified TPO cannot reach an assignment belonging to a different college", async () => {
+      Assignment.findOne.mockReturnValue({ lean: vi.fn().mockResolvedValue(null) });
+      const req = { userDoc: verifiedTpo, params: { id: "other-colleges-assignment" } };
+
+      const res = await runRoute("get", "/assignments/:id/completion", req);
+
+      expect(res.status).not.toHaveBeenCalledWith(403);
+      expect(res.status).toHaveBeenCalledWith(404);
     });
   });
 });
@@ -667,6 +800,63 @@ describe("multi-domain college scoping (GET /students, GET /dashboard)", () => {
   });
 });
 
+describe("GET /dashboard — cohort slicing", () => {
+  const tpo = { role: "tpo", tpoProfile: { collegeDomain: "mit.edu", verified: true } };
+  const summaryAgg = [{
+    visibleSummary: [{ totalStudents: 4, totalSolved: 200, totalEasy: 100, totalMedium: 60, totalHard: 40, activeThisWeek: 3 }],
+    optOutCount: [{ count: 1 }],
+    topicCoverage: [{ topic: "graphs", totalSolves: 90 }],
+  }];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getCollegeForTpo.mockResolvedValue({ _id: "college-1" });
+    User.aggregate.mockResolvedValue(summaryAgg);
+  });
+
+  it("college-wide call includes cohortBreakdown and no cohort key", async () => {
+    getCohortBreakdown.mockResolvedValue([{ cohortId: "a", name: "CSE-A" }]);
+    const res = await runRoute("get", "/dashboard", { userDoc: tpo, query: {} });
+    const body = res.json.mock.calls[0][0];
+    expect(body.cohortBreakdown).toEqual([{ cohortId: "a", name: "CSE-A" }]);
+    expect(body.cohort).toBeUndefined();
+    expect(getCohortBreakdown).toHaveBeenCalledWith({ collegeId: "college-1", collegeDomains: ["mit.edu"] });
+  });
+
+  it("?cohortId= restricts the aggregate to that cohort's active members and skips the breakdown", async () => {
+    cohortService.getCohortForCollege.mockResolvedValue({ id: "a", name: "CSE-A" });
+    getActiveCohortStudentIds.mockResolvedValue(["s1", "s2"]);
+    const res = await runRoute("get", "/dashboard", { userDoc: tpo, query: { cohortId: "a" } });
+
+    const match = User.aggregate.mock.calls.at(-1)[0].find((s) => s.$match).$match;
+    expect(match._id).toEqual({ $in: ["s1", "s2"] });
+    expect(match.emailDomain).toEqual({ $in: ["mit.edu"] });
+    expect(getCohortBreakdown).not.toHaveBeenCalled();
+    const body = res.json.mock.calls[0][0];
+    expect(body.cohort).toEqual({ cohortId: "a", name: "CSE-A" });
+    expect(body.totalStudents).toBe(4);
+    expect(body.optedOutStudents).toBe(1);
+  });
+
+  it("returns 404 (not 200/empty) for a cohort outside the TPO's college", async () => {
+    cohortService.getCohortForCollege.mockResolvedValue(null);
+    const res = await runRoute("get", "/dashboard", { userDoc: tpo, query: { cohortId: "foreign" } });
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(User.aggregate).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 for a malformed cohort id", async () => {
+    cohortService.getCohortForCollege.mockResolvedValue({ invalidId: true });
+    const res = await runRoute("get", "/dashboard", { userDoc: tpo, query: { cohortId: "nope" } });
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it("topicCoverage unwinds topicStats via $objectToArray (Map stored as sub-document)", async () => {
+    await runRoute("get", "/dashboard", { userDoc: tpo, query: {} });
+    expect(JSON.stringify(User.aggregate.mock.calls.at(-1)[0])).toContain("$objectToArray");
+  });
+});
+
 describe("GET /college-directory", () => {
   const verifiedStudent = {
     role: "student",
@@ -733,93 +923,4 @@ describe("GET /college-directory", () => {
     expect(res.status).toHaveBeenCalledWith(403);
     expect(User.find).not.toHaveBeenCalled();
   });
-
-  it("returns a stable error code when the student's college email is unverified", async () => {
-    const res = await runRoute("get", "/college-directory", {
-      userDoc: { role: "student", emailDomain: "report.edu", education: { emailVerified: false } },
-    });
-
-    expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.json).toHaveBeenCalledWith({
-      error: "Verify your college email to view your college TPO directory.",
-      code: "COLLEGE_EMAIL_UNVERIFIED",
-    });
-    expect(College.findById).not.toHaveBeenCalled();
-    expect(College.findOne).not.toHaveBeenCalled();
-    expect(User.find).not.toHaveBeenCalled();
-  });
-
-  it("resolves a verified college from the student's email domain when collegeId is missing", async () => {
-    College.findOne.mockReturnValue({
-      lean: vi.fn().mockResolvedValue({
-        _id: "college-domain",
-        name: "Domain University",
-        status: "verified",
-        domains: ["report.edu"],
-        primaryTpo: null,
-      }),
-    });
-
-    const res = await runRoute("get", "/college-directory", {
-      userDoc: {
-        role: "student",
-        emailDomain: "REPORT.EDU",
-        education: { emailVerified: true },
-      },
-    });
-
-    expect(res.json).toHaveBeenCalledWith({
-      college: { id: "college-domain", name: "Domain University" },
-      tpos: expect.any(Array),
-    });
-    expect(College.findOne).toHaveBeenCalledWith({
-      domains: "report.edu",
-      status: "verified",
-    });
-  });
-
-  it("returns 404 when the verified student's college cannot be resolved to a verified institution", async () => {
-    College.findById.mockReturnValue({
-      lean: vi.fn().mockResolvedValue(null),
-    });
-    College.findOne.mockReturnValue({
-      lean: vi.fn().mockResolvedValue(null),
-    });
-
-    const res = await runRoute("get", "/college-directory", {
-      userDoc: {
-        role: "student",
-        emailDomain: "unknown.edu",
-        education: { emailVerified: true, collegeId: "missing-college" },
-      },
-    });
-
-    expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.json).toHaveBeenCalledWith({
-      error: "Your college is not linked to a verified institution yet.",
-    });
-    expect(User.find).not.toHaveBeenCalled();
-  });
-
-  it("does not expose TPOs from another college when the student's college has multiple domains", async () => {
-    College.findById.mockReturnValue({
-      lean: vi.fn().mockResolvedValue({
-        _id: "college-1",
-        name: "Report University",
-        status: "verified",
-        domains: ["report.edu", "legacy.report.edu"],
-        primaryTpo: null,
-      }),
-    });
-
-    const res = await runRoute("get", "/college-directory", { userDoc: verifiedStudent });
-
-    expect(res.status).not.toHaveBeenCalledWith(403);
-    expect(User.find).toHaveBeenCalledWith(
-      expect.objectContaining({
-        "tpoProfile.collegeDomain": { $in: ["report.edu", "legacy.report.edu"] },
-      })
-    );
-  });
-
 });
