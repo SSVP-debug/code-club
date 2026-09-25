@@ -618,7 +618,10 @@ router.get("/college-directory", requireRole("student"), async (req, res) => {
   try {
     const education = req.userDoc.education || {};
     if (!education.emailVerified) {
-      return res.status(403).json({ error: "Verify your college email to view your college TPO directory." });
+      return res.status(403).json({
+        error: "Verify your college email to view your college TPO directory.",
+        code: "COLLEGE_EMAIL_UNVERIFIED",
+      });
     }
 
     let college = null;
