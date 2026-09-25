@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { ThemeProvider } from "../context/ThemeContext";
-import { BWModeProvider } from "../context/BWModeContext";
 import { AuthContext } from "../context/AuthContextObject";
 import { GuestContext } from "../context/GuestContextObject";
 import { AppContext } from "../context/AppContextObject";
@@ -51,7 +50,7 @@ vi.mock("./common/StreakBadge", () => ({
 
 function renderNavbar({ role, user = { displayName: "Test User", email: "test@example.com" }, path = "/dashboard", isBackendReady = true }) {
   return render(
-    <BWModeProvider>
+    <MemoryRouter initialEntries={[path]}>
     <ThemeProvider>
       <AuthContext.Provider value={{ user, loading: false }}>
         {/* Navbar now also reads GuestContext (Guest Mode) for its
@@ -59,14 +58,12 @@ function renderNavbar({ role, user = { displayName: "Test User", email: "test@ex
             guest session, so a stable "not a guest" stub is enough. */}
         <GuestContext.Provider value={{ isGuest: false, guestPortal: null, enterGuestMode: () => {}, exitGuestMode: () => {} }}>
         <AppContext.Provider value={{ role, currentStreak: 0, isBackendReady }}>
-          <MemoryRouter initialEntries={[path]}>
-            <Navbar />
-          </MemoryRouter>
+          <Navbar />
         </AppContext.Provider>
         </GuestContext.Provider>
       </AuthContext.Provider>
     </ThemeProvider>
-    </BWModeProvider>
+  </MemoryRouter>
   );
 }
 
