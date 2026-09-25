@@ -13,7 +13,10 @@
       // localStorage (privacy mode, disabled storage, etc.) can never
       // stop the app from loading — it just falls back to Black Mode.
       try {
-        if (localStorage.getItem("codeclub.bwMode") === "true") {
+        if (
+          window.location.pathname === "/" &&
+          localStorage.getItem("codeclub.bwMode") === "true"
+        ) {
           document.documentElement.classList.add("bw-mode");
         }
       } catch (e) {}
