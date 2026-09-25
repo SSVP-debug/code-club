@@ -156,12 +156,13 @@ describe("getSystemHealth", () => {
     });
   });
 
-  it("reports background jobs honestly — one in-process, one external, no fabricated dashboard", async () => {
+  it("reports background jobs honestly — one in-process, two external, no fabricated dashboard", async () => {
     await getSystemHealth({}, res);
     const payload = res.json.mock.calls[0][0];
     expect(payload.backgroundJobs.inProcess).toHaveLength(1);
     expect(payload.backgroundJobs.inProcess[0].name).toBe("Interview session sweep");
-    expect(payload.backgroundJobs.external).toHaveLength(1);
+    expect(payload.backgroundJobs.external).toHaveLength(2);
     expect(payload.backgroundJobs.external[0].name).toBe("Weekly review emails");
+    expect(payload.backgroundJobs.external[1].name).toBe("Assignment auto-reminders");
   });
 });

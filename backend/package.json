@@ -23,6 +23,8 @@
     "migrate:college-schema:dry-run": "node scripts/migrateCollegeSchema.js --dry-run",
     "weekly-review": "node scripts/sendWeeklyReviewEmails.js",
     "weekly-review:dry-run": "node scripts/sendWeeklyReviewEmails.js --dry-run",
+    "assignment-auto-reminders": "node scripts/sendAssignmentAutoReminders.js",
+    "assignment-auto-reminders:dry-run": "node scripts/sendAssignmentAutoReminders.js --dry-run",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:integration": "vitest run --config vitest.integration.config.js"

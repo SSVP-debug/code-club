@@ -63,6 +63,11 @@ function summarizeDbStatus(readyState) {
 //     to run as a separate Railway Cron Job service, NOT inside this
 //     Node process. This app process has no idea when/whether it last ran.
 //
+// TPO-6 addendum (not a re-run of the original grep, just noting the new
+// job added alongside it): backend/scripts/sendAssignmentAutoReminders.js
+// is the same standalone-script, no-in-process-scheduler shape as the
+// weekly review job above.
+//
 // A broader `setInterval` grep (no size filter) found exactly one
 // in-process job: backend/routes/interview.js's 10-minute sweep of expired
 // in-memory interview sessions. It's real and in-process, but it exposes
@@ -88,6 +93,12 @@ function getBackgroundJobsSummary() {
         schedule: "weekly (Railway Cron Job service, not this process)",
         source: "backend/scripts/sendWeeklyReviewEmails.js",
         note: "Not tracked by this app process — this process has no signal for whether/when it last ran. Check the Railway Cron Job service's own run history for that.",
+      },
+      {
+        name: "Assignment auto-reminders",
+        schedule: "hourly (Railway Cron Job service, not this process) — TPO-6",
+        source: "backend/scripts/sendAssignmentAutoReminders.js",
+        note: "Not tracked by this app process, same as the weekly review job above. Idempotency is per-assignment (Assignment.autoReminderSentAt), not per-run, so a missed or delayed cron tick doesn't cause a double-send.",
       },
     ],
   };

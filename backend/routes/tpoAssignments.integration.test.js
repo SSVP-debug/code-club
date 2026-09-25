@@ -305,6 +305,63 @@ describe("TPO-4 cohort assignments — real Mongo integration", () => {
     expect(res._json.totalStudents).toBe(2);
   });
 
+  it("auto-reminder script targets exactly the same cohort roster as manual /remind, using the real seeded data", async () => {
+    const { college, tpo, cohort, studentA, studentB, outsider } = await seed();
+
+    const assignment = await Assignment.create({
+      tpoId: tpo._id,
+      collegeId: college._id,
+      collegeDomain: "a.edu",
+      cohortId: cohort._id,
+      title: "Due Soon",
+      problemSlugs: ["p1", "p2"],
+      dueDate: new Date(Date.now() + 12 * 60 * 60 * 1000), // 12h out — inside the 24h window
+    });
+
+    const { getAssignmentAudience } = await import("../services/assignmentAudienceService.js");
+    const audience = await getAssignmentAudience(assignment.toObject(), "_id solvedSlugs");
+    const audienceIds = audience.map((s) => s._id.toString()).sort();
+
+    expect(audienceIds).toEqual([studentA._id.toString(), studentB._id.toString()].sort());
+    expect(audienceIds).not.toContain(outsider._id.toString());
+  });
+
+  it("auto-reminder script's real Mongoose deps pick up an assignment due within 24h, skip one due in 3 days, and are idempotent after marking it reminded", async () => {
+    const { college, tpo, cohort } = await seed();
+
+    const dueSoon = await Assignment.create({
+      tpoId: tpo._id,
+      collegeId: college._id,
+      collegeDomain: "a.edu",
+      cohortId: cohort._id,
+      title: "Due Soon",
+      problemSlugs: ["p1", "p2"],
+      dueDate: new Date(Date.now() + 6 * 60 * 60 * 1000), // 6h out
+    });
+    await Assignment.create({
+      tpoId: tpo._id,
+      collegeId: college._id,
+      collegeDomain: "a.edu",
+      cohortId: cohort._id,
+      title: "Due Later",
+      problemSlugs: ["p1", "p2"],
+      dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days out
+    });
+
+    const { sendAssignmentAutoRemindersCore, buildMongooseDeps } =
+      await import("../scripts/sendAssignmentAutoReminders.js");
+
+    const firstRun = await sendAssignmentAutoRemindersCore({ ...buildMongooseDeps(), log: mockLog().info });
+    expect(firstRun.scanned).toBe(1); // only the 6h-out one — the 3-day one isn't in the window yet
+
+    const updated = await Assignment.findById(dueSoon._id).lean();
+    expect(updated.autoReminderSentAt).toBeTruthy();
+
+    // Re-running immediately must not rescan/re-notify the one already marked.
+    const secondRun = await sendAssignmentAutoRemindersCore({ ...buildMongooseDeps(), log: mockLog().info });
+    expect(secondRun.scanned).toBe(0);
+  });
+
   it("TPOs from every college domain can see the same college-wide assignment", async () => {
     const { college, tpo, studentA } = await seed();
 

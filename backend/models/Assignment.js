@@ -34,6 +34,14 @@ const assignmentSchema = new mongoose.Schema(
     dueDate:      { type: Date, required: true },
     status:       { type: String, enum: ["active", "archived"], default: "active", index: true },
     createdAt:    { type: Date, default: Date.now },
+
+    // TPO-6: set once the 24h-before-due auto-reminder has run for this
+    // assignment (see scripts/sendAssignmentAutoReminders.js). null means
+    // "not yet sent" — distinct from a manual /remind call, which this
+    // field is NOT updated by, so a TPO can still send extra manual
+    // reminders after the automatic one without anything getting confused
+    // about "already reminded". One-shot per assignment, not a queue.
+    autoReminderSentAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
@@ -41,6 +49,9 @@ const assignmentSchema = new mongoose.Schema(
 assignmentSchema.index({ collegeDomain: 1, dueDate: -1 });
 assignmentSchema.index({ collegeId: 1, dueDate: -1 });
 assignmentSchema.index({ cohortId: 1, dueDate: -1 });
+// Supports the auto-reminder sweep's exact query shape: active,
+// not-yet-reminded assignments due within a window.
+assignmentSchema.index({ status: 1, autoReminderSentAt: 1, dueDate: 1 });
 
 const Assignment = mongoose.model("Assignment", assignmentSchema);
 export default Assignment;
