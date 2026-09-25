@@ -78,6 +78,11 @@ describe("Navbar", () => {
     expect(screen.queryByText("Student")).not.toBeInTheDocument();
   });
 
+  it("does not render the Black & White Mode control inside the product navbar", () => {
+    renderNavbar({ role: "student" });
+    expect(screen.queryByRole("switch", { name: /black & white mode/i })).not.toBeInTheDocument();
+  });
+
   it("shows a plain Recruiter workspace label with no switcher", () => {
     renderNavbar({ role: "recruiter" });
     expect(screen.getByText("Recruiter")).toBeInTheDocument();
