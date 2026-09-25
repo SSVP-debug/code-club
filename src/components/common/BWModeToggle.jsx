@@ -1,10 +1,10 @@
 import { useBWMode } from "../../hooks/useBWMode";
 
 /**
- * Platform-wide Black & White Mode switch. Lives in Navbar (desktop icon
- * row) and again inside the mobile dropdown (as a labeled row) so it's
- * reachable regardless of viewport — see BWModeContext for the actual
- * theme logic, applied globally via a class on <html>. As of Phase 1 of
+ * Landing-page Black & White Mode switch. It intentionally lives only in
+ * LandingNav: the authenticated product uses the selected Universe as its
+ * visual system. BWModeContext keeps the preference persisted so returning
+ * visitors get the same landing-page appearance. As of Phase 1 of
  * the theme migration, that class no longer applies a grayscale filter —
  * it switches the platform between the dark (default) and light theme
  * defined by index.css's semantic tokens. The switch's own visuals below
