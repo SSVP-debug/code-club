@@ -58,7 +58,6 @@ function LearningWorkspace({
         </div>
       </div>
 
-      {/* Cards */}
       <ContinueLearningCard />
       <DailyMissionCard submissions={submissions} currentStreak={currentStreak} />
       <AICoachCard
