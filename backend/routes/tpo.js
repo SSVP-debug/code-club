@@ -2118,7 +2118,10 @@ export async function handleAssignmentCompletion(req, res) {
         continue;
       }
       stragglers.push({
-        studentId: student._id,
+        // HTTP/JSON contract: never leak a BSON ObjectId instance from this response.
+        // Keep the public completion payload consistent with the existing tests and
+        // other TPO endpoints, which expose student identifiers as strings.
+        studentId: student._id.toString(),
         name: student.displayName,
         email: student.email,
         solvedCount: assignment.problemSlugs.length - missingSlugs.length,
