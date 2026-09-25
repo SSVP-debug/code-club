@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { loadBWModePreference, saveBWModePreference } from "../utils/bwModeStorage";
 import { BWModeContext } from "./BWModeContextObject";
 
@@ -6,19 +7,25 @@ import { BWModeContext } from "./BWModeContextObject";
 // and this provider never drift out of sync.
 export const BW_MODE_CLASS = "bw-mode";
 
+// Black & White Mode is intentionally a landing-page preference. Once a
+// visitor enters the product, the selected Universe owns the visual system.
+// The preference is retained so returning to the landing page restores it.
+const BW_MODE_ROUTE = "/";
+
 export function BWModeProvider({ children }) {
     const [bwMode, setBwMode] = useState(() => loadBWModePreference());
+    const { pathname } = useLocation();
 
-    // Reflect state onto the document root rather than a component-level
-    // wrapper — Black & White Mode is a platform-wide theme (nav, pages,
-    // modals, everything), and <html> is the one element every one of
-    // those renders underneath, regardless of route or role. index.html
-    // has a small inline script that sets this same class before first
-    // paint from the same storage key, so a returning visitor doesn't
-    // see a flash of the wrong theme before this effect runs.
-    useEffect(() => {
-        document.documentElement.classList.toggle(BW_MODE_CLASS, bwMode);
-    }, [bwMode]);
+    // Only the landing page owns this preference visually. useLayoutEffect
+    // removes the class before paint when navigating into the product, so
+    // a saved White Mode preference can never leak into a Universe page.
+    useLayoutEffect(() => {
+        const isLandingPage = pathname === BW_MODE_ROUTE;
+        document.documentElement.classList.toggle(
+            BW_MODE_CLASS,
+            isLandingPage && bwMode
+        );
+    }, [pathname, bwMode]);
 
     const toggleBWMode = () => {
         setBwMode((prev) => {
