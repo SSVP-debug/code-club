@@ -43,28 +43,21 @@ function LearningWorkspace({
 
       <div className="universe-learning__stage-label">MISSION CONTROL / LEARNING SIGNAL</div>
 
-      {/* Stats row — 3 cards with clear borders */}
       <div className="grid grid-cols-3 gap-2">
-        {[
-          { label: "Solved",   value: solvedCount,        color: "text-[var(--foreground)]"      },
-          { label: "Progress", value: `${progress}%`,     color: "text-[var(--theme-primary,#2dd4bf)]"  },
-          { label: "Vaults",   value: problems.length,    color: "text-[var(--foreground)]"      },
-        ].map(({ label, value, color }) => (
-          <div
-            key={label}
-            className="bg-[var(--surface)] border border-[var(--border-strong)] rounded-xl p-3 text-center"
-          >
-            <p className={`text-lg font-bold leading-none tabular-nums ${color}`}>
-              {value}
-            </p>
-            <p className="text-[10px] text-[var(--muted-foreground)] uppercase tracking-wide mt-1">
-              {label}
-            </p>
-          </div>
-        ))}
+        <div className="bg-[var(--surface)] border border-[var(--border-strong)] rounded-xl p-3 text-center">
+          <p className="text-lg font-bold leading-none tabular-nums text-[var(--foreground)]">{solvedCount}</p>
+          <p className="text-[10px] text-[var(--muted-foreground)] uppercase tracking-wide mt-1">Solved</p>
+        </div>
+        <div className="bg-[var(--surface)] border border-[var(--border-strong)] rounded-xl p-3 text-center">
+          <p className="text-lg font-bold leading-none tabular-nums text-[var(--theme-primary,#2dd4bf)]">{progress}%</p>
+          <p className="text-[10px] text-[var(--muted-foreground)] uppercase tracking-wide mt-1">Progress</p>
+        </div>
+        <div className="bg-[var(--surface)] border border-[var(--border-strong)] rounded-xl p-3 text-center">
+          <p className="text-lg font-bold leading-none tabular-nums text-[var(--foreground)]">{problems.length}</p>
+          <p className="text-[10px] text-[var(--muted-foreground)] uppercase tracking-wide mt-1">Vaults</p>
+        </div>
       </div>
 
-      {/* Cards */}
       <ContinueLearningCard />
       <DailyMissionCard submissions={submissions} currentStreak={currentStreak} />
       <AICoachCard
