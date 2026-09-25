@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, Mail, ShieldCheck, Users } from "lucide-react";
+import { ArrowRight, Mail, Share2, ShieldCheck, Users } from "lucide-react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { apiFetch } from "../services/api";
+import { share } from "../utils/share";
 
 export default function CollegeTpoDirectoryPage() {
   const [data, setData] = useState(null);
@@ -33,6 +34,20 @@ export default function CollegeTpoDirectoryPage() {
       });
     return () => { cancelled = true; };
   }, []);
+
+  const handleInviteFaculty = async () => {
+    if (!data?.college?.name) return;
+
+    try {
+      await share({
+        title: "Join Code Club as a TPO",
+        text: `Join Code Club as a Training & Placement Officer for ${data.college.name} and help your students prepare for placements.`,
+        url: `${window.location.origin}/tpo/signup`,
+      });
+    } catch {
+      // Share/clipboard failures should not turn the directory into an error state.
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -99,6 +114,17 @@ export default function CollegeTpoDirectoryPage() {
                 <p className="text-sm text-[var(--muted-foreground)] mt-1">
                   Your institution does not currently have a verified TPO on Code Club.
                 </p>
+                <p className="text-sm text-[var(--muted-foreground)] mt-3 leading-6 max-w-xl mx-auto">
+                  Connect with your college placement authority and invite a faculty member to join Code Club as a Training & Placement Officer on behalf of your college.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleInviteFaculty}
+                  className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[var(--foreground)] px-4 py-2.5 text-sm font-semibold text-[var(--background)] hover:opacity-90 transition"
+                >
+                  <Share2 size={16} aria-hidden="true" />
+                  Invite your college faculty
+                </button>
               </div>
             ) : (
               <div className="grid gap-4 md:grid-cols-2">
