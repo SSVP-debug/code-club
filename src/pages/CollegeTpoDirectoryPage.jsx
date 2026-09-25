@@ -88,12 +88,26 @@ export default function CollegeTpoDirectoryPage() {
               </a>
             </div>
           </div>
+        ) : data?.enabled === false ? (
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 sm:p-10">
+            <div className="max-w-2xl">
+              <div className="w-12 h-12 rounded-2xl bg-[var(--surface-elevated)] flex items-center justify-center">
+                <Users size={22} aria-hidden="true" />
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold text-[var(--foreground)] mt-5">
+                College TPO directory is not live yet
+              </h2>
+              <p className="text-[var(--muted-foreground)] mt-3 leading-6">
+                {data.message || "The college support directory is currently being prepared."}
+              </p>
+            </div>
+          </div>
         ) : error ? (
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
             <p className="font-semibold text-[var(--foreground)]">TPO directory unavailable</p>
             <p className="text-sm text-[var(--muted-foreground)] mt-2">{error}</p>
           </div>
-        ) : (
+        ) : data?.college && Array.isArray(data.tpos) ? (
           <>
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex items-center gap-4">
               <div className="w-11 h-11 rounded-xl bg-[var(--surface-elevated)] flex items-center justify-center">
@@ -150,6 +164,13 @@ export default function CollegeTpoDirectoryPage() {
               </div>
             )}
           </>
+        ) : (
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+            <p className="font-semibold text-[var(--foreground)]">TPO directory unavailable</p>
+            <p className="text-sm text-[var(--muted-foreground)] mt-2">
+              We received an unexpected response. Please try again later.
+            </p>
+          </div>
         )}
       </div>
     </DashboardLayout>
