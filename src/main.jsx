@@ -64,9 +64,9 @@ ReactDOM.createRoot(
 ).render(
   <React.StrictMode>
     <HelmetProvider>
-    <BWModeProvider>
     <ThemeProvider>
       <BrowserRouter>
+        <BWModeProvider>
         <AuthProvider>
           <GuestProvider>
           <PremiumProvider>
@@ -111,9 +111,9 @@ ReactDOM.createRoot(
           </PremiumProvider>
           </GuestProvider>
         </AuthProvider>
+        </BWModeProvider>
       </BrowserRouter>
     </ThemeProvider>
-    </BWModeProvider>
     </HelmetProvider>
   </React.StrictMode>
 );
