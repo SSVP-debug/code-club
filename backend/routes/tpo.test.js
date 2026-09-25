@@ -733,4 +733,93 @@ describe("GET /college-directory", () => {
     expect(res.status).toHaveBeenCalledWith(403);
     expect(User.find).not.toHaveBeenCalled();
   });
+
+  it("returns a stable error code when the student's college email is unverified", async () => {
+    const res = await runRoute("get", "/college-directory", {
+      userDoc: { role: "student", emailDomain: "report.edu", education: { emailVerified: false } },
+    });
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith({
+      error: "Verify your college email to view your college TPO directory.",
+      code: "COLLEGE_EMAIL_UNVERIFIED",
+    });
+    expect(College.findById).not.toHaveBeenCalled();
+    expect(College.findOne).not.toHaveBeenCalled();
+    expect(User.find).not.toHaveBeenCalled();
+  });
+
+  it("resolves a verified college from the student's email domain when collegeId is missing", async () => {
+    College.findOne.mockReturnValue({
+      lean: vi.fn().mockResolvedValue({
+        _id: "college-domain",
+        name: "Domain University",
+        status: "verified",
+        domains: ["report.edu"],
+        primaryTpo: null,
+      }),
+    });
+
+    const res = await runRoute("get", "/college-directory", {
+      userDoc: {
+        role: "student",
+        emailDomain: "REPORT.EDU",
+        education: { emailVerified: true },
+      },
+    });
+
+    expect(res.json).toHaveBeenCalledWith({
+      college: { id: "college-domain", name: "Domain University" },
+      tpos: expect.any(Array),
+    });
+    expect(College.findOne).toHaveBeenCalledWith({
+      domains: "report.edu",
+      status: "verified",
+    });
+  });
+
+  it("returns 404 when the verified student's college cannot be resolved to a verified institution", async () => {
+    College.findById.mockReturnValue({
+      lean: vi.fn().mockResolvedValue(null),
+    });
+    College.findOne.mockReturnValue({
+      lean: vi.fn().mockResolvedValue(null),
+    });
+
+    const res = await runRoute("get", "/college-directory", {
+      userDoc: {
+        role: "student",
+        emailDomain: "unknown.edu",
+        education: { emailVerified: true, collegeId: "missing-college" },
+      },
+    });
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({
+      error: "Your college is not linked to a verified institution yet.",
+    });
+    expect(User.find).not.toHaveBeenCalled();
+  });
+
+  it("does not expose TPOs from another college when the student's college has multiple domains", async () => {
+    College.findById.mockReturnValue({
+      lean: vi.fn().mockResolvedValue({
+        _id: "college-1",
+        name: "Report University",
+        status: "verified",
+        domains: ["report.edu", "legacy.report.edu"],
+        primaryTpo: null,
+      }),
+    });
+
+    const res = await runRoute("get", "/college-directory", { userDoc: verifiedStudent });
+
+    expect(res.status).not.toHaveBeenCalledWith(403);
+    expect(User.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        "tpoProfile.collegeDomain": { $in: ["report.edu", "legacy.report.edu"] },
+      })
+    );
+  });
+
 });

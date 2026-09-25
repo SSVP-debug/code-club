@@ -51,26 +51,44 @@ export default function CollegeTpoDirectoryPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-5xl mx-auto space-y-8">
-        <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted-foreground)]">College support</p>
-          <h1 className="text-3xl font-black text-[var(--foreground)] mt-2">Find your College TPOs</h1>
-          <p className="text-[var(--muted-foreground)] mt-2">
+      <main className="max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
+        <header>
+          <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
+            College support
+          </p>
+          <h1 className="text-3xl sm:text-4xl font-black text-[var(--foreground)] mt-2">
+            Find your College TPOs
+          </h1>
+          <p className="text-[var(--muted-foreground)] mt-2 max-w-2xl leading-6">
             Connect with the verified Training & Placement Officers responsible for your institution.
           </p>
-        </div>
+        </header>
 
         {loading ? (
-          <div className="flex justify-center py-16">
-            <div className="w-7 h-7 border-2 border-[var(--theme-primary,#2dd4bf)] border-t-transparent rounded-full animate-spin" />
+          <div
+            className="flex justify-center py-16"
+            role="status"
+            aria-live="polite"
+            aria-label="Loading your college TPO directory"
+          >
+            <div
+              className="w-7 h-7 border-2 border-[var(--theme-primary,#2dd4bf)] border-t-transparent rounded-full animate-spin"
+              aria-hidden="true"
+            />
           </div>
         ) : verificationRequired ? (
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 sm:p-10">
+          <section
+            aria-labelledby="college-email-verification-title"
+            className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-10"
+          >
             <div className="max-w-2xl">
-              <div className="w-12 h-12 rounded-2xl bg-[var(--surface-elevated)] flex items-center justify-center">
-                <ShieldCheck size={22} aria-hidden="true" />
+              <div className="w-12 h-12 rounded-2xl bg-[var(--surface-elevated)] flex items-center justify-center" aria-hidden="true">
+                <ShieldCheck size={22} />
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-[var(--foreground)] mt-5">
+              <h2
+                id="college-email-verification-title"
+                className="text-xl sm:text-2xl font-bold text-[var(--foreground)] mt-5"
+              >
                 Verify your college email
               </h2>
               <p className="text-[var(--muted-foreground)] mt-3 leading-6">
@@ -81,37 +99,82 @@ export default function CollegeTpoDirectoryPage() {
               </p>
               <a
                 href="/profile"
-                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[var(--foreground)] px-4 py-2.5 text-sm font-semibold text-[var(--background)] hover:opacity-90 transition"
+                className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--foreground)] px-4 py-2.5 text-sm font-semibold text-[var(--background)] hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary,#2dd4bf)] focus-visible:ring-offset-2 transition"
               >
                 Go to Profile
                 <ArrowRight size={16} aria-hidden="true" />
               </a>
             </div>
-          </div>
-        ) : error ? (
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
-            <p className="font-semibold text-[var(--foreground)]">TPO directory unavailable</p>
-            <p className="text-sm text-[var(--muted-foreground)] mt-2">{error}</p>
-          </div>
-        ) : (
-          <>
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex items-center gap-4">
-              <div className="w-11 h-11 rounded-xl bg-[var(--surface-elevated)] flex items-center justify-center">
-                <Users size={20} aria-hidden="true" />
+          </section>
+        ) : data?.enabled === false ? (
+          <section
+            aria-labelledby="college-directory-disabled-title"
+            className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-10"
+          >
+            <div className="max-w-2xl">
+              <div className="w-12 h-12 rounded-2xl bg-[var(--surface-elevated)] flex items-center justify-center" aria-hidden="true">
+                <Users size={22} />
               </div>
-              <div>
-                <p className="font-semibold text-[var(--foreground)]">{data.college.name}</p>
-                <p className="text-sm text-[var(--muted-foreground)]">
-                  {data.tpos.length} verified TPO{data.tpos.length === 1 ? "" : "s"}
-                </p>
-              </div>
+              <h2
+                id="college-directory-disabled-title"
+                className="text-xl sm:text-2xl font-bold text-[var(--foreground)] mt-5"
+              >
+                College TPO directory is not live yet
+              </h2>
+              <p className="text-[var(--muted-foreground)] mt-3 leading-6">
+                {data.message || "The college support directory is currently being prepared."}
+              </p>
             </div>
+          </section>
+        ) : error ? (
+          <section
+            role="alert"
+            aria-labelledby="college-directory-error-title"
+            className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8"
+          >
+            <h2 id="college-directory-error-title" className="font-semibold text-[var(--foreground)]">
+              TPO directory unavailable
+            </h2>
+            <p className="text-sm text-[var(--muted-foreground)] mt-2 leading-6">{error}</p>
+          </section>
+        ) : data?.college && Array.isArray(data.tpos) ? (
+          <>
+            <section
+              aria-labelledby="college-directory-college-title"
+              className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-11 h-11 shrink-0 rounded-xl bg-[var(--surface-elevated)] flex items-center justify-center" aria-hidden="true">
+                  <Users size={20} />
+                </div>
+                <div className="min-w-0">
+                  <h2
+                    id="college-directory-college-title"
+                    className="font-semibold text-[var(--foreground)] truncate"
+                  >
+                    {data.college.name}
+                  </h2>
+                  <p className="text-sm text-[var(--muted-foreground)]">
+                    {data.tpos.length} verified TPO{data.tpos.length === 1 ? "" : "s"}
+                  </p>
+                </div>
+              </div>
+            </section>
 
             {data.tpos.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-[var(--border)] p-10 text-center">
-                <ShieldCheck className="mx-auto mb-3 text-[var(--muted-foreground)]" size={24} aria-hidden="true" />
-                <p className="font-semibold text-[var(--foreground)]">No verified TPOs yet</p>
-                <p className="text-sm text-[var(--muted-foreground)] mt-1">
+              <section
+                aria-labelledby="no-tpos-title"
+                className="rounded-2xl border border-dashed border-[var(--border)] p-6 sm:p-10 text-center"
+              >
+                <ShieldCheck
+                  className="mx-auto mb-3 text-[var(--muted-foreground)]"
+                  size={24}
+                  aria-hidden="true"
+                />
+                <h2 id="no-tpos-title" className="font-semibold text-[var(--foreground)]">
+                  No verified TPOs yet
+                </h2>
+                <p className="text-sm text-[var(--muted-foreground)] mt-1 leading-6">
                   Your institution does not currently have a verified TPO on Code Club.
                 </p>
                 <p className="text-sm text-[var(--muted-foreground)] mt-3 leading-6 max-w-xl mx-auto">
@@ -120,38 +183,69 @@ export default function CollegeTpoDirectoryPage() {
                 <button
                   type="button"
                   onClick={handleInviteFaculty}
-                  className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[var(--foreground)] px-4 py-2.5 text-sm font-semibold text-[var(--background)] hover:opacity-90 transition"
+                  className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl bg-[var(--foreground)] px-4 py-2.5 text-sm font-semibold text-[var(--background)] hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary,#2dd4bf)] focus-visible:ring-offset-2 transition"
                 >
                   <Share2 size={16} aria-hidden="true" />
                   Invite your college faculty
                 </button>
-              </div>
+              </section>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2">
-                {data.tpos.map((tpo) => (
-                  <article key={tpo.id} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h2 className="font-bold text-lg text-[var(--foreground)]">{tpo.name}</h2>
-                        <p className="text-sm text-[var(--muted-foreground)] mt-1">{tpo.collegeName}</p>
+              <section aria-labelledby="verified-tpos-title">
+                <h2 id="verified-tpos-title" className="sr-only">
+                  Verified College TPOs
+                </h2>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {data.tpos.map((tpo) => (
+                    <article
+                      key={tpo.id}
+                      className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 min-w-0"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="font-bold text-lg text-[var(--foreground)] break-words">
+                            {tpo.name}
+                          </h3>
+                          <p className="text-sm text-[var(--muted-foreground)] mt-1 break-words">
+                            {tpo.collegeName}
+                          </p>
+                        </div>
+                        <span className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold rounded-full px-2.5 py-1 bg-[var(--surface-elevated)] text-[var(--foreground)]">
+                          <ShieldCheck size={13} aria-hidden="true" />
+                          Verified
+                        </span>
                       </div>
-                      <span className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-full px-2.5 py-1 bg-[var(--surface-elevated)] text-[var(--foreground)]">
-                        <ShieldCheck size={13} aria-hidden="true" />
-                        Verified
-                      </span>
-                    </div>
-                    {tpo.isPrimary ? <p className="text-xs text-[var(--muted-foreground)] mt-4">Primary TPO</p> : null}
-                    <a href={`mailto:${tpo.email}`} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[var(--foreground)] hover:opacity-70 transition">
-                      <Mail size={15} aria-hidden="true" />
-                      {tpo.email}
-                    </a>
-                  </article>
-                ))}
-              </div>
+                      {tpo.isPrimary ? (
+                        <p className="text-xs text-[var(--muted-foreground)] mt-4">Primary TPO</p>
+                      ) : null}
+                      <a
+                        href={`mailto:${tpo.email}`}
+                        aria-label={`Email ${tpo.name} at ${tpo.email}`}
+                        className="mt-4 inline-flex max-w-full min-h-11 items-center gap-2 text-sm font-semibold text-[var(--foreground)] hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary,#2dd4bf)] focus-visible:ring-offset-2 transition"
+                      >
+                        <Mail size={15} aria-hidden="true" />
+                        <span className="break-all">{tpo.email}</span>
+                      </a>
+                    </article>
+                  ))}
+                </div>
+              </section>
             )}
           </>
+        ) : (
+          <section
+            role="alert"
+            aria-labelledby="unexpected-response-title"
+            className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8"
+          >
+            <h2 id="unexpected-response-title" className="font-semibold text-[var(--foreground)]">
+              TPO directory unavailable
+            </h2>
+            <p className="text-sm text-[var(--muted-foreground)] mt-2 leading-6">
+              We received an unexpected response. Please try again later.
+            </p>
+          </section>
         )}
-      </div>
+      </main>
     </DashboardLayout>
   );
 }
