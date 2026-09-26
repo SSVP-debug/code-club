@@ -288,6 +288,5 @@ describe("POST /register — TPO-1 hardening: partial-failure handling", () => {
       expect(res._json.verification.additionalEvidenceRecommended).toBe(true);
     });
 
-    });
   });
 });
