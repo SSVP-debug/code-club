@@ -114,6 +114,32 @@ const collegeSchema = new mongoose.Schema(
       index: true,
     },
 
+    // ── TPO email-role advisory rules ─────────────────────────────────────
+    // College-specific patterns are advisory evidence only. They never grant
+    // or deny a TPO role by themselves. This lets each institution describe
+    // its own mailbox conventions without hardcoding assumptions globally.
+    staffEmailPatterns: {
+      type: [
+        {
+          type: { type: String, enum: ["domain", "local_prefix", "local_regex"] },
+          value: { type: String, trim: true, maxlength: 253 },
+          values: { type: [String], default: undefined },
+        },
+      ],
+      default: [],
+    },
+
+    studentEmailPatterns: {
+      type: [
+        {
+          type: { type: String, enum: ["domain", "local_prefix", "local_regex"] },
+          value: { type: String, trim: true, maxlength: 253 },
+          values: { type: [String], default: undefined },
+        },
+      ],
+      default: [],
+    },
+
     // ── Institutional subscription (TPO-6 Commercialization) ─────────────
     // Billing belongs to the institution, not an individual TPO account.
     // This keeps access intact when the primary TPO changes.

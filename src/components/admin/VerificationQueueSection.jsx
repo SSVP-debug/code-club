@@ -9,7 +9,7 @@ import ConfirmDialog from "../ui/ConfirmDialog";
 // way for the admin to undo it from here. It gets a confirmation step;
 // Approve stays one-click since a fast, low-friction "yes" is exactly
 // what a review queue should optimize for.
-function QueueRow({ title, subtitle, meta, onApprove, onReject, busy }) {
+function QueueRow({ title, subtitle, meta, signal, evidenceHint, evidence, onApprove, onReject, busy }) {
   const [confirmingReject, setConfirmingReject] = useState(false);
 
   return (
@@ -18,6 +18,17 @@ function QueueRow({ title, subtitle, meta, onApprove, onReject, busy }) {
         <p className="text-[var(--foreground)] font-semibold text-sm truncate">{title}</p>
         <p className="text-[var(--muted-foreground)] text-xs truncate">{subtitle}</p>
         {meta && <p className="text-[var(--muted-foreground)] text-[11px] mt-0.5">{meta}</p>}
+        {signal && (
+          <p className="text-[var(--muted-foreground)] text-[11px] mt-1">
+            Email signal: <span className="font-medium text-[var(--foreground)]">{signal.replaceAll("_", " ")}</span>
+            {evidenceHint ? " · additional evidence recommended" : ""}
+          </p>
+        )}
+        {Array.isArray(evidence) && evidence.length > 0 && (
+          <p className="text-[var(--muted-foreground)] text-[11px] mt-0.5">
+            Evidence: {evidence.map((item) => item.label).join(", ")}
+          </p>
+        )}
       </div>
       <div className="flex items-center gap-2 shrink-0">
         <Button
@@ -80,6 +91,9 @@ function VerificationQueueSection({ heading, loading, emptyLabel, items, busyIds
                 title={row.title}
                 subtitle={row.subtitle}
                 meta={row.meta}
+                signal={row.signal}
+                evidenceHint={row.evidenceHint}
+                evidence={row.evidence}
                 busy={busyIds[row.id]}
                 onApprove={() => onApprove(row.id)}
                 onReject={() => onReject(row.id)}
