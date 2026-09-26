@@ -67,16 +67,6 @@ export async function getPendingQueue(req, res) {
       )
         .sort({ "tpoProfile.requestedAt": 1, createdAt: 1 })
         .lean(),
-      User.find(
-        {
-          role: "tpo",
-          "tpoProfile.verified": false,
-          "tpoVerification.status": "pending",
-        },
-        "email displayName tpoProfile tpoVerification createdAt"
-      )
-        .sort({ "tpoProfile.requestedAt": 1, createdAt: 1 })
-        .lean(),
     ]);
 
     const tpoColleges = pendingColleges.filter((c) => c.submittedByRole === "tpo");
