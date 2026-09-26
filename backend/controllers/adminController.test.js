@@ -1,5 +1,8 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
+vi.mock("../models/TpoVerificationReview.js", () => ({
+    default: { create: vi.fn().mockResolvedValue({}) },
+}));
 vi.mock("../models/College.js", () => ({
     default: {
         find: vi.fn(),
@@ -50,6 +53,7 @@ vi.mock("../config/logger.js", () => ({
     logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
+import TpoVerificationReview from "../models/TpoVerificationReview.js";
 import College from "../models/College.js";
 import User from "../models/User.js";
 import ImpersonationLog from "../models/ImpersonationLog.js";
@@ -274,6 +278,14 @@ describe("adminController", () => {
             expect(createNotification).toHaveBeenCalledWith(
                 expect.objectContaining({ userId: "admin-user-1", type: "tpo_verified" })
             );
+            expect(TpoVerificationReview.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    userId: "req1",
+                    collegeId: "c1",
+                    decision: "approved",
+                    reviewedBy: "admin1",
+                })
+            );
             expect(res.json).toHaveBeenCalledWith({ success: true });
         });
 
@@ -414,6 +426,28 @@ describe("adminController", () => {
             expect(recordAdminAction).toHaveBeenCalledWith(
                 expect.objectContaining({ adminDoc: admin, action: "tpo.reject", targetType: "College", targetId: "c1" })
             );
+            expect(TpoVerificationReview.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    userId: "req1",
+                    collegeId: "c1",
+                    decision: "rejected",
+                    reviewedBy: "admin1",
+                })
+            );
+            expect(res.json).toHaveBeenCalledWith({ success: true });
+        });
+
+        it("does not demote a requester who is no longer a TPO", async () => {
+            const college = { _id: "c1", name: "MIT", submittedBy: "req1" };
+            const requester = makeUser({ _id: "req1", role: "student", roles: ["student"], firebaseUid: "fb-req1" });
+            College.findById.mockResolvedValueOnce(college);
+            User.findById.mockResolvedValueOnce(requester);
+
+            await rejectTpo({ params: { collegeId: "c1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
+
+            expect(College.deleteOne).toHaveBeenCalledWith({ _id: "c1" });
+            expect(requester.save).not.toHaveBeenCalled();
+            expect(invalidateCachedUserByFirebaseUid).not.toHaveBeenCalled();
             expect(res.json).toHaveBeenCalledWith({ success: true });
         });
     });
