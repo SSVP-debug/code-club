@@ -54,7 +54,7 @@ export async function getPendingQueue(req, res) {
       // same collection and split below by submittedByRole so the queue
       // can render/label them separately.
       College.find({ status: "pending" })
-        .populate("submittedBy", "email displayName")
+        .populate("submittedBy", "email displayName tpoVerification")
         .sort({ createdAt: 1 })
         .lean(),
     ]);
@@ -80,27 +80,28 @@ export async function getPendingQueue(req, res) {
         companyDomain: u.recruiterProfile?.companyDomain,
         requestedAt: u.createdAt,
       })),
-      tpos: await Promise.all(
-        tpoColleges.map(async (c) => {
-          const applicant = c.submittedBy
-            ? await User.findById(c.submittedBy).select("email displayName tpoVerification").lean()
-            : null;
-          const signal = applicant?.tpoVerification?.emailRoleSignal || "unknown";
-          return {
-            collegeId: c._id,
-            collegeName: c.name,
-            domains: c.domains,
-            requestedBy: applicant
-              ? { email: applicant.email, displayName: applicant.displayName }
-              : null,
-            requestedAt: applicant?.tpoVerification?.submittedAt || c.createdAt,
-            emailRoleSignal: signal,
-            verificationStatus: applicant?.tpoVerification?.status || "pending",
-            additionalEvidenceRecommended: signal !== "staff_candidate",
-            evidence: applicant?.tpoVerification?.evidence || [],
-          };
-        })
-      ),
+      tpos: tpoColleges.map((c) => {
+        const applicant = c.submittedBy && typeof c.submittedBy === "object"
+          ? c.submittedBy
+          : null;
+        const signal = applicant?.tpoVerification?.emailRoleSignal || "unknown";
+        return {
+          collegeId: c._id,
+          collegeName: c.name,
+          // Keep the legacy first-domain field for existing admin clients while
+          // exposing the complete configured domain list.
+          domain: c.domains?.[0],
+          domains: c.domains,
+          requestedBy: applicant
+            ? { email: applicant.email, displayName: applicant.displayName }
+            : null,
+          requestedAt: applicant?.tpoVerification?.submittedAt || c.createdAt,
+          emailRoleSignal: signal,
+          verificationStatus: applicant?.tpoVerification?.status || "pending",
+          additionalEvidenceRecommended: signal !== "staff_candidate",
+          evidence: applicant?.tpoVerification?.evidence || [],
+        };
+      }),
       studentCollegeRequests: studentColleges.map((c) => ({
         collegeId: c._id,
         collegeName: c.name,
@@ -262,21 +263,28 @@ export async function approveTpo(req, res) {
 
     const reviewerId = req.actingAdminDoc?._id || req.userDoc?._id;
     if (reviewerId) {
-      await Promise.all(
-        pendingCandidates.map((u) =>
-          TpoVerificationReview.create({
-            userId: u._id,
-            collegeId: college._id,
-            requestedEmail: u.tpoVerification?.submittedEmail || u.email || "",
-            emailRoleSignal: u.tpoVerification?.emailRoleSignal || "unknown",
-            evidence: u.tpoVerification?.evidence || [],
-            decision: "approved",
-            decisionReason: "Approved through the administrative TPO verification queue.",
-            reviewedBy: reviewerId,
-            reviewedAt: college.verifiedAt || new Date(),
-          })
-        )
-      );
+      try {
+        await Promise.all(
+          pendingCandidates.map((u) =>
+            TpoVerificationReview.create({
+              userId: u._id,
+              collegeId: college._id,
+              requestedEmail: u.tpoVerification?.submittedEmail || u.email || "",
+              emailRoleSignal: u.tpoVerification?.emailRoleSignal || "unknown",
+              evidence: u.tpoVerification?.evidence || [],
+              decision: "approved",
+              decisionReason: "Approved through the administrative TPO verification queue.",
+              reviewedBy: reviewerId,
+              reviewedAt: college.verifiedAt || new Date(),
+            })
+          )
+        );
+      } catch (err) {
+        logger.error(
+          { err, collegeId: college._id },
+          "[Admin] approveTpo: failed to persist verification review audit"
+        );
+      }
     }
 
     recordAdminAction({
@@ -318,17 +326,24 @@ export async function rejectTpo(req, res) {
 
     const reviewerId = req.actingAdminDoc?._id || req.userDoc?._id;
     if (reviewerId && requester) {
-      await TpoVerificationReview.create({
-        userId: requester._id,
-        collegeId: college._id,
-        requestedEmail: requester.tpoVerification?.submittedEmail || requester.email || "",
-        emailRoleSignal: requester.tpoVerification?.emailRoleSignal || "unknown",
-        evidence: requester.tpoVerification?.evidence || [],
-        decision: "rejected",
-        decisionReason: "TPO request rejected through the administrative verification queue.",
-        reviewedBy: reviewerId,
-        reviewedAt: new Date(),
-      });
+      try {
+        await TpoVerificationReview.create({
+          userId: requester._id,
+          collegeId: college._id,
+          requestedEmail: requester.tpoVerification?.submittedEmail || requester.email || "",
+          emailRoleSignal: requester.tpoVerification?.emailRoleSignal || "unknown",
+          evidence: requester.tpoVerification?.evidence || [],
+          decision: "rejected",
+          decisionReason: "TPO request rejected through the administrative verification queue.",
+          reviewedBy: reviewerId,
+          reviewedAt: new Date(),
+        });
+      } catch (err) {
+        logger.error(
+          { err, collegeId: college._id },
+          "[Admin] rejectTpo: failed to persist verification review audit"
+        );
+      }
     }
 
     await College.deleteOne({ _id: college._id });
@@ -350,7 +365,14 @@ export async function rejectTpo(req, res) {
         requestedAt: null,
         verifiedAt: null,
       };
-      requester.tpoVerification.status = "rejected";
+      requester.tpoVerification = {
+        ...(requester.tpoVerification || {}),
+        status: "rejected",
+        emailRoleSignal: requester.tpoVerification?.emailRoleSignal || "unknown",
+        submittedEmail: requester.tpoVerification?.submittedEmail || requester.email || null,
+        submittedAt: requester.tpoVerification?.submittedAt || null,
+        evidence: requester.tpoVerification?.evidence || [],
+      };
       await requester.save();
       invalidateCachedUserByFirebaseUid(requester.firebaseUid);
 
