@@ -145,8 +145,8 @@ router.post("/register", async (req, res) => {
         submittedByRole: existingCollege.submittedByRole,
       };
       existingCollege.name = collegeName.trim();
-      existingCollege.status = autoVerified ? "verified" : "pending";
-      existingCollege.verifiedAt = autoVerified ? now : null;
+      existingCollege.status = collegeAutoVerified ? "verified" : "pending";
+      existingCollege.verifiedAt = collegeAutoVerified ? now : null;
       existingCollege.submittedBy = req.userDoc._id;
       existingCollege.submittedByRole = "tpo";
       await existingCollege.save();
