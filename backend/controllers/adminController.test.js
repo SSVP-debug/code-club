@@ -1230,6 +1230,7 @@ describe("individual TPO verification", () => {
         User.findById.mockResolvedValueOnce(user);
         College.findByDomain.mockResolvedValueOnce(college);
         claimPrimaryIfNone.mockResolvedValueOnce(true);
+        const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
 
         await approveTpoUser({ params: { userId: "t1" }, userDoc: makeAdmin() }, res);
 
@@ -1257,6 +1258,7 @@ describe("individual TPO verification", () => {
         });
         User.findById.mockResolvedValueOnce(user);
         College.findByDomain.mockResolvedValueOnce({ _id: "c1", name: "MIT", status: "verified", domains: ["mit.edu"] });
+        const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
 
         await rejectTpoUser({ params: { userId: "t2" }, userDoc: makeAdmin() }, res);
 
