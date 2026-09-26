@@ -160,12 +160,14 @@ router.post("/register", async (req, res) => {
     req.userDoc.tpoProfile = {
       collegeDomain: domain,
       collegeName: collegeName.trim(),
-      verified: autoVerified,
+      // College recognition and individual TPO authorization are separate.
+      // A requester stays pending until an admin reviews the TPO identity.
+      verified: false,
       requestedAt: now,
-      verifiedAt: autoVerified ? now : null,
+      verifiedAt: null,
     };
     req.userDoc.tpoVerification = {
-      status: autoVerified ? "approved" : "pending",
+      status: "pending",
       emailRoleSignal: emailRoleClassification,
       submittedEmail: email,
       submittedAt: now,
