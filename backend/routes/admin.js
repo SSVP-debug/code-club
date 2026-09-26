@@ -7,6 +7,8 @@ import {
   rejectRecruiter,
   approveTpo,
   rejectTpo,
+  approveTpoUser,
+  rejectTpoUser,
   approveStudentCollege,
   rejectStudentCollege,
   listUsers,
@@ -107,6 +109,8 @@ router.post("/recruiters/:id/approve", requireAdmin, approveRecruiter);
 router.post("/recruiters/:id/reject", requireAdmin, rejectRecruiter);
 router.post("/tpo/:collegeId/approve", requireAdmin, approveTpo);
 router.post("/tpo/:collegeId/reject", requireAdmin, rejectTpo);
+router.post("/tpo-verification/:userId/approve", requireAdmin, approveTpoUser);
+router.post("/tpo-verification/:userId/reject", requireAdmin, rejectTpoUser);
 router.post("/student-colleges/:collegeId/approve", requireAdmin, approveStudentCollege);
 router.post("/student-colleges/:collegeId/reject", requireAdmin, rejectStudentCollege);
 
