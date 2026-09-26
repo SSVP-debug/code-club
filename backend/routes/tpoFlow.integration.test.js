@@ -196,7 +196,7 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
     expect(outcome).toBe("allowed");
   });
 
-  it("a second TPO registering for an already-verified college is auto-verified immediately, no queue", async () => {
+  it("a second TPO registering for an already-verified college still requires individual verification", async () => {
     const firstUser = await seedStudent({ email: "tpofirst@already-verified.ac.in" });
     await registerHandler(
       { userDoc: firstUser, log: mockLog(), body: { collegeName: "Already Verified College" } },
@@ -352,10 +352,27 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
       const reloadedEarlier = await User.findById(earlier._id);
       const reloadedLater = await User.findById(later._id);
 
-      expect(reloadedEarlier.tpoProfile.verified).toBe(true);
-      expect(reloadedLater.tpoProfile.verified).toBe(true);
-      expect(reloadedCollege.primaryTpo.toString()).toBe(reloadedEarlier._id.toString());
-      expect(reloadedCollege.primaryTpo.toString()).not.toBe(reloadedLater._id.toString());
+      expect(reloadedEarlier.tpoProfile.verified).toBe(false);
+      expect(reloadedLater.tpoProfile.verified).toBe(false);
+      expect(reloadedCollege.primaryTpo).toBeNull();
+
+      await approveTpoUser(
+        { params: { userId: earlier._id.toString() }, userDoc: admin, log: mockLog() },
+        mockRes()
+      );
+      await approveTpoUser(
+        { params: { userId: later._id.toString() }, userDoc: admin, log: mockLog() },
+        mockRes()
+      );
+
+      const approvedEarlier = await User.findById(earlier._id);
+      const approvedLater = await User.findById(later._id);
+      const finalCollege = await College.findById(college._id);
+
+      expect(approvedEarlier.tpoProfile.verified).toBe(true);
+      expect(approvedLater.tpoProfile.verified).toBe(true);
+      expect(finalCollege.primaryTpo.toString()).toBe(approvedEarlier._id.toString());
+      expect(finalCollege.primaryTpo.toString()).not.toBe(approvedLater._id.toString());
     });
 
     it("two sequential self-registrations for the same still-pending domain: the second is rejected with 409, not silently queued", async () => {
@@ -390,6 +407,10 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
       const admin = await User.create({ firebaseUid: "fb-admin-9", email: "admin9@codeclub.test", role: "admin" });
       const college = await College.findByDomain("established.ac.in");
       await approveTpo({ params: { collegeId: college._id.toString() }, userDoc: admin, log: mockLog() }, mockRes());
+      await approveTpoUser(
+        { params: { userId: first._id.toString() }, userDoc: admin, log: mockLog() },
+        mockRes()
+      );
 
       const second = await seedStudent({ email: "second@established.ac.in" });
       const res2 = mockRes();
