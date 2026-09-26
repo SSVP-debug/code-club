@@ -15,6 +15,7 @@ import User from "../models/User.js";
 import { logger } from "../config/logger.js";
 import { recordAdminAction } from "../services/adminAuditLog.js";
 import { looksLikeEmailAddress } from "../utils/collegeNameHeuristics.js";
+import { sanitizeRolePatternRules } from "../services/tpoRoleSignalService.js";
 
 // ── GET /api/admin/colleges ──────────────────────────────────────────────────
 // Lists every college (not just pending ones — that's getPendingQueue's job)
@@ -86,6 +87,8 @@ export async function getColleges(req, res) {
         return {
           id: college._id,
           name: college.name,
+          staffEmailPatterns: college.staffEmailPatterns || [],
+          studentEmailPatterns: college.studentEmailPatterns || [],
           domains: college.domains,
           website: college.website,
           status: college.status,
@@ -171,5 +174,60 @@ export async function renameCollege(req, res) {
   } catch (err) {
     logger.error({ err }, "[Admin] rename college error");
     return res.status(500).json({ error: "Failed to rename college." });
+  }
+}
+
+/**
+ * PATCH /api/admin/colleges/:collegeId/email-role-patterns
+ *
+ * College-specific email patterns are advisory evidence only. They help
+ * classify an authenticated institutional email as staff_candidate,
+ * student_candidate, ambiguous, or unknown; they never grant TPO access.
+ */
+export async function updateEmailRolePatterns(req, res) {
+  try {
+    const { collegeId } = req.params;
+    const { staffEmailPatterns, studentEmailPatterns } = req.body || {};
+
+    if (!Array.isArray(staffEmailPatterns) || !Array.isArray(studentEmailPatterns)) {
+      return res.status(400).json({
+        error: "staffEmailPatterns and studentEmailPatterns must both be arrays.",
+      });
+    }
+
+    const staff = sanitizeRolePatternRules(staffEmailPatterns);
+    const students = sanitizeRolePatternRules(studentEmailPatterns);
+
+    const college = await College.findById(collegeId);
+    if (!college) return res.status(404).json({ error: "College not found." });
+
+    college.staffEmailPatterns = staff;
+    college.studentEmailPatterns = students;
+    await college.save();
+
+    recordAdminAction({
+      adminDoc: req.actingAdminDoc || req.userDoc,
+      action: "college.email_role_patterns.update",
+      targetType: "College",
+      targetId: college._id,
+      details: {
+        staffRuleCount: staff.length,
+        studentRuleCount: students.length,
+      },
+    });
+
+    return res.json({
+      success: true,
+      college: {
+        id: college._id,
+        name: college.name,
+        domains: college.domains,
+        staffEmailPatterns: college.staffEmailPatterns,
+        studentEmailPatterns: college.studentEmailPatterns,
+      },
+    });
+  } catch (err) {
+    logger.error({ err }, "[Admin] update college email-role patterns error");
+    return res.status(500).json({ error: "Failed to update college email-role patterns." });
   }
 }

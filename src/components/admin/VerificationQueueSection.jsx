@@ -95,8 +95,8 @@ function VerificationQueueSection({ heading, loading, emptyLabel, items, busyIds
                 evidenceHint={row.evidenceHint}
                 evidence={row.evidence}
                 busy={busyIds[row.id]}
-                onApprove={() => onApprove(row.id)}
-                onReject={() => onReject(row.id)}
+                onApprove={() => onApprove(row.actionTarget ?? row.id)}
+                onReject={() => onReject(row.actionTarget ?? row.id)}
               />
             );
           })}

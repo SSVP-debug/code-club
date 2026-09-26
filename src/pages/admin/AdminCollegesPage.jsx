@@ -53,6 +53,7 @@ export default function AdminCollegesPage() {
     searchInput,
     setSearchInput,
     renameCollege,
+    updateEmailRolePatterns,
   } = useAdminColleges();
 
   const selectedCollege = colleges.find((c) => c.id === selectedCollegeId) || null;
@@ -212,6 +213,7 @@ export default function AdminCollegesPage() {
         onClose={() => setSelectedCollegeId(null)}
         onViewStudents={viewStudents}
         onRename={renameCollege}
+        onSaveEmailRolePatterns={updateEmailRolePatterns}
       />
     </>
   );

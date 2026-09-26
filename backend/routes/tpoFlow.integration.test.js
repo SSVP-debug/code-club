@@ -14,7 +14,7 @@ const { default: User } = await import("../models/User.js");
 const { default: College } = await import("../models/College.js");
 const { requireRole } = await import("../middleware/roleGuard.js");
 const { requireVerified } = await import("../middleware/requireVerified.js");
-const { approveTpo, rejectTpo } = await import("../controllers/adminController.js");
+const { approveTpo, rejectTpo, approveTpoUser } = await import("../controllers/adminController.js");
 const { claimPrimaryIfNone, transferPrimary } = await import("../services/tpoTeamService.js");
 
 function extractRegisterHandler() {
@@ -200,9 +200,11 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
       res2
     );
 
-    expect(res2._json.status).toBe("verified");
+    expect(res2._json.status).toBe("pending");
+    expect(res2._json.verified).toBe(false);
     const reloadedSecond = await User.findById(secondUser._id);
-    expect(reloadedSecond.tpoProfile.verified).toBe(true);
+    expect(reloadedSecond.tpoProfile.verified).toBe(false);
+    expect(reloadedSecond.tpoVerification.status).toBe("pending");
   });
 
   // ── Role/profile isolation regression coverage ──────────────────────────
@@ -266,7 +268,7 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
 
   // ── Phase 3: primary TPO claim, real Mongo ──────────────────────────────
   describe("primary TPO claim (real Mongo)", () => {
-    it("the first auto-verified TPO on a brand-new domain becomes primary immediately", async () => {
+    it("a newly registered TPO never becomes primary before individual verification", async () => {
       const user = await seedStudent({ email: "founder@new-domain.ac.in" });
       const res = mockRes();
 

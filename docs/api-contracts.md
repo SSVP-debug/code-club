@@ -167,3 +167,16 @@ Institution subscription enforcement is controlled by `B2B_BILLING_ENABLED`, ind
 | POST | `/api/tpo/billing/verify` | Verifies Razorpay HMAC, order metadata, amount/currency, and payment identity before activating the college plan. |
 
 Current launch catalog is maintained in `config/featureFlags.js` as `B2B_PRICING`. Institution checkout is backed by the shared Razorpay webhook endpoint (`/api/billing/webhook`) using `billingType: "institution"` and a separate `RAZORPAY_B2B_WEBHOOK_SECRET` when configured. Webhook delivery is idempotent via Razorpay's `x-razorpay-event-id`; failed processing is left retryable.
+
+
+### TPO email-role verification
+
+College email-role patterns are institution-specific advisory evidence. They may classify an authenticated institutional email as `staff_candidate`, `student_candidate`, `ambiguous`, or `unknown`; they never grant TPO authorization.
+
+| Method | Path | Purpose |
+|---|---|---|
+| PATCH | `/api/admin/colleges/:collegeId/email-role-patterns` | Admin-only configuration of staff/student email patterns for a college. |
+| POST | `/api/admin/tpo-verification/:userId/approve` | Admin-only approval of an individual pending TPO request after the college is verified. |
+| POST | `/api/admin/tpo-verification/:userId/reject` | Admin-only rejection of an individual pending TPO request. |
+
+TPO registration keeps the requester pending even when the institution itself is already recognized. This separates **institution trust** from **individual TPO authorization**. Student/staff email patterns are evidence shown to the reviewer, not an authorization shortcut.

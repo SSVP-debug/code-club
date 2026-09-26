@@ -84,7 +84,8 @@ export default function AdminOverviewPage() {
               items={tpos}
               busyIds={busyIds}
               getRow={(t) => ({
-                id: t.collegeId,
+                id: t.userId || t.collegeId,
+                actionTarget: t.reviewTarget === "user" ? t : undefined,
                 title: t.collegeName,
                 subtitle: t.requestedBy?.displayName || t.requestedBy?.email || "Unknown requester",
                 meta: `${(t.domains || []).join(", ")} · requested ${formatDate(t.requestedAt)}`,

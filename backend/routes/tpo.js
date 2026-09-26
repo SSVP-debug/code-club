@@ -117,7 +117,7 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    const autoVerified =
+    const collegeAutoVerified =
       (existingCollege?.status === "verified" && !existingIsAutoPlaceholder) ||
       (await isDomainAutoVerified(domain, "college"));
 
@@ -130,8 +130,8 @@ router.post("/register", async (req, res) => {
       collegeDoc = await College.create({
         domains: [domain],
         name: collegeName.trim(),
-        status: autoVerified ? "verified" : "pending",
-        verifiedAt: autoVerified ? now : null,
+        status: collegeAutoVerified ? "verified" : "pending",
+        verifiedAt: collegeAutoVerified ? now : null,
         submittedBy: req.userDoc._id,
         submittedByRole: "tpo",
       });
@@ -145,8 +145,8 @@ router.post("/register", async (req, res) => {
         submittedByRole: existingCollege.submittedByRole,
       };
       existingCollege.name = collegeName.trim();
-      existingCollege.status = autoVerified ? "verified" : "pending";
-      existingCollege.verifiedAt = autoVerified ? now : null;
+      existingCollege.status = collegeAutoVerified ? "verified" : "pending";
+      existingCollege.verifiedAt = collegeAutoVerified ? now : null;
       existingCollege.submittedBy = req.userDoc._id;
       existingCollege.submittedByRole = "tpo";
       await existingCollege.save();
@@ -160,12 +160,14 @@ router.post("/register", async (req, res) => {
     req.userDoc.tpoProfile = {
       collegeDomain: domain,
       collegeName: collegeName.trim(),
-      verified: autoVerified,
+      // College recognition and individual TPO authorization are separate.
+      // A requester stays pending until an admin reviews the TPO identity.
+      verified: false,
       requestedAt: now,
-      verifiedAt: autoVerified ? now : null,
+      verifiedAt: null,
     };
     req.userDoc.tpoVerification = {
-      status: autoVerified ? "approved" : "pending",
+      status: "pending",
       emailRoleSignal: emailRoleClassification,
       submittedEmail: email,
       submittedAt: now,
@@ -203,32 +205,27 @@ router.post("/register", async (req, res) => {
       throw err;
     }
 
-    let isPrimary = false;
-    if (autoVerified && collegeDoc) {
-      try {
-        isPrimary = await claimPrimaryIfNone(collegeDoc._id, req.userDoc._id);
-      } catch (err) {
-        (req.log || logger).error(
-          { err, collegeId: collegeDoc._id, userId: req.userDoc._id },
-          "[TPO] register: primary claim failed after successful registration"
-        );
-      }
-    }
+    // Primary TPO authority is assigned only after individual TPO approval.
+    const isPrimary = false;
 
     return res.status(201).json({
       success: true,
       role: "tpo",
-      verified: autoVerified,
-      status: autoVerified ? "verified" : "pending",
+      // A verified college does not automatically make the requester a
+      // verified TPO. The reviewer must approve the individual TPO request.
+      verified: false,
+      status: "pending",
       isPrimary,
       emailRoleSignal: emailRoleClassification,
       verification: {
-        status: autoVerified ? "approved" : "pending",
+        // Individual TPO authorization always requires human verification.
+        // College/domain trust and TPO role verification are separate facts.
+        status: "pending",
         additionalEvidenceRecommended:
           emailRoleClassification !== "staff_candidate",
       },
-      message: autoVerified
-        ? "Your college is verified. You're all set — head to your dashboard."
+      message: collegeAutoVerified
+        ? "Your college is recognized. Your TPO access request is now waiting for individual verification."
         : "Your college registration request has been submitted for verification.",
     });
   } catch (err) {

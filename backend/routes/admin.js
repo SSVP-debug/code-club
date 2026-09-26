@@ -7,6 +7,8 @@ import {
   rejectRecruiter,
   approveTpo,
   rejectTpo,
+  approveTpoUser,
+  rejectTpoUser,
   approveStudentCollege,
   rejectStudentCollege,
   listUsers,
@@ -20,7 +22,7 @@ import {
   startImpersonation,
   stopImpersonation,
 } from "../controllers/adminController.js";
-import { getColleges, renameCollege } from "../controllers/collegeController.js";
+import { getColleges, renameCollege, updateEmailRolePatterns } from "../controllers/collegeController.js";
 import {
   listProblemsForAdmin,
   getProblemForAdmin,
@@ -107,6 +109,8 @@ router.post("/recruiters/:id/approve", requireAdmin, approveRecruiter);
 router.post("/recruiters/:id/reject", requireAdmin, rejectRecruiter);
 router.post("/tpo/:collegeId/approve", requireAdmin, approveTpo);
 router.post("/tpo/:collegeId/reject", requireAdmin, rejectTpo);
+router.post("/tpo-verification/:userId/approve", requireAdmin, approveTpoUser);
+router.post("/tpo-verification/:userId/reject", requireAdmin, rejectTpoUser);
 router.post("/student-colleges/:collegeId/approve", requireAdmin, approveStudentCollege);
 router.post("/student-colleges/:collegeId/reject", requireAdmin, rejectStudentCollege);
 
@@ -116,6 +120,7 @@ router.get("/users", requireAdmin, listUsers);
 // ── Colleges ─────────────────────────────────────────────────────────────────
 router.get("/colleges", requireAdmin, getColleges);
 router.patch("/colleges/:collegeId", requireAdmin, renameCollege);
+router.patch("/colleges/:collegeId/email-role-patterns", requireAdmin, updateEmailRolePatterns);
 // NOTE: order matters here. "/impersonate/stop" must be registered before
 // the parameterized "/impersonate/:userId" — Express matches routes in
 // registration order, and :userId matches the literal segment "stop" too.
