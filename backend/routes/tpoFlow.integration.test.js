@@ -116,7 +116,7 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
     expect(outcome).toBe("role");
   });
 
-  it("admin approval of a pending TPO's college verifies BOTH the College doc and the submitting user's tpoProfile", async () => {
+  it("admin approval of a pending TPO's college verifies only the College doc; individual TPO approval remains separate", async () => {
     const user = await seedStudent({ email: "tposignup2@unrecognized-college.ac.in" });
     await registerHandler(
       { userDoc: user, log: mockLog(), body: { collegeName: "Unrecognized College 2" } },
@@ -132,9 +132,22 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
     expect(reloadedCollege.status).toBe("verified");
 
     const reloadedUser = await User.findById(user._id);
-    expect(reloadedUser.tpoProfile.verified).toBe(true);
+    expect(reloadedUser.tpoProfile.verified).toBe(false);
+    expect(reloadedUser.tpoVerification.status).toBe("pending");
 
-    const gateOutcome = await runTpoOnlyGate({ userDoc: reloadedUser });
+    const pendingGateOutcome = await runTpoOnlyGate({ userDoc: reloadedUser });
+    expect(pendingGateOutcome).toBe("verification");
+
+    await approveTpoUser(
+      { params: { userId: user._id.toString() }, userDoc: admin, log: mockLog() },
+      mockRes()
+    );
+
+    const approvedUser = await User.findById(user._id);
+    expect(approvedUser.tpoProfile.verified).toBe(true);
+    expect(approvedUser.tpoVerification.status).toBe("approved");
+
+    const gateOutcome = await runTpoOnlyGate({ userDoc: approvedUser });
     expect(gateOutcome).toBe("allowed");
   });
 
@@ -401,6 +414,11 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
       const admin = await User.create({ firebaseUid: "fb-admin-10", email: "admin10@codeclub.test", role: "admin" });
       const college = await College.findByDomain("deletetest.ac.in");
       await approveTpo({ params: { collegeId: college._id.toString() }, userDoc: admin, log: mockLog() }, mockRes());
+
+      await approveTpoUser(
+        { params: { userId: first._id.toString() }, userDoc: admin, log: mockLog() },
+        mockRes()
+      );
 
       const reloadedFirst = await User.findById(first._id);
       const reloadedCollege = await College.findById(college._id);
