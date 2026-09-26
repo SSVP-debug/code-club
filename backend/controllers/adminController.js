@@ -93,13 +93,6 @@ export async function getPendingQueue(req, res) {
       (u) => !pendingCollegeRequesterIds.has(u._id.toString())
     );
 
-    const pendingCollegeRequesterIds = new Set(
-      tpoColleges.map((c) => c.submittedBy?._id?.toString()).filter(Boolean)
-    );
-    const individualTpoRequests = pendingTpoUsers.filter(
-      (u) => !pendingCollegeRequesterIds.has(u._id.toString())
-    );
-
     const studentColleges = pendingColleges.filter(
       (c) => c.submittedByRole === "student" || c.submittedByRole === "auto"
     );
