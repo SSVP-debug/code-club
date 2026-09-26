@@ -66,18 +66,25 @@ export function useAdminVerificationQueue() {
     }
   }
 
-  async function actOnTpo(collegeId, action) {
-    setBusyIds((b) => ({ ...b, [collegeId]: action }));
+  async function actOnTpo(itemOrId, action) {
+    const item = typeof itemOrId === "object" ? itemOrId : { collegeId: itemOrId };
+    const key = item.userId || item.collegeId;
+    setBusyIds((b) => ({ ...b, [key]: action }));
     try {
-      await apiFetch(`/api/admin/tpo/${collegeId}/${action}`, { method: "POST" });
-      setTpos((list) => list.filter((t) => t.collegeId !== collegeId));
-      toast.success(action === "approve" ? "College verified." : "TPO request rejected.");
+      if (item.reviewTarget === "user") {
+        await apiFetch(`/api/admin/tpo-verification/${item.userId}/${action}`, { method: "POST" });
+        setTpos((list) => list.filter((t) => t.userId !== item.userId));
+      } else {
+        await apiFetch(`/api/admin/tpo/${item.collegeId}/${action}`, { method: "POST" });
+        setTpos((list) => list.filter((t) => t.collegeId !== item.collegeId));
+      }
+      toast.success(action === "approve" ? "TPO verification approved." : "TPO request rejected.");
     } catch (err) {
       toast.error(err.message || `Failed to ${action} TPO request.`);
     } finally {
       setBusyIds((b) => {
         const next = { ...b };
-        delete next[collegeId];
+        delete next[key];
         return next;
       });
     }
