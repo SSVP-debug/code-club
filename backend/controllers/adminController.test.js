@@ -71,6 +71,8 @@ import {
     rejectRecruiter,
     approveTpo,
     rejectTpo,
+    approveTpoUser,
+    rejectTpoUser,
     approveStudentCollege,
     rejectStudentCollege,
     listUsers,
@@ -1198,5 +1200,69 @@ describe("adminController", () => {
 
             expect(res.status).toHaveBeenCalledWith(500);
         });
+    });
+});
+
+describe("individual TPO verification", () => {
+    it("approves a pending TPO only when its college is already verified", async () => {
+        const user = makeUser({
+            _id: "t1",
+            role: "tpo",
+            roles: ["student", "tpo"],
+            email: "prof@staff.mit.edu",
+            firebaseUid: "fb-t1",
+            tpoProfile: {
+                collegeDomain: "staff.mit.edu",
+                collegeName: "MIT",
+                verified: false,
+                requestedAt: new Date(),
+                verifiedAt: null,
+            },
+            tpoVerification: {
+                status: "pending",
+                emailRoleSignal: "staff_candidate",
+                submittedEmail: "prof@staff.mit.edu",
+                evidence: [],
+            },
+        });
+        const college = { _id: "c1", name: "MIT", status: "verified", domains: ["staff.mit.edu"], };
+        User.findById.mockResolvedValueOnce(user);
+        College.findByDomain.mockResolvedValueOnce(college);
+        claimPrimaryIfNone.mockResolvedValueOnce(true);
+
+        await approveTpoUser({ params: { userId: "t1" }, userDoc: makeAdmin() }, res);
+
+        expect(user.tpoProfile.verified).toBe(true);
+        expect(user.tpoVerification.status).toBe("approved");
+        expect(user.save).toHaveBeenCalled();
+        expect(TpoVerificationReview.create).toHaveBeenCalledWith(
+            expect.objectContaining({ userId: "t1", collegeId: "c1", decision: "approved" })
+        );
+    });
+
+    it("rejects an individual pending TPO without deleting the college", async () => {
+        const user = makeUser({
+            _id: "t2",
+            role: "tpo",
+            roles: ["student", "tpo"],
+            tpoProfile: {
+                collegeDomain: "mit.edu",
+                collegeName: "MIT",
+                verified: false,
+                requestedAt: new Date(),
+                verifiedAt: null,
+            },
+            tpoVerification: { status: "pending", emailRoleSignal: "student_candidate", evidence: [] },
+        });
+        User.findById.mockResolvedValueOnce(user);
+        College.findByDomain.mockResolvedValueOnce({ _id: "c1", name: "MIT", status: "verified", domains: ["mit.edu"] });
+
+        await rejectTpoUser({ params: { userId: "t2" }, userDoc: makeAdmin() }, res);
+
+        expect(user.roles).toEqual(["student"]);
+        expect(user.role).toBe("student");
+        expect(user.tpoVerification.status).toBe("rejected");
+        expect(College.deleteOne).not.toHaveBeenCalled();
+        expect(user.save).toHaveBeenCalled();
     });
 });
