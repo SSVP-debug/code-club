@@ -169,6 +169,7 @@ describe("adminController", () => {
                     },
                 ])
             );
+            User.find.mockReturnValueOnce(chainableQuery([]));
 
             const req = {};
             await getPendingQueue(req, res);
