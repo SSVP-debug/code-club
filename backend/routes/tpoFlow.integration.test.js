@@ -14,7 +14,7 @@ const { default: User } = await import("../models/User.js");
 const { default: College } = await import("../models/College.js");
 const { requireRole } = await import("../middleware/roleGuard.js");
 const { requireVerified } = await import("../middleware/requireVerified.js");
-const { approveTpo, rejectTpo } = await import("../controllers/adminController.js");
+const { approveTpo, rejectTpo, approveTpoUser } = await import("../controllers/adminController.js");
 const { claimPrimaryIfNone, transferPrimary } = await import("../services/tpoTeamService.js");
 
 function extractRegisterHandler() {
