@@ -162,38 +162,14 @@ describe("POST /register — TPO-1 hardening: partial-failure handling", () => {
     });
   });
 
-  describe("primary-claim graceful degradation", () => {
-    it("still returns 201 success with isPrimary: false when claimPrimaryIfNone throws after a successful save", async () => {
-      College.findByDomain.mockResolvedValueOnce({
-        _id: "college-id",
-        status: "verified", // autoVerified = true without touching isDomainAutoVerified
-        submittedByRole: "tpo",
-        domains: ["newcollege.ac.in"],
-      });
-      claimPrimaryIfNone.mockRejectedValueOnce(new Error("CAS write boom"));
-
-      const userDoc = makeUserDoc();
-      const res = mockRes();
-
-      await registerHandler(
-        { userDoc, log: mockLog(), body: { collegeName: "New College" } },
-        res
-      );
-
-      expect(userDoc.save).toHaveBeenCalledOnce(); // core registration succeeded
-      expect(claimPrimaryIfNone).toHaveBeenCalledOnce();
-      expect(res._status).toBe(201);
-      expect(res._json).toEqual(expect.objectContaining({ success: true, isPrimary: false }));
-    });
-
-    it("reports isPrimary: true normally when the claim succeeds", async () => {
+  describe("individual verification boundary", () => {
+    it("never claims primary during registration, even when the college is already verified", async () => {
       College.findByDomain.mockResolvedValueOnce({
         _id: "college-id",
         status: "verified",
         submittedByRole: "tpo",
         domains: ["newcollege.ac.in"],
       });
-      claimPrimaryIfNone.mockResolvedValueOnce(true);
 
       const userDoc = makeUserDoc();
       const res = mockRes();
@@ -203,11 +179,22 @@ describe("POST /register — TPO-1 hardening: partial-failure handling", () => {
         res
       );
 
-      expect(res._json).toEqual(expect.objectContaining({ success: true, isPrimary: true }));
+      expect(userDoc.save).toHaveBeenCalledOnce();
+      expect(claimPrimaryIfNone).not.toHaveBeenCalled();
+      expect(userDoc.tpoProfile.verified).toBe(false);
+      expect(userDoc.tpoVerification.status).toBe("pending");
+      expect(res._status).toBe(201);
+      expect(res._json).toEqual(expect.objectContaining({
+        success: true,
+        verified: false,
+        isPrimary: false,
+        status: "pending",
+      }));
     });
 
-    it("never attempts a primary claim on the pending (non-auto-verified) path", async () => {
-      College.findByDomain.mockResolvedValueOnce(null); // brand-new, unrecognized domain → pending
+    it("keeps an unrecognized college and TPO request pending", async () => {
+      College.findByDomain.mockResolvedValueOnce(null);
+      College.create.mockResolvedValueOnce({ _id: "new-college-id" });
 
       const userDoc = makeUserDoc();
       const res = mockRes();
@@ -218,7 +205,12 @@ describe("POST /register — TPO-1 hardening: partial-failure handling", () => {
       );
 
       expect(claimPrimaryIfNone).not.toHaveBeenCalled();
-      expect(res._json).toEqual(expect.objectContaining({ success: true, isPrimary: false, status: "pending" }));
+      expect(res._json).toEqual(expect.objectContaining({
+        success: true,
+        verified: false,
+        isPrimary: false,
+        status: "pending",
+      }));
     });
-  });
+  });;
 });
