@@ -140,8 +140,10 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    const emailRoleSignal = buildTpoVerificationSignal(email, collegeDoc || existingCollege || {});
-    const emailRoleClassification = emailRoleSignal.result;
+    // Role classification is advisory and must use the resolved college rules.
+    // For a new college, there are no configured staff/student patterns yet,
+    // so the classification correctly remains unknown until an admin configures them.
+    let emailRoleClassification = "unknown";
 
     // A matching student signal is deliberately not an automatic rejection:
     // people can legitimately hold multiple institutional responsibilities
@@ -149,6 +151,11 @@ router.post("/register", async (req, res) => {
     // evidence trail explicit for the reviewer.
 
     const now = new Date();
+    if (collegeDoc || existingCollege) {
+      const signal = buildTpoVerificationSignal(email, collegeDoc || existingCollege);
+      emailRoleClassification = signal.result;
+    }
+
     // Hybrid verification (Phase B): known college domains — including one
     // already verified via an earlier TPO from the same college — skip the
     // queue. Everything else is created pending and shows up in
