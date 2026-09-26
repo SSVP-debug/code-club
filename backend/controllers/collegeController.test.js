@@ -183,8 +183,8 @@ describe("collegeController", () => {
             expect(res.status).toHaveBeenCalledWith(500);
         });
     });
-});
-describe("updateEmailRolePatterns", () => {
+
+    describe("updateEmailRolePatterns", () => {
     it("sanitizes and persists staff/student rules separately", async () => {
         const college = {
             _id: "c1",
@@ -223,5 +223,6 @@ describe("updateEmailRolePatterns", () => {
             res
         );
         expect(res.status).toHaveBeenCalledWith(400);
+    });
     });
 });
