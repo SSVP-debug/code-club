@@ -304,7 +304,7 @@ export async function approveTpo(req, res) {
       }).catch(() => {});
     }
 
-    return res.json({ success: true, reviewed: pendingCandidates.length });
+    return res.json({ success: true });
   } catch (err) {
     logger.error({ err }, "[Admin] approve TPO error");
     return res.status(500).json({ error: "Failed to approve TPO." });
@@ -321,7 +321,7 @@ export async function rejectTpo(req, res) {
     const requesterId = college.submittedBy;
     const collegeName = college.name;
     const requester = requesterId
-      ? await User.findById(requesterId).select("email firebaseUid role tpoVerification")
+      ? await User.findById(requesterId)
       : null;
 
     const reviewerId = req.actingAdminDoc?._id || req.userDoc?._id;
@@ -355,7 +355,7 @@ export async function rejectTpo(req, res) {
       targetId: college._id,
     });
 
-    if (requester) {
+    if (requester && requester.role === "tpo") {
       requester.revokeRole("tpo");
       requester.role = "student";
       requester.tpoProfile = {
