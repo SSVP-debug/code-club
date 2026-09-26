@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import { Plus, Trash2 } from "lucide-react";
 import Button from "../ui/Button";
 
@@ -62,6 +63,9 @@ export default function CollegeEmailRoleRules({ staffRules, studentRules, onSave
     setSaving(true);
     try {
       await onSave(rules.staff, rules.student);
+      toast.success("Email role patterns saved.");
+    } catch (err) {
+      toast.error(err.message || "Failed to save email role patterns.");
     } finally {
       setSaving(false);
     }
