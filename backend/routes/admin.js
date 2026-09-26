@@ -20,7 +20,7 @@ import {
   startImpersonation,
   stopImpersonation,
 } from "../controllers/adminController.js";
-import { getColleges, renameCollege } from "../controllers/collegeController.js";
+import { getColleges, renameCollege, updateEmailRolePatterns } from "../controllers/collegeController.js";
 import {
   listProblemsForAdmin,
   getProblemForAdmin,
@@ -116,6 +116,7 @@ router.get("/users", requireAdmin, listUsers);
 // ── Colleges ─────────────────────────────────────────────────────────────────
 router.get("/colleges", requireAdmin, getColleges);
 router.patch("/colleges/:collegeId", requireAdmin, renameCollege);
+router.patch("/colleges/:collegeId/email-role-patterns", requireAdmin, updateEmailRolePatterns);
 // NOTE: order matters here. "/impersonate/stop" must be registered before
 // the parameterized "/impersonate/:userId" — Express matches routes in
 // registration order, and :userId matches the literal segment "stop" too.
