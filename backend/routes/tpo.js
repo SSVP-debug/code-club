@@ -205,17 +205,8 @@ router.post("/register", async (req, res) => {
       throw err;
     }
 
-    let isPrimary = false;
-    if (collegeAutoVerified && collegeDoc) {
-      try {
-        isPrimary = await claimPrimaryIfNone(collegeDoc._id, req.userDoc._id);
-      } catch (err) {
-        (req.log || logger).error(
-          { err, collegeId: collegeDoc._id, userId: req.userDoc._id },
-          "[TPO] register: primary claim failed after successful registration"
-        );
-      }
-    }
+    // Primary TPO authority is assigned only after individual TPO approval.
+    const isPrimary = false;
 
     return res.status(201).json({
       success: true,
