@@ -203,6 +203,14 @@ router.post("/register", async (req, res) => {
       await existingCollege.save();
     }
 
+    const signal = buildTpoVerificationSignal(email, collegeDoc || existingCollege || {});
+    emailRoleClassification = signal.result;
+
+    // A matching student signal is deliberately not an automatic rejection:
+    // people can legitimately hold multiple institutional responsibilities
+    // and local mailbox conventions are advisory. It simply makes the
+    // evidence trail explicit for the reviewer.
+
     // Mark user as TPO. Previously this dropped collegeDomain/collegeName
     // entirely — tpoProfile only ever got verificationStatus (not even a
     // real schema field) + verified + requestedAt, so every TPO's own
