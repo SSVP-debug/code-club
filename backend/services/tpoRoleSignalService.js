@@ -143,31 +143,36 @@ export function sanitizeRolePatternRules(rules) {
   const sanitized = [];
 
   for (const rule of rules.slice(0, MAX_RULES)) {
-    if (!isValidRolePatternRule(rule)) continue;
+    if (!rule || typeof rule !== "object") continue;
 
     const type = String(rule.type || "").toLowerCase().trim();
+
+    if (type === "local_prefix") {
+      // Sanitization intentionally removes empty entries before validation.
+      // An otherwise valid rule such as ["faculty.", ""] must remain usable;
+      // the empty string is configuration noise, not a reason to discard the
+      // whole rule.
+      const values = Array.isArray(rule.values)
+        ? rule.values
+            .filter((value) => typeof value === "string")
+            .map((value) => value.toLowerCase().trim())
+            .filter(Boolean)
+            .slice(0, MAX_RULES)
+        : [];
+
+      if (!isValidRolePatternRule({ type, values })) continue;
+
+      sanitized.push({ type, values });
+      continue;
+    }
+
+    if (!isValidRolePatternRule(rule)) continue;
 
     if (type === "domain") {
       sanitized.push({
         type,
         value: rule.value.toLowerCase().trim(),
       });
-      continue;
-    }
-
-    if (type === "local_prefix") {
-      // Empty prefix entries are harmless configuration noise and should be
-      // removed during sanitization rather than invalidating the entire rule.
-      // Validation stays strict for callers that validate an unsanitized rule.
-      const values = rule.values
-        .filter((value) => typeof value === "string")
-        .map((value) => value.toLowerCase().trim())
-        .filter(Boolean)
-        .slice(0, MAX_RULES);
-
-      if (values.length === 0) continue;
-
-      sanitized.push({ type, values });
       continue;
     }
 
