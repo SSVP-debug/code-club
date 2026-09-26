@@ -58,11 +58,7 @@ export async function getPendingQueue(req, res) {
         .sort({ createdAt: 1 })
         .lean(),
       User.find(
-        {
-          role: "tpo",
-          "tpoProfile.verified": false,
-          "tpoVerification.status": "pending",
-        },
+        { role: "tpo", "tpoProfile.verified": false, "tpoVerification.status": "pending" },
         "email displayName tpoProfile tpoVerification createdAt"
       )
         .sort({ "tpoProfile.requestedAt": 1, createdAt: 1 })
@@ -120,23 +116,20 @@ export async function getPendingQueue(req, res) {
           evidence: applicant?.tpoVerification?.evidence || [],
         };
         }),
-        ...individualTpoRequests.map((u) => {
-          const signal = u.tpoVerification?.emailRoleSignal || "unknown";
-          return {
-            userId: u._id,
-            collegeId: null,
-            collegeName: u.tpoProfile?.collegeName || "Unknown college",
-            domain: u.tpoProfile?.collegeDomain,
-            domains: u.tpoProfile?.collegeDomain ? [u.tpoProfile.collegeDomain] : [],
-            requestedBy: { email: u.email, displayName: u.displayName },
-            requestedAt: u.tpoVerification?.submittedAt || u.tpoProfile?.requestedAt || u.createdAt,
-            emailRoleSignal: signal,
-            verificationStatus: u.tpoVerification?.status || "pending",
-            additionalEvidenceRecommended: signal !== "staff_candidate",
-            evidence: u.tpoVerification?.evidence || [],
-            reviewTarget: "user",
-          };
-        }),
+        ...individualTpoRequests.map((u) => ({
+          userId: u._id,
+          collegeId: null,
+          collegeName: u.tpoProfile?.collegeName || "Unknown college",
+          domain: u.tpoProfile?.collegeDomain,
+          domains: u.tpoProfile?.collegeDomain ? [u.tpoProfile.collegeDomain] : [],
+          requestedBy: { email: u.email, displayName: u.displayName },
+          requestedAt: u.tpoVerification?.submittedAt || u.tpoProfile?.requestedAt || u.createdAt,
+          emailRoleSignal: u.tpoVerification?.emailRoleSignal || "unknown",
+          verificationStatus: u.tpoVerification?.status || "pending",
+          additionalEvidenceRecommended: (u.tpoVerification?.emailRoleSignal || "unknown") !== "staff_candidate",
+          evidence: u.tpoVerification?.evidence || [],
+          reviewTarget: "user",
+        })),
       ],
       studentCollegeRequests: studentColleges.map((c) => ({
         collegeId: c._id,
@@ -267,13 +260,65 @@ export async function approveTpo(req, res) {
     const college = await setCollegeStatus(req.params.collegeId, "verified");
     if (!college) return res.status(404).json({ error: "College request not found." });
 
-    // Institution approval and individual TPO authorization are separate
-    // decisions. Do not promote every requester attached to the domain here.
-    // Their individual pending TPO request is surfaced in the verification
-    // queue and must be explicitly approved by an admin.
+    const pendingCandidates = await User.find({
+      role: "tpo",
+      "tpoProfile.collegeDomain": { $in: college.domains },
+      "tpoProfile.verified": false,
+    })
+      .sort({ "tpoProfile.requestedAt": 1, _id: 1 })
+      .select("_id firebaseUid email tpoVerification")
+      .lean();
+
+    await User.updateMany(
+      { role: "tpo", "tpoProfile.collegeDomain": { $in: college.domains }, "tpoProfile.verified": false },
+      {
+        $set: {
+          "tpoProfile.verified": true,
+          "tpoProfile.verifiedAt": college.verifiedAt,
+          "tpoVerification.status": "approved",
+        },
+      }
+    );
+
+    pendingCandidates.forEach((u) => invalidateCachedUserByFirebaseUid(u.firebaseUid));
+
+    if (pendingCandidates.length > 0) {
+      try {
+        await claimPrimaryIfNone(college._id, pendingCandidates[0]._id);
+      } catch (err) {
+        logger.error({ err, collegeId: college._id }, "[Admin] approveTpo primary claim failed");
+      }
+    }
+
+    const reviewerId = req.actingAdminDoc?._id || req.userDoc?._id;
+    if (reviewerId) {
+      try {
+        await Promise.all(
+          pendingCandidates.map((u) =>
+            TpoVerificationReview.create({
+              userId: u._id,
+              collegeId: college._id,
+              requestedEmail: u.tpoVerification?.submittedEmail || u.email || "",
+              emailRoleSignal: u.tpoVerification?.emailRoleSignal || "unknown",
+              evidence: u.tpoVerification?.evidence || [],
+              decision: "approved",
+              decisionReason: "Approved through the administrative TPO verification queue.",
+              reviewedBy: reviewerId,
+              reviewedAt: college.verifiedAt || new Date(),
+            })
+          )
+        );
+      } catch (err) {
+        logger.error(
+          { err, collegeId: college._id },
+          "[Admin] approveTpo: failed to persist verification review audit"
+        );
+      }
+    }
+
     recordAdminAction({
       adminDoc: req.actingAdminDoc || req.userDoc,
-      action: "tpo.college.approve",
+      action: "tpo.approve",
       targetType: "College",
       targetId: college._id,
     });
@@ -281,19 +326,20 @@ export async function approveTpo(req, res) {
     if (college.submittedBy) {
       createNotification({
         userId: college.submittedBy,
-        type: "tpo_college_verified",
-        title: "College verified",
-        message: college.name + " is verified. Your individual TPO access request still needs review.",
-        link: "/tpo/signup",
+        type: "tpo_verified",
+        title: "TPO access approved",
+        message: college.name + " is verified. Your placement dashboard is ready.",
+        link: "/tpo/dashboard",
       }).catch(() => {});
     }
 
     return res.json({ success: true });
   } catch (err) {
-    logger.error({ err }, "[Admin] approve TPO college error");
-    return res.status(500).json({ error: "Failed to approve TPO college." });
+    logger.error({ err }, "[Admin] approve TPO error");
+    return res.status(500).json({ error: "Failed to approve TPO." });
   }
 }
+
 
 // ── POST /api/admin/tpo/:collegeId/reject ───────────────────────────────────
 export async function rejectTpo(req, res) {
@@ -1038,18 +1084,12 @@ async function resolvePendingTpoCollege(user) {
 export async function approveTpoUser(req, res) {
   try {
     const user = await User.findById(req.params.userId);
-    if (!user || user.role !== "tpo") {
-      return res.status(404).json({ error: "TPO verification request not found." });
-    }
-    if (user.tpoProfile?.verified) {
-      return res.json({ success: true, alreadyVerified: true });
-    }
+    if (!user || user.role !== "tpo") return res.status(404).json({ error: "TPO verification request not found." });
+    if (user.tpoProfile?.verified) return res.json({ success: true, alreadyVerified: true });
 
     const college = await resolvePendingTpoCollege(user);
     if (!college || college.status !== "verified") {
-      return res.status(409).json({
-        error: "The TPO's college must be verified before individual TPO access can be approved.",
-      });
+      return res.status(409).json({ error: "The TPO's college must be verified before individual TPO access can be approved." });
     }
 
     const now = new Date();
@@ -1075,11 +1115,8 @@ export async function approveTpoUser(req, res) {
       logger.error({ err, userId: user._id }, "[Admin] approveTpoUser: audit write failed");
     }
 
-    try {
-      await claimPrimaryIfNone(college._id, user._id);
-    } catch (err) {
-      logger.error({ err, collegeId: college._id, userId: user._id }, "[Admin] approveTpoUser primary claim failed");
-    }
+    try { await claimPrimaryIfNone(college._id, user._id); }
+    catch (err) { logger.error({ err, collegeId: college._id, userId: user._id }, "[Admin] approveTpoUser primary claim failed"); }
 
     recordAdminAction({
       adminDoc: req.actingAdminDoc || req.userDoc,
@@ -1107,9 +1144,7 @@ export async function approveTpoUser(req, res) {
 export async function rejectTpoUser(req, res) {
   try {
     const user = await User.findById(req.params.userId);
-    if (!user || user.role !== "tpo") {
-      return res.status(404).json({ error: "TPO verification request not found." });
-    }
+    if (!user || user.role !== "tpo") return res.status(404).json({ error: "TPO verification request not found." });
 
     const college = await resolvePendingTpoCollege(user);
     const reviewerId = req.actingAdminDoc?._id || req.userDoc?._id;
@@ -1135,13 +1170,7 @@ export async function rejectTpoUser(req, res) {
 
     user.revokeRole("tpo");
     user.role = "student";
-    user.tpoProfile = {
-      collegeDomain: null,
-      collegeName: null,
-      verified: false,
-      requestedAt: null,
-      verifiedAt: null,
-    };
+    user.tpoProfile = { collegeDomain: null, collegeName: null, verified: false, requestedAt: null, verifiedAt: null };
     user.tpoVerification = { ...(user.tpoVerification || {}), status: "rejected" };
     await user.save();
     invalidateCachedUserByFirebaseUid(user.firebaseUid);
