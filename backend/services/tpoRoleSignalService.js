@@ -156,13 +156,18 @@ export function sanitizeRolePatternRules(rules) {
     }
 
     if (type === "local_prefix") {
-      sanitized.push({
-        type,
-        values: rule.values
-          .map((value) => value.toLowerCase().trim())
-          .filter(Boolean)
-          .slice(0, MAX_RULES),
-      });
+      // Empty prefix entries are harmless configuration noise and should be
+      // removed during sanitization rather than invalidating the entire rule.
+      // Validation stays strict for callers that validate an unsanitized rule.
+      const values = rule.values
+        .filter((value) => typeof value === "string")
+        .map((value) => value.toLowerCase().trim())
+        .filter(Boolean)
+        .slice(0, MAX_RULES);
+
+      if (values.length === 0) continue;
+
+      sanitized.push({ type, values });
       continue;
     }
 
