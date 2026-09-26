@@ -87,7 +87,10 @@ export default function AdminOverviewPage() {
                 id: t.collegeId,
                 title: t.collegeName,
                 subtitle: t.requestedBy?.displayName || t.requestedBy?.email || "Unknown requester",
-                meta: `${t.domain} · requested ${formatDate(t.requestedAt)}`,
+                meta: `${(t.domains || []).join(", ")} · requested ${formatDate(t.requestedAt)}`,
+                signal: t.emailRoleSignal,
+                evidenceHint: t.additionalEvidenceRecommended,
+                evidence: t.evidence,
               })}
               onApprove={(id) => actOnTpo(id, "approve")}
               onReject={(id) => actOnTpo(id, "reject")}
