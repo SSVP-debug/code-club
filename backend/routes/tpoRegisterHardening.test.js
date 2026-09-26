@@ -211,6 +211,8 @@ describe("POST /register — TPO-1 hardening: partial-failure handling", () => {
         isPrimary: false,
         status: "pending",
       }));
+    });
+
     it("records a student-candidate signal without silently rejecting the TPO request", async () => {
       College.findByDomain.mockResolvedValueOnce({
         _id: "college-id",
