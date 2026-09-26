@@ -37,6 +37,7 @@ import { computeReadinessScore } from "../utils/readiness.js";
 import multer from "multer";
 import { csvUpload } from "../middleware/csvUpload.js";
 import { getInstitutionSubscription } from "../services/institutionSubscriptionService.js";
+import { buildTpoVerificationSignal, classifyInstitutionalEmailRole } from "../services/tpoRoleSignalService.js";
 
 const TPO_CACHE_TTL_SECONDS = 2 * 60; // 2 minutes — matches profile cache TTL
 const TPO_CACHE_PREFIX = "tpo:";
@@ -103,8 +104,16 @@ router.post("/register", async (req, res) => {
 
     const email = req.userDoc.email || "";
     const domain = email.split("@")[1];
+    if (!domain) {
+      return res.status(400).json({
+        error: "Your account does not have a valid institutional email address.",
+      });
+    }
 
-    if (!domain || isConsumerEmailDomain(domain)) {
+    // Advisory only: never grants or denies TPO access. The resolved college
+    // rules are applied after the College document is known below.
+
+    if (isConsumerEmailDomain(domain)) {
       return res.status(400).json({
         error: "Please sign up with your institutional email (e.g. yourname@college.ac.in), not a personal email.",
       });
@@ -130,6 +139,14 @@ router.post("/register", async (req, res) => {
         status: existingCollege.status,
       });
     }
+
+    const emailRoleSignal = buildTpoVerificationSignal(email, collegeDoc || existingCollege || {});
+    const emailRoleClassification = emailRoleSignal.result;
+
+    // A matching student signal is deliberately not an automatic rejection:
+    // people can legitimately hold multiple institutional responsibilities
+    // and local mailbox conventions are advisory. It simply makes the
+    // evidence trail explicit for the reviewer.
 
     const now = new Date();
     // Hybrid verification (Phase B): known college domains — including one
@@ -198,6 +215,22 @@ router.post("/register", async (req, res) => {
       verified: autoVerified,
       requestedAt: now,
       verifiedAt: autoVerified ? now : null,
+    };
+
+    req.userDoc.tpoVerification = {
+      status: autoVerified ? "approved" : "pending",
+      emailRoleSignal: emailRoleClassification,
+      submittedEmail: email,
+      submittedAt: now,
+      evidence: [
+        {
+          kind: "email",
+          label: "Institutional sign-in email",
+          reference: null,
+          note: "Email ownership is established by the authenticated sign-in provider; role classification remains advisory.",
+          addedAt: now,
+        },
+      ],
     };
 
     // TPO-1 hardening: partial-failure handling. The College-side write
@@ -272,6 +305,11 @@ router.post("/register", async (req, res) => {
       verified: autoVerified,
       status: autoVerified ? "verified" : "pending",
       isPrimary,
+      emailRoleSignal: emailRoleClassification,
+      verification: {
+        status: autoVerified ? "approved" : "pending",
+        additionalEvidenceRecommended: !autoVerified || emailRoleClassification !== "staff_candidate",
+      },
       message: autoVerified
         ? "Your college is verified. You're all set — head to your dashboard."
         : "Your college registration request has been submitted for verification.",
