@@ -139,23 +139,40 @@ export function isValidRolePatternRule(rule) {
 
 export function sanitizeRolePatternRules(rules) {
   if (!Array.isArray(rules)) return [];
-  return rules
-    .slice(0, MAX_RULES)
-    .filter(isValidRolePatternRule)
-    .map((rule) => {
-      const type = String(rule.type).toLowerCase().trim();
-      if (type === "domain") {
-        return { type, value: rule.value.toLowerCase().trim() };
-      }
-      if (type === "local_prefix") {
-        return {
-          type,
-          values: rule.values
-            .map((value) => value.toLowerCase().trim())
-            .filter(Boolean)
-            .slice(0, MAX_RULES),
-        };
-      }
-      return { type, value: rule.value };
-    });
+
+  const sanitized = [];
+
+  for (const rule of rules.slice(0, MAX_RULES)) {
+    if (!isValidRolePatternRule(rule)) continue;
+
+    const type = String(rule.type || "").toLowerCase().trim();
+
+    if (type === "domain") {
+      sanitized.push({
+        type,
+        value: rule.value.toLowerCase().trim(),
+      });
+      continue;
+    }
+
+    if (type === "local_prefix") {
+      sanitized.push({
+        type,
+        values: rule.values
+          .map((value) => value.toLowerCase().trim())
+          .filter(Boolean)
+          .slice(0, MAX_RULES),
+      });
+      continue;
+    }
+
+    if (type === "local_regex") {
+      sanitized.push({
+        type,
+        value: rule.value,
+      });
+    }
+  }
+
+  return sanitized;
 }
