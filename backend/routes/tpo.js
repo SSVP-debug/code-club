@@ -117,7 +117,7 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    const autoVerified =
+    const collegeAutoVerified =
       (existingCollege?.status === "verified" && !existingIsAutoPlaceholder) ||
       (await isDomainAutoVerified(domain, "college"));
 
@@ -130,8 +130,8 @@ router.post("/register", async (req, res) => {
       collegeDoc = await College.create({
         domains: [domain],
         name: collegeName.trim(),
-        status: autoVerified ? "verified" : "pending",
-        verifiedAt: autoVerified ? now : null,
+        status: collegeAutoVerified ? "verified" : "pending",
+        verifiedAt: collegeAutoVerified ? now : null,
         submittedBy: req.userDoc._id,
         submittedByRole: "tpo",
       });
@@ -204,7 +204,7 @@ router.post("/register", async (req, res) => {
     }
 
     let isPrimary = false;
-    if (autoVerified && collegeDoc) {
+    if (collegeAutoVerified && collegeDoc) {
       try {
         isPrimary = await claimPrimaryIfNone(collegeDoc._id, req.userDoc._id);
       } catch (err) {
@@ -218,17 +218,21 @@ router.post("/register", async (req, res) => {
     return res.status(201).json({
       success: true,
       role: "tpo",
-      verified: autoVerified,
-      status: autoVerified ? "verified" : "pending",
+      // A verified college does not automatically make the requester a
+      // verified TPO. The reviewer must approve the individual TPO request.
+      verified: false,
+      status: "pending",
       isPrimary,
       emailRoleSignal: emailRoleClassification,
       verification: {
-        status: autoVerified ? "approved" : "pending",
+        // Individual TPO authorization always requires human verification.
+        // College/domain trust and TPO role verification are separate facts.
+        status: "pending",
         additionalEvidenceRecommended:
           emailRoleClassification !== "staff_candidate",
       },
-      message: autoVerified
-        ? "Your college is verified. You're all set — head to your dashboard."
+      message: collegeAutoVerified
+        ? "Your college is recognized. Your TPO access request is now waiting for individual verification."
         : "Your college registration request has been submitted for verification.",
     });
   } catch (err) {
