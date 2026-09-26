@@ -67,6 +67,16 @@ export async function getPendingQueue(req, res) {
       )
         .sort({ "tpoProfile.requestedAt": 1, createdAt: 1 })
         .lean(),
+      User.find(
+        {
+          role: "tpo",
+          "tpoProfile.verified": false,
+          "tpoVerification.status": "pending",
+        },
+        "email displayName tpoProfile tpoVerification createdAt"
+      )
+        .sort({ "tpoProfile.requestedAt": 1, createdAt: 1 })
+        .lean(),
     ]);
 
     const tpoColleges = pendingColleges.filter((c) => c.submittedByRole === "tpo");
@@ -76,6 +86,13 @@ export async function getPendingQueue(req, res) {
     // submitted an "auto" record, so requestedBy will just be null for
     // those — the frontend labels them "Auto-detected" instead of a
     // requester name (see AdminOverviewPage.jsx).
+    const pendingCollegeRequesterIds = new Set(
+      tpoColleges.map((c) => c.submittedBy?._id?.toString()).filter(Boolean)
+    );
+    const individualTpoRequests = pendingTpoUsers.filter(
+      (u) => !pendingCollegeRequesterIds.has(u._id.toString())
+    );
+
     const pendingCollegeRequesterIds = new Set(
       tpoColleges.map((c) => c.submittedBy?._id?.toString()).filter(Boolean)
     );
