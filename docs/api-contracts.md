@@ -80,7 +80,7 @@ Mounted at `/api/tpo`. All routes return `{ enabled: false, message }` while `B2
 
 | Method | Path | Purpose |
 |---|---|---|
-| POST | `/api/tpo/register` | Convert the caller's account to a TPO account (requires an institutional email domain — rejects gmail/yahoo/outlook). |
+| POST | `/api/tpo/register` | Convert the caller's account to a TPO account (requires an institutional email domain — rejects gmail/yahoo/outlook). Captures a per-college advisory email-role signal; this signal never grants the TPO role. |
 | GET | `/api/tpo/me` | Current TPO's profile + college info. |
 | GET | `/api/tpo/college-directory` | Verified TPO directory for the authenticated student's own verified college. The server resolves the institution from the student session; no client-supplied collegeId is accepted. |
 | GET | `/api/tpo/students` | All students matched by the TPO's college email domain. |
