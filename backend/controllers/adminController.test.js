@@ -246,15 +246,7 @@ describe("adminController", () => {
     });
 
     describe("approveTpo", () => {
-        function mockPendingCandidates(candidates) {
-            User.find.mockReturnValueOnce({
-                sort: vi.fn().mockReturnThis(),
-                select: vi.fn().mockReturnThis(),
-                lean: vi.fn().mockResolvedValue(candidates),
-            });
-        }
-
-        it("verifies the college, bulk-verifies matching pending TPO profiles, and audit-logs it", async () => {
+        it("verifies the college without bulk-authorizing individual TPOs", async () => {
             const college = {
                 _id: "c1",
                 domains: ["mit.edu"],
@@ -265,28 +257,26 @@ describe("adminController", () => {
             };
             const admin = makeAdmin();
             College.findById.mockResolvedValueOnce(college);
-            mockPendingCandidates([{ _id: "req1" }]);
-            User.updateMany.mockResolvedValueOnce({ modifiedCount: 3 });
 
             await approveTpo({ params: { collegeId: "c1" }, userDoc: admin, actingAdminDoc: null }, res);
 
             expect(college.status).toBe("verified");
-            expect(User.updateMany).toHaveBeenCalledWith(
-                { role: "tpo", "tpoProfile.collegeDomain": { $in: ["mit.edu"] }, "tpoProfile.verified": false },
-                expect.objectContaining({ $set: expect.any(Object) })
-            );
+            expect(User.updateMany).not.toHaveBeenCalled();
+            expect(User.find).not.toHaveBeenCalled();
+            expect(claimPrimaryIfNone).not.toHaveBeenCalled();
+            expect(TpoVerificationReview.create).not.toHaveBeenCalled();
             expect(recordAdminAction).toHaveBeenCalledWith(
-                expect.objectContaining({ adminDoc: admin, action: "tpo.approve", targetType: "College", targetId: "c1" })
+                expect.objectContaining({
+                    adminDoc: admin,
+                    action: "tpo.approve",
+                    targetType: "College",
+                    targetId: "c1",
+                })
             );
             expect(createNotification).toHaveBeenCalledWith(
-                expect.objectContaining({ userId: "admin-user-1", type: "tpo_verified" })
-            );
-            expect(TpoVerificationReview.create).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    userId: "req1",
-                    collegeId: "c1",
-                    decision: "approved",
-                    reviewedBy: "admin1",
+                    userId: "admin-user-1",
+                    type: "college_verified",
                 })
             );
             expect(res.json).toHaveBeenCalledWith({ success: true });
@@ -300,112 +290,39 @@ describe("adminController", () => {
             expect(res.status).toHaveBeenCalledWith(404);
         });
 
-        // ── First verified TPO becomes primary (Phase 3) ─────────────────
-        it("claims primary for the earliest-requestedAt pending TPO among those just verified", async () => {
+        it("does not authorize or claim primary for pending TPOs when a college is approved", async () => {
             const college = {
-                _id: "c1", domains: ["mit.edu"], name: "MIT", submittedBy: "u1", status: "pending",
+                _id: "c1",
+                domains: ["mit.edu"],
+                name: "MIT",
+                submittedBy: "u1",
+                status: "pending",
                 save: vi.fn().mockResolvedValue(true),
             };
             College.findById.mockResolvedValueOnce(college);
-            // Sorted ascending by requestedAt — the service is trusted to
-            // have applied the sort; the handler just uses candidates[0].
-            mockPendingCandidates([{ _id: "earliest" }, { _id: "later" }]);
-            User.updateMany.mockResolvedValueOnce({ modifiedCount: 2 });
 
             await approveTpo({ params: { collegeId: "c1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
 
-            expect(User.find).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    role: "tpo",
-                    "tpoProfile.collegeDomain": { $in: ["mit.edu"] },
-                    "tpoProfile.verified": false,
-                })
-            );
-            expect(claimPrimaryIfNone).toHaveBeenCalledWith("c1", "earliest");
-        });
-
-        it("still calls claimPrimaryIfNone (a safe no-op CAS) even when the college already has a primary", async () => {
-            const college = {
-                _id: "c1", domains: ["mit.edu"], name: "MIT", submittedBy: "u1", status: "pending",
-                primaryTpo: "already-primary",
-                save: vi.fn().mockResolvedValue(true),
-            };
-            College.findById.mockResolvedValueOnce(college);
-            mockPendingCandidates([{ _id: "second-tpo" }]);
-            User.updateMany.mockResolvedValueOnce({ modifiedCount: 1 });
-            claimPrimaryIfNone.mockResolvedValueOnce(false); // CAS no-op — already claimed
-
-            await approveTpo({ params: { collegeId: "c1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
-
-            expect(claimPrimaryIfNone).toHaveBeenCalledWith("c1", "second-tpo");
-            expect(res.json).toHaveBeenCalledWith({ success: true });
-        });
-
-        it("does not attempt a primary claim when there are no pending candidates", async () => {
-            const college = {
-                _id: "c1", domains: ["mit.edu"], name: "MIT", submittedBy: "u1", status: "pending",
-                save: vi.fn().mockResolvedValue(true),
-            };
-            College.findById.mockResolvedValueOnce(college);
-            mockPendingCandidates([]);
-            User.updateMany.mockResolvedValueOnce({ modifiedCount: 0 });
-
-            await approveTpo({ params: { collegeId: "c1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
-
+            expect(User.updateMany).not.toHaveBeenCalled();
             expect(claimPrimaryIfNone).not.toHaveBeenCalled();
-        });
-
-        // ── TPO-1 closure: auth-cache invalidation for bulk-verified TPOs ──
-        it("invalidates the auth cache for every TPO account it just bulk-verified", async () => {
-            const college = {
-                _id: "c1", domains: ["mit.edu"], name: "MIT", submittedBy: "u1", status: "pending",
-                save: vi.fn().mockResolvedValue(true),
-            };
-            College.findById.mockResolvedValueOnce(college);
-            mockPendingCandidates([
-                { _id: "req1", firebaseUid: "fb-req1" },
-                { _id: "req2", firebaseUid: "fb-req2" },
-            ]);
-            User.updateMany.mockResolvedValueOnce({ modifiedCount: 2 });
-
-            await approveTpo({ params: { collegeId: "c1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
-
-            expect(invalidateCachedUserByFirebaseUid).toHaveBeenCalledWith("fb-req1");
-            expect(invalidateCachedUserByFirebaseUid).toHaveBeenCalledWith("fb-req2");
-        });
-
-        it("does not attempt any cache invalidation when there are no pending candidates", async () => {
-            const college = {
-                _id: "c1", domains: ["mit.edu"], name: "MIT", submittedBy: "u1", status: "pending",
-                save: vi.fn().mockResolvedValue(true),
-            };
-            College.findById.mockResolvedValueOnce(college);
-            mockPendingCandidates([]);
-            User.updateMany.mockResolvedValueOnce({ modifiedCount: 0 });
-
-            await approveTpo({ params: { collegeId: "c1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
-
             expect(invalidateCachedUserByFirebaseUid).not.toHaveBeenCalled();
         });
 
-        // ── TPO-1 hardening: partial-failure handling ───────────────────────
-        it("still reports success when claimPrimaryIfNone throws after the college was already verified and TPOs already bulk-verified", async () => {
+        it("keeps the college approval successful even though notification delivery is asynchronous", async () => {
             const college = {
-                _id: "c1", domains: ["mit.edu"], name: "MIT", submittedBy: "u1", status: "pending",
+                _id: "c1",
+                domains: ["mit.edu"],
+                name: "MIT",
+                submittedBy: "u1",
+                status: "pending",
                 save: vi.fn().mockResolvedValue(true),
             };
             College.findById.mockResolvedValueOnce(college);
-            mockPendingCandidates([{ _id: "req1", firebaseUid: "fb-req1" }]);
-            User.updateMany.mockResolvedValueOnce({ modifiedCount: 1 });
-            claimPrimaryIfNone.mockRejectedValueOnce(new Error("CAS write boom"));
+            createNotification.mockImplementationOnce(() => Promise.reject(new Error("notification failed")));
 
             await approveTpo({ params: { collegeId: "c1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
 
-            // The core operation (verify college + bulk-verify TPOs) already
-            // happened by the time the claim fails — that must not turn into
-            // a 500 the admin reads as "the approval didn't go through".
             expect(college.status).toBe("verified");
-            expect(User.updateMany).toHaveBeenCalledOnce();
             expect(res.status).not.toHaveBeenCalledWith(500);
             expect(res.json).toHaveBeenCalledWith({ success: true });
         });
