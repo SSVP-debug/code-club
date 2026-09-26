@@ -212,5 +212,5 @@ describe("POST /register — TPO-1 hardening: partial-failure handling", () => {
         status: "pending",
       }));
     });
-  });;
+  });
 });
