@@ -1045,3 +1045,149 @@ export async function stopImpersonation(req, res) {
     return res.status(500).json({ error: "Failed to stop impersonation." });
   }
 }
+
+async function resolvePendingTpoCollege(user) {
+  const domain = user?.tpoProfile?.collegeDomain;
+  if (!domain) return null;
+  return College.findByDomain(domain);
+}
+
+export async function approveTpoUser(req, res) {
+  try {
+    const user = await User.findById(req.params.userId);
+    if (!user || user.role !== "tpo") {
+      return res.status(404).json({ error: "TPO verification request not found." });
+    }
+    if (user.tpoProfile?.verified) {
+      return res.json({ success: true, alreadyVerified: true });
+    }
+
+    const college = await resolvePendingTpoCollege(user);
+    if (!college || college.status !== "verified") {
+      return res.status(409).json({
+        error: "The TPO's college must be verified before individual TPO access can be approved.",
+      });
+    }
+
+    const now = new Date();
+    user.tpoProfile.verified = true;
+    user.tpoProfile.verifiedAt = now;
+    user.tpoVerification = {
+      ...(user.tpoVerification || {}),
+      status: "approved",
+    };
+    await user.save();
+    invalidateCachedUserByFirebaseUid(user.firebaseUid);
+
+    try {
+      await TpoVerificationReview.create({
+        userId: user._id,
+        collegeId: college._id,
+        requestedEmail: user.tpoVerification?.submittedEmail || user.email || "",
+        emailRoleSignal: user.tpoVerification?.emailRoleSignal || "unknown",
+        evidence: user.tpoVerification?.evidence || [],
+        decision: "approved",
+        decisionReason: "Approved through individual TPO verification.",
+        reviewedBy: req.actingAdminDoc?._id || req.userDoc?._id,
+        reviewedAt: now,
+      });
+    } catch (err) {
+      logger.error({ err, userId: user._id }, "[Admin] approveTpoUser: audit write failed");
+    }
+
+    try {
+      await claimPrimaryIfNone(college._id, user._id);
+    } catch (err) {
+      logger.error({ err, collegeId: college._id, userId: user._id }, "[Admin] approveTpoUser primary claim failed");
+    }
+
+    recordAdminAction({
+      adminDoc: req.actingAdminDoc || req.userDoc,
+      action: "tpo.user.approve",
+      targetType: "User",
+      targetId: user._id,
+      details: { collegeId: college._id },
+    });
+
+    createNotification({
+      userId: user._id,
+      type: "tpo_verified",
+      title: "TPO access approved",
+      message: college.name + " TPO access is now verified.",
+      link: "/tpo/dashboard",
+    }).catch(() => {});
+
+    return res.json({ success: true });
+  } catch (err) {
+    logger.error({ err }, "[Admin] approve TPO user error");
+    return res.status(500).json({ error: "Failed to approve TPO verification." });
+  }
+}
+
+export async function rejectTpoUser(req, res) {
+  try {
+    const user = await User.findById(req.params.userId);
+    if (!user || user.role !== "tpo") {
+      return res.status(404).json({ error: "TPO verification request not found." });
+    }
+
+    const college = await resolvePendingTpoCollege(user);
+    const reviewerId = req.actingAdminDoc?._id || req.userDoc?._id;
+    const now = new Date();
+
+    if (reviewerId && college) {
+      try {
+        await TpoVerificationReview.create({
+          userId: user._id,
+          collegeId: college._id,
+          requestedEmail: user.tpoVerification?.submittedEmail || user.email || "",
+          emailRoleSignal: user.tpoVerification?.emailRoleSignal || "unknown",
+          evidence: user.tpoVerification?.evidence || [],
+          decision: "rejected",
+          decisionReason: "Individual TPO verification request rejected.",
+          reviewedBy: reviewerId,
+          reviewedAt: now,
+        });
+      } catch (err) {
+        logger.error({ err, userId: user._id }, "[Admin] rejectTpoUser: audit write failed");
+      }
+    }
+
+    user.revokeRole("tpo");
+    user.role = "student";
+    user.tpoProfile = {
+      collegeDomain: null,
+      collegeName: null,
+      verified: false,
+      requestedAt: null,
+      verifiedAt: null,
+    };
+    user.tpoVerification = {
+      ...(user.tpoVerification || {}),
+      status: "rejected",
+    };
+    await user.save();
+    invalidateCachedUserByFirebaseUid(user.firebaseUid);
+
+    recordAdminAction({
+      adminDoc: req.actingAdminDoc || req.userDoc,
+      action: "tpo.user.reject",
+      targetType: "User",
+      targetId: user._id,
+      details: { collegeId: college?._id || null },
+    });
+
+    createNotification({
+      userId: user._id,
+      type: "tpo_rejected",
+      title: "TPO access request declined",
+      message: "We couldn't verify your TPO access request. Reach out if this was a mistake.",
+      link: "/tpo/signup",
+    }).catch(() => {});
+
+    return res.json({ success: true });
+  } catch (err) {
+    logger.error({ err }, "[Admin] reject TPO user error");
+    return res.status(500).json({ error: "Failed to reject TPO verification." });
+  }
+}
