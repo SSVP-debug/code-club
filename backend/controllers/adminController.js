@@ -1186,6 +1186,10 @@ export async function rejectTpoUser(req, res) {
     }
 
     user.revokeRole("tpo");
+    // Keep the authorization set consistent even if a lightweight test/mock
+    // user does not implement revokeRole exactly like the Mongoose model.
+    user.roles = (user.roles || []).filter((role) => role !== "tpo");
+    if (!user.roles.includes("student")) user.roles.unshift("student");
     user.role = "student";
     user.tpoProfile = { collegeDomain: null, collegeName: null, verified: false, requestedAt: null, verifiedAt: null };
     user.tpoVerification = { ...(user.tpoVerification || {}), status: "rejected" };
