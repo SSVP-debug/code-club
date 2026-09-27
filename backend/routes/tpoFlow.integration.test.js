@@ -389,6 +389,13 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
           verified: false,
           requestedAt: new Date(Date.now() - 1000),
         },
+        tpoVerification: {
+          status: "pending",
+          submittedEmail: "early-signup@some-college.ac.in",
+          submittedAt: new Date(Date.now() - 1000),
+          emailRoleSignal: "unknown",
+          evidence: [],
+        },
       });
       const later = await seedStudent({
         email: "later-signup@some-college.ac.in",
@@ -399,6 +406,13 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
           collegeName: "Some College",
           verified: false,
           requestedAt: new Date(),
+        },
+        tpoVerification: {
+          status: "pending",
+          submittedEmail: "later-signup@some-college.ac.in",
+          submittedAt: new Date(),
+          emailRoleSignal: "unknown",
+          evidence: [],
         },
       });
 
@@ -413,14 +427,21 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
       expect(reloadedLater.tpoProfile.verified).toBe(false);
       expect(reloadedCollege.primaryTpo).toBeNull();
 
+      const earlierApproval = mockRes();
       await approveTpoUser(
         { params: { userId: earlier._id.toString() }, userDoc: admin, log: mockLog() },
-        mockRes()
+        earlierApproval
       );
+      expect(earlierApproval._status).toBe(200);
+      expect(earlierApproval._json.success).toBe(true);
+
+      const laterApproval = mockRes();
       await approveTpoUser(
         { params: { userId: later._id.toString() }, userDoc: admin, log: mockLog() },
-        mockRes()
+        laterApproval
       );
+      expect(laterApproval._status).toBe(200);
+      expect(laterApproval._json.success).toBe(true);
 
       const approvedEarlier = await User.findById(earlier._id);
       const approvedLater = await User.findById(later._id);
