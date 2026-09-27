@@ -113,6 +113,9 @@ function QueueRow({
                     <p className="text-[var(--foreground)] font-medium capitalize">
                       {review.decision}
                       {review.reviewedAt ? ` · ${new Date(review.reviewedAt).toLocaleString()}` : ""}
+                      {review.reviewedBy?.displayName || review.reviewedBy?.email
+                        ? ` · ${review.reviewedBy.displayName || review.reviewedBy.email}`
+                        : ""}
                     </p>
                     {review.decisionReason && (
                       <p className="text-[var(--muted-foreground)] mt-0.5">{review.decisionReason}</p>
