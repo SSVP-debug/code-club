@@ -234,6 +234,72 @@ router.post("/register", async (req, res) => {
   }
 });
 
+// ── TPO verification evidence ─────────────────────────────────────────────
+// Evidence supplements the advisory email signal; it never grants TPO access.
+// Only a pending TPO applicant can add evidence, and the email evidence entry
+// created during registration remains system-controlled.
+const TPO_EVIDENCE_KINDS = new Set(["invitation", "staff_id", "document", "manual_note"]);
+const MAX_TPO_EVIDENCE_ITEMS = 10;
+
+router.post("/verification/evidence", requireRole("tpo"), async (req, res) => {
+  try {
+    const verification = req.userDoc?.tpoVerification;
+    if (!verification || verification.status !== "pending") {
+      return res.status(409).json({ error: "Only a pending TPO verification request can receive evidence." });
+    }
+
+    const input = req.body?.evidence;
+    if (!Array.isArray(input) || input.length === 0) {
+      return res.status(400).json({ error: "evidence must be a non-empty array." });
+    }
+
+    if (input.length > MAX_TPO_EVIDENCE_ITEMS) {
+      return res.status(400).json({ error: "A maximum of " + MAX_TPO_EVIDENCE_ITEMS + " evidence items is allowed." });
+    }
+
+    const now = new Date();
+    const additions = [];
+    for (const item of input) {
+      const kind = String(item?.kind || "").trim().toLowerCase();
+      const label = String(item?.label || "").trim();
+      const reference = item?.reference == null ? null : String(item.reference).trim();
+      const note = item?.note == null ? null : String(item.note).trim();
+
+      if (!TPO_EVIDENCE_KINDS.has(kind)) {
+        return res.status(400).json({ error: "Unsupported evidence kind: " + (kind || "unknown") + "." });
+      }
+      if (!label || label.length > 120) {
+        return res.status(400).json({ error: "Each evidence label must be 1–120 characters." });
+      }
+      if (reference && reference.length > 500) {
+        return res.status(400).json({ error: "Evidence reference must be at most 500 characters." });
+      }
+      if (note && note.length > 1000) {
+        return res.status(400).json({ error: "Evidence note must be at most 1000 characters." });
+      }
+
+      additions.push({ kind, label, reference: reference || null, note: note || null, addedAt: now });
+    }
+
+    const existing = Array.isArray(verification.evidence) ? verification.evidence : [];
+    if (existing.length + additions.length > MAX_TPO_EVIDENCE_ITEMS) {
+      return res.status(400).json({ error: "A maximum of " + MAX_TPO_EVIDENCE_ITEMS + " evidence items is allowed in total." });
+    }
+
+    verification.evidence = [...existing, ...additions];
+    await req.userDoc.save();
+
+    return res.status(200).json({
+      success: true,
+      status: verification.status,
+      evidence: verification.evidence,
+    });
+  } catch (err) {
+    (req.log || logger).error({ err, userId: req.userDoc?._id }, "[TPO] verification evidence update error");
+    return res.status(500).json({ error: "Failed to update TPO verification evidence." });
+  }
+});
+
 // ── TPO-6 entitlement enforcement ─────────────────────────────────────────
 // Registration and billing-status must remain reachable without a paid plan.
 // Students using the college TPO directory are also unaffected because this
