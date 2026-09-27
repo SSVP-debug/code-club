@@ -190,6 +190,59 @@ describe("adminController", () => {
             );
         });
 
+        it("includes recent review history for a pending individual TPO applicant", async () => {
+            User.find.mockReturnValueOnce(chainableQuery([]));
+            College.find.mockReturnValueOnce(chainableQuery([]));
+            User.find.mockReturnValueOnce(
+                chainableQuery([
+                    {
+                        _id: "tpo1",
+                        email: "staff@mit.edu",
+                        displayName: "Staff",
+                        tpoProfile: { collegeName: "MIT", collegeDomain: "mit.edu", requestedAt: "now" },
+                        tpoVerification: {
+                            status: "pending",
+                            emailRoleSignal: "staff_candidate",
+                            submittedAt: "now",
+                            evidence: [{ kind: "staff_id", label: "Staff ID" }],
+                        },
+                        createdAt: "created",
+                    },
+                ])
+            );
+            TpoVerificationReview.find.mockReturnValueOnce(
+                chainableQuery([
+                    {
+                        userId: "tpo1",
+                        decision: "rejected",
+                        decisionReason: "Previous evidence was insufficient.",
+                        reviewedAt: "2026-09-20T10:00:00Z",
+                        reviewedBy: "admin1",
+                    },
+                ])
+            );
+
+            await getPendingQueue({}, res);
+
+            expect(TpoVerificationReview.find).toHaveBeenCalledWith({ userId: { $in: ["tpo1"] } });
+            expect(res.json).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    tpos: [
+                        expect.objectContaining({
+                            userId: "tpo1",
+                            reviewTarget: "user",
+                            reviewHistory: [
+                                expect.objectContaining({
+                                    decision: "rejected",
+                                    decisionReason: "Previous evidence was insufficient.",
+                                }),
+                            ],
+                        }),
+                    ],
+                })
+            );
+        });
+
         it("returns 500 if the query fails", async () => {
             User.find.mockImplementationOnce(() => {
                 throw new Error("db down");
