@@ -79,6 +79,29 @@ export async function getPendingQueue(req, res) {
       (u) => !pendingCollegeRequesterIds.has(u._id.toString())
     );
 
+    const reviewHistoryByUser = new Map();
+    if (individualTpoRequests.length) {
+      const reviews = await TpoVerificationReview.find({
+        userId: { $in: individualTpoRequests.map((u) => u._id) },
+      })
+        .sort({ reviewedAt: -1 })
+        .lean();
+
+      for (const review of reviews) {
+        const key = review.userId.toString();
+        const history = reviewHistoryByUser.get(key) || [];
+        if (history.length < 5) {
+          history.push({
+            decision: review.decision,
+            decisionReason: review.decisionReason,
+            reviewedAt: review.reviewedAt,
+            reviewedBy: review.reviewedBy,
+          });
+          reviewHistoryByUser.set(key, history);
+        }
+      }
+    }
+
     const studentColleges = pendingColleges.filter(
       (c) => c.submittedByRole === "student" || c.submittedByRole === "auto"
     );
@@ -128,6 +151,7 @@ export async function getPendingQueue(req, res) {
           verificationStatus: u.tpoVerification?.status || "pending",
           additionalEvidenceRecommended: (u.tpoVerification?.emailRoleSignal || "unknown") !== "staff_candidate",
           evidence: u.tpoVerification?.evidence || [],
+          reviewHistory: reviewHistoryByUser.get(u._id.toString()) || [],
           reviewTarget: "user",
         })),
       ],
@@ -1027,11 +1051,42 @@ async function resolvePendingTpoCollege(user) {
   return College.findByDomain(domain);
 }
 
+function getReviewDecisionReason(req, { required = false } = {}) {
+  const raw = req.body?.decisionReason;
+  if (raw == null) {
+    if (required) {
+      return { error: "A decision reason is required when rejecting a TPO verification request." };
+    }
+    return { value: null };
+  }
+
+  const value = String(raw).trim();
+  if (!value) {
+    if (required) {
+      return { error: "A decision reason is required when rejecting a TPO verification request." };
+    }
+    return { value: null };
+  }
+
+  if (value.length > 1000) {
+    return { error: "Decision reason must be at most 1000 characters." };
+  }
+
+  return { value };
+}
+
 export async function approveTpoUser(req, res) {
   try {
     const user = await User.findById(req.params.userId);
     if (!user || user.role !== "tpo") return res.status(404).json({ error: "TPO verification request not found." });
     if (user.tpoProfile?.verified) return res.json({ success: true, alreadyVerified: true });
+    if (user.tpoVerification?.status !== "pending") {
+      return res.status(409).json({ error: "Only a pending TPO verification request can be approved." });
+    }
+
+    const reasonResult = getReviewDecisionReason(req);
+    if (reasonResult.error) return res.status(400).json({ error: reasonResult.error });
+    const decisionReason = reasonResult.value || "Approved through individual TPO verification.";
 
     const college = await resolvePendingTpoCollege(user);
     if (!college || college.status !== "verified") {
@@ -1053,7 +1108,7 @@ export async function approveTpoUser(req, res) {
         emailRoleSignal: user.tpoVerification?.emailRoleSignal || "unknown",
         evidence: user.tpoVerification?.evidence || [],
         decision: "approved",
-        decisionReason: "Approved through individual TPO verification.",
+        decisionReason,
         reviewedBy: req.actingAdminDoc?._id || req.userDoc?._id,
         reviewedAt: now,
       });
@@ -1091,6 +1146,13 @@ export async function rejectTpoUser(req, res) {
   try {
     const user = await User.findById(req.params.userId);
     if (!user || user.role !== "tpo") return res.status(404).json({ error: "TPO verification request not found." });
+    if (user.tpoVerification?.status !== "pending") {
+      return res.status(409).json({ error: "Only a pending TPO verification request can be rejected." });
+    }
+
+    const reasonResult = getReviewDecisionReason(req, { required: true });
+    if (reasonResult.error) return res.status(400).json({ error: reasonResult.error });
+    const decisionReason = reasonResult.value;
 
     const college = await resolvePendingTpoCollege(user);
     const reviewerId = req.actingAdminDoc?._id || req.userDoc?._id;
@@ -1105,7 +1167,7 @@ export async function rejectTpoUser(req, res) {
           emailRoleSignal: user.tpoVerification?.emailRoleSignal || "unknown",
           evidence: user.tpoVerification?.evidence || [],
           decision: "rejected",
-          decisionReason: "Individual TPO verification request rejected.",
+          decisionReason,
           reviewedBy: reviewerId,
           reviewedAt: now,
         });
