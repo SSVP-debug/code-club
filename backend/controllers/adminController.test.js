@@ -1375,7 +1375,10 @@ describe("individual TPO verification", () => {
         College.findByDomain.mockResolvedValueOnce({ _id: "c1", name: "MIT", status: "verified", domains: ["mit.edu"] });
         const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
 
-        await rejectTpoUser({ params: { userId: "t2" }, userDoc: makeAdmin() }, res);
+        await rejectTpoUser(
+            { params: { userId: "t2" }, userDoc: makeAdmin(), body: { decisionReason: "Staff identity could not be verified." } },
+            res
+        );
 
         expect(user.roles).toEqual(["student"]);
         expect(user.role).toBe("student");
