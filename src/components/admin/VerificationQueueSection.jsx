@@ -210,7 +210,11 @@ function VerificationQueueSection({ heading, loading, emptyLabel, items, busyIds
                 reviewTarget={row.reviewTarget}
                 busy={busyIds[row.id]}
                 onApprove={() => onApprove(row.actionTarget ?? row.id)}
-                onReject={(reason) => onReject(row.actionTarget ?? row.id, reason)}
+                onReject={(reason) => {
+                  const target = row.actionTarget ?? row.id;
+                  if (reason === undefined) onReject(target);
+                  else onReject(target, reason);
+                }}
               />
             );
           })}
