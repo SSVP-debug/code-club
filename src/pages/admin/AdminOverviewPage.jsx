@@ -92,9 +92,11 @@ export default function AdminOverviewPage() {
                 signal: t.emailRoleSignal,
                 evidenceHint: t.additionalEvidenceRecommended,
                 evidence: t.evidence,
+                reviewHistory: t.reviewHistory,
+                reviewTarget: t.reviewTarget,
               })}
               onApprove={(id) => actOnTpo(id, "approve")}
-              onReject={(id) => actOnTpo(id, "reject")}
+              onReject={(id, reason) => actOnTpo(id, "reject", reason)}
             />
           </div>
 

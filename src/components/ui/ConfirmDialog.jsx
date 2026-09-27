@@ -55,6 +55,7 @@ export default function ConfirmDialog({
   loading = false,
   onConfirm,
   onCancel,
+  children,
 }) {
   const panelRef = useRef(null);
   const triggerRef = useRef(null);
@@ -131,6 +132,7 @@ export default function ConfirmDialog({
             {title}
           </h2>
           {description && <p className="text-[var(--muted-foreground)] text-sm mb-5">{description}</p>}
+          {children}
           <div className="flex items-center justify-end gap-2">
             <Button size="sm" variant="secondary" onClick={onCancel} disabled={loading}>
               {cancelLabel}

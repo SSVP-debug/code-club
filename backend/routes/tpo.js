@@ -796,12 +796,11 @@ router.get("/team", requireRole("tpo", "admin"), requireVerified, resolveTpoInst
 // the candidate must already have signed up (and therefore already gone
 // through Firebase auth) before the primary can add them, mirroring the
 // "candidate authenticates, then institution relationship established"
-// flow the phase doc describes. This is the same instant-verification
-// trust decision POST /register already makes for a second TPO registering
-// on an already-verified college domain (see isDomainAutoVerified/
-// existingCollege.status === "verified" above): a known institutional-
-// domain account, vouched for by the college's own primary TPO, doesn't
-// need a second manual admin review.
+// flow the phase doc describes. Unlike self-registration, however,
+// this path is an explicit authorization action by an already-verified
+// primary TPO. The primary's authenticated team-management action is the
+// authority for this grant; institutional email/domain checks only enforce
+// that the invited account belongs to the same college.
 router.post("/team/invite", requireRole("tpo", "admin"), requireVerified, resolveTpoInstitution, requirePrimaryOnly, async (req, res) => {
   if (b2bGate(req, res)) return;
 

@@ -44,6 +44,55 @@ describe("VerificationQueueSection", () => {
     expect(onReject).toHaveBeenCalledWith("r1");
   });
 
+  it("shows TPO evidence and requires a rejection reason before submitting", () => {
+    const { onReject } = renderSection({
+      heading: "TPO requests",
+      items: [{
+        id: "t1",
+        company: "MIT",
+        reviewTarget: "user",
+        evidence: [{
+          kind: "staff_id",
+          label: "Staff ID",
+          reference: "staff-42",
+          note: "Verified by applicant.",
+        }],
+        reviewHistory: [{
+          decision: "rejected",
+          decisionReason: "Previous evidence was insufficient.",
+          reviewedAt: "2026-09-20T10:00:00Z",
+          reviewedBy: { displayName: "Admin One", email: "admin@example.com" },
+        }],
+      }],
+      getRow: (item) => ({
+        id: item.id,
+        title: item.company,
+        subtitle: "staff@mit.edu",
+        reviewTarget: item.reviewTarget,
+        evidence: item.evidence,
+        reviewHistory: item.reviewHistory,
+      }),
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /review details/i }));
+    expect(screen.getByText("Staff ID")).toBeInTheDocument();
+    expect(screen.getByText(/Previous evidence was insufficient/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /reject/i }));
+    const dialog = screen.getByRole("alertdialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Reject" }));
+    expect(onReject).not.toHaveBeenCalled();
+
+    fireEvent.change(within(dialog).getByLabelText(/decision reason/i), {
+      target: { value: "The submitted staff evidence could not be verified." },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Reject" }));
+    expect(onReject).toHaveBeenCalledWith(
+      "t1",
+      "The submitted staff evidence could not be verified."
+    );
+  });
+
   it("cancelling the reject confirmation never calls onReject", () => {
     const { onReject } = renderSection();
     fireEvent.click(screen.getByRole("button", { name: /reject/i }));

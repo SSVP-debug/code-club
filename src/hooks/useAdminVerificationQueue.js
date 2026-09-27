@@ -66,13 +66,19 @@ export function useAdminVerificationQueue() {
     }
   }
 
-  async function actOnTpo(itemOrId, action) {
+  async function actOnTpo(itemOrId, action, decisionReason) {
     const item = typeof itemOrId === "object" ? itemOrId : { collegeId: itemOrId };
     const key = item.userId || item.collegeId;
     setBusyIds((b) => ({ ...b, [key]: action }));
     try {
       if (item.reviewTarget === "user") {
-        await apiFetch(`/api/admin/tpo-verification/${item.userId}/${action}`, { method: "POST" });
+        await apiFetch(`/api/admin/tpo-verification/${item.userId}/${action}`, {
+          method: "POST",
+          body: action === "approve" || action === "reject"
+            ? JSON.stringify(decisionReason ? { decisionReason } : {})
+            : undefined,
+          headers: { "Content-Type": "application/json" },
+        });
         setTpos((list) => list.filter((t) => t.userId !== item.userId));
       } else {
         await apiFetch(`/api/admin/tpo/${item.collegeId}/${action}`, { method: "POST" });
