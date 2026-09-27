@@ -146,6 +146,7 @@ describe("adminController", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        TpoVerificationReview.find.mockReturnValue(chainableQuery([]));
         res = mockRes();
     });
 
