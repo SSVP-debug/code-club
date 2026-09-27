@@ -140,7 +140,8 @@ function QueueRow({
             const reason = rejectReason.trim();
             if (isTpoReview && !reason) return;
             setConfirmingReject(false);
-            onReject(reason || undefined);
+            if (isTpoReview) onReject(reason);
+            else onReject();
             setRejectReason("");
           }}
           onCancel={closeRejectDialog}
