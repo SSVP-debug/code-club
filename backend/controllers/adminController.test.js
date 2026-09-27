@@ -1367,6 +1367,10 @@ describe("individual TPO verification", () => {
             },
             tpoVerification: { status: "pending", emailRoleSignal: "student_candidate", evidence: [] },
         });
+        // Deliberately make revokeRole a no-op here. The controller must
+        // enforce the persisted authorization invariant itself: TPO is removed
+        // from roles and student remains available after an individual rejection.
+        user.revokeRole = vi.fn();
         User.findById.mockResolvedValueOnce(user);
         College.findByDomain.mockResolvedValueOnce({ _id: "c1", name: "MIT", status: "verified", domains: ["mit.edu"] });
         const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
