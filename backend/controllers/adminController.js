@@ -1059,6 +1059,9 @@ async function resolvePendingTpoCollege(user) {
 
 function getReviewDecisionReason(req, { required = false } = {}) {
   const raw = req.body?.decisionReason;
+  if (raw != null && typeof raw !== "string") {
+    return { error: "decisionReason must be a string." };
+  }
   if (raw == null) {
     if (required) {
       return { error: "A decision reason is required when rejecting a TPO verification request." };
