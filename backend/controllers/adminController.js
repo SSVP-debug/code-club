@@ -84,6 +84,7 @@ export async function getPendingQueue(req, res) {
       const reviews = await TpoVerificationReview.find({
         userId: { $in: individualTpoRequests.map((u) => u._id) },
       })
+        .populate("reviewedBy", "displayName email")
         .sort({ reviewedAt: -1 })
         .lean();
 
@@ -95,7 +96,12 @@ export async function getPendingQueue(req, res) {
             decision: review.decision,
             decisionReason: review.decisionReason,
             reviewedAt: review.reviewedAt,
-            reviewedBy: review.reviewedBy,
+            reviewedBy: review.reviewedBy
+              ? {
+                  displayName: review.reviewedBy.displayName || null,
+                  email: review.reviewedBy.email || null,
+                }
+              : null,
           });
           reviewHistoryByUser.set(key, history);
         }
