@@ -176,8 +176,10 @@ College email-role patterns are institution-specific advisory evidence. They may
 | Method | Path | Purpose |
 |---|---|---|
 | PATCH | `/api/admin/colleges/:collegeId/email-role-patterns` | Admin-only configuration of staff/student email patterns for a college. |
-| POST | `/api/admin/tpo-verification/:userId/approve` | Admin-only approval of an individual pending TPO request after the college is verified. |
-| POST | `/api/admin/tpo-verification/:userId/reject` | Admin-only rejection of an individual pending TPO request. |
+| POST | `/api/admin/tpo-verification/:userId/approve` | Admin-only approval of an individual pending TPO request after the college is verified. Optional JSON body: `{ "decisionReason": "..." }` (max 1000 chars) for the immutable review audit. |
+| POST | `/api/admin/tpo-verification/:userId/reject` | Admin-only rejection of an individual pending TPO request. Requires JSON body: `{ "decisionReason": "..." }` (1–1000 chars); rejected requests must be submitted again to re-enter the pending state. |
 | POST | `/api/tpo/verification/evidence` | Adds applicant-supplied verification evidence to a pending TPO request; evidence is advisory and does not grant access. |
 
 TPO registration keeps the requester pending even when the institution itself is already recognized. This separates **institution trust** from **individual TPO authorization**. Student/staff email patterns are evidence shown to the reviewer, not an authorization shortcut.
+
+The admin pending queue also exposes the applicant's submitted evidence and up to five most recent immutable review decisions for that user, so a resubmission can be reviewed with prior context. Review decisions are lifecycle-gated: only a request whose `tpoVerification.status` is `pending` can be approved or rejected. Individual approval is the point at which `tpoProfile.verified` and primary-TPO eligibility can be established.
