@@ -17,7 +17,7 @@ import { GithubMark } from "../icons/BrandIcons";
  * shown. If that integration is added later, this component's read state
  * is the only place that needs to grow.
  */
-function FeaturedProject() {
+function FeaturedProject({ collapsible = true }) {
   const { developerProfile, updateDeveloperProfile } = useAppContext();
   const project = developerProfile.featuredProjects?.[0] || null;
 
@@ -62,7 +62,7 @@ function FeaturedProject() {
       subtitle="Showcase the project you're most proud of."
       icon={<Sparkles size={18} strokeWidth={2} />}
       accented
-      collapsible
+      collapsible={collapsible}
       defaultOpen
       storageKey="profile-collapse-featured-project"
       action={
