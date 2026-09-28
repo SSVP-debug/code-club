@@ -57,6 +57,7 @@ function Profile() {
   } = useAppContext();
 
   const [showAllSubmissions, setShowAllSubmissions] = useState(false);
+  const [activityOpen, setActivityOpen] = useState(true);
 
   const SUBMISSIONS_PREVIEW_COUNT = 5;
   const SUBMISSIONS_EXPANDED_COUNT = 15; // capped even when "expanded" — full history isn't paginated here
@@ -239,7 +240,7 @@ function Profile() {
               <ProfileCompletion />
             </div>
             <div className="profile-wow-bento__medium">
-              {role === "student" ? <EducationSection /> : (
+              {role === "student" ? <EducationSection collapsible={false} /> : (
                 <SectionCard title="Account" icon={<Award size={18} />} accented>
                   <div className="profile-wow-account-card">
                     <span className="profile-wow-account-card__icon"><Award size={18} /></span>
@@ -252,7 +253,7 @@ function Profile() {
               )}
             </div>
             <div className="profile-wow-bento__medium profile-wow-presence-mini">
-              <ProfessionalPresence />
+              <ProfessionalPresence collapsible={false} />
             </div>
             <div className="profile-wow-bento__small">
               <div className="profile-wow-stat-card">
@@ -277,15 +278,15 @@ function Profile() {
           <div className="profile-wow-bento profile-wow-bento--work">
             <div className="profile-wow-feature">
               <ContentSlot id="profile-featured-project">
-                <FeaturedProject />
+                <FeaturedProject collapsible={false} />
               </ContentSlot>
             </div>
             <div className="profile-wow-resume">
-              <ResumeCard />
+              <ResumeCard collapsible={false} />
             </div>
             <div className="profile-wow-pinned">
               <ContentSlot id="profile-pinned-problems">
-                <PinnedProblems />
+                <PinnedProblems collapsible={false} />
               </ContentSlot>
             </div>
           </div>
@@ -317,7 +318,7 @@ function Profile() {
             </div>
             <div className="profile-wow-dna">
               <ContentSlot id="profile-coding-dna">
-                <CodingDNA
+                <CodingDNA collapsible={false}
                   submissions={submissions}
                   topicStats={topicStats}
                   solvedDifficulty={solvedDifficulty}
@@ -351,11 +352,11 @@ function Profile() {
             </div>
             {role === "student" && (
               <div className="profile-wow-contests">
-                <ContestHistorySection />
+                <ContestHistorySection collapsible={false} />
               </div>
             )}
             <div className="profile-wow-journey">
-              <JourneyTimeline joinedDate={joinedDate} achievements={achievements} />
+              <JourneyTimeline joinedDate={joinedDate} achievements={achievements} collapsible={false} />
             </div>
             <div className="profile-wow-certifications">
               <CollapsibleGroup
@@ -380,83 +381,7 @@ function Profile() {
           </div>
         </ContentSlot>
 
-        <ContentSlot id="profile-coding-activity">
-          <div className="profile-wow-section-heading">
-            <div>
-              <span>05 / ACTIVITY</span>
-              <h2>Recent coding activity</h2>
-            </div>
-            <p>A clean record of what you submitted, in the order it happened.</p>
-          </div>
-
-          <SectionCard
-            accented
-            collapsible
-            defaultOpen
-            storageKey="profile-collapse-coding-activity"
-          >
-            {recentSubmissions.length === 0 ? (
-              <EmptyState
-                icon={<FileText size={28} strokeWidth={1.75} />}
-                title="No coding activity yet"
-                description="Submit your first solution to see your coding history here."
-                actionLabel="Start solving"
-                actionHref="/problems"
-                compact
-              />
-            ) : (
-              <>
-                <div className="profile-wow-table-wrap">
-                  <div className="profile-wow-table">
-                    <div className="profile-wow-table__head">
-                      <span>Problem</span>
-                      <span>Language</span>
-                      <span>Status</span>
-                      <span>Date</span>
-                    </div>
-                    {recentSubmissions.map((submission, index) => (
-                      <div
-                        key={submission.id || submission.createdAt || index}
-                        className="profile-wow-table__row"
-                      >
-                        <strong>{submission.problemTitle || "Untitled problem"}</strong>
-                        <span className="profile-wow-table__language">{submission.language || "—"}</span>
-                        <span className={
-                          submission.status?.includes("Accepted")
-                            ? "profile-wow-status profile-wow-status--accepted"
-                            : "profile-wow-status profile-wow-status--rejected"
-                        }>
-                          <i aria-hidden="true" />
-                          {submission.status || "Unknown"}
-                        </span>
-                        <span>{submission.date || "—"}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {submissions.length > SUBMISSIONS_PREVIEW_COUNT && (
-                  <button
-                    type="button"
-                    onClick={() => setShowAllSubmissions((v) => !v)}
-                    className="profile-wow-more"
-                  >
-                    {showAllSubmissions
-                      ? "Show less"
-                      : `Show ${Math.min(submissions.length, SUBMISSIONS_EXPANDED_COUNT) - SUBMISSIONS_PREVIEW_COUNT} more`}
-                    <ChevronDown
-                      size={15}
-                      className={showAllSubmissions ? "rotate-180" : ""}
-                      aria-hidden="true"
-                    />
-                  </button>
-                )}
-              </>
-            )}
-          </SectionCard>
-        </ContentSlot>
-
-        {role === "student" && (
+        <ContentSlot id="profile-coding-activity">\n          <div className="profile-wow-section-heading profile-wow-section-heading--activity">\n            <div>\n              <span>05 / ACTIVITY</span>\n              <h2>Recent coding activity</h2>\n            </div>\n            <p>A live trail of the problems you touched, languages you used and results you earned.</p>\n          </div>\n\n          <section className="profile-wow-activity" aria-label="Recent coding activity">\n            <button\n              type="button"\n              className="profile-wow-activity__header"\n              onClick={() => setActivityOpen((open) => !open)}\n              aria-expanded={activityOpen}\n            >\n              <span className="profile-wow-activity__index">RUN LOG</span>\n              <span className="profile-wow-activity__title">\n                <Zap size={18} aria-hidden="true" />\n                Submission stream\n              </span>\n              <span className="profile-wow-activity__count">{submissions.length} total</span>\n              <ChevronDown size={18} className={activityOpen ? "rotate-180" : ""} aria-hidden="true" />\n            </button>\n\n            <div className={activityOpen ? "profile-wow-activity__body profile-wow-activity__body--open" : "profile-wow-activity__body"}>\n              {recentSubmissions.length === 0 ? (\n                <EmptyState\n                  icon={<FileText size={28} strokeWidth={1.75} />}\n                  title="No coding activity yet"\n                  description="Submit your first solution to start your coding trail."\n                  actionLabel="Start solving"\n                  actionHref="/problems"\n                  compact\n                />\n              ) : (\n                <>\n                  <div className="profile-wow-activity__legend">\n                    <span>PROBLEM</span>\n                    <span>LANGUAGE</span>\n                    <span>RESULT</span>\n                    <span>DATE</span>\n                  </div>\n\n                  <div className="profile-wow-activity__rows">\n                    {recentSubmissions.map((submission, index) => {\n                      const accepted = submission.status?.includes("Accepted");\n                      return (\n                        <div\n                          key={submission.id || submission.createdAt || index}\n                          className="profile-wow-activity__row"\n                        >\n                          <span className="profile-wow-activity__pulse" aria-hidden="true" />\n                          <div className="profile-wow-activity__problem">\n                            <span className="profile-wow-activity__row-number">{String(index + 1).padStart(2, "0")}</span>\n                            <strong>{submission.problemTitle || "Untitled problem"}</strong>\n                          </div>\n                          <span className="profile-wow-activity__language">{submission.language || "—"}</span>\n                          <span className={accepted ? "profile-wow-status profile-wow-status--accepted" : "profile-wow-status profile-wow-status--rejected"}>\n                            <i aria-hidden="true" />\n                            {submission.status || "Unknown"}\n                          </span>\n                          <span className="profile-wow-activity__date">{submission.date || "—"}</span>\n                        </div>\n                      );\n                    })}\n                  </div>\n\n                  {submissions.length > SUBMISSIONS_PREVIEW_COUNT && (\n                    <button\n                      type="button"\n                      onClick={() => setShowAllSubmissions((v) => !v)}\n                      className="profile-wow-more"\n                    >\n                      {showAllSubmissions\n                        ? "Collapse stream"\n                        : `Reveal ${Math.min(submissions.length, SUBMISSIONS_EXPANDED_COUNT) - SUBMISSIONS_PREVIEW_COUNT} more runs`}\n                      <ChevronDown\n                        size={15}\n                        className={showAllSubmissions ? "rotate-180" : ""}\n                        aria-hidden="true"\n                      />\n                    </button>\n                  )}\n                </>\n              )}\n            </div>\n          </section>\n        </ContentSlot>\n        {role === "student" && (
           <ContentSlot id="profile-recruiter-snapshot">
             <div className="profile-wow-section-heading">
               <div>
@@ -465,7 +390,7 @@ function Profile() {
               </div>
               <p>Turn your coding identity into a clear professional signal.</p>
             </div>
-            <RecruiterSnapshot />
+            <RecruiterSnapshot collapsible={false} />
           </ContentSlot>
         )}
       </div>
