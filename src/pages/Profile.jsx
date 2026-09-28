@@ -399,6 +399,7 @@ function Profile() {
               </CollapsibleGroup>
             </div>
           </div>
+          </div>
         </ContentSlot>
 
         <ContentSlot id="profile-coding-activity">
