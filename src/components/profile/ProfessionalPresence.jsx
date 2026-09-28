@@ -12,7 +12,7 @@ import { GithubMark, LinkedinMark } from "../icons/BrandIcons";
  * RecruiterSnapshot/EducationSection's localized-edit pattern rather than
  * a whole-card "Edit Profile" mode).
  */
-function ProfessionalPresence() {
+function ProfessionalPresence({ collapsible = true }) {
   const { developerProfile, updateDeveloperProfile } = useAppContext();
 
   return (
@@ -20,7 +20,7 @@ function ProfessionalPresence() {
       title="Professional Presence"
       subtitle="Connect the profiles that represent your work."
       accented
-      collapsible
+      collapsible={collapsible}
       defaultOpen
       storageKey="profile-collapse-professional-presence"
     >
