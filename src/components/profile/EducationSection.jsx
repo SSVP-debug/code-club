@@ -27,7 +27,7 @@ function deriveState(education) {
   return "verified"; // collegeStatus === "verified"
 }
 
-export default function EducationSection() {
+export default function EducationSection({ collapsible = true }) {
   const { theme } = useTheme();
   const [education, setEducation] = useState(undefined); // undefined = loading
   const [modalOpen, setModalOpen] = useState(false);
@@ -61,7 +61,7 @@ export default function EducationSection() {
       subtitle="Verify your college to unlock the College Leaderboard"
       icon={<GraduationCap size={18} strokeWidth={2} />}
       accented
-      collapsible
+      collapsible={collapsible}
       defaultOpen={false}
       storageKey="profile-collapse-education"
     >
