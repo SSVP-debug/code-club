@@ -4201,3 +4201,79 @@ html.bw-mode .lp-final-cta-copy p {
     margin-right: 16px;
   }
 }
+
+
+/* Foldable milestone chapter — keeps the page compact without turning
+   the individual achievement components into nested collapsible cards. */
+.profile-wow-fold-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.profile-wow-fold-header:focus-visible {
+  outline: 2px solid var(--theme-primary);
+  outline-offset: 8px;
+  border-radius: 10px;
+}
+
+.profile-wow-fold-header__right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+  min-width: 0;
+}
+
+.profile-wow-fold-header__right p {
+  margin: 0;
+}
+
+.profile-wow-fold-header__right svg {
+  flex: 0 0 auto;
+  color: var(--muted-foreground);
+  transition: transform .25s ease, color .2s ease;
+}
+
+.profile-wow-fold-header:hover .profile-wow-fold-header__right svg {
+  color: var(--theme-primary);
+}
+
+.profile-wow-fold-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows .38s ease, opacity .25s ease;
+  opacity: 0;
+}
+
+.profile-wow-fold-body > div {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.profile-wow-fold-body--open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+@media (max-width: 700px) {
+  .profile-wow-fold-header {
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .profile-wow-fold-header__right {
+    padding-top: 4px;
+  }
+
+  .profile-wow-fold-header__right p {
+    display: none;
+  }
+}
