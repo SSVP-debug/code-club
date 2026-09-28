@@ -255,11 +255,15 @@ function Profile() {
           </div>
 
           <div className="mt-4">
-            <FeaturedProject />
+            <ContentSlot id="profile-featured-project">
+              <FeaturedProject />
+            </ContentSlot>
           </div>
 
           <div className="mt-4">
-            <PinnedProblems />
+            <ContentSlot id="profile-pinned-problems">
+              <PinnedProblems />
+            </ContentSlot>
           </div>
         </ContentSlot>
 
