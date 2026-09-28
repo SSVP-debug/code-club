@@ -5,7 +5,7 @@ import { useAppContext } from "../hooks/useAppContext";
 import { useTheme } from "../hooks/useTheme";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { getLevel, getLevelProgress } from "../utils/xpLevel";
-import { Flame, BarChart3, Award, Zap, Inbox, FileText, ChevronDown } from "lucide-react";
+import { Flame, BarChart3, Award, Zap, FileText, ChevronDown } from "lucide-react";
 
 // ── UI foundation ──────────────────────────────────────────────────────────────
 import SectionCard from "../components/ui/layout/SectionCard";
@@ -42,7 +42,6 @@ function Profile() {
   const { theme } = useTheme();
   const {
     solvedProblems,
-    recentActivity,
     submissions,
     currentStreak,
     longestStreak,
@@ -57,22 +56,15 @@ function Profile() {
     switchActiveRole,
   } = useAppContext();
 
-  const [showAllActivity, setShowAllActivity] = useState(false);
   const [showAllSubmissions, setShowAllSubmissions] = useState(false);
 
-  const ACTIVITY_PREVIEW_COUNT = 5;
   const SUBMISSIONS_PREVIEW_COUNT = 5;
   const SUBMISSIONS_EXPANDED_COUNT = 15; // capped even when "expanded" — full history isn't paginated here
-
-  const visibleActivity = showAllActivity
-    ? recentActivity
-    : recentActivity.slice(0, ACTIVITY_PREVIEW_COUNT);
 
   const recentSubmissions = submissions.slice(
     0,
     showAllSubmissions ? SUBMISSIONS_EXPANDED_COUNT : SUBMISSIONS_PREVIEW_COUNT
   );
-
   const level = getLevel(totalXP);
   const { current, needed, percent } = getLevelProgress(totalXP);
 
@@ -405,134 +397,73 @@ function Profile() {
             defaultOpen
             storageKey="profile-collapse-coding-activity"
           >
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-              <SectionCard
-                title="Recent Activity"
-                icon={<Zap size={18} strokeWidth={2} />}
-                accented
-                collapsible
-                defaultOpen
-                storageKey="profile-collapse-activity"
-              >
-                {recentActivity.length === 0 ? (
-                  <EmptyState
-                    icon={<Inbox size={28} strokeWidth={1.75} />}
-                    title="No activity yet"
-                    description="Solve a problem to start building your activity history."
-                    actionLabel="Browse Problems"
-                    actionHref="/problems"
-                    compact
-                  />
-                ) : (
-                  <>
-                    <div className="space-y-3">
-                      {visibleActivity.map((item, index) => (
-                        <div
-                          key={index}
-                          className="bg-[var(--surface-elevated)] px-4 py-3 rounded-xl flex justify-between items-center"
-                        >
-                          <div className="flex items-center gap-3">
-                            <span
-                              className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                                item.status?.includes("Accepted")
-                                  ? "bg-green-500"
-                                  : "bg-red-500"
-                              }`}
-                            />
-                            <span className="text-sm">{item.title}</span>
-                          </div>
-                          <span className="text-[var(--muted-foreground)] text-sm flex-shrink-0 ml-4">
-                            {item.time}
-                          </span>
-                        </div>
-                      ))}
+            {recentSubmissions.length === 0 ? (
+              <EmptyState
+                icon={<FileText size={28} strokeWidth={1.75} />}
+                title="No coding activity yet"
+                description="Submit your first solution to see your coding history here."
+                actionLabel="Start solving"
+                actionHref="/problems"
+                compact
+              />
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <div className="min-w-[640px]">
+                    <div className="grid grid-cols-[minmax(0,1.8fr)_100px_150px_120px] gap-4 px-4 pb-3 text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+                      <span>Problem</span>
+                      <span>Language</span>
+                      <span>Status</span>
+                      <span className="text-right">Date</span>
                     </div>
 
-                    {recentActivity.length > ACTIVITY_PREVIEW_COUNT && (
-                      <button
-                        type="button"
-                        onClick={() => setShowAllActivity((v) => !v)}
-                        className="w-full mt-3 flex items-center justify-center gap-1.5 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] py-2 rounded-lg hover:bg-white/[0.03] transition"
-                      >
-                        {showAllActivity ? "Show less" : `Show ${recentActivity.length - ACTIVITY_PREVIEW_COUNT} more`}
-                        <ChevronDown
-                          size={15}
-                          strokeWidth={2}
-                          className={`transition-transform duration-200 ${showAllActivity ? "rotate-180" : ""}`}
-                          aria-hidden="true"
-                        />
-                      </button>
-                    )}
-                  </>
-                )}
-              </SectionCard>
-
-              <SectionCard
-                title="Recent Submissions"
-                icon={<FileText size={18} strokeWidth={2} />}
-                accented
-                collapsible
-                defaultOpen={false}
-                storageKey="profile-collapse-submissions"
-              >
-                {recentSubmissions.length === 0 ? (
-                  <EmptyState
-                    icon={<FileText size={28} strokeWidth={1.75} />}
-                    title="No submissions yet"
-                    description="Submit your first solution to see your history here."
-                    actionLabel="Start solving"
-                    actionHref="/problems"
-                    compact
-                  />
-                ) : (
-                  <>
-                    <div className="space-y-3">
+                    <div className="divide-y divide-[var(--border)]">
                       {recentSubmissions.map((submission, index) => (
                         <div
                           key={submission.id || submission.createdAt || index}
-                          className="flex justify-between items-center border-b border-[var(--border)] pb-2 last:border-0"
+                          className="grid grid-cols-[minmax(0,1.8fr)_100px_150px_120px] gap-4 items-center px-4 py-4"
                         >
-                          <div>
-                            <p className="font-medium">{submission.problemTitle}</p>
-                            <p className="text-xs text-[var(--muted-foreground)]">{submission.language}</p>
-                          </div>
-                          <div className="text-right">
-                            <p
-                              className={
-                                submission.status?.includes("Accepted")
-                                  ? "text-green-500"
-                                  : "text-red-500"
-                              }
-                            >
-                              {submission.status}
-                            </p>
-                            <p className="text-xs text-[var(--muted-foreground)]">{submission.date}</p>
-                          </div>
+                          <p className="font-medium truncate">{submission.problemTitle || "Untitled problem"}</p>
+                          <p className="text-sm text-[var(--muted-foreground)] uppercase">
+                            {submission.language || "—"}
+                          </p>
+                          <p
+                            className={
+                              submission.status?.includes("Accepted")
+                                ? "text-sm font-medium text-green-500"
+                                : "text-sm font-medium text-red-500"
+                            }
+                          >
+                            {submission.status || "Unknown"}
+                          </p>
+                          <p className="text-sm text-[var(--muted-foreground)] text-right">
+                            {submission.date || "—"}
+                          </p>
                         </div>
                       ))}
                     </div>
+                  </div>
+                </div>
 
-                    {submissions.length > SUBMISSIONS_PREVIEW_COUNT && (
-                      <button
-                        type="button"
-                        onClick={() => setShowAllSubmissions((v) => !v)}
-                        className="w-full mt-3 flex items-center justify-center gap-1.5 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] py-2 rounded-lg hover:bg-white/[0.03] transition"
-                      >
-                        {showAllSubmissions
-                          ? "Show less"
-                          : `Show ${Math.min(submissions.length, SUBMISSIONS_EXPANDED_COUNT) - SUBMISSIONS_PREVIEW_COUNT} more`}
-                        <ChevronDown
-                          size={15}
-                          strokeWidth={2}
-                          className={`transition-transform duration-200 ${showAllSubmissions ? "rotate-180" : ""}`}
-                          aria-hidden="true"
-                        />
-                      </button>
-                    )}
-                  </>
+                {submissions.length > SUBMISSIONS_PREVIEW_COUNT && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllSubmissions((v) => !v)}
+                    className="w-full mt-3 flex items-center justify-center gap-1.5 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] py-2 rounded-lg hover:bg-white/[0.03] transition"
+                  >
+                    {showAllSubmissions
+                      ? "Show less"
+                      : `Show ${Math.min(submissions.length, SUBMISSIONS_EXPANDED_COUNT) - SUBMISSIONS_PREVIEW_COUNT} more`}
+                    <ChevronDown
+                      size={15}
+                      strokeWidth={2}
+                      className={`transition-transform duration-200 ${showAllSubmissions ? "rotate-180" : ""}`}
+                      aria-hidden="true"
+                    />
+                  </button>
                 )}
-              </SectionCard>
-            </div>
+              </>
+            )}
           </SectionCard>
         </ContentSlot>
 
