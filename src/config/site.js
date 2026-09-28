@@ -12,7 +12,7 @@
 export const SITE_URL = "https://code-club-one.vercel.app"; // update when a custom domain is set
 
 // TODO: not a real inbox yet — update once one exists.
-export const SUPPORT_EMAIL = "hello@codeclub.in";
+export const SUPPORT_EMAIL = "connect.codeclub@gmail.com";
 
 // Domain only, no protocol — for display copy like "share your profile at ___".
 export const SITE_DOMAIN = SITE_URL.replace(/^https?:\/\//, "");

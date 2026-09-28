@@ -16,7 +16,7 @@ vi.mock("../config/resend.js", () => ({
 }));
 vi.mock("../config/site.js", () => ({
   SITE_URL: "https://code-club-one.vercel.app",
-  SUPPORT_EMAIL: "hello@codeclub.in",
+  SUPPORT_EMAIL: "connect.codeclub@gmail.com",
 }));
 vi.mock("../middleware/rateLimiter.js", () => ({
   // Pass-through middleware for unit tests — rate limiting itself is

@@ -237,7 +237,7 @@ describe("TpoDashboardPage — pending verification and shared shell", () => {
     renderDashboard();
 
     await waitFor(() => screen.getByText("College Verification Pending"));
-    expect(screen.getByText(/hello@codeclub.in/)).toBeInTheDocument();
+    expect(screen.getByText(/connect.codeclub@gmail.com/)).toBeInTheDocument();
     expect(screen.getByTestId("navbar-stub")).toBeInTheDocument();
   });
 

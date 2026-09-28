@@ -14,4 +14,4 @@ export const SITE_URL = process.env.FRONTEND_URL || "https://code-club-one.verce
 
 // TODO: not a real inbox yet — set SUPPORT_EMAIL once one exists.
 // Referenced in TPO early-access messaging and PDF export footers.
-export const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || "hello@codeclub.in";
+export const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || "connect.codeclub@gmail.com";

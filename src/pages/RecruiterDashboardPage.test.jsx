@@ -322,7 +322,7 @@ describe("RecruiterDashboardPage pending verification", () => {
     renderPage();
 
     await waitFor(() => screen.getByText("Recruiter Verification Pending"));
-    expect(screen.getByText(/hello@codeclub.in/)).toBeInTheDocument();
+    expect(screen.getByText(/connect.codeclub@gmail.com/)).toBeInTheDocument();
     expect(screen.getByTestId("navbar-stub")).toBeInTheDocument();
   });
 });
