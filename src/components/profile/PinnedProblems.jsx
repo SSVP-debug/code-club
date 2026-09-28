@@ -28,7 +28,7 @@ const MAX_PINNED = 6;
  * the full feature without touching BrowseView's row rendering, which
  * wasn't reviewed as part of this phase.
  */
-function PinnedProblems() {
+function PinnedProblems({ collapsible = true }) {
   const { pinnedProblems, pinProblem, unpinProblem, solvedProblems } = useAppContext();
   const { problems } = useProblems();
   const { theme } = useTheme();
@@ -80,7 +80,7 @@ function PinnedProblems() {
       icon={<Pin size={18} strokeWidth={2} />}
       subtitle="Showcase your best solves shown on your public profile."
       accented
-      collapsible
+      collapsible={collapsible}
       defaultOpen={false}
       storageKey="profile-collapse-pinned"
     >
