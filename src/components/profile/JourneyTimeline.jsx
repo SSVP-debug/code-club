@@ -15,7 +15,7 @@ import { Compass, Flag } from "lucide-react";
  * derive them from — would need a real event log, flagged for a later
  * phase rather than faked here.
  */
-function JourneyTimeline({ joinedDate, achievements = [] }) {
+function JourneyTimeline({ joinedDate, achievements = [], collapsible = true }) {
   const events = useMemo(() => {
     const list = [];
 
@@ -50,7 +50,7 @@ function JourneyTimeline({ joinedDate, achievements = [] }) {
       title="Journey Timeline"
       icon={<Compass size={18} strokeWidth={2} />}
       accented
-      collapsible
+      collapsible={collapsible}
       defaultOpen={false}
       storageKey="profile-collapse-journey"
     >
