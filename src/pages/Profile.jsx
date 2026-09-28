@@ -471,4 +471,6 @@ function Profile() {
       </div>
     </DashboardLayout>
   );
+}
+
 export default Profile;
