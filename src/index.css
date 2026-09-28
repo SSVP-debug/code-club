@@ -3040,3 +3040,704 @@ html.bw-mode .lp-final-cta-copy p {
     transition: none;
   }
 }
+
+
+/* ── Profile WOW redesign ────────────────────────────────────────────────
+   Presentation-only layer: existing profile components and data contracts
+   stay intact while the page gets a cohesive bento/identity surface. */
+.profile-wow {
+  --profile-glow: var(--theme-glow, var(--theme-primary, #2dd4bf));
+  position: relative;
+  padding-bottom: 3rem;
+}
+
+.profile-wow > [data-slot^="profile-"] {
+  scroll-margin-top: 82px;
+  position: relative;
+}
+
+.profile-wow-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 360px;
+  padding: 32px;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 30%, var(--border));
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 78% 18%, color-mix(in srgb, var(--theme-primary) 16%, transparent), transparent 26%),
+    radial-gradient(circle at 15% 90%, color-mix(in srgb, var(--theme-accent, #0d9488) 12%, transparent), transparent 30%),
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 7%, var(--surface)), var(--surface) 55%, color-mix(in srgb, var(--theme-accent, #0d9488) 4%, var(--surface)));
+  box-shadow:
+    0 28px 80px color-mix(in srgb, var(--profile-glow) 9%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--theme-primary) 12%, transparent);
+}
+
+.profile-wow-hero__grid {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: .18;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--theme-primary) 14%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--theme-primary) 14%, transparent) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(to bottom, black, transparent 82%);
+}
+
+.profile-wow-hero__orb {
+  position: absolute;
+  z-index: -1;
+  width: 220px;
+  height: 220px;
+  border-radius: 999px;
+  filter: blur(30px);
+  opacity: .16;
+  pointer-events: none;
+  background: var(--theme-primary);
+}
+
+.profile-wow-hero__orb--one {
+  top: -100px;
+  right: 12%;
+}
+
+.profile-wow-hero__orb--two {
+  bottom: -150px;
+  left: 18%;
+  background: var(--theme-accent, var(--theme-primary));
+}
+
+.profile-wow-hero__identity {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  max-width: 68%;
+}
+
+.profile-wow-avatar {
+  position: relative;
+  width: 104px;
+  height: 104px;
+  flex: 0 0 104px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 28px;
+  border: 2px solid color-mix(in srgb, var(--theme-primary) 55%, var(--border));
+  background: color-mix(in srgb, var(--theme-primary) 12%, var(--surface-elevated));
+  box-shadow: 0 0 0 8px color-mix(in srgb, var(--theme-primary) 5%, transparent), 0 18px 45px color-mix(in srgb, var(--profile-glow) 12%, transparent);
+}
+
+.profile-wow-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-wow-avatar > span:first-child {
+  color: var(--theme-primary);
+  font-size: 2.5rem;
+  font-weight: 800;
+}
+
+.profile-wow-avatar__online {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 13px;
+  height: 13px;
+  border-radius: 999px;
+  border: 3px solid var(--surface);
+  background: #22c55e;
+}
+
+.profile-wow-kicker,
+.profile-wow-section-heading > div > span {
+  color: color-mix(in srgb, var(--theme-primary) 72%, var(--theme-muted));
+  font: 800 9px/1.2 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+
+.profile-wow-name {
+  margin-top: 8px;
+  font-size: clamp(2rem, 4vw, 3.8rem);
+  line-height: .98;
+  letter-spacing: -.045em;
+  font-weight: 800;
+  color: var(--foreground);
+}
+
+.profile-wow-email {
+  margin-top: 8px;
+  color: var(--muted-foreground);
+  font-size: .9rem;
+}
+
+.profile-wow-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.profile-wow-meta span {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted-foreground);
+  background: color-mix(in srgb, var(--surface-elevated) 72%, transparent);
+  font-size: .72rem;
+  font-weight: 700;
+}
+
+.profile-wow-hero__actions {
+  position: absolute;
+  top: 32px;
+  right: 32px;
+  display: flex;
+  gap: 8px;
+}
+
+.profile-wow-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 11px;
+  border: 1px solid var(--border);
+  font-size: .75rem;
+  font-weight: 700;
+  transition: transform .2s ease, border-color .2s ease, background .2s ease;
+}
+
+.profile-wow-action:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--theme-primary) 45%, var(--border));
+}
+
+.profile-wow-action--ghost {
+  color: var(--muted-foreground);
+  background: color-mix(in srgb, var(--surface) 65%, transparent);
+}
+
+.profile-wow-action--primary {
+  color: var(--background);
+  border-color: var(--theme-primary);
+  background: var(--theme-primary);
+}
+
+.profile-wow-hero__metrics {
+  position: absolute;
+  left: 32px;
+  right: 32px;
+  bottom: 76px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--border);
+}
+
+.profile-wow-hero__metrics > div {
+  min-width: 0;
+  padding: 15px 18px;
+  background: color-mix(in srgb, var(--surface-elevated) 88%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.profile-wow-metric-value {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--foreground);
+}
+
+.profile-wow-metric-value--streak {
+  color: #fb923c;
+}
+
+.profile-wow-metric-label {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted-foreground);
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.profile-wow-hero__progress {
+  position: absolute;
+  left: 32px;
+  right: 32px;
+  bottom: 28px;
+}
+
+.profile-wow-hero__progress > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 7px;
+  color: var(--muted-foreground);
+  font-size: .68rem;
+  font-weight: 700;
+}
+
+.profile-wow-hero__progress strong {
+  color: var(--foreground);
+}
+
+.profile-wow-progress-track,
+.profile-wow-mini-track {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-primary) 9%, var(--surface-elevated));
+}
+
+.profile-wow-progress-track span,
+.profile-wow-mini-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--theme-primary), var(--theme-accent, var(--theme-primary)));
+  box-shadow: 0 0 18px color-mix(in srgb, var(--profile-glow) 28%, transparent);
+}
+
+.profile-wow-signal {
+  position: absolute;
+  right: 32px;
+  top: 100px;
+  width: min(290px, 28%);
+  opacity: .88;
+  transform: rotate(1deg);
+}
+
+.profile-wow-signal .universe-profile-hero {
+  min-height: 0;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  backdrop-filter: blur(18px);
+}
+
+.profile-wow-signal .universe-profile-hero__content {
+  padding: 18px;
+}
+
+.profile-wow-section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 54px 2px 16px;
+}
+
+.profile-wow-section-heading h2 {
+  margin-top: 7px;
+  color: var(--foreground);
+  font-size: clamp(1.35rem, 2.4vw, 2rem);
+  line-height: 1.05;
+  font-weight: 800;
+  letter-spacing: -.025em;
+}
+
+.profile-wow-section-heading p {
+  max-width: 480px;
+  color: var(--muted-foreground);
+  font-size: .8rem;
+  line-height: 1.6;
+  text-align: right;
+}
+
+.profile-wow-bento {
+  display: grid;
+  gap: 14px;
+}
+
+.profile-wow-bento--overview {
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, .9fr);
+  grid-template-areas:
+    "completion education"
+    "presence stat";
+}
+
+.profile-wow-bento--overview > * {
+  min-width: 0;
+}
+
+.profile-wow-bento__large { grid-area: completion; }
+.profile-wow-bento__medium { grid-area: education; }
+.profile-wow-presence-mini { grid-area: presence; }
+.profile-wow-bento__small { grid-area: stat; }
+
+.profile-wow-bento--work {
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr);
+  grid-template-areas:
+    "feature resume"
+    "feature pinned";
+}
+
+.profile-wow-feature { grid-area: feature; }
+.profile-wow-resume { grid-area: resume; }
+.profile-wow-pinned { grid-area: pinned; }
+
+.profile-wow-bento--analytics {
+  grid-template-columns: 1.15fr .85fr;
+  grid-template-areas:
+    "heatmap radar"
+    "dna dna"
+    "link link";
+}
+
+.profile-wow-heatmap { grid-area: heatmap; }
+.profile-wow-radar { grid-area: radar; }
+.profile-wow-dna { grid-area: dna; }
+.profile-wow-analytics-link { grid-area: link; }
+
+.profile-wow-bento--achievements {
+  grid-template-columns: 1.1fr .9fr;
+  grid-template-areas:
+    "achievements contests"
+    "achievements journey"
+    "certifications certifications";
+}
+
+.profile-wow-achievements { grid-area: achievements; }
+.profile-wow-contests { grid-area: contests; }
+.profile-wow-journey { grid-area: journey; }
+.profile-wow-certifications { grid-area: certifications; }
+
+.profile-wow-bento > * > .universe-card,
+.profile-wow-bento > .universe-card,
+.profile-wow-bento > * > [data-slot] > .universe-card {
+  height: 100%;
+}
+
+.profile-wow-stat-card,
+.profile-wow-account-card {
+  height: 100%;
+  min-height: 150px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--theme-primary) 8%, var(--surface)), var(--surface-elevated));
+}
+
+.profile-wow-stat-card__eyebrow {
+  color: var(--theme-primary);
+  font: 800 8px/1.2 ui-monospace, monospace;
+  letter-spacing: .16em;
+}
+
+.profile-wow-stat-card strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 2rem;
+  letter-spacing: -.04em;
+}
+
+.profile-wow-stat-card p {
+  margin: 5px 0 16px;
+  color: var(--muted-foreground);
+  font-size: .75rem;
+  line-height: 1.5;
+}
+
+.profile-wow-mini-track {
+  height: 7px;
+}
+
+.profile-wow-account-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.profile-wow-account-card__icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-radius: 13px;
+  color: var(--theme-primary);
+  background: color-mix(in srgb, var(--theme-primary) 12%, var(--surface-elevated));
+}
+
+.profile-wow-account-card strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.profile-wow-account-card p {
+  margin-top: 4px;
+  color: var(--muted-foreground);
+  font-size: .72rem;
+}
+
+.profile-wow-analytics-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 17px 19px;
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--surface-elevated) 86%, transparent);
+  transition: border-color .2s ease, transform .2s ease, background .2s ease;
+}
+
+.profile-wow-analytics-link:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--theme-primary) 42%, var(--border));
+  background: color-mix(in srgb, var(--theme-primary) 5%, var(--surface-elevated));
+}
+
+.profile-wow-analytics-link > svg {
+  flex: 0 0 auto;
+  color: var(--theme-primary);
+}
+
+.profile-wow-analytics-link div {
+  min-width: 0;
+}
+
+.profile-wow-analytics-link strong,
+.profile-wow-analytics-link span {
+  display: block;
+}
+
+.profile-wow-analytics-link strong {
+  font-size: .8rem;
+}
+
+.profile-wow-analytics-link div span {
+  margin-top: 2px;
+  color: var(--muted-foreground);
+  font-size: .7rem;
+}
+
+.profile-wow-arrow {
+  margin-left: auto;
+  color: var(--muted-foreground);
+  font-size: 1.15rem;
+}
+
+.profile-wow-table-wrap {
+  overflow-x: auto;
+}
+
+.profile-wow-table {
+  min-width: 680px;
+}
+
+.profile-wow-table__head,
+.profile-wow-table__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) 110px 160px 125px;
+  gap: 16px;
+  align-items: center;
+}
+
+.profile-wow-table__head {
+  padding: 0 14px 10px;
+  color: var(--muted-foreground);
+  font-size: .63rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.profile-wow-table__row {
+  min-height: 58px;
+  padding: 0 14px;
+  border-top: 1px solid var(--border);
+  color: var(--muted-foreground);
+  font-size: .78rem;
+}
+
+.profile-wow-table__row strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--foreground);
+  font-size: .82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-wow-table__language {
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.profile-wow-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 700;
+}
+
+.profile-wow-status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.profile-wow-status--accepted { color: #22c55e; }
+.profile-wow-status--rejected { color: #ef4444; }
+
+.profile-wow-more {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  color: var(--muted-foreground);
+  font-size: .72rem;
+  font-weight: 700;
+  transition: color .2s ease, background .2s ease;
+}
+
+.profile-wow-more:hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 4%, transparent);
+}
+
+@media (max-width: 900px) {
+  .profile-wow-hero {
+    min-height: 450px;
+    padding: 24px;
+  }
+
+  .profile-wow-hero__identity {
+    max-width: 100%;
+  }
+
+  .profile-wow-hero__actions {
+    top: auto;
+    right: 24px;
+    left: 24px;
+    bottom: 170px;
+  }
+
+  .profile-wow-hero__metrics {
+    left: 24px;
+    right: 24px;
+    bottom: 76px;
+  }
+
+  .profile-wow-hero__progress {
+    left: 24px;
+    right: 24px;
+    bottom: 27px;
+  }
+
+  .profile-wow-signal {
+    display: none;
+  }
+
+  .profile-wow-bento--overview,
+  .profile-wow-bento--work,
+  .profile-wow-bento--analytics,
+  .profile-wow-bento--achievements {
+    grid-template-columns: 1fr;
+    grid-template-areas: none;
+  }
+
+  .profile-wow-bento--overview > *,
+  .profile-wow-bento--work > *,
+  .profile-wow-bento--analytics > *,
+  .profile-wow-bento--achievements > * {
+    grid-area: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .profile-wow {
+    padding-bottom: 2rem;
+  }
+
+  .profile-wow-hero {
+    min-height: 520px;
+    padding: 20px;
+    border-radius: 22px;
+  }
+
+  .profile-wow-hero__identity {
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .profile-wow-avatar {
+    width: 78px;
+    height: 78px;
+    flex-basis: 78px;
+    border-radius: 20px;
+  }
+
+  .profile-wow-name {
+    font-size: 2rem;
+  }
+
+  .profile-wow-hero__actions {
+    bottom: 196px;
+    left: 20px;
+    right: 20px;
+  }
+
+  .profile-wow-action {
+    flex: 1;
+  }
+
+  .profile-wow-hero__metrics {
+    left: 20px;
+    right: 20px;
+    bottom: 83px;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .profile-wow-hero__metrics > div {
+    padding: 12px 14px;
+  }
+
+  .profile-wow-metric-value {
+    font-size: 1.1rem;
+  }
+
+  .profile-wow-hero__progress {
+    left: 20px;
+    right: 20px;
+    bottom: 27px;
+  }
+
+  .profile-wow-section-heading {
+    display: block;
+    margin-top: 40px;
+  }
+
+  .profile-wow-section-heading p {
+    margin-top: 9px;
+    text-align: left;
+  }
+
+  .profile-wow-meta {
+    gap: 5px;
+  }
+
+  .profile-wow-meta span {
+    font-size: .65rem;
+    padding: 5px 8px;
+  }
+}
