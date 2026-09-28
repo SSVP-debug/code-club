@@ -238,8 +238,6 @@ function Profile() {
 
         <ProfileQuickNav items={quickNavItems} />
 
-        {/* ── 1. Hero ──────────────────────────────────────────────────── */}
-
         <ContentSlot id="profile-presence">
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
             <ProfessionalPresence />
@@ -255,6 +253,7 @@ function Profile() {
           </div>
         </ContentSlot>
 
+        <ContentSlot id="profile-overview-details">
         {/* ── 2. Profile Completion nudge ──────────────────────────────── */}
         {/* Self-hides at 100% — see ProfileCompletion.jsx for why there's
             no "unlock 50 XP" reward here despite the audit mockup showing
@@ -262,6 +261,7 @@ function Profile() {
         <ContentSlot id="profile-completion">
           <ProfileCompletion />
         </ContentSlot>
+
 
 
         </ContentSlot>
@@ -281,13 +281,6 @@ function Profile() {
         {role === "student" && (
           <ContentSlot id="profile-education">
             <EducationSection />
-          </ContentSlot>
-        )}
-
-        {/* ── Contest History (Phase 12D) ──────────────────────────────── */}
-        {role === "student" && (
-          <ContentSlot id="profile-contest-history">
-            <ContestHistorySection />
           </ContentSlot>
         )}
 
