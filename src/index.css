@@ -3741,3 +3741,443 @@ html.bw-mode .lp-final-cta-copy p {
     padding: 5px 8px;
   }
 }
+
+
+/* ── Profile WOW v2: signal-driven lower page ────────────────────────────
+   The hero is the "energy" anchor. Lower sections intentionally behave like
+   a continuous interface: fewer equal cards, stronger editorial hierarchy,
+   tighter vertical rhythm, and interactive logs instead of generic grids. */
+.profile-wow .universe-card {
+  border-radius: 22px;
+  border-color: color-mix(in srgb, var(--theme-primary) 18%, var(--border));
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--theme-primary) 3%, var(--surface)), var(--surface) 58%);
+  box-shadow: 0 14px 45px rgba(0,0,0,.12);
+}
+
+.profile-wow .profile-wow-bento > * > .universe-card,
+.profile-wow .profile-wow-bento > .universe-card,
+.profile-wow .profile-wow-bento > * > [data-slot] > .universe-card {
+  height: auto;
+}
+
+.profile-wow-section-heading {
+  position: relative;
+  align-items: center;
+  margin: 46px 2px 14px;
+  padding-bottom: 14px;
+}
+
+.profile-wow-section-heading::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--theme-primary) 65%, transparent), var(--border) 38%, transparent);
+}
+
+.profile-wow-section-heading > div {
+  position: relative;
+  z-index: 1;
+}
+
+.profile-wow-section-heading > div > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-wow-section-heading > div > span::before {
+  content: "";
+  width: 20px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--theme-primary);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--profile-glow) 45%, transparent);
+}
+
+.profile-wow-section-heading h2 {
+  font-size: clamp(1.55rem, 2.7vw, 2.25rem);
+}
+
+.profile-wow-section-heading p {
+  font-size: .78rem;
+}
+
+.profile-wow-bento {
+  gap: 10px;
+}
+
+.profile-wow-bento--overview {
+  grid-template-columns: minmax(0, 1.5fr) minmax(260px, .7fr);
+  grid-template-areas:
+    "completion education"
+    "presence stat";
+}
+
+.profile-wow-bento--overview .profile-wow-bento__large,
+.profile-wow-bento--overview .profile-wow-bento__medium,
+.profile-wow-bento--overview .profile-wow-presence-mini,
+.profile-wow-bento--overview .profile-wow-bento__small {
+  min-width: 0;
+}
+
+.profile-wow-bento--overview .universe-card {
+  height: 100%;
+}
+
+.profile-wow-bento--overview .profile-wow-presence-mini .universe-card {
+  min-height: 150px;
+}
+
+.profile-wow-bento--work {
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, .7fr);
+  grid-template-areas:
+    "feature resume"
+    "feature pinned";
+  align-items: start;
+}
+
+.profile-wow-bento--work .profile-wow-feature {
+  min-height: 100%;
+}
+
+.profile-wow-bento--work .profile-wow-feature .universe-card {
+  min-height: 100%;
+}
+
+.profile-wow-bento--analytics {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "heatmap"
+    "radar"
+    "dna"
+    "link";
+}
+
+.profile-wow-heatmap .relative {
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 85% 0%, color-mix(in srgb, var(--theme-primary) 9%, transparent), transparent 30%),
+    var(--surface);
+}
+
+.profile-wow-radar .universe-card,
+.profile-wow-dna .universe-card {
+  height: auto;
+}
+
+.profile-wow-bento--analytics .profile-wow-radar {
+  width: min(100%, 720px);
+}
+
+.profile-wow-bento--analytics .profile-wow-dna {
+  width: min(100%, 980px);
+}
+
+.profile-wow-bento--achievements {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "achievements"
+    "contests"
+    "journey"
+    "certifications";
+}
+
+.profile-wow-achievements .universe-card {
+  border-color: color-mix(in srgb, var(--theme-primary) 26%, var(--border));
+}
+
+.profile-wow-achievements .universe-achievement-gallery__summary {
+  margin-bottom: 16px;
+}
+
+.profile-wow-bento--achievements .profile-wow-contests .universe-card,
+.profile-wow-bento--achievements .profile-wow-journey .universe-card {
+  min-height: 0;
+}
+
+.profile-wow-bento--achievements .profile-wow-contests,
+.profile-wow-bento--achievements .profile-wow-journey {
+  max-width: 920px;
+}
+
+.profile-wow-bento--achievements .profile-wow-certifications {
+  max-width: 920px;
+}
+
+.profile-wow-activity {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 28%, var(--border));
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--theme-primary) 8%, transparent), transparent 32%),
+    linear-gradient(145deg, color-mix(in srgb, var(--theme-primary) 3%, var(--surface)), var(--surface));
+  box-shadow: 0 22px 65px rgba(0,0,0,.15);
+}
+
+.profile-wow-activity::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(var(--theme-primary), transparent 85%);
+}
+
+.profile-wow-activity__header {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 13px;
+  padding: 18px 22px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  color: var(--foreground);
+  transition: background .2s ease;
+}
+
+.profile-wow-activity__header:hover {
+  background: color-mix(in srgb, var(--theme-primary) 4%, transparent);
+}
+
+.profile-wow-activity__index {
+  color: var(--theme-primary);
+  font: 800 8px/1 ui-monospace, monospace;
+  letter-spacing: .16em;
+}
+
+.profile-wow-activity__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .9rem;
+  font-weight: 800;
+}
+
+.profile-wow-activity__title svg {
+  color: var(--theme-primary);
+}
+
+.profile-wow-activity__count {
+  color: var(--muted-foreground);
+  font-size: .68rem;
+  font-weight: 700;
+}
+
+.profile-wow-activity__body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows .35s ease;
+}
+
+.profile-wow-activity__body > * {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.profile-wow-activity__body--open {
+  grid-template-rows: 1fr;
+}
+
+.profile-wow-activity__legend,
+.profile-wow-activity__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) 110px 170px 125px;
+  gap: 16px;
+  align-items: center;
+}
+
+.profile-wow-activity__legend {
+  padding: 15px 22px 10px;
+  color: var(--muted-foreground);
+  font: 800 8px/1 ui-monospace, monospace;
+  letter-spacing: .13em;
+}
+
+.profile-wow-activity__rows {
+  padding-bottom: 4px;
+}
+
+.profile-wow-activity__row {
+  position: relative;
+  min-height: 64px;
+  padding: 0 22px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  color: var(--muted-foreground);
+  font-size: .78rem;
+  transition: background .2s ease, transform .2s ease;
+}
+
+.profile-wow-activity__row:hover {
+  background: color-mix(in srgb, var(--theme-primary) 4%, transparent);
+}
+
+.profile-wow-activity__pulse {
+  position: absolute;
+  left: 8px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--theme-primary);
+  box-shadow: 0 0 13px color-mix(in srgb, var(--profile-glow) 55%, transparent);
+  opacity: 0;
+}
+
+.profile-wow-activity__row:hover .profile-wow-activity__pulse {
+  opacity: 1;
+}
+
+.profile-wow-activity__problem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.profile-wow-activity__problem strong {
+  overflow: hidden;
+  color: var(--foreground);
+  font-size: .82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-wow-activity__row-number {
+  color: color-mix(in srgb, var(--theme-primary) 50%, var(--muted-foreground));
+  font: 800 8px/1 ui-monospace, monospace;
+}
+
+.profile-wow-activity__language {
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  font-size: .68rem;
+}
+
+.profile-wow-activity__date {
+  text-align: right;
+}
+
+.profile-wow-activity .profile-wow-more {
+  width: calc(100% - 44px);
+  margin: 9px 22px 16px;
+  border: 1px dashed color-mix(in srgb, var(--theme-primary) 25%, var(--border));
+}
+
+.profile-wow-section-heading--activity {
+  margin-bottom: 14px;
+}
+
+.profile-wow-section-heading--activity + .profile-wow-activity {
+  margin-bottom: 8px;
+}
+
+/* Career is the closing CTA, not another anonymous dashboard card. */
+#profile-recruiter-snapshot > .profile-wow-section-heading {
+  margin-top: 46px;
+}
+
+#profile-recruiter-snapshot > .universe-card {
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--theme-primary) 11%, transparent), transparent 32%),
+    var(--surface);
+}
+
+@media (min-width: 901px) {
+  .profile-wow-bento--overview > * {
+    animation: profile-wow-rise .45s ease both;
+  }
+
+  .profile-wow-bento--overview > :nth-child(2) { animation-delay: .05s; }
+  .profile-wow-bento--overview > :nth-child(3) { animation-delay: .1s; }
+  .profile-wow-bento--overview > :nth-child(4) { animation-delay: .15s; }
+
+  .profile-wow-bento--work > * {
+    animation: profile-wow-rise .45s ease both;
+  }
+
+  .profile-wow-bento--work > :nth-child(2) { animation-delay: .06s; }
+  .profile-wow-bento--work > :nth-child(3) { animation-delay: .12s; }
+}
+
+@keyframes profile-wow-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 900px) {
+  .profile-wow-section-heading {
+    margin-top: 38px;
+  }
+
+  .profile-wow-activity__legend,
+  .profile-wow-activity__row {
+    grid-template-columns: minmax(0, 1.6fr) 90px 140px 105px;
+  }
+}
+
+@media (max-width: 640px) {
+  .profile-wow-section-heading {
+    padding-bottom: 12px;
+  }
+
+  .profile-wow-section-heading p {
+    max-width: 100%;
+  }
+
+  .profile-wow-activity {
+    border-radius: 18px;
+  }
+
+  .profile-wow-activity__header {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding: 16px;
+  }
+
+  .profile-wow-activity__count {
+    display: none;
+  }
+
+  .profile-wow-activity__legend,
+  .profile-wow-activity__row {
+    grid-template-columns: minmax(0, 1fr) 90px 115px;
+  }
+
+  .profile-wow-activity__legend span:first-child {
+    grid-column: 1;
+  }
+
+  .profile-wow-activity__legend span:nth-child(2) {
+    grid-column: 2;
+  }
+
+  .profile-wow-activity__legend span:nth-child(3) {
+    grid-column: 3;
+  }
+
+  .profile-wow-activity__legend span:nth-child(4),
+  .profile-wow-activity__row .profile-wow-activity__date {
+    display: none;
+  }
+
+  .profile-wow-activity__row {
+    padding: 0 16px;
+    min-height: 58px;
+  }
+
+  .profile-wow-activity__legend {
+    padding: 13px 16px 9px;
+  }
+
+  .profile-wow-activity .profile-wow-more {
+    width: calc(100% - 32px);
+    margin-left: 16px;
+    margin-right: 16px;
+  }
+}
