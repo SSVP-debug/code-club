@@ -84,13 +84,19 @@ export default function AdminOverviewPage() {
               items={tpos}
               busyIds={busyIds}
               getRow={(t) => ({
-                id: t.collegeId,
+                id: t.userId || t.collegeId,
+                actionTarget: t.reviewTarget === "user" ? t : undefined,
                 title: t.collegeName,
                 subtitle: t.requestedBy?.displayName || t.requestedBy?.email || "Unknown requester",
-                meta: `${t.domain} · requested ${formatDate(t.requestedAt)}`,
+                meta: `${(t.domains || []).join(", ")} · requested ${formatDate(t.requestedAt)}`,
+                signal: t.emailRoleSignal,
+                evidenceHint: t.additionalEvidenceRecommended,
+                evidence: t.evidence,
+                reviewHistory: t.reviewHistory,
+                reviewTarget: t.reviewTarget,
               })}
               onApprove={(id) => actOnTpo(id, "approve")}
-              onReject={(id) => actOnTpo(id, "reject")}
+              onReject={(id, reason) => actOnTpo(id, "reject", reason)}
             />
           </div>
 

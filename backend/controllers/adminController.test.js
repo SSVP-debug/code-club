@@ -1,5 +1,11 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
+vi.mock("../models/TpoVerificationReview.js", () => ({
+    default: {
+        create: vi.fn().mockResolvedValue({}),
+        find: vi.fn(),
+    },
+}));
 vi.mock("../models/College.js", () => ({
     default: {
         find: vi.fn(),
@@ -50,6 +56,7 @@ vi.mock("../config/logger.js", () => ({
     logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
+import TpoVerificationReview from "../models/TpoVerificationReview.js";
 import College from "../models/College.js";
 import User from "../models/User.js";
 import ImpersonationLog from "../models/ImpersonationLog.js";
@@ -67,6 +74,8 @@ import {
     rejectRecruiter,
     approveTpo,
     rejectTpo,
+    approveTpoUser,
+    rejectTpoUser,
     approveStudentCollege,
     rejectStudentCollege,
     listUsers,
@@ -137,6 +146,7 @@ describe("adminController", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        TpoVerificationReview.find.mockReturnValue(chainableQuery([]));
         res = mockRes();
     });
 
@@ -163,6 +173,7 @@ describe("adminController", () => {
                     },
                 ])
             );
+            User.find.mockReturnValueOnce(chainableQuery([]));
 
             const req = {};
             await getPendingQueue(req, res);
@@ -174,6 +185,59 @@ describe("adminController", () => {
                     tpos: [expect.objectContaining({ collegeId: "c1", collegeName: "MIT", domain: "mit.edu" })],
                     studentCollegeRequests: [
                         expect.objectContaining({ collegeId: "c2", collegeName: "XYZ Institute", domains: ["xyz.ac.in"] }),
+                    ],
+                })
+            );
+        });
+
+        it("includes recent review history for a pending individual TPO applicant", async () => {
+            User.find.mockReturnValueOnce(chainableQuery([]));
+            College.find.mockReturnValueOnce(chainableQuery([]));
+            User.find.mockReturnValueOnce(
+                chainableQuery([
+                    {
+                        _id: "tpo1",
+                        email: "staff@mit.edu",
+                        displayName: "Staff",
+                        tpoProfile: { collegeName: "MIT", collegeDomain: "mit.edu", requestedAt: "now" },
+                        tpoVerification: {
+                            status: "pending",
+                            emailRoleSignal: "staff_candidate",
+                            submittedAt: "now",
+                            evidence: [{ kind: "staff_id", label: "Staff ID" }],
+                        },
+                        createdAt: "created",
+                    },
+                ])
+            );
+            TpoVerificationReview.find.mockReturnValueOnce(
+                chainableQuery([
+                    {
+                        userId: "tpo1",
+                        decision: "rejected",
+                        decisionReason: "Previous evidence was insufficient.",
+                        reviewedAt: "2026-09-20T10:00:00Z",
+                        reviewedBy: "admin1",
+                    },
+                ])
+            );
+
+            await getPendingQueue({}, res);
+
+            expect(TpoVerificationReview.find).toHaveBeenCalledWith({ userId: { $in: ["tpo1"] } });
+            expect(res.json).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    tpos: [
+                        expect.objectContaining({
+                            userId: "tpo1",
+                            reviewTarget: "user",
+                            reviewHistory: [
+                                expect.objectContaining({
+                                    decision: "rejected",
+                                    decisionReason: "Previous evidence was insufficient.",
+                                }),
+                            ],
+                        }),
                     ],
                 })
             );
@@ -238,16 +302,145 @@ describe("adminController", () => {
         });
     });
 
-    describe("approveTpo", () => {
-        function mockPendingCandidates(candidates) {
-            User.find.mockReturnValueOnce({
-                sort: vi.fn().mockReturnThis(),
-                select: vi.fn().mockReturnThis(),
-                lean: vi.fn().mockResolvedValue(candidates),
+    describe("individual TPO verification decisions", () => {
+        function makePendingTpo(overrides = {}) {
+            return makeUser({
+                _id: "tpo1",
+                firebaseUid: "fb-tpo1",
+                email: "staff@mit.edu",
+                role: "tpo",
+                roles: ["student", "tpo"],
+                tpoProfile: {
+                    collegeDomain: "mit.edu",
+                    collegeName: "MIT",
+                    verified: false,
+                    requestedAt: "request-time",
+                    verifiedAt: null,
+                },
+                tpoVerification: {
+                    status: "pending",
+                    emailRoleSignal: "staff_candidate",
+                    submittedEmail: "staff@mit.edu",
+                    submittedAt: "request-time",
+                    evidence: [],
+                },
+                ...overrides,
             });
         }
 
-        it("verifies the college, bulk-verifies matching pending TPO profiles, and audit-logs it", async () => {
+        it("approves only a pending applicant, records the review reason, and claims primary after approval", async () => {
+            const user = makePendingTpo();
+            const college = {
+                _id: "c1",
+                name: "MIT",
+                status: "verified",
+                domains: ["mit.edu"],
+            };
+            const admin = makeAdmin();
+            User.findById.mockResolvedValueOnce(user);
+            College.findByDomain.mockResolvedValueOnce(college);
+            claimPrimaryIfNone.mockResolvedValueOnce(true);
+
+            await approveTpoUser({
+                params: { userId: "tpo1" },
+                body: { decisionReason: "Staff identity matched the submitted institutional evidence." },
+                userDoc: admin,
+            }, res);
+
+            expect(user.tpoProfile.verified).toBe(true);
+            expect(user.tpoVerification.status).toBe("approved");
+            expect(user.save).toHaveBeenCalledOnce();
+            expect(TpoVerificationReview.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    userId: "tpo1",
+                    collegeId: "c1",
+                    decision: "approved",
+                    decisionReason: "Staff identity matched the submitted institutional evidence.",
+                    reviewedBy: "admin1",
+                })
+            );
+            expect(claimPrimaryIfNone).toHaveBeenCalledWith("c1", "tpo1");
+            expect(recordAdminAction).toHaveBeenCalledWith(
+                expect.objectContaining({ action: "tpo.user.approve", targetType: "User", targetId: "tpo1" })
+            );
+            expect(res.json).toHaveBeenCalledWith({ success: true });
+        });
+
+        it("rejects without mutating the applicant when a non-pending request is reviewed", async () => {
+            const user = makePendingTpo({
+                tpoVerification: {
+                    status: "rejected",
+                    emailRoleSignal: "unknown",
+                    submittedEmail: "staff@mit.edu",
+                    evidence: [],
+                },
+            });
+            User.findById.mockResolvedValueOnce(user);
+
+            await rejectTpoUser({ params: { userId: "tpo1" }, body: { decisionReason: "Insufficient evidence." }, userDoc: makeAdmin() }, res);
+
+            expect(res.status).toHaveBeenCalledWith(409);
+            expect(user.save).not.toHaveBeenCalled();
+            expect(TpoVerificationReview.create).not.toHaveBeenCalled();
+        });
+
+        it("requires a reason when rejecting a pending applicant", async () => {
+            const user = makePendingTpo();
+            User.findById.mockResolvedValueOnce(user);
+
+            await rejectTpoUser({ params: { userId: "tpo1" }, body: {}, userDoc: makeAdmin() }, res);
+
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(user.save).not.toHaveBeenCalled();
+            expect(TpoVerificationReview.create).not.toHaveBeenCalled();
+        });
+
+        it("rejects a pending applicant and preserves the reason in the immutable review", async () => {
+            const user = makePendingTpo();
+            const college = { _id: "c1", name: "MIT", status: "verified", domains: ["mit.edu"] };
+            const admin = makeAdmin();
+            User.findById.mockResolvedValueOnce(user);
+            College.findByDomain.mockResolvedValueOnce(college);
+
+            await rejectTpoUser({
+                params: { userId: "tpo1" },
+                body: { decisionReason: "The submitted staff evidence could not be verified." },
+                userDoc: admin,
+            }, res);
+
+            expect(user.role).toBe("student");
+            expect(user.roles).toEqual(["student"]);
+            expect(user.tpoVerification.status).toBe("rejected");
+            expect(TpoVerificationReview.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    userId: "tpo1",
+                    collegeId: "c1",
+                    decision: "rejected",
+                    decisionReason: "The submitted staff evidence could not be verified.",
+                    reviewedBy: "admin1",
+                })
+            );
+            expect(invalidateCachedUserByFirebaseUid).toHaveBeenCalledWith("fb-tpo1");
+            expect(res.json).toHaveBeenCalledWith({ success: true });
+        });
+
+        it("does not allow an oversized decision reason", async () => {
+            const user = makePendingTpo();
+            User.findById.mockResolvedValueOnce(user);
+
+            await rejectTpoUser({
+                params: { userId: "tpo1" },
+                body: { decisionReason: "x".repeat(1001) },
+                userDoc: makeAdmin(),
+            }, res);
+
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(user.save).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("approveTpo", () => {
+        it("verifies the college without bulk-authorizing individual TPOs", async () => {
             const college = {
                 _id: "c1",
                 domains: ["mit.edu"],
@@ -258,21 +451,27 @@ describe("adminController", () => {
             };
             const admin = makeAdmin();
             College.findById.mockResolvedValueOnce(college);
-            mockPendingCandidates([{ _id: "req1" }]);
-            User.updateMany.mockResolvedValueOnce({ modifiedCount: 3 });
 
             await approveTpo({ params: { collegeId: "c1" }, userDoc: admin, actingAdminDoc: null }, res);
 
             expect(college.status).toBe("verified");
-            expect(User.updateMany).toHaveBeenCalledWith(
-                { role: "tpo", "tpoProfile.collegeDomain": { $in: ["mit.edu"] }, "tpoProfile.verified": false },
-                expect.objectContaining({ $set: expect.any(Object) })
-            );
+            expect(User.updateMany).not.toHaveBeenCalled();
+            expect(User.find).not.toHaveBeenCalled();
+            expect(claimPrimaryIfNone).not.toHaveBeenCalled();
+            expect(TpoVerificationReview.create).not.toHaveBeenCalled();
             expect(recordAdminAction).toHaveBeenCalledWith(
-                expect.objectContaining({ adminDoc: admin, action: "tpo.approve", targetType: "College", targetId: "c1" })
+                expect.objectContaining({
+                    adminDoc: admin,
+                    action: "tpo.approve",
+                    targetType: "College",
+                    targetId: "c1",
+                })
             );
             expect(createNotification).toHaveBeenCalledWith(
-                expect.objectContaining({ userId: "admin-user-1", type: "tpo_verified" })
+                expect.objectContaining({
+                    userId: "admin-user-1",
+                    type: "college_verified",
+                })
             );
             expect(res.json).toHaveBeenCalledWith({ success: true });
         });
@@ -285,112 +484,39 @@ describe("adminController", () => {
             expect(res.status).toHaveBeenCalledWith(404);
         });
 
-        // ── First verified TPO becomes primary (Phase 3) ─────────────────
-        it("claims primary for the earliest-requestedAt pending TPO among those just verified", async () => {
+        it("does not authorize or claim primary for pending TPOs when a college is approved", async () => {
             const college = {
-                _id: "c1", domains: ["mit.edu"], name: "MIT", submittedBy: "u1", status: "pending",
+                _id: "c1",
+                domains: ["mit.edu"],
+                name: "MIT",
+                submittedBy: "u1",
+                status: "pending",
                 save: vi.fn().mockResolvedValue(true),
             };
             College.findById.mockResolvedValueOnce(college);
-            // Sorted ascending by requestedAt — the service is trusted to
-            // have applied the sort; the handler just uses candidates[0].
-            mockPendingCandidates([{ _id: "earliest" }, { _id: "later" }]);
-            User.updateMany.mockResolvedValueOnce({ modifiedCount: 2 });
 
             await approveTpo({ params: { collegeId: "c1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
 
-            expect(User.find).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    role: "tpo",
-                    "tpoProfile.collegeDomain": { $in: ["mit.edu"] },
-                    "tpoProfile.verified": false,
-                })
-            );
-            expect(claimPrimaryIfNone).toHaveBeenCalledWith("c1", "earliest");
-        });
-
-        it("still calls claimPrimaryIfNone (a safe no-op CAS) even when the college already has a primary", async () => {
-            const college = {
-                _id: "c1", domains: ["mit.edu"], name: "MIT", submittedBy: "u1", status: "pending",
-                primaryTpo: "already-primary",
-                save: vi.fn().mockResolvedValue(true),
-            };
-            College.findById.mockResolvedValueOnce(college);
-            mockPendingCandidates([{ _id: "second-tpo" }]);
-            User.updateMany.mockResolvedValueOnce({ modifiedCount: 1 });
-            claimPrimaryIfNone.mockResolvedValueOnce(false); // CAS no-op — already claimed
-
-            await approveTpo({ params: { collegeId: "c1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
-
-            expect(claimPrimaryIfNone).toHaveBeenCalledWith("c1", "second-tpo");
-            expect(res.json).toHaveBeenCalledWith({ success: true });
-        });
-
-        it("does not attempt a primary claim when there are no pending candidates", async () => {
-            const college = {
-                _id: "c1", domains: ["mit.edu"], name: "MIT", submittedBy: "u1", status: "pending",
-                save: vi.fn().mockResolvedValue(true),
-            };
-            College.findById.mockResolvedValueOnce(college);
-            mockPendingCandidates([]);
-            User.updateMany.mockResolvedValueOnce({ modifiedCount: 0 });
-
-            await approveTpo({ params: { collegeId: "c1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
-
+            expect(User.updateMany).not.toHaveBeenCalled();
             expect(claimPrimaryIfNone).not.toHaveBeenCalled();
-        });
-
-        // ── TPO-1 closure: auth-cache invalidation for bulk-verified TPOs ──
-        it("invalidates the auth cache for every TPO account it just bulk-verified", async () => {
-            const college = {
-                _id: "c1", domains: ["mit.edu"], name: "MIT", submittedBy: "u1", status: "pending",
-                save: vi.fn().mockResolvedValue(true),
-            };
-            College.findById.mockResolvedValueOnce(college);
-            mockPendingCandidates([
-                { _id: "req1", firebaseUid: "fb-req1" },
-                { _id: "req2", firebaseUid: "fb-req2" },
-            ]);
-            User.updateMany.mockResolvedValueOnce({ modifiedCount: 2 });
-
-            await approveTpo({ params: { collegeId: "c1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
-
-            expect(invalidateCachedUserByFirebaseUid).toHaveBeenCalledWith("fb-req1");
-            expect(invalidateCachedUserByFirebaseUid).toHaveBeenCalledWith("fb-req2");
-        });
-
-        it("does not attempt any cache invalidation when there are no pending candidates", async () => {
-            const college = {
-                _id: "c1", domains: ["mit.edu"], name: "MIT", submittedBy: "u1", status: "pending",
-                save: vi.fn().mockResolvedValue(true),
-            };
-            College.findById.mockResolvedValueOnce(college);
-            mockPendingCandidates([]);
-            User.updateMany.mockResolvedValueOnce({ modifiedCount: 0 });
-
-            await approveTpo({ params: { collegeId: "c1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
-
             expect(invalidateCachedUserByFirebaseUid).not.toHaveBeenCalled();
         });
 
-        // ── TPO-1 hardening: partial-failure handling ───────────────────────
-        it("still reports success when claimPrimaryIfNone throws after the college was already verified and TPOs already bulk-verified", async () => {
+        it("keeps the college approval successful even though notification delivery is asynchronous", async () => {
             const college = {
-                _id: "c1", domains: ["mit.edu"], name: "MIT", submittedBy: "u1", status: "pending",
+                _id: "c1",
+                domains: ["mit.edu"],
+                name: "MIT",
+                submittedBy: "u1",
+                status: "pending",
                 save: vi.fn().mockResolvedValue(true),
             };
             College.findById.mockResolvedValueOnce(college);
-            mockPendingCandidates([{ _id: "req1", firebaseUid: "fb-req1" }]);
-            User.updateMany.mockResolvedValueOnce({ modifiedCount: 1 });
-            claimPrimaryIfNone.mockRejectedValueOnce(new Error("CAS write boom"));
+            createNotification.mockImplementationOnce(() => Promise.reject(new Error("notification failed")));
 
             await approveTpo({ params: { collegeId: "c1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
 
-            // The core operation (verify college + bulk-verify TPOs) already
-            // happened by the time the claim fails — that must not turn into
-            // a 500 the admin reads as "the approval didn't go through".
             expect(college.status).toBe("verified");
-            expect(User.updateMany).toHaveBeenCalledOnce();
             expect(res.status).not.toHaveBeenCalledWith(500);
             expect(res.json).toHaveBeenCalledWith({ success: true });
         });
@@ -414,6 +540,28 @@ describe("adminController", () => {
             expect(recordAdminAction).toHaveBeenCalledWith(
                 expect.objectContaining({ adminDoc: admin, action: "tpo.reject", targetType: "College", targetId: "c1" })
             );
+            expect(TpoVerificationReview.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    userId: "req1",
+                    collegeId: "c1",
+                    decision: "rejected",
+                    reviewedBy: "admin1",
+                })
+            );
+            expect(res.json).toHaveBeenCalledWith({ success: true });
+        });
+
+        it("does not demote a requester who is no longer a TPO", async () => {
+            const college = { _id: "c1", name: "MIT", submittedBy: "req1" };
+            const requester = makeUser({ _id: "req1", role: "student", roles: ["student"], firebaseUid: "fb-req1" });
+            College.findById.mockResolvedValueOnce(college);
+            User.findById.mockResolvedValueOnce(requester);
+
+            await rejectTpo({ params: { collegeId: "c1" }, userDoc: makeAdmin(), actingAdminDoc: null }, res);
+
+            expect(College.deleteOne).toHaveBeenCalledWith({ _id: "c1" });
+            expect(requester.save).not.toHaveBeenCalled();
+            expect(invalidateCachedUserByFirebaseUid).not.toHaveBeenCalled();
             expect(res.json).toHaveBeenCalledWith({ success: true });
         });
     });
@@ -1164,5 +1312,78 @@ describe("adminController", () => {
 
             expect(res.status).toHaveBeenCalledWith(500);
         });
+    });
+});
+
+describe("individual TPO verification", () => {
+    it("approves a pending TPO only when its college is already verified", async () => {
+        const user = makeUser({
+            _id: "t1",
+            role: "tpo",
+            roles: ["student", "tpo"],
+            email: "prof@staff.mit.edu",
+            firebaseUid: "fb-t1",
+            tpoProfile: {
+                collegeDomain: "staff.mit.edu",
+                collegeName: "MIT",
+                verified: false,
+                requestedAt: new Date(),
+                verifiedAt: null,
+            },
+            tpoVerification: {
+                status: "pending",
+                emailRoleSignal: "staff_candidate",
+                submittedEmail: "prof@staff.mit.edu",
+                evidence: [],
+            },
+        });
+        const college = { _id: "c1", name: "MIT", status: "verified", domains: ["staff.mit.edu"], };
+        User.findById.mockResolvedValueOnce(user);
+        College.findByDomain.mockResolvedValueOnce(college);
+        claimPrimaryIfNone.mockResolvedValueOnce(true);
+        const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+
+        await approveTpoUser({ params: { userId: "t1" }, userDoc: makeAdmin() }, res);
+
+        expect(user.tpoProfile.verified).toBe(true);
+        expect(user.tpoVerification.status).toBe("approved");
+        expect(user.save).toHaveBeenCalled();
+        expect(TpoVerificationReview.create).toHaveBeenCalledWith(
+            expect.objectContaining({ userId: "t1", collegeId: "c1", decision: "approved" })
+        );
+    });
+
+    it("rejects an individual pending TPO without deleting the college", async () => {
+        const user = makeUser({
+            _id: "t2",
+            role: "tpo",
+            roles: ["student", "tpo"],
+            tpoProfile: {
+                collegeDomain: "mit.edu",
+                collegeName: "MIT",
+                verified: false,
+                requestedAt: new Date(),
+                verifiedAt: null,
+            },
+            tpoVerification: { status: "pending", emailRoleSignal: "student_candidate", evidence: [] },
+        });
+        // Deliberately make revokeRole a no-op here. The controller must
+        // enforce the persisted authorization invariant itself: TPO is removed
+        // from roles and student remains available after an individual rejection.
+        user.revokeRole = vi.fn();
+        User.findById.mockResolvedValueOnce(user);
+        College.findByDomain.mockResolvedValueOnce({ _id: "c1", name: "MIT", status: "verified", domains: ["mit.edu"] });
+        const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+
+        await rejectTpoUser(
+            { params: { userId: "t2" }, userDoc: makeAdmin(), body: { decisionReason: "Staff identity could not be verified." } },
+            res
+        );
+
+        expect(user.roles).toEqual(["student"]);
+        expect(user.role).toBe("student");
+        expect(user.tpoVerification.status).toBe("rejected");
+        expect(College.deleteOne).not.toHaveBeenCalled();
+        expect(user.save).toHaveBeenCalled();
     });
 });

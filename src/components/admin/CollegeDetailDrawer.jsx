@@ -3,6 +3,7 @@ import { Users2, ExternalLink, Pencil, Check, X as XIcon, Sparkles } from "lucid
 import toast from "react-hot-toast";
 import Button from "../ui/Button";
 import SideDrawer, { DrawerSection, DrawerField } from "./command/SideDrawer";
+import CollegeEmailRoleRules from "./CollegeEmailRoleRules";
 
 const STATUS_STYLES = {
   pending: "bg-amber-500/10 text-amber-400",
@@ -23,7 +24,7 @@ const STATUS_STYLES = {
  * cse.nits.ac.in) — this is the correction UI for that guess, and for any
  * other college whose name just needs fixing.
  */
-export default function CollegeDetailDrawer({ college, open, onClose, onViewStudents, onRename }) {
+export default function CollegeDetailDrawer({ college, open, onClose, onViewStudents, onRename, onSaveEmailRolePatterns }) {
   const [editing, setEditing] = useState(false);
   const [nameInput, setNameInput] = useState("");
   const [saving, setSaving] = useState(false);
@@ -135,6 +136,16 @@ export default function CollegeDetailDrawer({ college, open, onClose, onViewStud
           </div>
         </div>
         <DrawerField label="Domains" value={college.domains?.join(", ")} copyable />
+      </DrawerSection>
+
+      <DrawerSection label="Email role patterns">
+        <CollegeEmailRoleRules
+          staffRules={college.staffEmailPatterns}
+          studentRules={college.studentEmailPatterns}
+          onSave={(staffRules, studentRules) =>
+            onSaveEmailRolePatterns(college.id, staffRules, studentRules)
+          }
+        />
       </DrawerSection>
 
       <DrawerSection label="Activity">

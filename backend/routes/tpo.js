@@ -37,6 +37,7 @@ import { computeReadinessScore } from "../utils/readiness.js";
 import multer from "multer";
 import { csvUpload } from "../middleware/csvUpload.js";
 import { getInstitutionSubscription } from "../services/institutionSubscriptionService.js";
+import { buildTpoVerificationSignal, classifyInstitutionalEmailRole } from "../services/tpoRoleSignalService.js";
 
 const TPO_CACHE_TTL_SECONDS = 2 * 60; // 2 minutes — matches profile cache TTL
 const TPO_CACHE_PREFIX = "tpo:";
@@ -93,34 +94,19 @@ router.post("/register", async (req, res) => {
     if (!collegeName) return res.status(400).json({ error: "collegeName is required." });
 
     if (looksLikeEmailAddress(collegeName)) {
-      // The "unnecessary box" bug class: a College record whose name is
-      // literally someone's email address, pasted into the wrong field.
-      // Reject it here instead of silently storing it.
       return res.status(400).json({
         error: "That looks like an email address — please enter your college's name instead.",
       });
     }
 
     const email = req.userDoc.email || "";
-    const domain = email.split("@")[1];
-
+    const domain = email.split("@")[1]?.toLowerCase().trim();
     if (!domain || isConsumerEmailDomain(domain)) {
       return res.status(400).json({
-        error: "Please sign up with your institutional email (e.g. yourname@college.ac.in), not a personal email.",
+        error: "Please sign in with your institutional email (e.g. yourname@college.ac.in), not a personal email.",
       });
     }
 
-    // A second TPO from a domain that's already verified doesn't need
-    // another manual review — the college itself has already been vetted.
-    // A domain still pending review from an earlier TPO or student stays
-    // blocked from a second claim, to avoid two conflicting requests in
-    // the queue — UNLESS the existing record is an auto-detected
-    // placeholder (submittedByRole: "auto", created the moment some
-    // student first signed up from this domain — see
-    // services/collegeAutoProvision.js). Nobody actually submitted that
-    // one; it's not a real claim to conflict with, so a TPO registering
-    // for the same domain should be able to claim/upgrade it rather than
-    // being blocked by a guess nobody reviewed.
     const existingCollege = await College.findByDomain(domain);
     const existingIsAutoPlaceholder = existingCollege?.submittedByRole === "auto";
 
@@ -131,39 +117,26 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    const now = new Date();
-    // Hybrid verification (Phase B): known college domains — including one
-    // already verified via an earlier TPO from the same college — skip the
-    // queue. Everything else is created pending and shows up in
-    // GET /api/admin/pending for manual approval.
-    const autoVerified =
+    const collegeAutoVerified =
       (existingCollege?.status === "verified" && !existingIsAutoPlaceholder) ||
       (await isDomainAutoVerified(domain, "college"));
 
-    // Tracks the resolved College doc across all three branches below
-    // (brand new / upgraded placeholder / already-verified existing) so
-    // the primary-TPO claim after it can run against a real _id in every
-    // case, not just the "created a new one" branch. Also tracks enough
-    // to roll a College-side change back if the User-side save fails
-    // right after — see the try/catch around req.userDoc.save() below.
+    const now = new Date();
     let collegeDoc = existingCollege;
     let createdNewCollege = false;
     let placeholderSnapshot = null;
+
     if (!existingCollege) {
       collegeDoc = await College.create({
         domains: [domain],
-        name: collegeName,
-        status: autoVerified ? "verified" : "pending",
-        verifiedAt: autoVerified ? now : null,
+        name: collegeName.trim(),
+        status: collegeAutoVerified ? "verified" : "pending",
+        verifiedAt: collegeAutoVerified ? now : null,
         submittedBy: req.userDoc._id,
         submittedByRole: "tpo",
       });
       createdNewCollege = true;
     } else if (existingIsAutoPlaceholder) {
-      // Upgrade the auto-detected placeholder into a real TPO submission
-      // — replace the guessed name with the TPO's actual college name and
-      // record who's now vouching for it, rather than leaving a second,
-      // duplicate College doc for the same domain.
       placeholderSnapshot = {
         name: existingCollege.name,
         status: existingCollege.status,
@@ -171,48 +144,43 @@ router.post("/register", async (req, res) => {
         submittedBy: existingCollege.submittedBy,
         submittedByRole: existingCollege.submittedByRole,
       };
-      existingCollege.name = collegeName;
-      existingCollege.status = autoVerified ? "verified" : "pending";
-      existingCollege.verifiedAt = autoVerified ? now : null;
+      existingCollege.name = collegeName.trim();
+      existingCollege.status = collegeAutoVerified ? "verified" : "pending";
+      existingCollege.verifiedAt = collegeAutoVerified ? now : null;
       existingCollege.submittedBy = req.userDoc._id;
       existingCollege.submittedByRole = "tpo";
       await existingCollege.save();
     }
 
-    // Mark user as TPO. Previously this dropped collegeDomain/collegeName
-    // entirely — tpoProfile only ever got verificationStatus (not even a
-    // real schema field) + verified + requestedAt, so every TPO's own
-    // college identity was silently lost. Fixed here.
-    //
-    // grantRole is additive — a Student registering as TPO keeps their
-    // "student" authorization (and every student-track field: totalXP,
-    // solvedSlugs, streaks, etc. all stay untouched on this same
-    // document); only the ACTIVE role below switches to "tpo". See
-    // models/User.js's role/roles comment for why student data isn't
-    // moved or cleared here.
+    const signal = buildTpoVerificationSignal(email, collegeDoc);
+    const emailRoleClassification = signal.result;
+
     req.userDoc.grantRole("tpo");
     req.userDoc.role = "tpo";
     req.userDoc.tpoProfile = {
       collegeDomain: domain,
-      collegeName,
-      verified: autoVerified,
+      collegeName: collegeName.trim(),
+      // College recognition and individual TPO authorization are separate.
+      // A requester stays pending until an admin reviews the TPO identity.
+      verified: false,
       requestedAt: now,
-      verifiedAt: autoVerified ? now : null,
+      verifiedAt: null,
+    };
+    req.userDoc.tpoVerification = {
+      status: "pending",
+      emailRoleSignal: emailRoleClassification,
+      submittedEmail: email,
+      submittedAt: now,
+      evidence: [
+        {
+          kind: "email",
+          label: "Institutional sign-in email",
+          note: "Email ownership is established by the authenticated sign-in provider; role classification remains advisory.",
+          addedAt: now,
+        },
+      ],
     };
 
-    // TPO-1 hardening: partial-failure handling. The College-side write
-    // above already committed by this point — if the User-side write
-    // fails now, we'd otherwise strand the domain in a half-claimed state
-    // with no valid owner (the pending-college 409 guard near the top of
-    // this handler would then permanently block every future
-    // registration attempt for this domain, since College.findByDomain
-    // would keep finding this orphaned record). Roll the College-side
-    // change back so the domain returns to its pre-request state and can
-    // be retried cleanly. Best-effort (a rollback failure is logged, not
-    // thrown over) — there is no fully atomic alternative available in
-    // this codebase (no transactions are used anywhere else either; see
-    // tpoTeamService.js's CAS-based approach for why single-document
-    // atomic operations are preferred where the invariant allows it).
     try {
       await req.userDoc.save();
     } catch (err) {
@@ -220,65 +188,115 @@ router.post("/register", async (req, res) => {
         await College.deleteOne({ _id: collegeDoc._id }).catch((rollbackErr) =>
           (req.log || logger).error(
             { err: rollbackErr, collegeId: collegeDoc._id },
-            "[TPO] register: failed to roll back newly-created College after User save failure"
+            "[TPO] register: failed to roll back newly-created College"
           )
         );
       } else if (placeholderSnapshot) {
-        await College.updateOne({ _id: collegeDoc._id }, { $set: placeholderSnapshot }).catch((rollbackErr) =>
+        await College.updateOne(
+          { _id: collegeDoc._id },
+          { $set: placeholderSnapshot }
+        ).catch((rollbackErr) =>
           (req.log || logger).error(
             { err: rollbackErr, collegeId: collegeDoc._id },
-            "[TPO] register: failed to roll back placeholder-upgrade College change after User save failure"
+            "[TPO] register: failed to roll back placeholder College"
           )
         );
       }
       throw err;
     }
 
-    // ── First verified TPO becomes primary (Phase 3, item 5) ────────────
-    // Only ever attempted here for the auto-verified path — a pending TPO
-    // isn't verified yet and can't hold primary authority (item 3/18).
-    // Pending TPOs get their shot at this when an admin later verifies
-    // their college — see adminController.js's approveTpo, which runs the
-    // same claim against whichever pending TPO registered earliest. Uses
-    // the atomic CAS in tpoTeamService.js rather than a plain "is there a
-    // primary yet?" read-then-write, so two people registering for a
-    // brand-new domain at nearly the same moment can't both become primary.
-    //
-    // TPO-1 hardening: this is deliberately isolated in its own try/catch.
-    // By this point the User doc is already saved and verified — the core
-    // "did registration succeed" outcome is already settled. A failure
-    // here (e.g. a transient DB error on the CAS write) must not make an
-    // otherwise-successful registration report as a 500 to the person
-    // registering. Falling back to isPrimary: false is always a *safe*
-    // default per the invariant (rule 4: a college can legitimately have
-    // zero primary TPOs temporarily) — it just means this particular
-    // attempt didn't claim it, recoverable later via the team endpoints
-    // or the next verified registration.
-    let isPrimary = false;
-    if (autoVerified && collegeDoc) {
-      try {
-        isPrimary = await claimPrimaryIfNone(collegeDoc._id, req.userDoc._id);
-      } catch (err) {
-        (req.log || logger).error(
-          { err, collegeId: collegeDoc._id, userId: req.userDoc._id },
-          "[TPO] register: primary claim failed after successful registration — continuing without primary"
-        );
-      }
-    }
+    // Primary TPO authority is assigned only after individual TPO approval.
+    const isPrimary = false;
 
     return res.status(201).json({
       success: true,
       role: "tpo",
-      verified: autoVerified,
-      status: autoVerified ? "verified" : "pending",
+      // A verified college does not automatically make the requester a
+      // verified TPO. The reviewer must approve the individual TPO request.
+      verified: false,
+      status: "pending",
       isPrimary,
-      message: autoVerified
-        ? "Your college is verified. You're all set — head to your dashboard."
+      emailRoleSignal: emailRoleClassification,
+      verification: {
+        // Individual TPO authorization always requires human verification.
+        // College/domain trust and TPO role verification are separate facts.
+        status: "pending",
+        additionalEvidenceRecommended:
+          emailRoleClassification !== "staff_candidate",
+      },
+      message: collegeAutoVerified
+        ? "Your college is recognized. Your TPO access request is now waiting for individual verification."
         : "Your college registration request has been submitted for verification.",
     });
   } catch (err) {
     (req.log || logger).error({ err }, "[TPO] register error");
     return res.status(500).json({ error: "Failed to register as TPO." });
+  }
+});
+
+// ── TPO verification evidence ─────────────────────────────────────────────
+// Evidence supplements the advisory email signal; it never grants TPO access.
+// Only a pending TPO applicant can add evidence, and the email evidence entry
+// created during registration remains system-controlled.
+const TPO_EVIDENCE_KINDS = new Set(["invitation", "staff_id", "document", "manual_note"]);
+const MAX_TPO_EVIDENCE_ITEMS = 10;
+
+router.post("/verification/evidence", requireRole("tpo"), async (req, res) => {
+  try {
+    const verification = req.userDoc?.tpoVerification;
+    if (!verification || verification.status !== "pending") {
+      return res.status(409).json({ error: "Only a pending TPO verification request can receive evidence." });
+    }
+
+    const input = req.body?.evidence;
+    if (!Array.isArray(input) || input.length === 0) {
+      return res.status(400).json({ error: "evidence must be a non-empty array." });
+    }
+
+    if (input.length > MAX_TPO_EVIDENCE_ITEMS) {
+      return res.status(400).json({ error: "A maximum of " + MAX_TPO_EVIDENCE_ITEMS + " evidence items is allowed." });
+    }
+
+    const now = new Date();
+    const additions = [];
+    for (const item of input) {
+      const kind = String(item?.kind || "").trim().toLowerCase();
+      const label = String(item?.label || "").trim();
+      const reference = item?.reference == null ? null : String(item.reference).trim();
+      const note = item?.note == null ? null : String(item.note).trim();
+
+      if (!TPO_EVIDENCE_KINDS.has(kind)) {
+        return res.status(400).json({ error: "Unsupported evidence kind: " + (kind || "unknown") + "." });
+      }
+      if (!label || label.length > 120) {
+        return res.status(400).json({ error: "Each evidence label must be 1–120 characters." });
+      }
+      if (reference && reference.length > 500) {
+        return res.status(400).json({ error: "Evidence reference must be at most 500 characters." });
+      }
+      if (note && note.length > 1000) {
+        return res.status(400).json({ error: "Evidence note must be at most 1000 characters." });
+      }
+
+      additions.push({ kind, label, reference: reference || null, note: note || null, addedAt: now });
+    }
+
+    const existing = Array.isArray(verification.evidence) ? verification.evidence : [];
+    if (existing.length + additions.length > MAX_TPO_EVIDENCE_ITEMS) {
+      return res.status(400).json({ error: "A maximum of " + MAX_TPO_EVIDENCE_ITEMS + " evidence items is allowed in total." });
+    }
+
+    verification.evidence = [...existing, ...additions];
+    await req.userDoc.save();
+
+    return res.status(200).json({
+      success: true,
+      status: verification.status,
+      evidence: verification.evidence,
+    });
+  } catch (err) {
+    (req.log || logger).error({ err, userId: req.userDoc?._id }, "[TPO] verification evidence update error");
+    return res.status(500).json({ error: "Failed to update TPO verification evidence." });
   }
 });
 
@@ -778,12 +796,11 @@ router.get("/team", requireRole("tpo", "admin"), requireVerified, resolveTpoInst
 // the candidate must already have signed up (and therefore already gone
 // through Firebase auth) before the primary can add them, mirroring the
 // "candidate authenticates, then institution relationship established"
-// flow the phase doc describes. This is the same instant-verification
-// trust decision POST /register already makes for a second TPO registering
-// on an already-verified college domain (see isDomainAutoVerified/
-// existingCollege.status === "verified" above): a known institutional-
-// domain account, vouched for by the college's own primary TPO, doesn't
-// need a second manual admin review.
+// flow the phase doc describes. Unlike self-registration, however,
+// this path is an explicit authorization action by an already-verified
+// primary TPO. The primary's authenticated team-management action is the
+// authority for this grant; institutional email/domain checks only enforce
+// that the invited account belongs to the same college.
 router.post("/team/invite", requireRole("tpo", "admin"), requireVerified, resolveTpoInstitution, requirePrimaryOnly, async (req, res) => {
   if (b2bGate(req, res)) return;
 
@@ -2118,7 +2135,10 @@ export async function handleAssignmentCompletion(req, res) {
         continue;
       }
       stragglers.push({
-        studentId: student._id,
+        // HTTP/JSON contract: never leak a BSON ObjectId instance from this response.
+        // Keep the public completion payload consistent with the existing tests and
+        // other TPO endpoints, which expose student identifiers as strings.
+        studentId: student._id.toString(),
         name: student.displayName,
         email: student.email,
         solvedCount: assignment.problemSlugs.length - missingSlugs.length,

@@ -1,10 +1,16 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 vi.mock("../models/College.js", () => ({
-    default: { find: vi.fn(), countDocuments: vi.fn() },
+    default: { find: vi.fn(), countDocuments: vi.fn(), findById: vi.fn() },
 }));
 vi.mock("../models/User.js", () => ({
     default: { countDocuments: vi.fn(), aggregate: vi.fn() },
+}));
+vi.mock("../services/tpoRoleSignalService.js", () => ({
+    sanitizeRolePatternRules: vi.fn((rules) => rules.map((r) => ({ ...r }))),
+}));
+vi.mock("../services/adminAuditLog.js", () => ({
+    recordAdminAction: vi.fn(),
 }));
 vi.mock("../config/logger.js", () => ({
     logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
@@ -12,7 +18,8 @@ vi.mock("../config/logger.js", () => ({
 
 import College from "../models/College.js";
 import User from "../models/User.js";
-import { getColleges } from "./collegeController.js";
+import { getColleges, updateEmailRolePatterns } from "./collegeController.js";
+import { sanitizeRolePatternRules } from "../services/tpoRoleSignalService.js";
 
 function chainableQuery(result) {
     const q = {
@@ -175,5 +182,47 @@ describe("collegeController", () => {
 
             expect(res.status).toHaveBeenCalledWith(500);
         });
+    });
+
+    describe("updateEmailRolePatterns", () => {
+    it("sanitizes and persists staff/student rules separately", async () => {
+        const college = {
+            _id: "c1",
+            name: "MIT",
+            domains: ["mit.edu"],
+            staffEmailPatterns: [],
+            studentEmailPatterns: [],
+            save: vi.fn().mockResolvedValue(undefined),
+        };
+        College.findById.mockResolvedValueOnce(college);
+        sanitizeRolePatternRules
+            .mockReturnValueOnce([{ type: "domain", value: "staff.mit.edu" }])
+            .mockReturnValueOnce([{ type: "domain", value: "students.mit.edu" }]);
+
+        await updateEmailRolePatterns(
+            {
+                params: { collegeId: "c1" },
+                body: {
+                    staffEmailPatterns: [{ type: "domain", value: "staff.mit.edu" }],
+                    studentEmailPatterns: [{ type: "domain", value: "students.mit.edu" }],
+                    },
+                userDoc: { _id: "admin1" },
+            },
+            res
+        );
+
+        expect(college.staffEmailPatterns).toEqual([{ type: "domain", value: "staff.mit.edu" }]);
+        expect(college.studentEmailPatterns).toEqual([{ type: "domain", value: "students.mit.edu" }]);
+        expect(college.save).toHaveBeenCalled();
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    });
+
+    it("rejects missing rule arrays", async () => {
+        await updateEmailRolePatterns(
+            { params: { collegeId: "c1" }, body: { staffEmailPatterns: [] } },
+            res
+        );
+        expect(res.status).toHaveBeenCalledWith(400);
+    });
     });
 });

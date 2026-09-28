@@ -74,6 +74,25 @@ export function useAdminColleges() {
   // corrected name. Falls back to a toast + re-throw so the calling UI
   // (CollegeDetailDrawer) can keep its edit form open on failure instead
   // of silently losing the user's edit.
+  async function updateEmailRolePatterns(collegeId, staffEmailPatterns, studentEmailPatterns) {
+    const data = await apiFetch(`/api/admin/colleges/${collegeId}/email-role-patterns`, {
+      method: "PATCH",
+      body: JSON.stringify({ staffEmailPatterns, studentEmailPatterns }),
+    });
+    setColleges((prev) =>
+      prev.map((c) =>
+        c.id === collegeId
+          ? {
+              ...c,
+              staffEmailPatterns: data.college.staffEmailPatterns,
+              studentEmailPatterns: data.college.studentEmailPatterns,
+            }
+          : c
+      )
+    );
+    return data.college;
+  }
+
   async function renameCollege(collegeId, name) {
     const data = await apiFetch(`/api/admin/colleges/${collegeId}`, {
       method: "PATCH",
@@ -96,5 +115,6 @@ export function useAdminColleges() {
     searchInput,
     setSearchInput,
     renameCollege,
+    updateEmailRolePatterns,
   };
 }

@@ -348,6 +348,41 @@ const userSchema = new mongoose.Schema(
       verifiedAt: { type: Date, default: null },
     },
 
+    // ── TPO verification application evidence ────────────────────────────
+    // Pending/approved TPO applications retain their latest advisory signals
+    // and evidence metadata here. This is not the authorization source of
+    // truth: verified TPO access still depends on tpoProfile.verified and the
+    // College approval flow.
+    tpoVerification: {
+      status: {
+        type: String,
+        enum: ["unset", "pending", "approved", "rejected"],
+        default: "unset",
+      },
+      emailRoleSignal: {
+        type: String,
+        enum: ["staff_candidate", "student_candidate", "ambiguous", "unknown"],
+        default: "unknown",
+      },
+      submittedEmail: { type: String, default: null, trim: true, lowercase: true },
+      submittedAt: { type: Date, default: null },
+      evidence: {
+        type: [
+          {
+            kind: {
+              type: String,
+              enum: ["email", "invitation", "staff_id", "document", "manual_note"],
+            },
+            label: { type: String, trim: true, maxlength: 120 },
+            reference: { type: String, default: null, trim: true, maxlength: 500 },
+            note: { type: String, default: null, trim: true, maxlength: 1000 },
+            addedAt: { type: Date, default: Date.now },
+          },
+        ],
+        default: [],
+      },
+    },
+
     // ── Student college verification (Phase 12C) ────────────────────────
     // Distinct from tpoProfile — this is any student proving their own
     // college affiliation, not a TPO representing one. collegeEmail is

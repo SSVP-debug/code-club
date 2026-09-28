@@ -162,38 +162,14 @@ describe("POST /register — TPO-1 hardening: partial-failure handling", () => {
     });
   });
 
-  describe("primary-claim graceful degradation", () => {
-    it("still returns 201 success with isPrimary: false when claimPrimaryIfNone throws after a successful save", async () => {
-      College.findByDomain.mockResolvedValueOnce({
-        _id: "college-id",
-        status: "verified", // autoVerified = true without touching isDomainAutoVerified
-        submittedByRole: "tpo",
-        domains: ["newcollege.ac.in"],
-      });
-      claimPrimaryIfNone.mockRejectedValueOnce(new Error("CAS write boom"));
-
-      const userDoc = makeUserDoc();
-      const res = mockRes();
-
-      await registerHandler(
-        { userDoc, log: mockLog(), body: { collegeName: "New College" } },
-        res
-      );
-
-      expect(userDoc.save).toHaveBeenCalledOnce(); // core registration succeeded
-      expect(claimPrimaryIfNone).toHaveBeenCalledOnce();
-      expect(res._status).toBe(201);
-      expect(res._json).toEqual(expect.objectContaining({ success: true, isPrimary: false }));
-    });
-
-    it("reports isPrimary: true normally when the claim succeeds", async () => {
+  describe("individual verification boundary", () => {
+    it("never claims primary during registration, even when the college is already verified", async () => {
       College.findByDomain.mockResolvedValueOnce({
         _id: "college-id",
         status: "verified",
         submittedByRole: "tpo",
         domains: ["newcollege.ac.in"],
       });
-      claimPrimaryIfNone.mockResolvedValueOnce(true);
 
       const userDoc = makeUserDoc();
       const res = mockRes();
@@ -203,11 +179,68 @@ describe("POST /register — TPO-1 hardening: partial-failure handling", () => {
         res
       );
 
-      expect(res._json).toEqual(expect.objectContaining({ success: true, isPrimary: true }));
+      expect(userDoc.save).toHaveBeenCalledOnce();
+      expect(claimPrimaryIfNone).not.toHaveBeenCalled();
+      expect(userDoc.tpoProfile.verified).toBe(false);
+      expect(userDoc.tpoVerification.status).toBe("pending");
+      expect(res._status).toBe(201);
+      expect(res._json).toEqual(expect.objectContaining({
+        success: true,
+        verified: false,
+        isPrimary: false,
+        status: "pending",
+      }));
     });
 
-    it("never attempts a primary claim on the pending (non-auto-verified) path", async () => {
-      College.findByDomain.mockResolvedValueOnce(null); // brand-new, unrecognized domain → pending
+    it("allows a rejected applicant to submit a fresh pending request for a verified college", async () => {
+      College.findByDomain.mockResolvedValueOnce({
+        _id: "college-id",
+        status: "verified",
+        submittedByRole: "tpo",
+        domains: ["newcollege.ac.in"],
+      });
+
+      const userDoc = makeUserDoc({
+        role: "student",
+        roles: ["student"],
+        tpoProfile: {
+          collegeDomain: null,
+          collegeName: null,
+          verified: false,
+          requestedAt: null,
+          verifiedAt: null,
+        },
+        tpoVerification: {
+          status: "rejected",
+          emailRoleSignal: "student_candidate",
+          submittedEmail: "old@newcollege.ac.in",
+          submittedAt: new Date("2026-09-20T00:00:00Z"),
+          evidence: [{ kind: "manual_note", label: "Old review", reference: null, note: null }],
+        },
+      });
+      const res = mockRes();
+
+      await registerHandler(
+        { userDoc, log: mockLog(), body: { collegeName: "New College" } },
+        res
+      );
+
+      expect(userDoc.grantRole).toHaveBeenCalledWith("tpo");
+      expect(userDoc.tpoProfile.verified).toBe(false);
+      expect(userDoc.tpoVerification.status).toBe("pending");
+      expect(userDoc.tpoVerification.submittedEmail).toBe("founder@newcollege.ac.in");
+      expect(res._status).toBe(201);
+      expect(res._json).toEqual(expect.objectContaining({
+        success: true,
+        verified: false,
+        status: "pending",
+      }));
+      expect(claimPrimaryIfNone).not.toHaveBeenCalled();
+    });
+
+    it("keeps an unrecognized college and TPO request pending", async () => {
+      College.findByDomain.mockResolvedValueOnce(null);
+      College.create.mockResolvedValueOnce({ _id: "new-college-id" });
 
       const userDoc = makeUserDoc();
       const res = mockRes();
@@ -218,7 +251,88 @@ describe("POST /register — TPO-1 hardening: partial-failure handling", () => {
       );
 
       expect(claimPrimaryIfNone).not.toHaveBeenCalled();
-      expect(res._json).toEqual(expect.objectContaining({ success: true, isPrimary: false, status: "pending" }));
+      expect(res._json).toEqual(expect.objectContaining({
+        success: true,
+        verified: false,
+        isPrimary: false,
+        status: "pending",
+      }));
     });
+
+    it("records a student-candidate signal without silently rejecting the TPO request", async () => {
+      College.findByDomain.mockResolvedValueOnce({
+        _id: "college-id",
+        status: "verified",
+        submittedByRole: "tpo",
+        domains: ["newcollege.ac.in"],
+        staffEmailPatterns: [{ type: "domain", value: "staff.newcollege.ac.in" }],
+        studentEmailPatterns: [{ type: "domain", value: "students.newcollege.ac.in" }],
+      });
+
+      const userDoc = makeUserDoc({ email: "student@students.newcollege.ac.in" });
+      const res = mockRes();
+
+      await registerHandler(
+        { userDoc, log: mockLog(), body: { collegeName: "New College" } },
+        res
+      );
+
+      expect(res._status).toBe(201);
+      expect(userDoc.tpoVerification.emailRoleSignal).toBe("student_candidate");
+      expect(userDoc.tpoVerification.status).toBe("pending");
+      expect(userDoc.tpoProfile.verified).toBe(false);
+      expect(claimPrimaryIfNone).not.toHaveBeenCalled();
+    });
+
+    it("records an ambiguous signal and still requires individual human verification", async () => {
+      College.findByDomain.mockResolvedValueOnce({
+        _id: "college-id",
+        status: "verified",
+        submittedByRole: "tpo",
+        domains: ["newcollege.ac.in"],
+        staffEmailPatterns: [{ type: "local_prefix", values: ["student."] }],
+        studentEmailPatterns: [{ type: "local_prefix", values: ["student."] }],
+      });
+
+      const userDoc = makeUserDoc({ email: "student.person@newcollege.ac.in" });
+      const res = mockRes();
+
+      await registerHandler(
+        { userDoc, log: mockLog(), body: { collegeName: "New College" } },
+        res
+      );
+
+      expect(res._status).toBe(201);
+      expect(userDoc.tpoVerification.emailRoleSignal).toBe("ambiguous");
+      expect(userDoc.tpoVerification.status).toBe("pending");
+      expect(userDoc.tpoProfile.verified).toBe(false);
+      expect(res._json.verification.additionalEvidenceRecommended).toBe(true);
+    });
+
+    it("records unknown for an unmatched institutional address and keeps the request pending", async () => {
+      College.findByDomain.mockResolvedValueOnce({
+        _id: "college-id",
+        status: "verified",
+        submittedByRole: "tpo",
+        domains: ["newcollege.ac.in"],
+        staffEmailPatterns: [{ type: "domain", value: "staff.newcollege.ac.in" }],
+        studentEmailPatterns: [{ type: "domain", value: "students.newcollege.ac.in" }],
+      });
+
+      const userDoc = makeUserDoc({ email: "person@newcollege.ac.in" });
+      const res = mockRes();
+
+      await registerHandler(
+        { userDoc, log: mockLog(), body: { collegeName: "New College" } },
+        res
+      );
+
+      expect(res._status).toBe(201);
+      expect(userDoc.tpoVerification.emailRoleSignal).toBe("unknown");
+      expect(userDoc.tpoVerification.status).toBe("pending");
+      expect(userDoc.tpoProfile.verified).toBe(false);
+      expect(res._json.verification.additionalEvidenceRecommended).toBe(true);
+    });
+
   });
 });

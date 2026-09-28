@@ -924,3 +924,112 @@ describe("GET /college-directory", () => {
     expect(User.find).not.toHaveBeenCalled();
   });
 });
+
+describe("POST /verification/evidence", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("appends applicant evidence while keeping the request pending", async () => {
+    const userDoc = {
+      role: "tpo",
+      tpoVerification: {
+        status: "pending",
+        emailRoleSignal: "student_candidate",
+        evidence: [
+          { kind: "email", label: "Institutional sign-in email" },
+        ],
+      },
+      save: vi.fn().mockResolvedValue(true),
+    };
+
+    const res = await runRoute("post", "/verification/evidence", {
+      userDoc,
+      body: {
+        evidence: [
+          {
+            kind: "staff_id",
+            label: "Staff ID reference",
+            reference: "STAFF-2026-123",
+            note: "Current institutional staff identifier.",
+          },
+        ],
+      },
+    });
+
+    expect(res.status).not.toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: true,
+      status: "pending",
+      evidence: expect.arrayContaining([
+        expect.objectContaining({ kind: "email", label: "Institutional sign-in email" }),
+        expect.objectContaining({
+          kind: "staff_id",
+          label: "Staff ID reference",
+          reference: "STAFF-2026-123",
+        }),
+      ]),
+    }));
+    expect(userDoc.save).toHaveBeenCalledOnce();
+  });
+
+  it("rejects system-controlled email evidence submitted by the applicant", async () => {
+    const userDoc = {
+      role: "tpo",
+      tpoVerification: { status: "pending", evidence: [] },
+      save: vi.fn(),
+    };
+
+    const res = await runRoute("post", "/verification/evidence", {
+      userDoc,
+      body: { evidence: [{ kind: "email", label: "Forged email evidence" }] },
+    });
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(userDoc.save).not.toHaveBeenCalled();
+  });
+
+  it("rejects evidence updates after verification is no longer pending", async () => {
+    const userDoc = {
+      role: "tpo",
+      tpoVerification: { status: "approved", evidence: [] },
+      save: vi.fn(),
+    };
+
+    const res = await runRoute("post", "/verification/evidence", {
+      userDoc,
+      body: { evidence: [{ kind: "manual_note", label: "Extra context" }] },
+    });
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(userDoc.save).not.toHaveBeenCalled();
+  });
+
+  it("enforces the total evidence cap", async () => {
+    const userDoc = {
+      role: "tpo",
+      tpoVerification: {
+        status: "pending",
+        evidence: Array.from({ length: 9 }, (_, index) => ({
+          kind: "manual_note",
+          label: "Existing " + index,
+        })),
+      },
+      save: vi.fn(),
+    };
+
+    const res = await runRoute("post", "/verification/evidence", {
+      userDoc,
+      body: {
+        evidence: [
+          { kind: "manual_note", label: "One more" },
+          { kind: "manual_note", label: "Too many" },
+        ],
+      },
+    });
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(userDoc.save).not.toHaveBeenCalled();
+  });
+});
+

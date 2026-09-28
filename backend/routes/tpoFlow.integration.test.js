@@ -14,7 +14,7 @@ const { default: User } = await import("../models/User.js");
 const { default: College } = await import("../models/College.js");
 const { requireRole } = await import("../middleware/roleGuard.js");
 const { requireVerified } = await import("../middleware/requireVerified.js");
-const { approveTpo, rejectTpo } = await import("../controllers/adminController.js");
+const { approveTpo, rejectTpo, approveTpoUser, rejectTpoUser } = await import("../controllers/adminController.js");
 const { claimPrimaryIfNone, transferPrimary } = await import("../services/tpoTeamService.js");
 
 function extractRegisterHandler() {
@@ -116,7 +116,7 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
     expect(outcome).toBe("role");
   });
 
-  it("admin approval of a pending TPO's college verifies BOTH the College doc and the submitting user's tpoProfile", async () => {
+  it("admin approval of a pending TPO's college verifies only the College doc; individual TPO approval remains separate", async () => {
     const user = await seedStudent({ email: "tposignup2@unrecognized-college.ac.in" });
     await registerHandler(
       { userDoc: user, log: mockLog(), body: { collegeName: "Unrecognized College 2" } },
@@ -132,9 +132,22 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
     expect(reloadedCollege.status).toBe("verified");
 
     const reloadedUser = await User.findById(user._id);
-    expect(reloadedUser.tpoProfile.verified).toBe(true);
+    expect(reloadedUser.tpoProfile.verified).toBe(false);
+    expect(reloadedUser.tpoVerification.status).toBe("pending");
 
-    const gateOutcome = await runTpoOnlyGate({ userDoc: reloadedUser });
+    const pendingGateOutcome = await runTpoOnlyGate({ userDoc: reloadedUser });
+    expect(pendingGateOutcome).toBe("verification");
+
+    await approveTpoUser(
+      { params: { userId: user._id.toString() }, userDoc: admin, log: mockLog() },
+      mockRes()
+    );
+
+    const approvedUser = await User.findById(user._id);
+    expect(approvedUser.tpoProfile.verified).toBe(true);
+    expect(approvedUser.tpoVerification.status).toBe("approved");
+
+    const gateOutcome = await runTpoOnlyGate({ userDoc: approvedUser });
     expect(gateOutcome).toBe("allowed");
   });
 
@@ -177,13 +190,70 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
     expect(gateOutcome).toBe("role");
   });
 
+  it("rejecting an individual TPO request demotes the applicant, preserves audit history, and allows a fresh resubmission", async () => {
+    const user = await seedStudent({ email: "tpo-resubmit@verified-college.ac.in" });
+    await registerHandler(
+      { userDoc: user, log: mockLog(), body: { collegeName: "Verified College" } },
+      mockRes()
+    );
+
+    const admin = await User.create({
+      firebaseUid: "fb-admin-resubmit",
+      email: "admin-resubmit@codeclub.test",
+      role: "admin",
+    });
+    const college = await College.findByDomain("verified-college.ac.in");
+    await approveTpo(
+      { params: { collegeId: college._id.toString() }, userDoc: admin, log: mockLog() },
+      mockRes()
+    );
+
+    const pendingUser = await User.findById(user._id);
+    const rejectRes = mockRes();
+    await rejectTpoUser({
+      params: { userId: user._id.toString() },
+      body: { decisionReason: "The submitted staff evidence could not be verified." },
+      userDoc: admin,
+      log: mockLog(),
+    }, rejectRes);
+
+    expect(rejectRes._json).toEqual({ success: true });
+
+    const rejectedUser = await User.findById(user._id);
+    expect(rejectedUser.role).toBe("student");
+    expect(rejectedUser.tpoProfile.verified).toBe(false);
+    expect(rejectedUser.tpoVerification.status).toBe("rejected");
+
+    const Review = (await import("../models/TpoVerificationReview.js")).default;
+    const review = await Review.findOne({ userId: user._id }).sort({ reviewedAt: -1 });
+    expect(review.decision).toBe("rejected");
+    expect(review.decisionReason).toBe("The submitted staff evidence could not be verified.");
+
+    const resubmitRes = mockRes();
+    await registerHandler(
+      { userDoc: rejectedUser, log: mockLog(), body: { collegeName: "Verified College" } },
+      resubmitRes
+    );
+
+    expect(resubmitRes._json).toEqual(expect.objectContaining({
+      success: true,
+      status: "pending",
+      verified: false,
+    }));
+
+    const pendingAgain = await User.findById(user._id);
+    expect(pendingAgain.role).toBe("tpo");
+    expect(pendingAgain.tpoVerification.status).toBe("pending");
+    expect(pendingAgain.tpoProfile.verified).toBe(false);
+  });
+
   it("admin behavior: an admin account itself always passes any role gate, TPO included", async () => {
     const admin = await User.create({ firebaseUid: "fb-admin-5", email: "admin5@codeclub.test", role: "admin" });
     const outcome = await runTpoOnlyGate({ userDoc: admin });
     expect(outcome).toBe("allowed");
   });
 
-  it("a second TPO registering for an already-verified college is auto-verified immediately, no queue", async () => {
+  it("a second TPO registering for an already-verified college still requires individual verification", async () => {
     const firstUser = await seedStudent({ email: "tpofirst@already-verified.ac.in" });
     await registerHandler(
       { userDoc: firstUser, log: mockLog(), body: { collegeName: "Already Verified College" } },
@@ -200,9 +270,11 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
       res2
     );
 
-    expect(res2._json.status).toBe("verified");
+    expect(res2._json.status).toBe("pending");
+    expect(res2._json.verified).toBe(false);
     const reloadedSecond = await User.findById(secondUser._id);
-    expect(reloadedSecond.tpoProfile.verified).toBe(true);
+    expect(reloadedSecond.tpoProfile.verified).toBe(false);
+    expect(reloadedSecond.tpoVerification.status).toBe("pending");
   });
 
   // ── Role/profile isolation regression coverage ──────────────────────────
@@ -266,7 +338,7 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
 
   // ── Phase 3: primary TPO claim, real Mongo ──────────────────────────────
   describe("primary TPO claim (real Mongo)", () => {
-    it("the first auto-verified TPO on a brand-new domain becomes primary immediately", async () => {
+    it("a newly registered TPO never becomes primary before individual verification", async () => {
       const user = await seedStudent({ email: "founder@new-domain.ac.in" });
       const res = mockRes();
 
@@ -317,6 +389,13 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
           verified: false,
           requestedAt: new Date(Date.now() - 1000),
         },
+        tpoVerification: {
+          status: "pending",
+          submittedEmail: "early-signup@some-college.ac.in",
+          submittedAt: new Date(Date.now() - 1000),
+          emailRoleSignal: "unknown",
+          evidence: [],
+        },
       });
       const later = await seedStudent({
         email: "later-signup@some-college.ac.in",
@@ -328,6 +407,13 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
           verified: false,
           requestedAt: new Date(),
         },
+        tpoVerification: {
+          status: "pending",
+          submittedEmail: "later-signup@some-college.ac.in",
+          submittedAt: new Date(),
+          emailRoleSignal: "unknown",
+          evidence: [],
+        },
       });
 
       const admin = await User.create({ firebaseUid: "fb-admin-8", email: "admin8@codeclub.test", role: "admin" });
@@ -337,10 +423,34 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
       const reloadedEarlier = await User.findById(earlier._id);
       const reloadedLater = await User.findById(later._id);
 
-      expect(reloadedEarlier.tpoProfile.verified).toBe(true);
-      expect(reloadedLater.tpoProfile.verified).toBe(true);
-      expect(reloadedCollege.primaryTpo.toString()).toBe(reloadedEarlier._id.toString());
-      expect(reloadedCollege.primaryTpo.toString()).not.toBe(reloadedLater._id.toString());
+      expect(reloadedEarlier.tpoProfile.verified).toBe(false);
+      expect(reloadedLater.tpoProfile.verified).toBe(false);
+      expect(reloadedCollege.primaryTpo).toBeNull();
+
+      const earlierApproval = mockRes();
+      await approveTpoUser(
+        { params: { userId: earlier._id.toString() }, userDoc: admin, log: mockLog() },
+        earlierApproval
+      );
+      expect(earlierApproval._status).toBe(200);
+      expect(earlierApproval._json.success).toBe(true);
+
+      const laterApproval = mockRes();
+      await approveTpoUser(
+        { params: { userId: later._id.toString() }, userDoc: admin, log: mockLog() },
+        laterApproval
+      );
+      expect(laterApproval._status).toBe(200);
+      expect(laterApproval._json.success).toBe(true);
+
+      const approvedEarlier = await User.findById(earlier._id);
+      const approvedLater = await User.findById(later._id);
+      const finalCollege = await College.findById(college._id);
+
+      expect(approvedEarlier.tpoProfile.verified).toBe(true);
+      expect(approvedLater.tpoProfile.verified).toBe(true);
+      expect(finalCollege.primaryTpo.toString()).toBe(approvedEarlier._id.toString());
+      expect(finalCollege.primaryTpo.toString()).not.toBe(approvedLater._id.toString());
     });
 
     it("two sequential self-registrations for the same still-pending domain: the second is rejected with 409, not silently queued", async () => {
@@ -375,6 +485,10 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
       const admin = await User.create({ firebaseUid: "fb-admin-9", email: "admin9@codeclub.test", role: "admin" });
       const college = await College.findByDomain("established.ac.in");
       await approveTpo({ params: { collegeId: college._id.toString() }, userDoc: admin, log: mockLog() }, mockRes());
+      await approveTpoUser(
+        { params: { userId: first._id.toString() }, userDoc: admin, log: mockLog() },
+        mockRes()
+      );
 
       const second = await seedStudent({ email: "second@established.ac.in" });
       const res2 = mockRes();
@@ -399,6 +513,11 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
       const admin = await User.create({ firebaseUid: "fb-admin-10", email: "admin10@codeclub.test", role: "admin" });
       const college = await College.findByDomain("deletetest.ac.in");
       await approveTpo({ params: { collegeId: college._id.toString() }, userDoc: admin, log: mockLog() }, mockRes());
+
+      await approveTpoUser(
+        { params: { userId: first._id.toString() }, userDoc: admin, log: mockLog() },
+        mockRes()
+      );
 
       const reloadedFirst = await User.findById(first._id);
       const reloadedCollege = await College.findById(college._id);

@@ -80,7 +80,7 @@ Mounted at `/api/tpo`. All routes return `{ enabled: false, message }` while `B2
 
 | Method | Path | Purpose |
 |---|---|---|
-| POST | `/api/tpo/register` | Convert the caller's account to a TPO account (requires an institutional email domain — rejects gmail/yahoo/outlook). |
+| POST | `/api/tpo/register` | Convert the caller's account to a TPO account (requires an institutional email domain — rejects gmail/yahoo/outlook). Captures a per-college advisory email-role signal; this signal never grants the TPO role. |
 | GET | `/api/tpo/me` | Current TPO's profile + college info. |
 | GET | `/api/tpo/college-directory` | Verified TPO directory for the authenticated student's own verified college. The server resolves the institution from the student session; no client-supplied collegeId is accepted. |
 | GET | `/api/tpo/students` | All students matched by the TPO's college email domain. |
@@ -167,3 +167,19 @@ Institution subscription enforcement is controlled by `B2B_BILLING_ENABLED`, ind
 | POST | `/api/tpo/billing/verify` | Verifies Razorpay HMAC, order metadata, amount/currency, and payment identity before activating the college plan. |
 
 Current launch catalog is maintained in `config/featureFlags.js` as `B2B_PRICING`. Institution checkout is backed by the shared Razorpay webhook endpoint (`/api/billing/webhook`) using `billingType: "institution"` and a separate `RAZORPAY_B2B_WEBHOOK_SECRET` when configured. Webhook delivery is idempotent via Razorpay's `x-razorpay-event-id`; failed processing is left retryable.
+
+
+### TPO email-role verification
+
+College email-role patterns are institution-specific advisory evidence. They may classify an authenticated institutional email as `staff_candidate`, `student_candidate`, `ambiguous`, or `unknown`; they never grant TPO authorization.
+
+| Method | Path | Purpose |
+|---|---|---|
+| PATCH | `/api/admin/colleges/:collegeId/email-role-patterns` | Admin-only configuration of staff/student email patterns for a college. |
+| POST | `/api/admin/tpo-verification/:userId/approve` | Admin-only approval of an individual pending TPO request after the college is verified. Optional JSON body: `{ "decisionReason": "..." }` (max 1000 chars) for the immutable review audit. |
+| POST | `/api/admin/tpo-verification/:userId/reject` | Admin-only rejection of an individual pending TPO request. Requires JSON body: `{ "decisionReason": "..." }` (1–1000 chars); rejected requests must be submitted again to re-enter the pending state. |
+| POST | `/api/tpo/verification/evidence` | Adds applicant-supplied verification evidence to a pending TPO request; evidence is advisory and does not grant access. |
+
+TPO registration keeps the requester pending even when the institution itself is already recognized. This separates **institution trust** from **individual TPO authorization**. Student/staff email patterns are evidence shown to the reviewer, not an authorization shortcut.
+
+The admin pending queue also exposes the applicant's submitted evidence and up to five most recent immutable review decisions for that user, so a resubmission can be reviewed with prior context. Review decisions are lifecycle-gated: only a request whose `tpoVerification.status` is `pending` can be approved or rejected. Individual approval is the point at which `tpoProfile.verified` and primary-TPO eligibility can be established.
