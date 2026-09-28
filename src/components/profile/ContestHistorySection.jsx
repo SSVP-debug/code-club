@@ -11,7 +11,7 @@ import { Swords, Trophy } from "lucide-react";
  * by GET /api/contests/mine, which didn't exist before this phase — there
  * was no "contests I've participated in" query anywhere in the backend.
  */
-export default function ContestHistorySection() {
+export default function ContestHistorySection({ collapsible = true }) {
   const { theme } = useTheme();
   const [contests, setContests] = useState(undefined); // undefined = loading
 
@@ -27,7 +27,7 @@ export default function ContestHistorySection() {
       subtitle="Every contest you've taken part in"
       icon={<Swords size={18} strokeWidth={2} />}
       accented
-      collapsible
+      collapsible={collapsible}
       defaultOpen={false}
       storageKey="profile-collapse-contest-history"
     >
