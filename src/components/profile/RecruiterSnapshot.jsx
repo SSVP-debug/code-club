@@ -29,7 +29,7 @@ const GRADUATION_YEARS = Array.from({ length: 14 }, (_, i) => String(CURRENT_YEA
  * actually closes the loop between "student has a great profile" and
  * "recruiter can find and act on it" — see Phase 9C plan.
  */
-function RecruiterSnapshot() {
+function RecruiterSnapshot({ collapsible = true }) {
   const { recruiterSnapshot, updateRecruiterSnapshot } = useAppContext();
 
   const [availableForWork, setAvailableForWork] = useState(false);
@@ -81,7 +81,7 @@ function RecruiterSnapshot() {
       icon={<Target size={18} strokeWidth={2} />}
       subtitle="Shown to recruiters and TPOs viewing your public profile."
       accented
-      collapsible
+      collapsible={collapsible}
       defaultOpen
       storageKey="profile-collapse-recruiter-snapshot"
     >
