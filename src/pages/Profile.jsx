@@ -238,6 +238,16 @@ function Profile() {
 
         <ProfileQuickNav items={quickNavItems} />
 
+        <ContentSlot id="profile-overview-details">
+          <ProfileCompletion />
+
+          {role === "student" && (
+            <div className="mt-4">
+              <EducationSection />
+            </div>
+          )}
+        </ContentSlot>
+
         <ContentSlot id="profile-presence">
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
             <ProfessionalPresence />
@@ -253,34 +263,9 @@ function Profile() {
           </div>
         </ContentSlot>
 
-        <ContentSlot id="profile-overview-details">
-        {/* ── 2. Profile Completion nudge ──────────────────────────────── */}
-        {/* Self-hides at 100% — see ProfileCompletion.jsx for why there's
-            no "unlock 50 XP" reward here despite the audit mockup showing
-            one: that needs a new backend XP-grant hook, flagged not faked. */}
-        <ContentSlot id="profile-completion">
-          <ProfileCompletion />
-        </ContentSlot>
-
-
-
-        </ContentSlot>
-
-        {/* ── 3. Recruiter Snapshot ────────────────────────────────────── */}
-        {/* Only meaningful for students — recruiter/TPO/admin accounts
-            don't have a "looking for opportunities" state of their own. */}
         {role === "student" && (
           <ContentSlot id="profile-recruiter-snapshot">
             <RecruiterSnapshot />
-          </ContentSlot>
-        )}
-
-        {/* ── Education & College Verification (Phase 12C) ────────────── */}
-        {/* Also student-only — recruiters/TPO/Admin have their own,
-            separate verification systems (recruiterProfile/tpoProfile). */}
-        {role === "student" && (
-          <ContentSlot id="profile-education">
-            <EducationSection />
           </ContentSlot>
         )}
 
@@ -295,8 +280,14 @@ function Profile() {
           >
             <ContentSlot id="profile-heatmap-radar">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <ActivityHeatmap activityDates={activityDates} accentColor={theme.colors.primary} />
-                <SkillRadar topicStats={topicStats} accentColor={theme.colors.primary} />
+                <ActivityHeatmap
+                  activityDates={activityDates}
+                  accentColor={theme.colors.primary}
+                />
+                <SkillRadar
+                  topicStats={topicStats}
+                  accentColor={theme.colors.primary}
+                />
               </div>
             </ContentSlot>
 
@@ -311,22 +302,29 @@ function Profile() {
               </ContentSlot>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="mt-4">
               <Link
                 to="/analytics"
-                className="group bg-[var(--surface-elevated)] border border-[var(--border)] rounded-2xl p-5 flex items-center gap-4 hover:border-[var(--theme-primary,#2dd4bf)] transition"
+                className="group flex items-center gap-4 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-2xl p-5 hover:border-[var(--theme-primary,#2dd4bf)] transition"
               >
                 <div
                   className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: `${theme.colors.primary}1f`, color: theme.colors.primary }}
+                  style={{
+                    backgroundColor: `${theme.colors.primary}1f`,
+                    color: theme.colors.primary,
+                  }}
                 >
                   <BarChart3 size={20} strokeWidth={2} aria-hidden="true" />
                 </div>
                 <div className="min-w-0">
                   <p className="font-semibold">{theme.words.analytics}</p>
-                  <p className="text-[var(--muted-foreground)] text-sm">Deep dive into your solving patterns.</p>
+                  <p className="text-[var(--muted-foreground)] text-sm">
+                    Deep dive into your solving patterns.
+                  </p>
                 </div>
-                <span className="ml-auto text-[var(--muted-foreground)] group-hover:text-[var(--theme-primary,#2dd4bf)] transition flex-shrink-0">→</span>
+                <span className="ml-auto text-[var(--muted-foreground)] group-hover:text-[var(--theme-primary,#2dd4bf)] transition">
+                  →
+                </span>
               </Link>
             </div>
           </SectionCard>
@@ -346,12 +344,17 @@ function Profile() {
               defaultOpen
             />
 
-            <div className="mt-4">
-              <ContestHistorySection />
-            </div>
+            {role === "student" && (
+              <div className="mt-4">
+                <ContestHistorySection />
+              </div>
+            )}
 
             <div className="mt-4">
-              <JourneyTimeline joinedDate={joinedDate} achievements={achievements} />
+              <JourneyTimeline
+                joinedDate={joinedDate}
+                achievements={achievements}
+              />
             </div>
 
             <div className="mt-4">
@@ -363,19 +366,26 @@ function Profile() {
               >
                 <Link
                   to="/certifications"
-                  className="group bg-[var(--surface-elevated)] border border-[var(--border)] rounded-2xl p-5 flex items-center gap-4 hover:border-[var(--theme-primary,#2dd4bf)] transition"
+                  className="group flex items-center gap-4 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-2xl p-5 hover:border-[var(--theme-primary,#2dd4bf)] transition"
                 >
                   <div
                     className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: `${theme.colors.primary}1f`, color: theme.colors.primary }}
+                    style={{
+                      backgroundColor: `${theme.colors.primary}1f`,
+                      color: theme.colors.primary,
+                    }}
                   >
                     <Award size={20} strokeWidth={2} aria-hidden="true" />
                   </div>
                   <div className="min-w-0">
                     <p className="font-semibold">Certifications</p>
-                    <p className="text-[var(--muted-foreground)] text-sm">View and share what you've earned.</p>
+                    <p className="text-[var(--muted-foreground)] text-sm">
+                      View and share what you've earned.
+                    </p>
                   </div>
-                  <span className="ml-auto text-[var(--muted-foreground)] group-hover:text-[var(--theme-primary,#2dd4bf)] transition flex-shrink-0">→</span>
+                  <span className="ml-auto text-[var(--muted-foreground)] group-hover:text-[var(--theme-primary,#2dd4bf)] transition">
+                    →
+                  </span>
                 </Link>
               </CollapsibleGroup>
             </div>
@@ -419,10 +429,11 @@ function Profile() {
                         >
                           <div className="flex items-center gap-3">
                             <span
-                              className={`w-2 h-2 rounded-full flex-shrink-0 ${item.status?.includes("Accepted")
-                                ? "bg-green-500"
-                                : "bg-red-500"
-                                }`}
+                              className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                item.status?.includes("Accepted")
+                                  ? "bg-green-500"
+                                  : "bg-red-500"
+                              }`}
                             />
                             <span className="text-sm">{item.title}</span>
                           </div>
@@ -439,9 +450,7 @@ function Profile() {
                         onClick={() => setShowAllActivity((v) => !v)}
                         className="w-full mt-3 flex items-center justify-center gap-1.5 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] py-2 rounded-lg hover:bg-white/[0.03] transition"
                       >
-                        {showAllActivity
-                          ? "Show less"
-                          : `Show ${recentActivity.length - ACTIVITY_PREVIEW_COUNT} more`}
+                        {showAllActivity ? "Show less" : `Show ${recentActivity.length - ACTIVITY_PREVIEW_COUNT} more`}
                         <ChevronDown
                           size={15}
                           strokeWidth={2}
@@ -453,6 +462,7 @@ function Profile() {
                   </>
                 )}
               </SectionCard>
+
               <SectionCard
                 title="Recent Submissions"
                 icon={<FileText size={18} strokeWidth={2} />}
@@ -519,42 +529,6 @@ function Profile() {
                 )}
               </SectionCard>
             </div>
-          </SectionCard>
-        </ContentSlot>
-
-   className={
-                            submission.status?.includes("Accepted")
-                              ? "text-green-500"
-                              : "text-red-500"
-                          }
-                        >
-                          {submission.status}
-                        </p>
-                        <p className="text-xs text-[var(--muted-foreground)]">{submission.date}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {submissions.length > SUBMISSIONS_PREVIEW_COUNT && (
-                  <button
-                    type="button"
-                    onClick={() => setShowAllSubmissions((v) => !v)}
-                    className="w-full mt-3 flex items-center justify-center gap-1.5 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] py-2 rounded-lg hover:bg-white/[0.03] transition"
-                  >
-                    {showAllSubmissions
-                      ? "Show less"
-                      : `Show ${Math.min(submissions.length, SUBMISSIONS_EXPANDED_COUNT) - SUBMISSIONS_PREVIEW_COUNT} more`}
-                    <ChevronDown
-                      size={15}
-                      strokeWidth={2}
-                      className={`transition-transform duration-200 ${showAllSubmissions ? "rotate-180" : ""}`}
-                      aria-hidden="true"
-                    />
-                  </button>
-                )}
-              </>
-            )}
           </SectionCard>
         </ContentSlot>
 
