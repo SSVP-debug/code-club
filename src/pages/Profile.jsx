@@ -31,13 +31,11 @@ import AdminAccountView from "../components/profile/AdminAccountView";
 import RoleAccountView from "../components/profile/RoleAccountView";
 
 // ── Profile ────────────────────────────────────────────────────────────────────
-// Phase 9B: Coding Identity build-out. Hero now shows the real XP-derived
-// level (getLevel/getLevelProgress — same math as the public profile and
-// backend) instead of the old solvedProblems.length value that was
-// mislabeled "Level". Heatmap/Skill Radar/Coding DNA/Journey Timeline all
-// run off data already hydrated into AppContext (topicStats, activityDates,
-// totalXP, longestStreak, achievements, submissions, joinedDate) — no new
-// endpoints. See PROJECT_STATE.md Phase 9 for the rest of the plan.
+// Profile information architecture: the page is composed from existing
+// profile components and data contracts. This pass changes presentation and
+// grouping only — no backend endpoints, role contracts, or component data
+// models are changed. Student-only coding data remains isolated behind the
+// existing role early returns below.
 
 function Profile() {
   const { user } = useAuth();
@@ -126,35 +124,23 @@ function Profile() {
   // Quick-jump nav — mirrors the ContentSlot ids below, with the same
   // role gating so a link never points at a section that isn't rendered.
   const quickNavItems = [
-    { id: "profile-identity", label: "Overview" },
-    { id: "profile-professional-presence", label: "Presence" },
+    { id: "profile-overview", label: "Overview" },
+    { id: "profile-presence", label: "Presence" },
     ...(role === "student" ? [{ id: "profile-recruiter-snapshot", label: "Recruiter" }] : []),
-    { id: "profile-heatmap-radar", label: "Activity & Skills" },
+    { id: "profile-skills-analytics", label: "Skills & Analytics" },
     { id: "profile-achievements", label: "Achievements" },
-    { id: "profile-journey", label: "Journey" },
-    { id: "profile-submissions", label: "Submissions" },
+    { id: "profile-coding-activity", label: "Coding Activity" },
   ];
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <DashboardLayout>
-      <div className="max-w-3xl space-y-8 universe-profile">
+      <div className="max-w-6xl mx-auto space-y-8 universe-profile">
 
-        <UniverseProfileHeader
-          level={level}
-          rank={rank}
-          current={current}
-          needed={needed}
-          percent={percent}
-          solved={solvedProblems.length}
-          streak={currentStreak}
-        />
-
-        <ProfileQuickNav items={quickNavItems} />
-
-        {/* ── 1. Hero ──────────────────────────────────────────────────── */}
-        <ContentSlot id="profile-identity">
+        <ContentSlot id="profile-overview">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.8fr)] gap-4 items-stretch">
+            <ContentSlot id="profile-identity">
           <SectionCard accented>
             <div className="flex items-start gap-6">
               {user?.photoURL ? (
@@ -235,23 +221,38 @@ function Profile() {
               </div>
             </div>
           </SectionCard>
-        </ContentSlot>
-
-        {/* ── 1B. Developer Identity: Professional Presence + Resume ────── */}
-        {/* GitHub/LinkedIn/Resume live here, right after the identity hero
-            and before any account-nudge or recruiter content — this is
-            "who is this developer / where can I learn more", not a
-            settings section. See profile audit for placement rationale. */}
-        <ContentSlot id="profile-professional-presence">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <ProfessionalPresence />
-            <ResumeCard />
+            </ContentSlot>
+            <div className="min-w-0">
+<UniverseProfileHeader
+          level={level}
+          rank={rank}
+          current={current}
+          needed={needed}
+          percent={percent}
+          solved={solvedProblems.length}
+          streak={currentStreak}
+        />
+            </div>
           </div>
         </ContentSlot>
 
-        {/* ── 1C. Featured Project ─────────────────────────────────────── */}
-        <ContentSlot id="profile-featured-project">
-          <FeaturedProject />
+        <ProfileQuickNav items={quickNavItems} />
+
+        {/* ── 1. Hero ──────────────────────────────────────────────────── */}
+
+        <ContentSlot id="profile-presence">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <ProfessionalPresence />
+            <ResumeCard />
+          </div>
+
+          <div className="mt-4">
+            <FeaturedProject />
+          </div>
+
+          <div className="mt-4">
+            <PinnedProblems />
+          </div>
         </ContentSlot>
 
         {/* ── 2. Profile Completion nudge ──────────────────────────────── */}
@@ -260,6 +261,9 @@ function Profile() {
             one: that needs a new backend XP-grant hook, flagged not faked. */}
         <ContentSlot id="profile-completion">
           <ProfileCompletion />
+        </ContentSlot>
+
+
         </ContentSlot>
 
         {/* ── 3. Recruiter Snapshot ────────────────────────────────────── */}
@@ -287,53 +291,37 @@ function Profile() {
           </ContentSlot>
         )}
 
-        {/* ── 4. Activity Heatmap + Skill Radar ───────────────────────────── */}
-        {/* Both components already existed and already worked — ActivityHeatmap
-            was mounted only on the public /u/:username page, never here. */}
-        <ContentSlot id="profile-heatmap-radar">
-          <CollapsibleGroup
-            title="Activity & Skills"
-            icon={<BarChart3 size={15} strokeWidth={2} />}
+        <ContentSlot id="profile-skills-analytics">
+          <SectionCard
+            title="Skills & Analytics"
+            icon={<BarChart3 size={18} strokeWidth={2} />}
+            accented
+            collapsible
             defaultOpen
-            storageKey="profile-collapse-heatmap-radar"
+            storageKey="profile-collapse-skills-analytics"
           >
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <ActivityHeatmap activityDates={activityDates} accentColor={theme.colors.primary} />
-              <SkillRadar topicStats={topicStats} accentColor={theme.colors.primary} />
+            <ContentSlot id="profile-heatmap-radar">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <ActivityHeatmap activityDates={activityDates} accentColor={theme.colors.primary} />
+                <SkillRadar topicStats={topicStats} accentColor={theme.colors.primary} />
+              </div>
+            </ContentSlot>
+
+            <div className="mt-4">
+              <ContentSlot id="profile-coding-dna">
+                <CodingDNA
+                  submissions={submissions}
+                  topicStats={topicStats}
+                  solvedDifficulty={solvedDifficulty}
+                  longestStreak={longestStreak}
+                />
+              </ContentSlot>
             </div>
-          </CollapsibleGroup>
-        </ContentSlot>
 
-        {/* ── 5. Coding DNA ────────────────────────────────────────────── */}
-        <ContentSlot id="profile-coding-dna">
-          <CodingDNA
-            submissions={submissions}
-            topicStats={topicStats}
-            solvedDifficulty={solvedDifficulty}
-            longestStreak={longestStreak}
-          />
-        </ContentSlot>
-
-        {/* ── 6. Pinned Problems ───────────────────────────────────────── */}
-        <ContentSlot id="profile-pinned-problems">
-          <PinnedProblems />
-        </ContentSlot>
-
-        {/* ── 7. Insights & Certifications ───────────────────────────────── */}
-        {/* Analytics and Certifications used to be separate top-level nav
-            items. They live here now — personal, deep-dive detail belongs
-            on the Profile page, not in the main navbar. */}
-        <ContentSlot id="profile-insights">
-          <CollapsibleGroup
-            title="Insights & Certifications"
-            icon={<Award size={15} strokeWidth={2} />}
-            defaultOpen={false}
-            storageKey="profile-collapse-insights"
-          >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Link
                 to="/analytics"
-                className="group bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 flex items-center gap-4 hover:border-[var(--theme-primary,#2dd4bf)] transition"
+                className="group bg-[var(--surface-elevated)] border border-[var(--border)] rounded-2xl p-5 flex items-center gap-4 hover:border-[var(--theme-primary,#2dd4bf)] transition"
               >
                 <div
                   className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -347,140 +335,201 @@ function Profile() {
                 </div>
                 <span className="ml-auto text-[var(--muted-foreground)] group-hover:text-[var(--theme-primary,#2dd4bf)] transition flex-shrink-0">→</span>
               </Link>
-
-              <Link
-                to="/certifications"
-                className="group bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 flex items-center gap-4 hover:border-[var(--theme-primary,#2dd4bf)] transition"
-              >
-                <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: `${theme.colors.primary}1f`, color: theme.colors.primary }}
-                >
-                  <Award size={20} strokeWidth={2} aria-hidden="true" />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-semibold">Certifications</p>
-                  <p className="text-[var(--muted-foreground)] text-sm">View and share what you've earned.</p>
-                </div>
-                <span className="ml-auto text-[var(--muted-foreground)] group-hover:text-[var(--theme-primary,#2dd4bf)] transition flex-shrink-0">→</span>
-              </Link>
             </div>
-          </CollapsibleGroup>
+          </SectionCard>
         </ContentSlot>
 
-        {/* ── 8. Achievements ──────────────────────────────────────────── */}
         <ContentSlot id="profile-achievements">
-          <AchievementGallery
+          <SectionCard
+            title="Achievements"
+            icon={<Award size={18} strokeWidth={2} />}
+            accented
             collapsible
             defaultOpen
             storageKey="profile-collapse-achievements"
-          />
+          >
+            <AchievementGallery
+              collapsible={false}
+              defaultOpen
+            />
+
+            <div className="mt-4">
+              <ContestHistorySection />
+            </div>
+
+            <div className="mt-4">
+              <JourneyTimeline joinedDate={joinedDate} achievements={achievements} />
+            </div>
+
+            <div className="mt-4">
+              <CollapsibleGroup
+                title="Certifications"
+                icon={<Award size={15} strokeWidth={2} />}
+                defaultOpen={false}
+                storageKey="profile-collapse-certifications"
+              >
+                <Link
+                  to="/certifications"
+                  className="group bg-[var(--surface-elevated)] border border-[var(--border)] rounded-2xl p-5 flex items-center gap-4 hover:border-[var(--theme-primary,#2dd4bf)] transition"
+                >
+                  <div
+                    className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: `${theme.colors.primary}1f`, color: theme.colors.primary }}
+                  >
+                    <Award size={20} strokeWidth={2} aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-semibold">Certifications</p>
+                    <p className="text-[var(--muted-foreground)] text-sm">View and share what you've earned.</p>
+                  </div>
+                  <span className="ml-auto text-[var(--muted-foreground)] group-hover:text-[var(--theme-primary,#2dd4bf)] transition flex-shrink-0">→</span>
+                </Link>
+              </CollapsibleGroup>
+            </div>
+          </SectionCard>
         </ContentSlot>
 
-        {/* ── 9. Journey Timeline ──────────────────────────────────────── */}
-        <ContentSlot id="profile-journey">
-          <JourneyTimeline joinedDate={joinedDate} achievements={achievements} />
-        </ContentSlot>
-
-        {/* ── 10. Recent Activity ────────────────────────────────────────── */}
-        <ContentSlot id="profile-activity">
+        <ContentSlot id="profile-coding-activity">
           <SectionCard
-            title="Recent Activity"
+            title="Coding Activity"
             icon={<Zap size={18} strokeWidth={2} />}
             accented
             collapsible
             defaultOpen
-            storageKey="profile-collapse-activity"
+            storageKey="profile-collapse-coding-activity"
           >
-            {recentActivity.length === 0 ? (
-              <EmptyState
-                icon={<Inbox size={28} strokeWidth={1.75} />}
-                title="No activity yet"
-                description="Solve a problem to start building your activity history."
-                actionLabel="Browse Problems"
-                actionHref="/problems"
-                compact
-              />
-            ) : (
-              <>
-                <div className="space-y-3">
-                  {visibleActivity.map((item, index) => (
-                    <div
-                      key={index}
-                      className="bg-[var(--surface-elevated)] px-4 py-3 rounded-xl flex justify-between items-center"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={`w-2 h-2 rounded-full flex-shrink-0 ${item.status?.includes("Accepted")
-                            ? "bg-green-500"
-                            : "bg-red-500"
-                            }`}
-                        />
-                        <span className="text-sm">{item.title}</span>
-                      </div>
-                      <span className="text-[var(--muted-foreground)] text-sm flex-shrink-0 ml-4">
-                        {item.time}
-                      </span>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <SectionCard
+                title="Recent Activity"
+                icon={<Zap size={18} strokeWidth={2} />}
+                accented
+                collapsible
+                defaultOpen
+                storageKey="profile-collapse-activity"
+              >
+                {recentActivity.length === 0 ? (
+                  <EmptyState
+                    icon={<Inbox size={28} strokeWidth={1.75} />}
+                    title="No activity yet"
+                    description="Solve a problem to start building your activity history."
+                    actionLabel="Browse Problems"
+                    actionHref="/problems"
+                    compact
+                  />
+                ) : (
+                  <>
+                    <div className="space-y-3">
+                      {visibleActivity.map((item, index) => (
+                        <div
+                          key={index}
+                          className="bg-[var(--surface-elevated)] px-4 py-3 rounded-xl flex justify-between items-center"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={`w-2 h-2 rounded-full flex-shrink-0 ${item.status?.includes("Accepted")
+                                ? "bg-green-500"
+                                : "bg-red-500"
+                                }`}
+                            />
+                            <span className="text-sm">{item.title}</span>
+                          </div>
+                          <span className="text-[var(--muted-foreground)] text-sm flex-shrink-0 ml-4">
+                            {item.time}
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
 
-                {recentActivity.length > ACTIVITY_PREVIEW_COUNT && (
-                  <button
-                    type="button"
-                    onClick={() => setShowAllActivity((v) => !v)}
-                    className="w-full mt-3 flex items-center justify-center gap-1.5 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] py-2 rounded-lg hover:bg-white/[0.03] transition"
-                  >
-                    {showAllActivity
-                      ? "Show less"
-                      : `Show ${recentActivity.length - ACTIVITY_PREVIEW_COUNT} more`}
-                    <ChevronDown
-                      size={15}
-                      strokeWidth={2}
-                      className={`transition-transform duration-200 ${showAllActivity ? "rotate-180" : ""}`}
-                      aria-hidden="true"
-                    />
-                  </button>
+                    {recentActivity.length > ACTIVITY_PREVIEW_COUNT && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllActivity((v) => !v)}
+                        className="w-full mt-3 flex items-center justify-center gap-1.5 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] py-2 rounded-lg hover:bg-white/[0.03] transition"
+                      >
+                        {showAllActivity
+                          ? "Show less"
+                          : `Show ${recentActivity.length - ACTIVITY_PREVIEW_COUNT} more`}
+                        <ChevronDown
+                          size={15}
+                          strokeWidth={2}
+                          className={`transition-transform duration-200 ${showAllActivity ? "rotate-180" : ""}`}
+                          aria-hidden="true"
+                        />
+                      </button>
+                    )}
+                  </>
                 )}
-              </>
-            )}
+              </SectionCard>
+              <SectionCard
+                title="Recent Submissions"
+                icon={<FileText size={18} strokeWidth={2} />}
+                accented
+                collapsible
+                defaultOpen={false}
+                storageKey="profile-collapse-submissions"
+              >
+                {recentSubmissions.length === 0 ? (
+                  <EmptyState
+                    icon={<FileText size={28} strokeWidth={1.75} />}
+                    title="No submissions yet"
+                    description="Submit your first solution to see your history here."
+                    actionLabel="Start solving"
+                    actionHref="/problems"
+                    compact
+                  />
+                ) : (
+                  <>
+                    <div className="space-y-3">
+                      {recentSubmissions.map((submission, index) => (
+                        <div
+                          key={submission.id || submission.createdAt || index}
+                          className="flex justify-between items-center border-b border-[var(--border)] pb-2 last:border-0"
+                        >
+                          <div>
+                            <p className="font-medium">{submission.problemTitle}</p>
+                            <p className="text-xs text-[var(--muted-foreground)]">{submission.language}</p>
+                          </div>
+                          <div className="text-right">
+                            <p
+                              className={
+                                submission.status?.includes("Accepted")
+                                  ? "text-green-500"
+                                  : "text-red-500"
+                              }
+                            >
+                              {submission.status}
+                            </p>
+                            <p className="text-xs text-[var(--muted-foreground)]">{submission.date}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {submissions.length > SUBMISSIONS_PREVIEW_COUNT && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllSubmissions((v) => !v)}
+                        className="w-full mt-3 flex items-center justify-center gap-1.5 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] py-2 rounded-lg hover:bg-white/[0.03] transition"
+                      >
+                        {showAllSubmissions
+                          ? "Show less"
+                          : `Show ${Math.min(submissions.length, SUBMISSIONS_EXPANDED_COUNT) - SUBMISSIONS_PREVIEW_COUNT} more`}
+                        <ChevronDown
+                          size={15}
+                          strokeWidth={2}
+                          className={`transition-transform duration-200 ${showAllSubmissions ? "rotate-180" : ""}`}
+                          aria-hidden="true"
+                        />
+                      </button>
+                    )}
+                  </>
+                )}
+              </SectionCard>
+            </div>
           </SectionCard>
         </ContentSlot>
 
-        {/* ── 11. Recent Submissions ─────────────────────────────────────── */}
-        <ContentSlot id="profile-submissions">
-          <SectionCard
-            title="Recent Submissions"
-            icon={<FileText size={18} strokeWidth={2} />}
-            accented
-            collapsible
-            defaultOpen={false}
-            storageKey="profile-collapse-submissions"
-          >
-            {recentSubmissions.length === 0 ? (
-              <EmptyState
-                icon={<FileText size={28} strokeWidth={1.75} />}
-                title="No submissions yet"
-                description="Submit your first solution to see your history here."
-                actionLabel="Start solving"
-                actionHref="/problems"
-                compact
-              />
-            ) : (
-              <>
-                <div className="space-y-3">
-                  {recentSubmissions.map((submission, index) => (
-                    <div
-                      key={submission.id || submission.createdAt || index}
-                      className="flex justify-between items-center border-b border-[var(--border)] pb-2 last:border-0"
-                    >
-                      <div>
-                        <p className="font-medium">{submission.problemTitle}</p>
-                        <p className="text-xs text-[var(--muted-foreground)]">{submission.language}</p>
-                      </div>
-                      <div className="text-right">
-                        <p
-                          className={
+   className={
                             submission.status?.includes("Accepted")
                               ? "text-green-500"
                               : "text-red-500"
