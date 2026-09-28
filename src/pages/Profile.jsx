@@ -58,6 +58,7 @@ function Profile() {
 
   const [showAllSubmissions, setShowAllSubmissions] = useState(false);
   const [activityOpen, setActivityOpen] = useState(true);
+  const [achievementsOpen, setAchievementsOpen] = useState(true);
 
   const SUBMISSIONS_PREVIEW_COUNT = 5;
   const SUBMISSIONS_EXPANDED_COUNT = 15; // capped even when "expanded" — full history isn't paginated here
@@ -338,15 +339,34 @@ function Profile() {
         </ContentSlot>
 
         <ContentSlot id="profile-achievements">
-          <div className="profile-wow-section-heading">
+          <button
+            type="button"
+            className="profile-wow-fold-header profile-wow-section-heading"
+            onClick={() => setAchievementsOpen((open) => !open)}
+            aria-expanded={achievementsOpen}
+            aria-controls="profile-achievements-content"
+          >
             <div>
               <span>04 / MILESTONES</span>
               <h2>Achievements & journey</h2>
             </div>
-            <p>Every solved problem, streak and milestone becomes part of your coding story.</p>
-          </div>
+            <div className="profile-wow-fold-header__right">
+              <p>Every solved problem, streak and milestone becomes part of your coding story.</p>
+              <ChevronDown
+                size={20}
+                aria-hidden="true"
+                className={achievementsOpen ? "rotate-180" : ""}
+              />
+            </div>
+          </button>
 
-          <div className="profile-wow-bento profile-wow-bento--achievements">
+          <div
+            id="profile-achievements-content"
+            className={achievementsOpen
+              ? "profile-wow-fold-body profile-wow-fold-body--open"
+              : "profile-wow-fold-body"}
+          >
+            <div className="profile-wow-bento profile-wow-bento--achievements">
             <div className="profile-wow-achievements">
               <AchievementGallery collapsible={false} defaultOpen />
             </div>
