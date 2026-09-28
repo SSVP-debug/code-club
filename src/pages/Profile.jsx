@@ -124,170 +124,198 @@ function Profile() {
     { id: "profile-coding-activity", label: "Coding Activity" },
   ];
 
-  // ── Render ─────────────────────────────────────────────────────────────────
-
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-8 universe-profile">
-
+      <div className="profile-wow max-w-7xl mx-auto">
         <ContentSlot id="profile-overview">
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.8fr)] gap-4 items-stretch">
-            <ContentSlot id="profile-identity">
-          <SectionCard accented>
-            <div className="flex items-start gap-6">
-              {user?.photoURL ? (
-                <img
-                  src={user.photoURL}
-                  alt={user.displayName || "User"}
-                  className="w-20 h-20 rounded-full flex-shrink-0"
-                />
-              ) : (
-                <div
-                  className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold flex-shrink-0"
-                  style={{
-                    backgroundColor: `${theme.colors.primary}1f`,
-                    color: theme.colors.primary,
-                  }}
-                >
-                  {(user?.displayName || "U")[0]}
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <h2 className="text-2xl font-semibold">{user?.displayName || "User"}</h2>
-                    <p className="text-[var(--muted-foreground)] text-sm">{user?.email}</p>
-                    <p className="text-[var(--muted-foreground)] text-sm mt-1">Joined {joinedDisplay}</p>
-                  </div>
-                  <Link
-                    to="/settings"
-                    className="flex-shrink-0 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition whitespace-nowrap"
-                  >
-                    Account settings →
-                  </Link>
-                </div>
+          <section className="profile-wow-hero">
+            <div className="profile-wow-hero__grid" aria-hidden="true" />
+            <div className="profile-wow-hero__orb profile-wow-hero__orb--one" aria-hidden="true" />
+            <div className="profile-wow-hero__orb profile-wow-hero__orb--two" aria-hidden="true" />
 
-                {/* Level / XP progress */}
-                <div className="mt-5">
-                  <div className="flex items-baseline justify-between mb-1.5">
-                    <span className="text-sm font-semibold text-[var(--foreground)]">
-                      Level {level} · {rank}
-                    </span>
-                    <span className="text-xs text-[var(--muted-foreground)]">
-                      {current.toLocaleString()} / {needed.toLocaleString()} XP to next level
-                    </span>
-                  </div>
-                  <div className="h-2 bg-[var(--surface-elevated)] rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{
-                        width: `${Math.min(percent, 100)}%`,
-                        backgroundColor: theme.colors.primary,
-                      }}
-                    />
-                  </div>
+            <div className="profile-wow-hero__identity">
+              <div className="profile-wow-avatar">
+                {user?.photoURL ? (
+                  <img
+                    src={user.photoURL}
+                    alt={user.displayName || "User"}
+                  />
+                ) : (
+                  <span>{(user?.displayName || "U")[0]}</span>
+                )}
+                <span className="profile-wow-avatar__online" aria-label="Online" />
+              </div>
+
+              <div className="min-w-0">
+                <p className="profile-wow-kicker">CODE CLUB / CODING IDENTITY</p>
+                <h1 className="profile-wow-name">{user?.displayName || "User"}</h1>
+                <p className="profile-wow-email">{user?.email}</p>
+                <div className="profile-wow-meta">
+                  <span>Level {level}</span>
+                  <span>{rank}</span>
+                  <span>Joined {joinedDisplay}</span>
                 </div>
               </div>
             </div>
 
-            {/* Quick stat pills */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
-              <div className="bg-[var(--surface-elevated)] rounded-xl p-3 text-center">
-                <p className="text-xl font-bold">{totalXP.toLocaleString()}</p>
-                <p className="text-[var(--muted-foreground)] text-xs mt-0.5">Total XP</p>
+            <div className="profile-wow-hero__actions">
+              <Link to="/settings" className="profile-wow-action profile-wow-action--ghost">
+                Account settings
+              </Link>
+              <button
+                type="button"
+                className="profile-wow-action profile-wow-action--primary"
+                onClick={() => navigator.clipboard?.writeText(window.location.href)}
+              >
+                Share profile
+              </button>
+            </div>
+
+            <div className="profile-wow-hero__metrics">
+              <div>
+                <span className="profile-wow-metric-value">{solvedProblems.length}</span>
+                <span className="profile-wow-metric-label">Problems solved</span>
               </div>
-              <div className="bg-[var(--surface-elevated)] rounded-xl p-3 text-center">
-                <p className="text-xl font-bold">{solvedProblems.length}</p>
-                <p className="text-[var(--muted-foreground)] text-xs mt-0.5">Solved</p>
+              <div>
+                <span className="profile-wow-metric-value">{totalXP.toLocaleString()}</span>
+                <span className="profile-wow-metric-label">Total XP</span>
               </div>
-              <div className="bg-[var(--surface-elevated)] rounded-xl p-3 text-center">
-                <p className="text-xl font-bold flex items-center justify-center gap-1.5">
-                  <Flame size={18} strokeWidth={2} className="text-orange-400" aria-hidden="true" />
-                  {currentStreak}
-                </p>
-                <p className="text-[var(--muted-foreground)] text-xs mt-0.5">Current Streak</p>
+              <div>
+                <span className="profile-wow-metric-value profile-wow-metric-value--streak">
+                  <Flame size={17} aria-hidden="true" /> {currentStreak}
+                </span>
+                <span className="profile-wow-metric-label">Current streak</span>
               </div>
-              <div className="bg-[var(--surface-elevated)] rounded-xl p-3 text-center">
-                <p className="text-xl font-bold">{longestStreak}</p>
-                <p className="text-[var(--muted-foreground)] text-xs mt-0.5">Longest Streak</p>
+              <div>
+                <span className="profile-wow-metric-value">{longestStreak}</span>
+                <span className="profile-wow-metric-label">Longest streak</span>
               </div>
             </div>
-          </SectionCard>
-            </ContentSlot>
-            <div className="min-w-0">
-<UniverseProfileHeader
-          level={level}
-          rank={rank}
-          current={current}
-          needed={needed}
-          percent={percent}
-          solved={solvedProblems.length}
-          streak={currentStreak}
-        />
+
+            <div className="profile-wow-hero__progress">
+              <div>
+                <span>Level {level} progress</span>
+                <strong>{current.toLocaleString()} / {needed.toLocaleString()} XP</strong>
+              </div>
+              <div className="profile-wow-progress-track">
+                <span style={{ width: `${Math.min(percent, 100)}%` }} />
+              </div>
             </div>
-          </div>
+
+            <div className="profile-wow-signal">
+              <UniverseProfileHeader
+                level={level}
+                rank={rank}
+                current={current}
+                needed={needed}
+                percent={percent}
+                solved={solvedProblems.length}
+                streak={currentStreak}
+              />
+            </div>
+          </section>
         </ContentSlot>
 
-        <ProfileQuickNav items={quickNavItems} />
+        <ProfileQuickNav items={[
+          { id: "profile-overview", label: "Overview" },
+          { id: "profile-presence", label: "Presence" },
+          { id: "profile-skills-analytics", label: "Coding Identity" },
+          { id: "profile-achievements", label: "Achievements" },
+          { id: "profile-coding-activity", label: "Activity" },
+          ...(role === "student" ? [{ id: "profile-recruiter-snapshot", label: "Career" }] : []),
+        ]} />
 
         <ContentSlot id="profile-overview-details">
-          <ProfileCompletion />
-
-          {role === "student" && (
-            <div className="mt-4">
-              <EducationSection />
+          <div className="profile-wow-section-heading">
+            <div>
+              <span>01 / SNAPSHOT</span>
+              <h2>Your profile at a glance</h2>
             </div>
-          )}
+            <p>Build a profile that shows more than a resume — show how you actually code.</p>
+          </div>
+
+          <div className="profile-wow-bento profile-wow-bento--overview">
+            <div className="profile-wow-bento__large">
+              <ProfileCompletion />
+            </div>
+            <div className="profile-wow-bento__medium">
+              {role === "student" ? <EducationSection /> : (
+                <SectionCard title="Account" icon={<Award size={18} />} accented>
+                  <div className="profile-wow-account-card">
+                    <span className="profile-wow-account-card__icon"><Award size={18} /></span>
+                    <div>
+                      <strong>{rank} coder</strong>
+                      <p>Your coding identity is active and ready to grow.</p>
+                    </div>
+                  </div>
+                </SectionCard>
+              )}
+            </div>
+            <div className="profile-wow-bento__medium profile-wow-presence-mini">
+              <ProfessionalPresence />
+            </div>
+            <div className="profile-wow-bento__small">
+              <div className="profile-wow-stat-card">
+                <span className="profile-wow-stat-card__eyebrow">NEXT LEVEL</span>
+                <strong>{needed.toLocaleString()} XP</strong>
+                <p>Keep solving to unlock the next level.</p>
+                <div className="profile-wow-mini-track"><span style={{ width: `${Math.min(percent, 100)}%` }} /></div>
+              </div>
+            </div>
+          </div>
         </ContentSlot>
 
         <ContentSlot id="profile-presence">
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            <ProfessionalPresence />
-            <ResumeCard />
+          <div className="profile-wow-section-heading">
+            <div>
+              <span>02 / PRESENCE</span>
+              <h2>Proof of work</h2>
+            </div>
+            <p>Projects, resume, links and problems that make your profile tangible.</p>
           </div>
 
-          <div className="mt-4">
-            <ContentSlot id="profile-featured-project">
-              <FeaturedProject />
-            </ContentSlot>
-          </div>
-
-          <div className="mt-4">
-            <ContentSlot id="profile-pinned-problems">
-              <PinnedProblems />
-            </ContentSlot>
+          <div className="profile-wow-bento profile-wow-bento--work">
+            <div className="profile-wow-feature">
+              <ContentSlot id="profile-featured-project">
+                <FeaturedProject />
+              </ContentSlot>
+            </div>
+            <div className="profile-wow-resume">
+              <ResumeCard />
+            </div>
+            <div className="profile-wow-pinned">
+              <ContentSlot id="profile-pinned-problems">
+                <PinnedProblems />
+              </ContentSlot>
+            </div>
           </div>
         </ContentSlot>
 
-        {role === "student" && (
-          <ContentSlot id="profile-recruiter-snapshot">
-            <RecruiterSnapshot />
-          </ContentSlot>
-        )}
-
         <ContentSlot id="profile-skills-analytics">
-          <SectionCard
-            title="Skills & Analytics"
-            icon={<BarChart3 size={18} strokeWidth={2} />}
-            accented
-            collapsible
-            defaultOpen
-            storageKey="profile-collapse-skills-analytics"
-          >
-            <ContentSlot id="profile-heatmap-radar">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="profile-wow-section-heading">
+            <div>
+              <span>03 / CODING IDENTITY</span>
+              <h2>How you code</h2>
+            </div>
+            <p>Patterns, consistency and problem-solving signals — not just a list of skills.</p>
+          </div>
+
+          <div className="profile-wow-bento profile-wow-bento--analytics">
+            <div className="profile-wow-heatmap">
+              <ContentSlot id="profile-heatmap-radar">
                 <ActivityHeatmap
                   activityDates={activityDates}
                   accentColor={theme.colors.primary}
                 />
-                <SkillRadar
-                  topicStats={topicStats}
-                  accentColor={theme.colors.primary}
-                />
-              </div>
-            </ContentSlot>
-
-            <div className="mt-4">
+              </ContentSlot>
+            </div>
+            <div className="profile-wow-radar">
+              <SkillRadar
+                topicStats={topicStats}
+                accentColor={theme.colors.primary}
+              />
+            </div>
+            <div className="profile-wow-dna">
               <ContentSlot id="profile-coding-dna">
                 <CodingDNA
                   submissions={submissions}
@@ -297,63 +325,39 @@ function Profile() {
                 />
               </ContentSlot>
             </div>
-
-            <div className="mt-4">
-              <Link
-                to="/analytics"
-                className="group flex items-center gap-4 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-2xl p-5 hover:border-[var(--theme-primary,#2dd4bf)] transition"
-              >
-                <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{
-                    backgroundColor: `${theme.colors.primary}1f`,
-                    color: theme.colors.primary,
-                  }}
-                >
-                  <BarChart3 size={20} strokeWidth={2} aria-hidden="true" />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-semibold">{theme.words.analytics}</p>
-                  <p className="text-[var(--muted-foreground)] text-sm">
-                    Deep dive into your solving patterns.
-                  </p>
-                </div>
-                <span className="ml-auto text-[var(--muted-foreground)] group-hover:text-[var(--theme-primary,#2dd4bf)] transition">
-                  →
-                </span>
-              </Link>
-            </div>
-          </SectionCard>
+            <Link to="/analytics" className="profile-wow-analytics-link">
+              <BarChart3 size={20} aria-hidden="true" />
+              <div>
+                <strong>Open full analytics</strong>
+                <span>Explore deeper solving patterns</span>
+              </div>
+              <span className="profile-wow-arrow">→</span>
+            </Link>
+          </div>
         </ContentSlot>
 
         <ContentSlot id="profile-achievements">
-          <SectionCard
-            title="Achievements"
-            icon={<Award size={18} strokeWidth={2} />}
-            accented
-            collapsible
-            defaultOpen
-            storageKey="profile-collapse-achievements"
-          >
-            <AchievementGallery
-              collapsible={false}
-              defaultOpen
-            />
+          <div className="profile-wow-section-heading">
+            <div>
+              <span>04 / MILESTONES</span>
+              <h2>Achievements & journey</h2>
+            </div>
+            <p>Every solved problem, streak and milestone becomes part of your coding story.</p>
+          </div>
 
+          <div className="profile-wow-bento profile-wow-bento--achievements">
+            <div className="profile-wow-achievements">
+              <AchievementGallery collapsible={false} defaultOpen />
+            </div>
             {role === "student" && (
-              <div className="mt-4">
+              <div className="profile-wow-contests">
                 <ContestHistorySection />
               </div>
             )}
-
-            <div className="mt-4">
-              <JourneyTimeline
-                joinedDate={joinedDate}
-                achievements={achievements}
-              />
+            <div className="profile-wow-journey">
+              <JourneyTimeline joinedDate={joinedDate} achievements={achievements} />
             </div>
-
-            <div className="mt-4">
+            <div className="profile-wow-certifications">
               <CollapsibleGroup
                 title="Certifications"
                 icon={<Award size={15} strokeWidth={2} />}
@@ -362,36 +366,30 @@ function Profile() {
               >
                 <Link
                   to="/certifications"
-                  className="group flex items-center gap-4 bg-[var(--surface-elevated)] border border-[var(--border)] rounded-2xl p-5 hover:border-[var(--theme-primary,#2dd4bf)] transition"
+                  className="profile-wow-analytics-link"
                 >
-                  <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{
-                      backgroundColor: `${theme.colors.primary}1f`,
-                      color: theme.colors.primary,
-                    }}
-                  >
-                    <Award size={20} strokeWidth={2} aria-hidden="true" />
+                  <Award size={20} aria-hidden="true" />
+                  <div>
+                    <strong>View certifications</strong>
+                    <span>Share what you've earned.</span>
                   </div>
-                  <div className="min-w-0">
-                    <p className="font-semibold">Certifications</p>
-                    <p className="text-[var(--muted-foreground)] text-sm">
-                      View and share what you've earned.
-                    </p>
-                  </div>
-                  <span className="ml-auto text-[var(--muted-foreground)] group-hover:text-[var(--theme-primary,#2dd4bf)] transition">
-                    →
-                  </span>
+                  <span className="profile-wow-arrow">→</span>
                 </Link>
               </CollapsibleGroup>
             </div>
-          </SectionCard>
+          </div>
         </ContentSlot>
 
         <ContentSlot id="profile-coding-activity">
+          <div className="profile-wow-section-heading">
+            <div>
+              <span>05 / ACTIVITY</span>
+              <h2>Recent coding activity</h2>
+            </div>
+            <p>A clean record of what you submitted, in the order it happened.</p>
+          </div>
+
           <SectionCard
-            title="Coding Activity"
-            icon={<Zap size={18} strokeWidth={2} />}
             accented
             collapsible
             defaultOpen
@@ -408,40 +406,32 @@ function Profile() {
               />
             ) : (
               <>
-                <div className="overflow-x-auto">
-                  <div className="min-w-[640px]">
-                    <div className="grid grid-cols-[minmax(0,1.8fr)_100px_150px_120px] gap-4 px-4 pb-3 text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+                <div className="profile-wow-table-wrap">
+                  <div className="profile-wow-table">
+                    <div className="profile-wow-table__head">
                       <span>Problem</span>
                       <span>Language</span>
                       <span>Status</span>
-                      <span className="text-right">Date</span>
+                      <span>Date</span>
                     </div>
-
-                    <div className="divide-y divide-[var(--border)]">
-                      {recentSubmissions.map((submission, index) => (
-                        <div
-                          key={submission.id || submission.createdAt || index}
-                          className="grid grid-cols-[minmax(0,1.8fr)_100px_150px_120px] gap-4 items-center px-4 py-4"
-                        >
-                          <p className="font-medium truncate">{submission.problemTitle || "Untitled problem"}</p>
-                          <p className="text-sm text-[var(--muted-foreground)] uppercase">
-                            {submission.language || "—"}
-                          </p>
-                          <p
-                            className={
-                              submission.status?.includes("Accepted")
-                                ? "text-sm font-medium text-green-500"
-                                : "text-sm font-medium text-red-500"
-                            }
-                          >
-                            {submission.status || "Unknown"}
-                          </p>
-                          <p className="text-sm text-[var(--muted-foreground)] text-right">
-                            {submission.date || "—"}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
+                    {recentSubmissions.map((submission, index) => (
+                      <div
+                        key={submission.id || submission.createdAt || index}
+                        className="profile-wow-table__row"
+                      >
+                        <strong>{submission.problemTitle || "Untitled problem"}</strong>
+                        <span className="profile-wow-table__language">{submission.language || "—"}</span>
+                        <span className={
+                          submission.status?.includes("Accepted")
+                            ? "profile-wow-status profile-wow-status--accepted"
+                            : "profile-wow-status profile-wow-status--rejected"
+                        }>
+                          <i aria-hidden="true" />
+                          {submission.status || "Unknown"}
+                        </span>
+                        <span>{submission.date || "—"}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -449,15 +439,14 @@ function Profile() {
                   <button
                     type="button"
                     onClick={() => setShowAllSubmissions((v) => !v)}
-                    className="w-full mt-3 flex items-center justify-center gap-1.5 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] py-2 rounded-lg hover:bg-white/[0.03] transition"
+                    className="profile-wow-more"
                   >
                     {showAllSubmissions
                       ? "Show less"
                       : `Show ${Math.min(submissions.length, SUBMISSIONS_EXPANDED_COUNT) - SUBMISSIONS_PREVIEW_COUNT} more`}
                     <ChevronDown
                       size={15}
-                      strokeWidth={2}
-                      className={`transition-transform duration-200 ${showAllSubmissions ? "rotate-180" : ""}`}
+                      className={showAllSubmissions ? "rotate-180" : ""}
                       aria-hidden="true"
                     />
                   </button>
@@ -467,9 +456,19 @@ function Profile() {
           </SectionCard>
         </ContentSlot>
 
+        {role === "student" && (
+          <ContentSlot id="profile-recruiter-snapshot">
+            <div className="profile-wow-section-heading">
+              <div>
+                <span>06 / CAREER</span>
+                <h2>Recruiter-ready profile</h2>
+              </div>
+              <p>Turn your coding identity into a clear professional signal.</p>
+            </div>
+            <RecruiterSnapshot />
+          </ContentSlot>
+        )}
       </div>
     </DashboardLayout>
   );
-}
-
 export default Profile;
