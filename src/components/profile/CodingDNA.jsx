@@ -11,7 +11,7 @@ import { useLanguages } from "../../hooks/useLanguages";
  * Mirrors the favoriteLanguage/strongestTopic/averageRuntime derivations
  * already used on Analytics.jsx so the two pages never disagree.
  */
-function CodingDNA({ submissions = [], topicStats = {}, solvedDifficulty = {}, longestStreak = 0, languageBreakdown = null }) {
+function CodingDNA({ submissions = [], topicStats = {}, solvedDifficulty = {}, longestStreak = 0, languageBreakdown = null, collapsible = true }) {
   // Content & Execution Architecture cross-check follow-up (Phase 6):
   // was a hardcoded `LANG_LABELS` object literal — one of three
   // near-identical copies found across the frontend this session (see
@@ -84,7 +84,7 @@ function CodingDNA({ submissions = [], topicStats = {}, solvedDifficulty = {}, l
       title="Coding DNA"
       icon={<Dna size={18} strokeWidth={2} />}
       accented
-      collapsible
+      collapsible={collapsible}
       defaultOpen={false}
       storageKey="profile-collapse-coding-dna"
     >
