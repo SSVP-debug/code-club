@@ -10,7 +10,7 @@ import { FileText, ArrowUpRight, Lock, Globe, X } from "lucide-react";
  * Defaults to private: saving a link never implicitly exposes it on the
  * public profile. Visibility is an explicit, visible choice at save time.
  */
-function ResumeCard() {
+function ResumeCard({ collapsible = true }) {
   const { developerProfile, updateDeveloperProfile } = useAppContext();
   const { resumeUrl, resumeVisibility } = developerProfile;
 
@@ -59,7 +59,7 @@ function ResumeCard() {
       title="Resume"
       subtitle="Your resume, shared on your terms."
       accented
-      collapsible
+      collapsible={collapsible}
       defaultOpen
       storageKey="profile-collapse-resume"
     >
