@@ -203,6 +203,32 @@ describe("POST /api/battle-rooms — create", () => {
     expect(BattleRoom.create).not.toHaveBeenCalled();
   });
 
+  it("does not let an expired active room block a new hosted room", async () => {
+    BattleRoom.findOne.mockImplementation((filter) => {
+      expect(filter.createdBy).toBe("user1");
+      expect(filter.$or).toEqual(
+        expect.arrayContaining([
+          { status: "lobby" },
+          { status: "active", endsAt: expect.objectContaining({ $gt: expect.any(Date) }) },
+          { status: "active", endsAt: null },
+        ])
+      );
+      return queryResult(null);
+    });
+    Problem.countDocuments.mockResolvedValue(1);
+    BattleRoom.create.mockResolvedValue(makeRoomDoc());
+
+    const req = {
+      body: { title: "Replacement Room", problemSlugs: ["two-sum"], durationMinutes: 60 },
+      userDoc: userDoc(),
+      log: mockLog(),
+    };
+    await getHandler("post", "/")(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(BattleRoom.create).toHaveBeenCalled();
+  });
+
   it("rejects a duration outside the 30min–4hr guardrail for students", async () => {
     BattleRoom.findOne.mockReturnValue(queryResult(null));
 
@@ -448,7 +474,7 @@ describe("GET /api/battle-rooms/:id — detail", () => {
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ isHost: false, isJoined: false }));
   });
 
-  it("computes a display-only 'ended' status once endsAt has passed, without writing to the DB", async () => {
+  it("persists an expired active room as ended", async () => {
     const now = Date.now();
     BattleRoom.findById.mockReturnValue(
       queryResult(
@@ -463,9 +489,12 @@ describe("GET /api/battle-rooms/:id — detail", () => {
     const req = { params: { id: "room1" }, userDoc: null, log: mockLog() };
     await getHandler("get", "/:id")(req, res);
 
+    expect(BattleRoom.findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: "room1", status: "active", endsAt: expect.objectContaining({ $lte: expect.any(Date) }) },
+      { $set: { status: "ended" } },
+      { returnDocument: "after" }
+    );
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ status: "ended" }));
-    // findByIdAndUpdate was never called — this is display-only.
-    expect(BattleRoom.findOneAndUpdate).not.toHaveBeenCalled();
   });
 });
 
