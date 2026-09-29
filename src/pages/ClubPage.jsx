@@ -8,7 +8,7 @@ import { WHATSAPP_LINK, DISCORD_INVITE_URL, CONTACT_EMAIL_LINK } from "../config
 import { apiFetch } from "../services/api";
 import { useTheme } from "../hooks/useTheme";
 import { withAlpha } from "../themes/themeIcons";
-import { Trophy, Swords, Lock, Users, ArrowRight, GraduationCap, Medal, MessageCircle, Puzzle, Coins, Gift, Lightbulb } from "lucide-react";
+import { Trophy, Swords, Lock, Users, ArrowRight, GraduationCap, Medal, MessageCircle, Puzzle, Coins, Lightbulb } from "lucide-react";
 
 const MEDAL_COLOR = { 1: "text-yellow-400", 2: "text-[var(--muted-foreground)]", 3: "text-orange-700" };
 
@@ -240,32 +240,7 @@ function ClubPage() {
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-semibold">Credits</p>
-            <p className="text-[var(--muted-foreground)] text-sm">Check your Credits balance and see where they came from.</p>
-          </div>
-          <ArrowRight
-            size={16}
-            className="text-[var(--muted-foreground)] group-hover:text-[var(--theme-primary,#2dd4bf)] transition flex-shrink-0"
-            aria-hidden="true"
-          />
-        </Link>
-
-        {/* ── Rewards Store (Phase 4) ────────────────────────────────────── */}
-        <Link
-          to="/rewards-store"
-          className="group flex items-center gap-4 bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 hover:border-[var(--theme-primary,#2dd4bf)] transition"
-        >
-          <div
-            className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{
-              backgroundColor: withAlpha(theme.colors.primary, "1f"),
-              color: theme.colors.primary,
-            }}
-          >
-            <Gift size={20} strokeWidth={2} aria-hidden="true" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-semibold">Rewards Store</p>
-            <p className="text-[var(--muted-foreground)] text-sm">Spend your Credits on perks and merchandise.</p>
+            <p className="text-[var(--muted-foreground)] text-sm">Manage your Credits, learn how they work, and redeem rewards in one place.</p>
           </div>
           <ArrowRight
             size={16}
