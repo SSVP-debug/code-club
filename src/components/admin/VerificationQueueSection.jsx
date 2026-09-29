@@ -20,6 +20,7 @@ function QueueRow({
   reviewTarget,
   onApprove,
   onReject,
+  approveLabel = "Approve",
   busy,
 }) {
   const [confirmingReject, setConfirmingReject] = useState(false);
@@ -79,7 +80,7 @@ function QueueRow({
             Reject
           </Button>
           <Button size="sm" variant="primary" disabled={busy} loading={busy === "approve"} onClick={onApprove}>
-            Approve
+            {approveLabel}
           </Button>
         </div>
       </div>
@@ -209,6 +210,7 @@ function VerificationQueueSection({ heading, loading, emptyLabel, items, busyIds
                 reviewHistory={row.reviewHistory}
                 reviewTarget={row.reviewTarget}
                 busy={busyIds[row.id]}
+                approveLabel={row.approveLabel}
                 onApprove={() => onApprove(row.actionTarget ?? row.id)}
                 onReject={(reason) => {
                   const target = row.actionTarget ?? row.id;
