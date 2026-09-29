@@ -27,8 +27,9 @@ function QueueRow({
   const [rejectReason, setRejectReason] = useState("");
   const [showDetails, setShowDetails] = useState(false);
   const isTpoReview = reviewTarget === "user";
+  const isTpoApplication = isTpoReview || reviewTarget === "college";
   const hasDetails =
-    isTpoReview &&
+    isTpoApplication &&
     ((Array.isArray(evidence) && evidence.length > 0) ||
       (Array.isArray(reviewHistory) && reviewHistory.length > 0));
 
