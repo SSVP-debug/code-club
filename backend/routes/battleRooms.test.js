@@ -474,6 +474,58 @@ describe("GET /api/battle-rooms/:id — detail", () => {
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ isHost: false, isJoined: false }));
   });
 
+  it("does not expose the invite code or internal user ids to a non-host viewer", async () => {
+    BattleRoom.findById.mockReturnValue(
+      queryResult(
+        makeRoomDoc({
+          createdBy: { toString: () => "host1" },
+          inviteCode: "SECRET1",
+          roster: [
+            {
+              userId: { toString: () => "member1" },
+              displayName: "Member One",
+              teamIndex: 0,
+              solvedSlugs: ["two-sum"],
+            },
+          ],
+        })
+      )
+    );
+    const req = { params: { id: "room1" }, userDoc: userDoc({ _id: "viewer1" }), log: mockLog() };
+    await getHandler("get", "/:id")(req, res);
+
+    const payload = res.json.mock.calls[0][0];
+    expect(payload.inviteCode).toBeUndefined();
+    expect(payload.createdBy).toBeUndefined();
+    expect(payload.roster[0].userId).toBeUndefined();
+  });
+
+  it("returns the invite code and roster user ids to the authenticated host", async () => {
+    BattleRoom.findById.mockReturnValue(
+      queryResult(
+        makeRoomDoc({
+          createdBy: { toString: () => "user1" },
+          inviteCode: "SECRET1",
+          roster: [
+            {
+              userId: { toString: () => "member1" },
+              displayName: "Member One",
+              teamIndex: null,
+              solvedSlugs: [],
+            },
+          ],
+        })
+      )
+    );
+    const req = { params: { id: "room1" }, userDoc: userDoc(), log: mockLog() };
+    await getHandler("get", "/:id")(req, res);
+
+    const payload = res.json.mock.calls[0][0];
+    expect(payload.inviteCode).toBe("SECRET1");
+    expect(payload.createdBy).toBeUndefined();
+    expect(payload.roster[0].userId).toEqual({ toString: expect.any(Function) });
+  });
+
   it("persists an expired active room as ended", async () => {
     const now = Date.now();
     BattleRoom.findById.mockReturnValue(
