@@ -40,7 +40,15 @@ function makeUserDoc(overrides = {}) {
     longestStreak: 30,
     solvedSlugs: ["two-sum"],
     achievements: [],
-    activityDates: [],
+    activityDates: [
+      "2026-09-06",
+      "2026-09-07",
+      "2026-09-08",
+      "2026-09-09",
+      "2026-09-10",
+      "2026-09-11",
+      "2026-09-12",
+    ],
     recentActivity: [],
     solvedDifficulty: { easy: 1, medium: 0, hard: 0 },
     dailyChallengeHistory: [],
@@ -64,6 +72,8 @@ describe("GET /api/init — role-gated progress/submissions (role/profile isolat
   });
 
   it("returns real progress + fetches submissions for a student session", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-12T10:00:00.000Z"));
     const req = { userDoc: makeUserDoc({ role: "student" }), log: mockLog() };
     const res = mockRes();
 
@@ -73,6 +83,7 @@ describe("GET /api/init — role-gated progress/submissions (role/profile isolat
     expect(payload.progress.totalXP).toBe(4200);
     expect(payload.progress.currentStreak).toBe(7);
     expect(Submission.find).toHaveBeenCalledWith({ userId: "user1" });
+    vi.useRealTimers();
   });
 
   it(
