@@ -1,4 +1,4 @@
-import { getStudentDayKey, getPreviousStudentDayKey, isNextStudentDay } from "./studentDay.js";
+import { getStudentDayKey, isNextStudentDay } from "./studentDay.js";
 
 /**
  * calculateStreak — derives current/longest streak from a list of IST
@@ -31,13 +31,11 @@ export function calculateStreak(activityDates = []) {
   }
 
   const today = getStudentDayKey();
-  const yesterday = getPreviousStudentDayKey();
-
   const lastDate = sorted[sorted.length - 1];
 
   let currentStreak = 0;
 
-  if (lastDate === today || lastDate === yesterday) {
+  if (lastDate === today) {
     currentStreak = 1;
 
     for (let i = sorted.length - 1; i > 0; i--) {
