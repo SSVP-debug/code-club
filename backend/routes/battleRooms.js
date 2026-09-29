@@ -531,13 +531,28 @@ router.post("/:id/leave", requireAuth, async (req, res) => {
       return res.status(400).json({ error: "You can only leave a Battle Room before the match starts." });
     }
 
-    const before = room.roster.length;
-    room.roster = room.roster.filter((r) => r.userId.toString() !== req.userDoc._id.toString());
-    if (room.roster.length === before) {
-      return res.status(400).json({ error: "You haven't joined this Battle Room." });
+    const updated = await BattleRoom.findOneAndUpdate(
+      {
+        _id: room._id,
+        status: "lobby",
+        "roster.userId": req.userDoc._id,
+      },
+      {
+        $pull: { roster: { userId: req.userDoc._id } },
+      },
+      { new: true }
+    );
+
+    if (!updated) {
+      // The participant was present in the snapshot, but the atomic write
+      // matched nothing because a concurrent lobby change won the race.
+      // Do not fall back to save() — that could overwrite a concurrent
+      // join/team assignment. Report the stale operation explicitly.
+      return res.status(409).json({
+        error: "Battle Room changed while leaving. Refresh and try again.",
+      });
     }
 
-    await room.save();
     return res.json({ success: true });
   } catch (err) {
     (req.log || logger).error({ err }, "[BattleRoom] leave");
