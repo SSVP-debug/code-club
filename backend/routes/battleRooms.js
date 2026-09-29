@@ -325,10 +325,20 @@ router.get("/:id", async (req, res) => {
     // field flips permanently at /start, but "active past its endsAt"
     // should read as ended in the UI even before any write happens.
     const now = new Date();
-    const displayStatus =
-      room.status === "active" && room.endsAt && now > new Date(room.endsAt)
-        ? "ended"
-        : room.status;
+    const hasExpired =
+      room.status === "active" && room.endsAt && now >= new Date(room.endsAt);
+
+    if (hasExpired) {
+      // Persist the terminal lifecycle transition. The status filter makes
+      // this safe when multiple readers notice expiry at the same time:
+      // exactly one request performs the active -> ended write.
+      await BattleRoom.findOneAndUpdate(
+        { _id: room._id, status: "active", endsAt: { $lte: now } },
+        { $set: { status: "ended" } },
+        { returnDocument: "after" }
+      );
+      room.status = "ended";
+    }
 
     const myId = req.userDoc?._id?.toString();
     const myEntry = myId ? room.roster.find((r) => r.userId.toString() === myId) : null;
