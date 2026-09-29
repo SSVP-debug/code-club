@@ -752,12 +752,49 @@ describe("POST /api/battle-rooms/:id/leave", () => {
       roster: [{ userId: { toString: () => "user1" }, teamIndex: null, solvedSlugs: [] }],
     });
     BattleRoom.findById.mockResolvedValue(room);
+    BattleRoom.findOneAndUpdate.mockResolvedValue({
+      ...room,
+      roster: [],
+      toObject: () => ({ ...room, roster: [] }),
+    });
     const req = { params: { id: "room1" }, userDoc: userDoc(), log: mockLog() };
     await getHandler("post", "/:id/leave")(req, res);
 
-    expect(room.roster).toHaveLength(0);
-    expect(room.save).toHaveBeenCalled();
+    expect(BattleRoom.findOneAndUpdate).toHaveBeenCalledWith(
+      {
+        _id: "room1",
+        status: "lobby",
+        "roster.userId": "user1",
+      },
+      { $pull: { roster: { userId: "user1" } } },
+      { new: true }
+    );
+    expect(room.save).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({ success: true });
+  });
+
+  it("returns 409 when a concurrent lobby change makes the leave stale", async () => {
+    const room = makeRoomDoc({
+      createdBy: "host1",
+      roster: [{ userId: { toString: () => "user1" }, teamIndex: null, solvedSlugs: [] }],
+    });
+    BattleRoom.findById.mockResolvedValue(room);
+    BattleRoom.findOneAndUpdate.mockResolvedValue(null);
+    const req = { params: { id: "room1" }, userDoc: userDoc(), log: mockLog() };
+
+    await getHandler("post", "/:id/leave")(req, res);
+
+    expect(BattleRoom.findOneAndUpdate).toHaveBeenCalledWith(
+      {
+        _id: "room1",
+        status: "lobby",
+        "roster.userId": "user1",
+      },
+      { $pull: { roster: { userId: "user1" } } },
+      { new: true }
+    );
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(room.save).not.toHaveBeenCalled();
   });
 
   it("rejects the host trying to leave their own room — they must cancel instead", async () => {
