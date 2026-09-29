@@ -321,9 +321,9 @@ router.get("/:id", async (req, res) => {
     const room = await BattleRoom.findById(req.params.id).lean();
     if (!room) return res.status(404).json({ error: "Battle Room not found." });
 
-    // Display-only status sync, same pattern as Contest's /:id — the DB
-    // field flips permanently at /start, but "active past its endsAt"
-    // should read as ended in the UI even before any write happens.
+    // Expiry is a terminal lifecycle transition. Persist active -> ended
+    // when the room is first read after its deadline, while keeping the
+    // status filter on the write so concurrent readers are harmless.
     const now = new Date();
     const hasExpired =
       room.status === "active" && room.endsAt && now >= new Date(room.endsAt);
