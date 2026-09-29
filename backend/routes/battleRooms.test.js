@@ -470,11 +470,62 @@ describe("POST /api/battle-rooms/:id/start — ownership", () => {
       ],
     });
     BattleRoom.findById.mockResolvedValue(room);
+    BattleRoom.findOneAndUpdate.mockResolvedValue({
+      ...room,
+      status: "active",
+      startsAt: expect.any(Date),
+      endsAt: expect.any(Date),
+      toObject: () => ({ ...room, status: "active" }),
+    });
     const req = { params: { id: "room1" }, userDoc: userDoc(), log: mockLog() };
     await getHandler("post", "/:id/start")(req, res);
 
-    expect(room.status).toBe("active");
-    expect(room.save).toHaveBeenCalled();
+    expect(room.save).not.toHaveBeenCalled();
+    expect(BattleRoom.findOneAndUpdate).toHaveBeenCalledWith(
+      {
+        _id: "room1",
+        createdBy: "user1",
+        status: "lobby",
+        updatedAt: room.updatedAt,
+      },
+      expect.objectContaining({
+        $set: expect.objectContaining({
+          status: "active",
+          startsAt: expect.any(Date),
+          endsAt: expect.any(Date),
+        }),
+      }),
+      { new: true }
+    );
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ status: "active" }));
+  });
+
+  it("returns 409 when a concurrent change makes the start snapshot stale", async () => {
+    const room = makeRoomDoc({
+      createdBy: "user1",
+      roster: [
+        { userId: { toString: () => "a" }, teamIndex: 0 },
+        { userId: { toString: () => "b" }, teamIndex: 1 },
+      ],
+    });
+    BattleRoom.findById.mockResolvedValue(room);
+    BattleRoom.findOneAndUpdate.mockResolvedValue(null);
+    const req = { params: { id: "room1" }, userDoc: userDoc(), log: mockLog() };
+
+    await getHandler("post", "/:id/start")(req, res);
+
+    expect(BattleRoom.findOneAndUpdate).toHaveBeenCalledWith(
+      {
+        _id: "room1",
+        createdBy: "user1",
+        status: "lobby",
+        updatedAt: room.updatedAt,
+      },
+      expect.objectContaining({ $set: expect.objectContaining({ status: "active" }) }),
+      { new: true }
+    );
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(room.save).not.toHaveBeenCalled();
   });
 
   it("rejects starting an already-started match", async () => {
