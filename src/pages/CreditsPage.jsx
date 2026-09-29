@@ -251,7 +251,7 @@ export default function CreditsPage() {
             </p>
           </div>
 
-          <SectionCard className="!m-0 min-w-[190px]" padding="sm">
+          <SectionCard className="!m-0 min-w-[190px]">
             <div className="flex items-center gap-3">
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -330,6 +330,7 @@ export default function CreditsPage() {
             onLoadMore={loadMore}
             redemptions={redemptions}
             loadingRedemptions={loadingRedemptions}
+            busyId={busyId}
             onCancel={handleCancel}
             onViewRewards={() => selectView("rewards")}
           />
@@ -441,6 +442,7 @@ function Activity({
   onLoadMore,
   redemptions,
   loadingRedemptions,
+  busyId,
   onCancel,
   onViewRewards,
 }) {
@@ -482,8 +484,8 @@ function Activity({
               <RedemptionRow
                 key={redemption._id}
                 redemption={redemption}
-                busy={onCancel && false}
-                onCancel={onCancel}
+                busy={busyId === redemption._id}
+                onCancel={() => onCancel(redemption._id)}
               />
             ))}
           </div>
