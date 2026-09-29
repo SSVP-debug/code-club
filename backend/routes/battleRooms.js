@@ -180,7 +180,7 @@ router.post("/join", requireAuth, async (req, res) => {
     // first. This re-read is purely to report the correct, specific
     // reason; it has no bearing on correctness — that was already fully
     // decided by the atomic step above.
-    const current = await BattleRoom.findById(room._id).lean();
+    const current = await BattleRoom.findById(room._id);
     if (!current) return res.status(404).json({ error: "Invalid invite code." });
     if (current.status !== "lobby") {
       return res.status(400).json({ error: "This Battle Room has already started or ended." });
