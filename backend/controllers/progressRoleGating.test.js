@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi, afterEach } from "vitest";
 import { progressToClient, progressToClientForRole, emptyProgress } from "./progressController.js";
 
 // Root-cause regression coverage: before progressToClientForRole existed,
@@ -16,7 +16,15 @@ function makeStudentLikeUser(role) {
     longestStreak: 30,
     solvedSlugs: ["two-sum", "valid-parentheses"],
     achievements: [{ key: "first-blood", unlockedAt: new Date("2026-01-01") }],
-    activityDates: ["2026-01-01", "2026-01-02"],
+    activityDates: [
+      "2026-09-06",
+      "2026-09-07",
+      "2026-09-08",
+      "2026-09-09",
+      "2026-09-10",
+      "2026-09-11",
+      "2026-09-12",
+    ],
     recentActivity: [{ title: "Two Sum", slug: "two-sum", difficulty: "Easy", time: "2026-01-01" }],
     solvedDifficulty: { easy: 2, medium: 0, hard: 0 },
     dailyChallengeHistory: [],
@@ -27,7 +35,13 @@ function makeStudentLikeUser(role) {
 }
 
 describe("progressToClient — role-agnostic, always the real data", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
   it("serializes real progress regardless of the account's active role", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-12T10:00:00.000Z"));
+
     // Used by XP awarding, achievement evaluation, the leaderboard, and
     // the public profile — none of which should be gated by active role,
     // since a person's real solve history doesn't change just because
@@ -42,6 +56,8 @@ describe("progressToClient — role-agnostic, always the real data", () => {
 
 describe("progressToClientForRole — the read-boundary fix", () => {
   it("returns real progress data for an active student role", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-12T10:00:00.000Z"));
     const student = makeStudentLikeUser("student");
     const result = progressToClientForRole(student);
     expect(result.totalXP).toBe(4200);
