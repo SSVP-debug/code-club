@@ -67,7 +67,7 @@ export async function awardBattleRoomSolve({ battleRoomId, userId, slug }) {
   // "active" in the DB past its actual endsAt if nothing else has
   // written to it since. Never trust a client-sent status/clock.
   const now = new Date();
-  if (room.status !== "active" || (room.endsAt && now > new Date(room.endsAt))) {
+  if (room.status !== "active" || (room.endsAt && now >= new Date(room.endsAt))) {
     return { ok: false, reason: BATTLE_ROOM_SOLVE_REJECTION.NOT_ACTIVE };
   }
 
@@ -89,6 +89,8 @@ export async function awardBattleRoomSolve({ battleRoomId, userId, slug }) {
   const afterPersonal = await BattleRoom.findOneAndUpdate(
     {
       _id: battleRoomId,
+      status: "active",
+      endsAt: { $gt: new Date() },
       roster: { $elemMatch: { userId, teamIndex: { $ne: null }, solvedSlugs: { $ne: slug } } },
     },
     { $push: { "roster.$.solvedSlugs": slug } },
@@ -118,7 +120,12 @@ export async function awardBattleRoomSolve({ battleRoomId, userId, slug }) {
   // arrives after a teammate already solved it), and that's correct.
   const teamPath = `teams.${teamIndex}.solvedSlugs`;
   const afterTeam = await BattleRoom.findOneAndUpdate(
-    { _id: battleRoomId, [teamPath]: { $ne: slug } },
+    {
+      _id: battleRoomId,
+      status: "active",
+      endsAt: { $gt: new Date() },
+      [teamPath]: { $ne: slug },
+    },
     {
       $push: { [teamPath]: slug },
       $inc: { [`teams.${teamIndex}.score`]: BATTLE_ROOM_SOLVE_SCORE },
