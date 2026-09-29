@@ -132,8 +132,22 @@ describe("battleRooms router — requireAuth wiring", () => {
   });
 
   it("keeps role authorization after authentication on POST /", () => {
-    const names = middlewareNamesFor("/");
-    expect(names.indexOf("requireAuth")).toBeLessThan(names.indexOf("requireRole"));
+    const layer = battleRoomsRouter.stack.find(
+      (l) => l.route && l.route.path === "/"
+    );
+    if (!layer) throw new Error("No route registered for /");
+
+    const stack = layer.route.stack;
+
+    // Express receives requireAuth, the requireRole(...) middleware, and
+    // finally the async route handler. requireRole returns an anonymous
+    // middleware function, so its Express layer name is not "requireRole".
+    // Assert the real middleware ordering instead of relying on a function
+    // name that does not exist at runtime.
+    expect(stack).toHaveLength(3);
+    expect(stack[0].handle.name).toBe("requireAuth");
+    expect(stack[1].handle).not.toBe(stack[0].handle);
+    expect(stack[2].handle.constructor.name).toBe("AsyncFunction");
   });
 });
 
