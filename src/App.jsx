@@ -54,7 +54,6 @@ const CollegeVerifyConfirmPage = lazy(() => import("./pages/CollegeVerifyConfirm
 const AmbassadorPage = lazy(() => import("./pages/AmbassadorPage"));
 const ContributionsPage = lazy(() => import("./pages/ContributionsPage"));
 const CreditsPage = lazy(() => import("./pages/CreditsPage"));
-const RewardsStorePage = lazy(() => import("./pages/RewardsStorePage"));
 const FeatureRequestsPage = lazy(() => import("./pages/FeatureRequestsPage"));
 const PricingPage = lazy(() => import("./pages/PricingPage"));
 const InterviewModePage = lazy(() => import("./pages/InterviewModePage"));
@@ -296,11 +295,11 @@ function App() {
         {/* ── Phase 2F: Contribution Infrastructure ────────────────────── */}
         <Route path="/contribute" element={<ProtectedRoute><ThemeGate><ContributionsPage /></ThemeGate></ProtectedRoute>} />
 
-        {/* ── Phase 3: Token Economy — Credits balance + history ───────── */}
+        {/* ── Credits — unified Credits economy + Rewards Store ─────────── */}
         <Route path="/credits" element={<ProtectedRoute><ThemeGate><CreditsPage /></ThemeGate></ProtectedRoute>} />
 
-        {/* ── Phase 4: Rewards Store — browse + redeem + redemption history ── */}
-        <Route path="/rewards-store" element={<ProtectedRoute><ThemeGate><RewardsStorePage /></ThemeGate></ProtectedRoute>} />
+        {/* Legacy route: keep old bookmarks/deep links working after the merge. */}
+        <Route path="/rewards-store" element={<Navigate to="/credits?tab=rewards" replace />} />
 
         {/* ── Phase 5: Feature Requests — public board + submit + vote ──── */}
         <Route path="/feature-requests" element={<ProtectedRoute><ThemeGate><FeatureRequestsPage /></ThemeGate></ProtectedRoute>} />
