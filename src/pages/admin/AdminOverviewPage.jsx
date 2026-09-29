@@ -78,17 +78,18 @@ export default function AdminOverviewPage() {
 
           <div id="tpo-queue">
             <VerificationQueueSection
-              heading="TPO / college requests"
+              heading="TPO applications"
               loading={loading}
-              emptyLabel="No colleges awaiting review."
+              emptyLabel="No TPO applications awaiting review."
               items={tpos}
               busyIds={busyIds}
               getRow={(t) => ({
                 id: t.userId || t.collegeId,
                 actionTarget: t.reviewTarget === "user" ? t : undefined,
-                title: t.collegeName,
-                subtitle: t.requestedBy?.displayName || t.requestedBy?.email || "Unknown requester",
+                title: t.requestedBy?.displayName || t.requestedBy?.email || "Unknown applicant",
+                subtitle: t.collegeName ? `TPO application · ${t.collegeName}` : "TPO application",
                 meta: `${(t.domains || []).join(", ")} · requested ${formatDate(t.requestedAt)}`,
+                approveLabel: t.reviewTarget === "user" ? "Approve TPO" : "Verify college",
                 signal: t.emailRoleSignal,
                 evidenceHint: t.additionalEvidenceRecommended,
                 evidence: t.evidence,
