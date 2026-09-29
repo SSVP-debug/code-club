@@ -345,7 +345,7 @@ router.get("/:id", async (req, res) => {
 
     return res.json({
       ...room,
-      status: displayStatus,
+      status: room.status,
       isHost: myId ? room.createdBy.toString() === myId : false,
       myTeamIndex: myEntry?.teamIndex ?? null,
       mySolvedSlugs: myEntry?.solvedSlugs ?? [],
