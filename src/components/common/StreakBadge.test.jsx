@@ -1,1 +1,32 @@
-import { describe, expect, it, vi } from "vitest";\nimport { render, screen } from "@testing-library/react";\nimport { AppContext } from "../../context/AppContextObject";\nimport StreakBadge from "./StreakBadge";\n\nvi.mock("./StreakCalendarPopover", () => ({\n  default: () => <div data-testid="streak-calendar-popover" />,\n}));\n\nfunction renderBadge(streak) {\n  return render(\n    <AppContext.Provider value={{ activityDates: [], longestStreak: 0 }}>\n      <StreakBadge streak={streak} />\n    </AppContext.Provider>\n  );\n}\n\ndescribe("StreakBadge", () => {\n  it("shows the streak badge when the current streak is zero", () => {\n    renderBadge(0);\n    expect(screen.getByRole("button", { name: "0-day streak" })).toBeInTheDocument();\n    expect(screen.getByText("0")).toBeInTheDocument();\n    expect(screen.getByText("days")).toBeInTheDocument();\n  });\n\n  it("keeps showing positive streak counts", () => {\n    renderBadge(7);\n    expect(screen.getByRole("button", { name: "7-day streak" })).toBeInTheDocument();\n    expect(screen.getByText("7")).toBeInTheDocument();\n    expect(screen.getByText("days")).toBeInTheDocument();\n  });\n}\n
+import { describe, expect, it, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { AppContext } from "../../context/AppContextObject";
+import StreakBadge from "./StreakBadge";
+
+vi.mock("./StreakCalendarPopover", () => ({
+  default: () => <div data-testid="streak-calendar-popover" />,
+}));
+
+function renderBadge(streak) {
+  return render(
+    <AppContext.Provider value={{ activityDates: [], longestStreak: 0 }}>
+      <StreakBadge streak={streak} />
+    </AppContext.Provider>
+  );
+}
+
+describe("StreakBadge", () => {
+  it("shows the streak badge when the current streak is zero", () => {
+    renderBadge(0);
+    expect(screen.getByRole("button", { name: "0-day streak" })).toBeInTheDocument();
+    expect(screen.getByText("0")).toBeInTheDocument();
+    expect(screen.getByText("days")).toBeInTheDocument();
+  });
+
+  it("keeps showing positive streak counts", () => {
+    renderBadge(7);
+    expect(screen.getByRole("button", { name: "7-day streak" })).toBeInTheDocument();
+    expect(screen.getByText("7")).toBeInTheDocument();
+    expect(screen.getByText("days")).toBeInTheDocument();
+  });
+});
