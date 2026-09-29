@@ -76,6 +76,7 @@ function makeRoomDoc(overrides = {}) {
     createdBy: "host1",
     inviteCode: "ABC123",
     status: "lobby",
+    updatedAt: new Date(now),
     problemSlugs: ["two-sum"],
     maxTeamSize: 4,
     durationMs: 60 * 60 * 1000,
@@ -373,14 +374,51 @@ describe("POST /api/battle-rooms/:id/assign-teams — ownership", () => {
       ],
     });
     BattleRoom.findById.mockResolvedValue(room);
+    BattleRoom.findOneAndUpdate.mockResolvedValue(room);
     const req = {
       params: { id: "room1" }, body: { mode: "random" },
       userDoc: userDoc(), log: mockLog(),
     };
     await getHandler("post", "/:id/assign-teams")(req, res);
 
-    expect(room.save).toHaveBeenCalled();
+    expect(BattleRoom.findOneAndUpdate).toHaveBeenCalledWith(
+      {
+        _id: "room1",
+        createdBy: "user1",
+        status: "lobby",
+        updatedAt: room.updatedAt,
+      },
+      expect.objectContaining({ $set: expect.any(Object) }),
+      { new: true }
+    );
     expect(res.status).not.toHaveBeenCalledWith(403);
+  });
+
+  it("rejects a stale assignment instead of overwriting a concurrent roster change", async () => {
+    const room = makeRoomDoc({
+      createdBy: "user1",
+      roster: [{ userId: { toString: () => "a" }, teamIndex: null }],
+    });
+    BattleRoom.findById.mockResolvedValue(room);
+    BattleRoom.findOneAndUpdate.mockResolvedValue(null);
+    const req = {
+      params: { id: "room1" }, body: { mode: "manual", assignments: [{ userId: "a", teamIndex: 0 }] },
+      userDoc: userDoc(), log: mockLog(),
+    };
+
+    await getHandler("post", "/:id/assign-teams")(req, res);
+
+    expect(BattleRoom.findOneAndUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        _id: "room1",
+        createdBy: "user1",
+        status: "lobby",
+        updatedAt: room.updatedAt,
+      }),
+      expect.objectContaining({ $set: { "roster.0.teamIndex": 0 } }),
+      { new: true }
+    );
+    expect(res.status).toHaveBeenCalledWith(409);
   });
 
   it("rejects assigning teams after the match has already started", async () => {
