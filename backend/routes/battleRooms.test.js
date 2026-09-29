@@ -29,8 +29,8 @@ import battleRoomsRouter from "./battleRooms.js";
 // battleRooms.js doesn't export its handlers individually — pull them off
 // the real router's stack, same convention as routes/contests.test.js. This
 // exercises the actual handler code and deliberately skips over any
-// auth/role middleware registered on the route (that layer has its own
-// dedicated tests — middleware/auth.test.js, middleware/roleGuard.test.js).
+// auth/role middleware registered on the route. The router-level wiring
+// tests below verify that the create route is actually protected.
 function getHandler(method, path) {
   const layer = battleRoomsRouter.stack.find(
     (l) => l.route && l.route.path === path && l.route.methods[method]
@@ -64,7 +64,6 @@ function userDoc(overrides = {}) {
     username: "alice",
     displayName: "Alice",
     role: "student",
-    education: { emailVerified: true },
     ...overrides,
   };
 }
@@ -119,6 +118,25 @@ describe("router.param('id') — malformed id handling", () => {
   });
 });
 
+describe("battleRooms router — requireAuth wiring", () => {
+  function middlewareNamesFor(path) {
+    const layer = battleRoomsRouter.stack.find(
+      (l) => l.route && l.route.path === path
+    );
+    if (!layer) throw new Error(`No route registered for ${path}`);
+    return layer.route.stack.map((s) => s.name);
+  }
+
+  it("requires auth on POST /", () => {
+    expect(middlewareNamesFor("/")).toContain("requireAuth");
+  });
+
+  it("keeps role authorization after authentication on POST /", () => {
+    const names = middlewareNamesFor("/");
+    expect(names.indexOf("requireAuth")).toBeLessThan(names.indexOf("requireRole"));
+  });
+});
+
 describe("POST /api/battle-rooms — create", () => {
   let res;
   beforeEach(() => {
@@ -126,7 +144,7 @@ describe("POST /api/battle-rooms — create", () => {
     res = mockRes();
   });
 
-  it("creates a room for a verified student within guardrails", async () => {
+  it("creates a room for a student without requiring college verification", async () => {
     Problem.countDocuments.mockResolvedValue(1);
     BattleRoom.findOne.mockReturnValue(queryResult(null));
     BattleRoom.create.mockResolvedValue(makeRoomDoc());
@@ -141,7 +159,11 @@ describe("POST /api/battle-rooms — create", () => {
     expect(res.status).toHaveBeenCalledWith(201);
   });
 
-  it("rejects an unverified student host", async () => {
+  it("allows an unverified student to host a Battle Room", async () => {
+    Problem.countDocuments.mockResolvedValue(1);
+    BattleRoom.findOne.mockReturnValue(queryResult(null));
+    BattleRoom.create.mockResolvedValue(makeRoomDoc());
+
     const req = {
       body: { title: "My Room", problemSlugs: ["two-sum"], durationMinutes: 60 },
       userDoc: userDoc({ education: { emailVerified: false } }),
@@ -149,8 +171,8 @@ describe("POST /api/battle-rooms — create", () => {
     };
     await getHandler("post", "/")(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(403);
-    expect(BattleRoom.create).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(BattleRoom.create).toHaveBeenCalled();
   });
 
   it("rejects a student who already has an active/lobby hosted room", async () => {
