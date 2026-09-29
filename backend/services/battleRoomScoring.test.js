@@ -133,8 +133,13 @@ describe("awardBattleRoomSolve", () => {
   });
 
   it("rechecks the active deadline at the atomic write boundary", async () => {
-    BattleRoom.findById.mockResolvedValue(makeRoom());
+    BattleRoom.findById.mockReturnValueOnce(findByIdResult(makeRoom()));
     BattleRoom.findOneAndUpdate.mockResolvedValue(null);
+    BattleRoom.findById.mockReturnValueOnce(
+      findByIdResult(makeRoom({
+        roster: [{ userId: { toString: () => "user1" }, teamIndex: 0, solvedSlugs: ["two-sum"] }],
+      }))
+    );
 
     const result = await awardBattleRoomSolve({
       battleRoomId: "room1",
@@ -157,6 +162,7 @@ describe("awardBattleRoomSolve", () => {
     BattleRoom.findOneAndUpdate
       .mockResolvedValueOnce({
         roster: [{ userId: { toString: () => "user1" }, teamIndex: 0, solvedSlugs: ["two-sum"] }],
+        teams: [{ score: 0, solvedSlugs: [] }, { score: 0, solvedSlugs: [] }],
       })
       .mockResolvedValueOnce(null);
 
