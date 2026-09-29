@@ -236,7 +236,7 @@ describe("TpoDashboardPage — pending verification and shared shell", () => {
     apiFetch.mockRejectedValue(new Error("Your TPO account is pending verification."));
     renderDashboard();
 
-    await waitFor(() => screen.getByText("College Verification Pending"));
+    await waitFor(() => screen.getByText("TPO verification pending"));
     expect(screen.getByText(/connect.codeclub@gmail.com/)).toBeInTheDocument();
     expect(screen.getByTestId("navbar-stub")).toBeInTheDocument();
   });
