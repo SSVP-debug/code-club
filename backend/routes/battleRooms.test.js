@@ -174,6 +174,34 @@ describe("POST /api/battle-rooms — create", () => {
     expect(res.status).toHaveBeenCalledWith(201);
   });
 
+  it("retries with a fresh invite code when MongoDB reports an invite-code collision", async () => {
+    Problem.countDocuments.mockResolvedValue(1);
+    BattleRoom.findOne.mockReturnValue(queryResult(null));
+
+    const duplicate = Object.assign(new Error("duplicate invite code"), {
+      code: 11000,
+      keyPattern: { inviteCode: 1 },
+    });
+    BattleRoom.create
+      .mockRejectedValueOnce(duplicate)
+      .mockResolvedValueOnce(makeRoomDoc());
+
+    const req = {
+      body: { title: "Collision Room", problemSlugs: ["two-sum"], durationMinutes: 60 },
+      userDoc: userDoc(),
+      log: mockLog(),
+    };
+
+    await getHandler("post", "/")(req, res);
+
+    expect(BattleRoom.create).toHaveBeenCalledTimes(2);
+    const firstPayload = BattleRoom.create.mock.calls[0][0];
+    const secondPayload = BattleRoom.create.mock.calls[1][0];
+    expect(firstPayload.inviteCode).toEqual(expect.any(String));
+    expect(secondPayload.inviteCode).toEqual(expect.any(String));
+    expect(res.status).toHaveBeenCalledWith(201);
+  });
+
   it("allows an unverified student to host a Battle Room", async () => {
     Problem.countDocuments.mockResolvedValue(1);
     BattleRoom.findOne.mockReturnValue(queryResult(null));
