@@ -46,6 +46,10 @@ export default function TpoSignupPage() {
             For Training & Placement Officers. Track your students' DSA progress,
             assign problems, and get placement readiness reports.
           </p>
+          <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-left text-xs text-[var(--muted-foreground)]">
+            <span className="font-semibold text-[var(--foreground)]">How approval works:</span>{" "}
+            submit your institutional details, then an administrator reviews your TPO request before access is enabled.
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 space-y-4">
@@ -79,7 +83,7 @@ export default function TpoSignupPage() {
             loading={loading}
             className="w-full"
           >
-            {loading ? "Setting up…" : "Activate College Dashboard"}
+            {loading ? "Submitting…" : "Submit for verification"}
           </Button>
         </form>
       </div>
