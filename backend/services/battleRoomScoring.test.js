@@ -119,6 +119,62 @@ describe("awardBattleRoomSolve", () => {
       teamIndex: 0,
     });
     expect(BattleRoom.findOneAndUpdate).toHaveBeenCalledTimes(2);
+    const [personalFilter, , teamFilter] = BattleRoom.findOneAndUpdate.mock.calls;
+    expect(personalFilter[0]).toEqual(expect.objectContaining({
+      _id: "room1",
+      status: "active",
+      endsAt: expect.objectContaining({ $gt: expect.any(Date) }),
+    }));
+    expect(teamFilter[0]).toEqual(expect.objectContaining({
+      _id: "room1",
+      status: "active",
+      endsAt: expect.objectContaining({ $gt: expect.any(Date) }),
+    }));
+  });
+
+  it("rechecks the active deadline at the atomic write boundary", async () => {
+    BattleRoom.findById.mockResolvedValue(makeRoom());
+    BattleRoom.findOneAndUpdate.mockResolvedValue(null);
+
+    const result = await awardBattleRoomSolve({
+      battleRoomId: "room1",
+      userId: "user1",
+      slug: "two-sum",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(BattleRoom.findOneAndUpdate).toHaveBeenCalledOnce();
+    expect(BattleRoom.findOneAndUpdate.mock.calls[0][0]).toEqual(
+      expect.objectContaining({
+        status: "active",
+        endsAt: expect.objectContaining({ $gt: expect.any(Date) }),
+      })
+    );
+  });
+
+  it("reasserts the deadline before awarding team score", async () => {
+    BattleRoom.findById.mockResolvedValue(makeRoom());
+    BattleRoom.findOneAndUpdate
+      .mockResolvedValueOnce({
+        roster: [{ userId: { toString: () => "user1" }, teamIndex: 0, solvedSlugs: ["two-sum"] }],
+      })
+      .mockResolvedValueOnce(null);
+
+    const result = await awardBattleRoomSolve({
+      battleRoomId: "room1",
+      userId: "user1",
+      slug: "two-sum",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.countedForTeam).toBe(false);
+    expect(BattleRoom.findOneAndUpdate.mock.calls[1][0]).toEqual(
+      expect.objectContaining({
+        _id: "room1",
+        status: "active",
+        endsAt: expect.objectContaining({ $gt: expect.any(Date) }),
+      })
+    );
   });
 
   it("does not double-award team score when a teammate already solved this slug", async () => {
