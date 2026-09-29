@@ -81,8 +81,13 @@ export function useAdminVerificationQueue() {
         });
         setTpos((list) => list.filter((t) => t.userId !== item.userId));
       } else {
+        // A TPO's first queue item can represent the institution review.
+        // Approving that institution must not make the TPO application
+        // disappear: the same applicant still needs individual TPO approval.
+        // Reload the queue so the row transitions to the individual-review
+        // state immediately instead of requiring a manual page refresh.
         await apiFetch(`/api/admin/tpo/${item.collegeId}/${action}`, { method: "POST" });
-        setTpos((list) => list.filter((t) => t.collegeId !== item.collegeId));
+        await loadQueue();
       }
       toast.success(action === "approve" ? "TPO verification approved." : "TPO request rejected.");
     } catch (err) {
