@@ -39,6 +39,14 @@ async function recomputeXP(solvedSlugs) {
 // ── Public serialiser ──────────────────────────────────────────────────────────
 
 export function progressToClient(user) {
+  // currentStreak is derived from activityDates on every read, not only when
+  // a new solve is saved. Without this, a value such as "2" could remain
+  // visible indefinitely after the student stopped practicing, because no
+  // write would occur to trigger calculateStreak() again.
+  //
+  // longestStreak remains persisted because it is a historical maximum.
+  const { currentStreak } = calculateStreak(user.activityDates || []);
+
   return {
     solvedSlugs: user.solvedSlugs || [],
     topicStats: topicStatsToObject(user.topicStats),
@@ -47,8 +55,8 @@ export function progressToClient(user) {
     dailyChallengeHistory: user.dailyChallengeHistory || [],
     solvedDifficulty: user.solvedDifficulty || { easy: 0, medium: 0, hard: 0 },
     recentActivity: user.recentActivity || [],
-    currentStreak: user.currentStreak || 0,
-    longestStreak: user.longestStreak || 0,
+    currentStreak,
+    longestStreak: Math.max(user.longestStreak || 0, currentStreak),
     lastActivityDate: user.lastActivityDate || null,
     totalXP: user.totalXP || 0,
     joinedDate: user.joinedDate,
