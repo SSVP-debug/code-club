@@ -7,6 +7,13 @@ import Submission from "../models/Submission.js";
 import { requireRole } from "../middleware/roleGuard.js";
 import { requireAuth, optionalAuth } from "../middleware/auth.js";
 import { awardBattleRoomSolve } from "../services/battleRoomScoring.js";
+import { validateBody } from "../middleware/validateBody.js";
+import {
+  battleRoomAssignTeamsSchema,
+  battleRoomCreateSchema,
+  battleRoomJoinSchema,
+  battleRoomSolveSchema,
+} from "../schemas/battleRoomSchema.js";
 
 const router = Router();
 
@@ -47,7 +54,7 @@ function isInviteCodeDuplicateError(err) {
 }
 
 // ── POST /api/battle-rooms — create a room (lobby state) ───────────────────
-router.post("/", requireAuth, requireRole("student", "tpo", "admin"), async (req, res) => {
+router.post("/", requireAuth, requireRole("student", "tpo", "admin"), validateBody(battleRoomCreateSchema), async (req, res) => {
   try {
     const { title, description, problemSlugs, durationMinutes, maxTeamSize } = req.body;
     const isStudent = req.userDoc.role === "student";
@@ -155,7 +162,7 @@ router.post("/", requireAuth, requireRole("student", "tpo", "admin"), async (req
 // services/contestScoring.js. See
 // routes/battleRoomsJoin.concurrency.integration.test.js for the
 // regression coverage (now asserting on the real fix, not the retry).
-router.post("/join", requireAuth, async (req, res) => {
+router.post("/join", requireAuth, validateBody(battleRoomJoinSchema), async (req, res) => {
   try {
     const { inviteCode } = req.body;
     if (!inviteCode) return res.status(400).json({ error: "inviteCode required." });
@@ -218,7 +225,7 @@ router.post("/join", requireAuth, async (req, res) => {
 });
 
 // ── POST /api/battle-rooms/:id/assign-teams — host assigns roster to teams ─
-router.post("/:id/assign-teams", requireAuth, async (req, res) => {
+router.post("/:id/assign-teams", requireAuth, validateBody(battleRoomAssignTeamsSchema), async (req, res) => {
   try {
     const room = await BattleRoom.findById(req.params.id);
     if (!room) return res.status(404).json({ error: "Battle Room not found." });
@@ -480,7 +487,7 @@ router.get("/:id", optionalAuth, async (req, res) => {
 // Submission exists → no credit, full stop. A forged `{ slug: "...",
 // status: "Accepted" }` body with no matching Submission is rejected here
 // exactly like it always was for the contest equivalent.
-router.post("/:id/solve", requireAuth, async (req, res) => {
+router.post("/:id/solve", requireAuth, validateBody(battleRoomSolveSchema), async (req, res) => {
   try {
     const { slug } = req.body;
     if (!slug) return res.status(400).json({ error: "slug required." });
