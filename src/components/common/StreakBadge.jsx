@@ -27,7 +27,7 @@ function StreakBadge({ streak, size = "sm" }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [calendarOpen]);
 
-  if (!streak || streak <= 0) return null;
+  const normalizedStreak = Number.isFinite(Number(streak)) ? Math.max(0, Number(streak)) : 0;
 
   const styles = {
     sm: "px-3 py-1.5 text-xs",
@@ -42,21 +42,22 @@ function StreakBadge({ streak, size = "sm" }) {
       <button
         type="button"
         onClick={() => setCalendarOpen((prev) => !prev)}
-        title={`${streak}-day streak! Tap to view your streak calendar.`}
+        title={`${normalizedStreak}-day streak! Tap to view your streak calendar.`}
+        aria-label={`${normalizedStreak}-day streak`}
         aria-haspopup="dialog"
         aria-expanded={calendarOpen}
         className={`inline-flex items-center gap-1.5 rounded-full font-bold bg-orange-500/10 border border-orange-500/20 text-orange-400 hover:bg-orange-500/15 hover:border-orange-500/30 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 ${styles[size]}`}
       >
         <Flame size={iconSize} strokeWidth={2.5} aria-hidden="true" />
-        <span>{streak}</span>
+        <span>{normalizedStreak}</span>
         <span className="text-orange-500/60 font-normal">
-          {streak === 1 ? "day" : "days"}
+          {normalizedStreak === 1 ? "day" : "days"}
         </span>
       </button>
 
       {calendarOpen && (
         <StreakCalendarPopover
-          streak={streak}
+          streak={normalizedStreak}
           longestStreak={longestStreak}
           activityDates={activityDates}
           onClose={() => setCalendarOpen(false)}
