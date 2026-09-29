@@ -399,7 +399,7 @@ export default function TpoDashboardPage() {
               <GraduationCap size={28} strokeWidth={2} aria-hidden="true" />
             </div>
             <h1 className="text-3xl font-black text-[var(--foreground)]">
-              College Verification Pending
+              TPO verification pending
             </h1>
 
             <p className="mt-4 text-[var(--muted-foreground)]">
@@ -407,7 +407,11 @@ export default function TpoDashboardPage() {
             </p>
 
             <p className="text-[var(--muted-foreground)]">
-              Access will be enabled after an administrator verifies your institution.
+              Your request is waiting for administrator review. Your TPO access will be enabled after your account is approved.
+            </p>
+
+            <p className="text-[var(--muted-foreground)] text-sm mt-4">
+              Your college may be reviewed separately as part of the institution verification process.
             </p>
 
             <p className="text-[var(--muted-foreground)] text-sm mt-6">
