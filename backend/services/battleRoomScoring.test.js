@@ -119,13 +119,13 @@ describe("awardBattleRoomSolve", () => {
       teamIndex: 0,
     });
     expect(BattleRoom.findOneAndUpdate).toHaveBeenCalledTimes(2);
-    const [personalFilter, , teamFilter] = BattleRoom.findOneAndUpdate.mock.calls;
-    expect(personalFilter[0]).toEqual(expect.objectContaining({
+    const [personalCall, teamCall] = BattleRoom.findOneAndUpdate.mock.calls;
+    expect(personalCall[0]).toEqual(expect.objectContaining({
       _id: "room1",
       status: "active",
       endsAt: expect.objectContaining({ $gt: expect.any(Date) }),
     }));
-    expect(teamFilter[0]).toEqual(expect.objectContaining({
+    expect(teamCall[0]).toEqual(expect.objectContaining({
       _id: "room1",
       status: "active",
       endsAt: expect.objectContaining({ $gt: expect.any(Date) }),
