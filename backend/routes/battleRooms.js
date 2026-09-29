@@ -548,7 +548,7 @@ router.post("/:id/leave", requireAuth, async (req, res) => {
       // the roster, or because a concurrent lobby change won the race.
       // Re-read only to distinguish those user-facing cases; correctness
       // still comes entirely from the atomic $pull above.
-      const current = await BattleRoom.findById(room._id).lean();
+      const current = await BattleRoom.findById(room._id);
       if (!current) {
         return res.status(404).json({ error: "Battle Room not found." });
       }
