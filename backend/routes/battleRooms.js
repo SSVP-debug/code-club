@@ -5,7 +5,7 @@ import BattleRoom from "../models/BattleRoom.js";
 import Problem from "../models/Problem.js";
 import Submission from "../models/Submission.js";
 import { requireRole } from "../middleware/roleGuard.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth, optionalAuth } from "../middleware/auth.js";
 import { awardBattleRoomSolve } from "../services/battleRoomScoring.js";
 
 const router = Router();
@@ -316,7 +316,7 @@ router.get("/mine", requireAuth, async (req, res) => {
 });
 
 // ── GET /api/battle-rooms/:id — detail + poll target ────────────────────────
-router.get("/:id", async (req, res) => {
+router.get("/:id", optionalAuth, async (req, res) => {
   try {
     const room = await BattleRoom.findById(req.params.id).lean();
     if (!room) return res.status(404).json({ error: "Battle Room not found." });
@@ -341,12 +341,35 @@ router.get("/:id", async (req, res) => {
     }
 
     const myId = req.userDoc?._id?.toString();
+    const isHost = Boolean(myId && room.createdBy.toString() === myId);
     const myEntry = myId ? room.roster.find((r) => r.userId.toString() === myId) : null;
 
+    // This endpoint is intentionally public, so never spread the raw
+    // Mongo document into the response. In particular, inviteCode and
+    // internal user IDs must not be exposed to arbitrary viewers.
+    // The host still receives inviteCode/userId because those fields are
+    // required for the host-only lobby controls.
+    const roster = room.roster.map((member) => ({
+      ...(isHost ? { userId: member.userId } : {}),
+      displayName: member.displayName,
+      teamIndex: member.teamIndex,
+      solvedSlugs: member.solvedSlugs ?? [],
+    }));
+
     return res.json({
-      ...room,
+      _id: room._id,
+      title: room.title,
+      description: room.description,
       status: room.status,
-      isHost: myId ? room.createdBy.toString() === myId : false,
+      problemSlugs: room.problemSlugs,
+      maxTeamSize: room.maxTeamSize,
+      durationMs: room.durationMs,
+      startsAt: room.startsAt,
+      endsAt: room.endsAt,
+      teams: room.teams,
+      roster,
+      ...(isHost ? { inviteCode: room.inviteCode } : {}),
+      isHost,
       myTeamIndex: myEntry?.teamIndex ?? null,
       mySolvedSlugs: myEntry?.solvedSlugs ?? [],
       isJoined: Boolean(myEntry),
