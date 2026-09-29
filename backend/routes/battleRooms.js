@@ -306,12 +306,37 @@ router.post("/:id/start", requireAuth, async (req, res) => {
     }
 
     const now = new Date();
-    room.status = "active";
-    room.startsAt = now;
-    room.endsAt = new Date(now.getTime() + room.durationMs);
-    await room.save();
+    const startsAt = now;
+    const endsAt = new Date(now.getTime() + room.durationMs);
 
-    return res.json(room.toObject());
+    // The lobby snapshot above is only used for validation. Start the match
+    // with one conditional write so two concurrent start requests cannot
+    // both transition the same lobby, and a concurrent join/team change
+    // cannot be silently overwritten by a stale snapshot.
+    const updated = await BattleRoom.findOneAndUpdate(
+      {
+        _id: room._id,
+        createdBy: req.userDoc._id,
+        status: "lobby",
+        updatedAt: room.updatedAt,
+      },
+      {
+        $set: {
+          status: "active",
+          startsAt,
+          endsAt,
+        },
+      },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(409).json({
+        error: "Battle Room changed while starting the match. Refresh and try again.",
+      });
+    }
+
+    return res.json(updated.toObject());
   } catch (err) {
     (req.log || logger).error({ err }, "[BattleRoom] start");
     return res.status(500).json({ error: "Failed to start match." });
