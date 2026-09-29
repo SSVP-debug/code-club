@@ -210,17 +210,28 @@ router.post("/:id/assign-teams", requireAuth, async (req, res) => {
 
     const { mode, assignments } = req.body;
 
+    // Build the complete proposed roster from the snapshot we just read.
+    // The final write below is a single conditional MongoDB operation.
+    // updatedAt acts as the optimistic-concurrency token: if another host
+    // action, join, or leave changed the room after this read, this write
+    // matches nothing instead of overwriting their roster changes.
+    const proposedRoster = room.roster.map((member) => ({ ...member }));
+    const setOps = {};
+
     if (mode === "random") {
       // Fisher–Yates shuffle, then alternate 0/1/0/1... — keeps team sizes
       // within 1 of each other regardless of roster size.
-      const shuffled = [...room.roster];
+      const shuffled = [...proposedRoster];
       for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
       shuffled.forEach((member, i) => {
-        const target = room.roster.find((r) => r.userId.toString() === member.userId.toString());
-        target.teamIndex = i % 2;
+        const rosterIndex = proposedRoster.findIndex(
+          (r) => r.userId.toString() === member.userId.toString()
+        );
+        proposedRoster[rosterIndex].teamIndex = i % 2;
+        setOps[`roster.${rosterIndex}.teamIndex`] = i % 2;
       });
     } else if (mode === "manual") {
       if (!Array.isArray(assignments)) {
@@ -230,23 +241,47 @@ router.post("/:id/assign-teams", requireAuth, async (req, res) => {
         if (teamIndex !== null && teamIndex !== 0 && teamIndex !== 1) {
           return res.status(400).json({ error: "teamIndex must be 0, 1, or null." });
         }
-        const member = room.roster.find((r) => r.userId.toString() === String(userId));
-        if (member) member.teamIndex = teamIndex;
-      }
-      // Enforce the size cap after manual assignment, not per-assignment,
-      // since a host might be mid-rebalance across two calls.
-      for (const idx of [0, 1]) {
-        const count = room.roster.filter((r) => r.teamIndex === idx).length;
-        if (count > room.maxTeamSize) {
-          return res.status(400).json({ error: `${room.teams[idx].name} would exceed the ${room.maxTeamSize}-person cap.` });
+        const rosterIndex = proposedRoster.findIndex(
+          (r) => r.userId.toString() === String(userId)
+        );
+        if (rosterIndex !== -1) {
+          proposedRoster[rosterIndex].teamIndex = teamIndex;
+          setOps[`roster.${rosterIndex}.teamIndex`] = teamIndex;
         }
       }
     } else {
       return res.status(400).json({ error: 'mode must be "random" or "manual".' });
     }
 
-    await room.save();
-    return res.json(room.toObject());
+    // Validate the final proposed state, not each individual assignment.
+    // This preserves the existing rebalancing behavior where a host can
+    // move several people in one request without temporarily exceeding
+    // the team cap.
+    for (const idx of [0, 1]) {
+      const count = proposedRoster.filter((r) => r.teamIndex === idx).length;
+      if (count > room.maxTeamSize) {
+        return res.status(400).json({ error: `${room.teams[idx].name} would exceed the ${room.maxTeamSize}-person cap.` });
+      }
+    }
+
+    const updated = await BattleRoom.findOneAndUpdate(
+      {
+        _id: room._id,
+        createdBy: req.userDoc._id,
+        status: "lobby",
+        updatedAt: room.updatedAt,
+      },
+      { $set: setOps },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(409).json({
+        error: "Battle Room changed while assigning teams. Refresh and try again.",
+      });
+    }
+
+    return res.json(updated.toObject());
   } catch (err) {
     (req.log || logger).error({ err }, "[BattleRoom] assign-teams");
     return res.status(500).json({ error: "Failed to assign teams." });
