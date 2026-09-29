@@ -34,10 +34,11 @@ function makeStudentLikeUser(role) {
   };
 }
 
+afterEach(() => {
+  vi.useRealTimers();
+});
+
 describe("progressToClient — role-agnostic, always the real data", () => {
-  afterEach(() => {
-    vi.useRealTimers();
-  });
   it("serializes real progress regardless of the account's active role", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-09-12T10:00:00.000Z"));
