@@ -266,7 +266,7 @@ describe("Battle Room hardening — BR-10..BR-13", () => {
       expect((await BattleRoom.findById(room._id)).status).toBe("active");
     });
 
-    it("allows only one stale concurrent team assignment to commit", async () => {
+    it("rejects a stale team assignment after another write advances updatedAt", async () => {
       const host = await seedUser({ role: "student" });
       const a = await seedUser({ role: "student" });
       const b = await seedUser({ role: "student" });
@@ -278,24 +278,46 @@ describe("Battle Room hardening — BR-10..BR-13", () => {
         ],
       });
 
-      const assign = getHandler("post", "/:id/assign-teams");
-      const body = {
-        mode: "manual",
-        assignments: [
-          { userId: a._id.toString(), teamIndex: 0 },
-          { userId: b._id.toString(), teamIndex: 1 },
-        ],
+      const staleUpdatedAt = room.updatedAt;
+      const filter = {
+        _id: room._id,
+        createdBy: host._id,
+        status: "lobby",
+        updatedAt: staleUpdatedAt,
       };
-      const resA = mockRes();
-      const resB = mockRes();
 
-      await Promise.all([
-        assign({ params: { id: room._id.toString() }, body, userDoc: host }, resA),
-        assign({ params: { id: room._id.toString() }, body, userDoc: host }, resB),
-      ]);
+      const first = await BattleRoom.findOneAndUpdate(
+        filter,
+        {
+          $set: {
+            "roster.0.teamIndex": 0,
+            "roster.1.teamIndex": 1,
+          },
+        },
+        { new: true }
+      );
 
-      expect([resA._status, resB._status].filter((s) => s === 200)).toHaveLength(1);
-      expect([resA._status, resB._status].filter((s) => s === 409)).toHaveLength(1);
+      expect(first).not.toBeNull();
+      expect(first.roster[0].teamIndex).toBe(0);
+      expect(first.roster[1].teamIndex).toBe(1);
+
+      const staleSecond = await BattleRoom.findOneAndUpdate(
+        filter,
+        {
+          $set: {
+            "roster.0.teamIndex": 1,
+            "roster.1.teamIndex": 0,
+          },
+        },
+        { new: true }
+      );
+
+      expect(staleSecond).toBeNull();
+
+      const persisted = await BattleRoom.findById(room._id).lean();
+      expect(persisted.roster[0].teamIndex).toBe(0);
+      expect(persisted.roster[1].teamIndex).toBe(1);
+      expect(persisted.updatedAt.getTime()).toBeGreaterThan(staleUpdatedAt.getTime());
     });
 
     it("keeps concurrent leave operations atomic and never resurrects a member", async () => {
