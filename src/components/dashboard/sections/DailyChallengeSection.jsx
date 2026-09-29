@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAppContext } from "../../../hooks/useAppContext";
-import {
-  getDailyChallenge,
-} from "../../../utils/dailyChallenge";
+import { getDailyChallenge } from "../../../utils/dailyChallenge";
+import { getStudentDayKey } from "../../../utils/studentDay";
 
 import { useTheme } from "../../../hooks/useTheme";
 import SectionCard from "../../ui/layout/SectionCard";
@@ -13,9 +12,7 @@ function DailyChallengeSection() {
   const { theme } = useTheme();
   const [challenge, setChallenge] = useState(null);
 
-  const {
-    dailyChallengeHistory,
-  } = useAppContext();
+  const { dailyChallengeHistory } = useAppContext();
 
   useEffect(() => {
     let cancelled = false;
@@ -33,27 +30,19 @@ function DailyChallengeSection() {
     );
   }
 
-  const today = new Date()
-    .toISOString()
-    .split("T")[0];
+  // Must match backend/utils/studentDay.js exactly. Using
+  // new Date().toISOString() here would make the UI disagree with the
+  // server between 00:00 and 05:29 IST.
+  const today = getStudentDayKey();
 
-  const completedToday =
-    dailyChallengeHistory.some(
-      (entry) =>
-        entry.date === today &&
-        entry.slug === challenge.slug
-    );
+  const completedToday = dailyChallengeHistory.some(
+    (entry) => entry.date === today && entry.slug === challenge.slug
+  );
 
   // Kept deliberately minimal — just enough to identify + start today's
-  // problem. Difficulty and the full description used to render here too,
-  // but the description in particular had no length cap, so on longer
-  // problems this card grew taller than Continue Learning/Weekly Goal/Next
-  // Contest and (via grid stretch) dragged all three of them up with it,
-  // leaving dead space in the shorter ones. Full details are one click
-  // away on the problem page itself.
+  // problem. Full details are one click away on the problem page itself.
   return (
     <SectionCard accented>
-
       <p className="text-[var(--muted-foreground)] text-sm mb-2">
         {theme.words.dailyChallenge}
       </p>
@@ -75,7 +64,6 @@ function DailyChallengeSection() {
           {theme.words.solveChallenge}
         </Button>
       )}
-
     </SectionCard>
   );
 }
