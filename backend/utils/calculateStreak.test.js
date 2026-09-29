@@ -32,11 +32,11 @@ describe("calculateStreak", () => {
     expect(calculateStreak(dates)).toEqual({ currentStreak: 1, longestStreak: 5 });
   });
 
-  it("last activity was yesterday → streak still counts as current (grace of one day)", () => {
+  it("last activity was yesterday → current streak resets to 0", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-09-12T10:00:00.000Z"));
     const dates = ["2026-09-10", "2026-09-11"];
-    expect(calculateStreak(dates)).toEqual({ currentStreak: 2, longestStreak: 2 });
+    expect(calculateStreak(dates)).toEqual({ currentStreak: 0, longestStreak: 2 });
   });
 
   it("last activity was two days ago → current streak is 0, longest preserved", () => {
