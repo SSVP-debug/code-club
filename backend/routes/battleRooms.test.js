@@ -490,7 +490,7 @@ describe("GET /api/battle-rooms/:id — detail", () => {
     await getHandler("get", "/:id")(req, res);
 
     expect(BattleRoom.findOneAndUpdate).toHaveBeenCalledWith(
-      { _id: "room1", status: "active", endsAt: expect.objectContaining({ $lte: expect.any(Date) }) },
+      { _id: "room1", status: "active", endsAt: { $lte: expect.any(Date) } },
       { $set: { status: "ended" } },
       { returnDocument: "after" }
     );
