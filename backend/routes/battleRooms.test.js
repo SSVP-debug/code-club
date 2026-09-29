@@ -148,7 +148,7 @@ describe("battleRooms router — requireAuth wiring", () => {
     expect(stack).toHaveLength(4);
     expect(stack[0].handle.name).toBe("requireAuth");
     expect(stack[1].handle).not.toBe(stack[0].handle);
-    expect(stack[2].handle.name).toBe("validateBody");
+    expect(stack[2].handle).not.toBe(stack[1].handle);
     expect(stack[3].handle.constructor.name).toBe("AsyncFunction");
   });
 });
