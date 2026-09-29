@@ -41,7 +41,7 @@ function genInviteCode() {
 }
 
 // ── POST /api/battle-rooms — create a room (lobby state) ───────────────────
-router.post("/", requireRole("student", "tpo", "admin"), async (req, res) => {
+router.post("/", requireAuth, requireRole("student", "tpo", "admin"), async (req, res) => {
   try {
     const { title, description, problemSlugs, durationMinutes, maxTeamSize } = req.body;
     const isStudent = req.userDoc.role === "student";
@@ -54,12 +54,6 @@ router.post("/", requireRole("student", "tpo", "admin"), async (req, res) => {
     let durationMs = Number(durationMinutes) * 60 * 1000;
 
     if (isStudent) {
-      if (!req.userDoc.education?.emailVerified) {
-        return res.status(403).json({
-          error: "Verify your college email before hosting a Battle Room.",
-          code: "HOST_NOT_VERIFIED",
-        });
-      }
       if (problemSlugs.length > STUDENT_ROOM_LIMITS.MAX_PROBLEMS) {
         return res.status(400).json({ error: `Battle Rooms can have at most ${STUDENT_ROOM_LIMITS.MAX_PROBLEMS} problems.` });
       }
