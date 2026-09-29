@@ -145,10 +145,11 @@ describe("battleRooms router — requireAuth wiring", () => {
     // middleware function, so its Express layer name is not "requireRole".
     // Assert the real middleware ordering instead of relying on a function
     // name that does not exist at runtime.
-    expect(stack).toHaveLength(3);
+    expect(stack).toHaveLength(4);
     expect(stack[0].handle.name).toBe("requireAuth");
     expect(stack[1].handle).not.toBe(stack[0].handle);
-    expect(stack[2].handle.constructor.name).toBe("AsyncFunction");
+    expect(stack[2].handle.name).toBe("validateBody");
+    expect(stack[3].handle.constructor.name).toBe("AsyncFunction");
   });
 });
 
