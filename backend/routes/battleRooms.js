@@ -40,6 +40,12 @@ function genInviteCode() {
   return crypto.randomBytes(3).toString("hex").toUpperCase();
 }
 
+const INVITE_CODE_CREATE_ATTEMPTS = 3;
+
+function isInviteCodeDuplicateError(err) {
+  return err?.code === 11000 && Boolean(err?.keyPattern?.inviteCode);
+}
+
 // ── POST /api/battle-rooms — create a room (lobby state) ───────────────────
 router.post("/", requireAuth, requireRole("student", "tpo", "admin"), async (req, res) => {
   try {
@@ -91,17 +97,32 @@ router.post("/", requireAuth, requireRole("student", "tpo", "admin"), async (req
       return res.status(400).json({ error: "One or more problem slugs are invalid." });
     }
 
-    const room = await BattleRoom.create({
+    const roomPayload = {
       title: title.trim(),
       description: description?.trim() || "",
       createdBy: req.userDoc._id,
-      inviteCode: genInviteCode(),
       problemSlugs,
       maxTeamSize: teamSize,
       durationMs,
       roster: [],
       teams: TEAM_NAMES.map((name) => ({ name, score: 0, solvedSlugs: [] })),
-    });
+    };
+
+    // inviteCode has a unique index. A random collision is exceptionally
+    // unlikely, but uniqueness must be enforced by MongoDB, not assumed by
+    // the random generator. Retry only duplicate-key collisions and keep the
+    // retry bounded so a real database failure still surfaces promptly.
+    let room;
+    for (let attempt = 0; attempt < INVITE_CODE_CREATE_ATTEMPTS; attempt++) {
+      try {
+        room = await BattleRoom.create({ ...roomPayload, inviteCode: genInviteCode() });
+        break;
+      } catch (err) {
+        if (!isInviteCodeDuplicateError(err) || attempt === INVITE_CODE_CREATE_ATTEMPTS - 1) {
+          throw err;
+        }
+      }
+    }
 
     return res.status(201).json(room.toObject());
   } catch (err) {
