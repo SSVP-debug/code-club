@@ -68,9 +68,16 @@ router.post("/", requireAuth, requireRole("student", "tpo", "admin"), async (req
       // One active/lobby hosted Battle Room at a time — a separate slot
       // from private contests (confirmed), so this only checks other
       // Battle Rooms this student is hosting, not their contests.
+      const now = new Date();
       const existingActive = await BattleRoom.findOne({
         createdBy: req.userDoc._id,
-        status: { $in: ["lobby", "active"] },
+        $or: [
+          { status: "lobby" },
+          { status: "active", endsAt: { $gt: now } },
+          // An active room without endsAt is malformed, but fail closed:
+          // keep it blocking rather than accidentally allowing overlap.
+          { status: "active", endsAt: null },
+        ],
       }).lean();
       if (existingActive) {
         return res.status(409).json({
