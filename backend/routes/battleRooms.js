@@ -544,10 +544,21 @@ router.post("/:id/leave", requireAuth, async (req, res) => {
     );
 
     if (!updated) {
-      // The participant was present in the snapshot, but the atomic write
-      // matched nothing because a concurrent lobby change won the race.
-      // Do not fall back to save() — that could overwrite a concurrent
-      // join/team assignment. Report the stale operation explicitly.
+      // The atomic write can miss either because the caller was never in
+      // the roster, or because a concurrent lobby change won the race.
+      // Re-read only to distinguish those user-facing cases; correctness
+      // still comes entirely from the atomic $pull above.
+      const current = await BattleRoom.findById(room._id).lean();
+      if (!current) {
+        return res.status(404).json({ error: "Battle Room not found." });
+      }
+      const stillJoined = current.roster.some(
+        (member) => member.userId.toString() === req.userDoc._id.toString()
+      );
+      if (!stillJoined) {
+        return res.status(400).json({ error: "You haven't joined this Battle Room." });
+      }
+
       return res.status(409).json({
         error: "Battle Room changed while leaving. Refresh and try again.",
       });
