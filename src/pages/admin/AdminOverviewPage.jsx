@@ -94,7 +94,7 @@ export default function AdminOverviewPage() {
                 evidenceHint: t.additionalEvidenceRecommended,
                 evidence: t.evidence,
                 reviewHistory: t.reviewHistory,
-                reviewTarget: t.reviewTarget,
+                reviewTarget: t.reviewTarget || "college",
               })}
               onApprove={(id) => actOnTpo(id, "approve")}
               onReject={(id, reason) => actOnTpo(id, "reject", reason)}
