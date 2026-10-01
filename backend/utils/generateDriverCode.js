@@ -15,8 +15,13 @@
  * for why. This file keeps everything that was already language-agnostic
  * (arg normalization, debug logging, the public call shape) and dispatches
  * the language-specific part through the registry.
+ *
+ * Plan 014: explicit ListNode contracts are dispatched to structuredDrivers
+ * before the ordinary scalar/array language drivers. This keeps recursive
+ * pointer-structure handling out of the existing scalar type modules.
  */
 import { getDriver } from "./languageDrivers/index.js";
+import * as structuredDrivers from "./structuredDrivers.js";
 
 // Re-exported for backward compatibility: both were previously defined
 // directly in this file and imported from here by
@@ -94,6 +99,16 @@ export function generateDriverCode(language, userCode, testcaseInput, functionNa
       `Unsupported language: ${language}`
     );
   }
+
+  const structured = structuredDrivers.generate({
+    language,
+    userCode,
+    fn,
+    returnType,
+    args,
+    paramTypes,
+  });
+  if (structured) return structured;
 
   return driver.generate({ userCode, fn, returnType, args, paramTypes, debugEnabled });
 }
