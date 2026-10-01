@@ -30,7 +30,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "license": "ISC",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.107.0",
     "@google/genai": "^2.18.0",
