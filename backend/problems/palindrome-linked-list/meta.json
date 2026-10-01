@@ -10,8 +10,16 @@
   "estimatedTime": "10–20 min",
   "companies": [],
   "relatedProblems": [],
-  "returnType": {},
-  "paramTypes": {},
+  "returnType": {
+    "java": "boolean",
+    "cpp": "bool",
+    "c": "bool"
+  },
+  "paramTypes": {
+    "java": { "head": "ListNode" },
+    "cpp": { "head": "ListNode*" },
+    "c": { "head": "ListNode*" }
+  },
   "comparisonMode": "exact",
   "operationSequence": {
     "enabled": false,
