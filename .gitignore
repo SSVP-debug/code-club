@@ -13,6 +13,9 @@ dist
 dist-ssr
 *.local
 
+# Generated problem fallback — rebuilt from backend/problems/ before dev/build/test
+src/data/generated/
+
 # Playwright (e2e tests — see playwright.config.js)
 /test-results/
 /playwright-report/
