@@ -6,7 +6,10 @@
  */
 import loadProblemsFromFolders from "./lib/loadProblemsFromFolders.js";
 import { generateDriverCode } from "../utils/generateDriverCode.js";
-import { SUPPORTED_LANGUAGE_KEYS } from "../config/languages.js";
+import {
+  SUPPORTED_LANGUAGE_KEYS,
+  REQUIRED_STARTER_LANGUAGE_KEYS,
+} from "../config/languages.js";
 
 const JAVA_RETURN_RE = /public\s+([\w<>[\],]+(?:\s*<[\w<>[\],\s]*>)?)\s+\w+\s*\(/;
 const C_RETURN_RE = (fn) => new RegExp(`^\\s*([\\w*]+(?:\\s+[\\w*]+)*)\\s+${fn}\\s*\\(`);
@@ -29,7 +32,9 @@ function validateProblem(problem) {
   for (const language of SUPPORTED_LANGUAGE_KEYS) {
     const code = problem.starterCode?.[language];
     if (!code?.trim()) {
-      errors.push(`${problem.slug}: starterCode.${language} missing/empty`);
+      if (REQUIRED_STARTER_LANGUAGE_KEYS.includes(language)) {
+        errors.push(`${problem.slug}: starterCode.${language} missing/empty`);
+      }
       continue;
     }
 
