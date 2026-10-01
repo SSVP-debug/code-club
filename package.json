@@ -5,14 +5,18 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "predev": "node scripts/generateProblemFallback.js",
     "build": "vite build",
+    "prebuild": "node scripts/generateProblemFallback.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
+    "pretest": "node scripts/generateProblemFallback.js",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "verify:no-hidden-test-leak": "node scripts/checkBundleForHiddenTestLeak.js",
     "verify:readme-languages": "node scripts/checkReadmeLanguagesInSync.js",
+    "verify:problem-fallback": "node scripts/generateProblemFallback.js",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },
