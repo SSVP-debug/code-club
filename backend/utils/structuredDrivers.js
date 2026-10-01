@@ -20,36 +20,40 @@ function jsArrayLiteral(values) {
   return `{${values.map((v) => String(Number(v))).join(", ")}}`;
 }
 
-function javaListHelper() {
+function javaListNodeType() {
   return `
 class ListNode {
   int val;
   ListNode next;
   ListNode(int val) { this.val = val; }
 }
-
-ListNode buildList(int[] values) {
-  ListNode dummy = new ListNode(0);
-  ListNode tail = dummy;
-  for (int value : values) {
-    tail.next = new ListNode(value);
-    tail = tail.next;
-  }
-  return dummy.next;
+`;
 }
 
-String listToJson(ListNode head) {
-  StringBuilder out = new StringBuilder("[");
-  boolean first = true;
-  while (head != null) {
-    if (!first) out.append(',');
-    out.append(head.val);
-    first = false;
-    head = head.next;
+function javaListHelpers() {
+  return `
+  static ListNode buildList(int[] values) {
+    ListNode dummy = new ListNode(0);
+    ListNode tail = dummy;
+    for (int value : values) {
+      tail.next = new ListNode(value);
+      tail = tail.next;
+    }
+    return dummy.next;
   }
-  out.append(']');
-  return out.toString();
-}
+
+  static String listToJson(ListNode head) {
+    StringBuilder out = new StringBuilder("[");
+    boolean first = true;
+    while (head != null) {
+      if (!first) out.append(',');
+      out.append(head.val);
+      first = false;
+      head = head.next;
+    }
+    out.append(']');
+    return out.toString();
+  }
 `;
 }
 
@@ -171,11 +175,12 @@ export function generate({ language, userCode, fn, returnType, args, paramTypes 
     return `
 import java.util.*;
 
-${javaListHelper()}
-
+${javaListNodeType()}
 ${userCode}
 
 class Main {
+${javaListHelpers()}
+
   public static void main(String[] args) {
     try {
       ${declarations}
