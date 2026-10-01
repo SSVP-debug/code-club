@@ -1,0 +1,10 @@
+[
+  {
+    "input": "ops = [[\"push\",5],[\"push\",3],[\"push\",7],[\"getMin\"],[\"pop\"],[\"getMin\"]]",
+    "output": "[3,3]"
+  },
+  {
+    "input": "ops = [[\"push\",2],[\"push\",0],[\"getMin\"],[\"pop\"],[\"getMin\"]]",
+    "output": "[0,2]"
+  }
+]

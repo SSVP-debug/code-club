@@ -1,0 +1,5 @@
+[
+  "1 <= numCourses <= 2000",
+  "0 <= prerequisites.length <= 5000",
+  "prerequisites[i].length == 2"
+]

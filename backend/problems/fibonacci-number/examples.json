@@ -1,0 +1,15 @@
+[
+  {
+    "input": "n = 2",
+    "output": "1",
+    "explanation": "F(2) = F(1) + F(0) = 1."
+  },
+  {
+    "input": "n = 3",
+    "output": "2"
+  },
+  {
+    "input": "n = 4",
+    "output": "3"
+  }
+]

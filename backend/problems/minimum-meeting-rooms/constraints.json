@@ -1,0 +1,4 @@
+[
+  "1 <= intervals.length <= 10^4",
+  "0 <= start < end <= 10^6"
+]

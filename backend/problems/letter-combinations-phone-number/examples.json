@@ -1,0 +1,14 @@
+[
+  {
+    "input": "digits = \"23\"",
+    "output": "[\"ad\",\"ae\",\"af\",\"bd\",\"be\",\"bf\",\"cd\",\"ce\",\"cf\"]"
+  },
+  {
+    "input": "digits = \"\"",
+    "output": "[]"
+  },
+  {
+    "input": "digits = \"2\"",
+    "output": "[\"a\",\"b\",\"c\"]"
+  }
+]

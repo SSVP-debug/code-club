@@ -1,0 +1,5 @@
+[
+  "1 <= n, m <= 100",
+  "0 <= Node.val <= 9",
+  "No leading zeros except the number 0 itself."
+]

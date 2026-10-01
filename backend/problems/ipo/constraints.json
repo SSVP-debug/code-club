@@ -1,0 +1,8 @@
+[
+  "1 <= k <= 10^5",
+  "0 <= w <= 10^9",
+  "n == profits.length == capital.length",
+  "1 <= n <= 10^5",
+  "0 <= profits[i] <= 10^4",
+  "0 <= capital[i] <= 10^9"
+]

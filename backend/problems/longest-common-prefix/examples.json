@@ -1,0 +1,11 @@
+[
+  {
+    "input": "strs = [\"flower\",\"flow\",\"flight\"]",
+    "output": "\"fl\""
+  },
+  {
+    "input": "strs = [\"dog\",\"racecar\",\"car\"]",
+    "output": "\"\"",
+    "explanation": "No common prefix."
+  }
+]

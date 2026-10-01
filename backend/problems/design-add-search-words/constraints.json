@@ -1,0 +1,5 @@
+[
+  "1 <= word.length <= 25",
+  "word consists of lowercase letters or '.'",
+  "At most 10^4 calls total."
+]

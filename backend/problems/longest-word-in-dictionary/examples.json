@@ -1,0 +1,10 @@
+[
+  {
+    "input": "words = [\"w\",\"wo\",\"wor\",\"worl\",\"world\"]",
+    "output": "\"world\""
+  },
+  {
+    "input": "words = [\"a\",\"banana\",\"app\",\"appl\",\"ap\",\"apply\",\"apple\"]",
+    "output": "\"apple\""
+  }
+]

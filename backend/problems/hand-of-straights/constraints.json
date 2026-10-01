@@ -1,0 +1,5 @@
+[
+  "1 <= hand.length <= 10^4",
+  "0 <= hand[i] <= 10^9",
+  "1 <= groupSize <= hand.length"
+]

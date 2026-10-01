@@ -1,0 +1,12 @@
+[
+  {
+    "input": "ratings = [1,0,2]",
+    "output": "5",
+    "explanation": "[2,1,2]"
+  },
+  {
+    "input": "ratings = [1,2,2]",
+    "output": "4",
+    "explanation": "[1,2,1]"
+  }
+]

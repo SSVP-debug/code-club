@@ -1,0 +1,10 @@
+[
+  {
+    "input": "s1 = \"ab\", s2 = \"eidbaooo\"",
+    "output": "true"
+  },
+  {
+    "input": "s1 = \"ab\", s2 = \"eidboaoo\"",
+    "output": "false"
+  }
+]

@@ -1,0 +1,6 @@
+[
+  "1 <= n <= 1000",
+  "0 <= trust.length <= 10^4",
+  "trust[i].length == 2",
+  "All trust pairs are distinct."
+]

@@ -1,0 +1,12 @@
+[
+  {
+    "input": "n = 2",
+    "output": "2",
+    "explanation": "Two ways: (1+1) or (2)."
+  },
+  {
+    "input": "n = 3",
+    "output": "3",
+    "explanation": "Three ways: (1+1+1), (1+2), (2+1)."
+  }
+]

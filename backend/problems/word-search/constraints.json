@@ -1,0 +1,6 @@
+[
+  "m == board.length",
+  "n == board[i].length",
+  "1 <= m, n <= 6",
+  "1 <= word.length <= 15"
+]

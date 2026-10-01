@@ -1,0 +1,11 @@
+[
+  {
+    "input": "nums = [1,12,-5,-6,50,3], k = 4",
+    "output": "12.75",
+    "explanation": "Max average subarray is [12,-5,-6,50] = 51/4 = 12.75."
+  },
+  {
+    "input": "nums = [5], k = 1",
+    "output": "5.0"
+  }
+]

@@ -1,0 +1,6 @@
+[
+  "n == edges.length",
+  "3 <= n <= 1000",
+  "edges[i].length == 2",
+  "1 <= ai < bi <= edges.length"
+]

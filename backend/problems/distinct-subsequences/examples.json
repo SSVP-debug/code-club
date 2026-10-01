@@ -1,0 +1,10 @@
+[
+  {
+    "input": "s = \"rabbbit\", t = \"rabbit\"",
+    "output": "3"
+  },
+  {
+    "input": "s = \"babgbag\", t = \"bag\"",
+    "output": "5"
+  }
+]

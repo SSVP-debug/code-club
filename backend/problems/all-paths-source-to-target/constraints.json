@@ -1,0 +1,8 @@
+[
+  "n == graph.length",
+  "2 <= n <= 15",
+  "0 <= graph[i][j] < n",
+  "graph[i][j] != i (no self-loops)",
+  "All elements of graph[i] are unique.",
+  "The input graph is guaranteed to be a DAG."
+]

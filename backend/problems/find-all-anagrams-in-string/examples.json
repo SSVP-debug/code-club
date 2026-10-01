@@ -1,0 +1,10 @@
+[
+  {
+    "input": "s = \"cbaebabacd\", p = \"abc\"",
+    "output": "[0,6]"
+  },
+  {
+    "input": "s = \"abab\", p = \"ab\"",
+    "output": "[0,1,2]"
+  }
+]

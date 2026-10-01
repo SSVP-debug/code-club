@@ -1,0 +1,11 @@
+[
+  {
+    "input": "x = 4",
+    "output": "2"
+  },
+  {
+    "input": "x = 8",
+    "output": "2",
+    "explanation": "sqrt(8) = 2.82..., rounded down to 2"
+  }
+]

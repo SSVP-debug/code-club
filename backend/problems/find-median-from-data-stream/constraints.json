@@ -1,0 +1,5 @@
+[
+  "-10^5 <= num <= 10^5",
+  "At most 5 * 10^4 calls to addNum and findMedian.",
+  "findMedian called after at least one addNum."
+]

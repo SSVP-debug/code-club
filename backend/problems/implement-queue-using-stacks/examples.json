@@ -1,0 +1,6 @@
+[
+  {
+    "input": "[\"MyQueue\",\"push\",\"push\",\"peek\",\"pop\",\"empty\"]\n[[],[1],[2],[],[],[]]",
+    "output": "[null,null,null,1,1,false]"
+  }
+]

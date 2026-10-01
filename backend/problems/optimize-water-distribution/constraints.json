@@ -1,0 +1,10 @@
+[
+  "1 <= n <= 10^4",
+  "wells.length == n",
+  "0 <= wells[i] <= 10^5",
+  "1 <= pipes.length <= 10^4",
+  "pipes[j].length == 3",
+  "1 <= house1_j, house2_j <= n",
+  "0 <= cost_j <= 10^5",
+  "house1_j != house2_j"
+]

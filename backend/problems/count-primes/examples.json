@@ -1,0 +1,15 @@
+[
+  {
+    "input": "n = 10",
+    "output": "4",
+    "explanation": "2, 3, 5, 7"
+  },
+  {
+    "input": "n = 0",
+    "output": "0"
+  },
+  {
+    "input": "n = 1",
+    "output": "0"
+  }
+]

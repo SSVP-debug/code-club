@@ -1,0 +1,4 @@
+[
+  "0 <= number of nodes <= 100",
+  "-10^4 <= Node.val <= 10^4"
+]

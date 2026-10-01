@@ -1,0 +1,17 @@
+[
+  {
+    "input": "startGene = \"AACCGGTT\", endGene = \"AACCGGTA\", bank = [\"AACCGGTA\"]",
+    "output": "1",
+    "explanation": "Changing the last character T to A produces endGene directly, and \"AACCGGTA\" is in bank."
+  },
+  {
+    "input": "startGene = \"AACCGGTT\", endGene = \"AAACGGTA\", bank = [\"AACCGGTA\",\"AACCGCTA\",\"AAACGGTA\"]",
+    "output": "2",
+    "explanation": "AACCGGTT -> AACCGGTA -> AAACGGTA, both intermediate/final genes are in bank, so 2 mutations suffice."
+  },
+  {
+    "input": "startGene = \"AAAAACCC\", endGene = \"AACCCCCC\", bank = [\"AAAACCCC\",\"AAACCCCC\",\"AACCCCCC\"]",
+    "output": "3",
+    "explanation": "AAAAACCC -> AAAACCCC -> AAACCCCC -> AACCCCCC, one character changes at a time and every step is in bank."
+  }
+]

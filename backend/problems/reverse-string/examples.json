@@ -1,0 +1,10 @@
+[
+  {
+    "input": "s = \"hello\"",
+    "output": "\"olleh\""
+  },
+  {
+    "input": "s = \"Hannah\"",
+    "output": "\"hannaH\""
+  }
+]

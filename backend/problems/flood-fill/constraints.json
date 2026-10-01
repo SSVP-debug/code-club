@@ -1,0 +1,5 @@
+[
+  "1 <= image.length <= 2500",
+  "numCols divides image.length evenly",
+  "0 <= sr < rows, 0 <= sc < numCols"
+]

@@ -1,0 +1,10 @@
+[
+  {
+    "input": "s1 = \"aabcc\", s2 = \"dbbca\", s3 = \"aadbbcbcac\"",
+    "output": "true"
+  },
+  {
+    "input": "s1 = \"aabcc\", s2 = \"dbbca\", s3 = \"aadbbbaccc\"",
+    "output": "false"
+  }
+]

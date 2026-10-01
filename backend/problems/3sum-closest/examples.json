@@ -1,0 +1,11 @@
+[
+  {
+    "input": "nums = [-1,2,1,-4], target = 1",
+    "output": "2",
+    "explanation": "-1+2+1=2 is closest to 1."
+  },
+  {
+    "input": "nums = [0,0,0], target = 1",
+    "output": "0"
+  }
+]

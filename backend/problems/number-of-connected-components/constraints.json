@@ -1,0 +1,8 @@
+[
+  "1 <= n <= 2000",
+  "1 <= edges.length <= 5000",
+  "edges[i].length == 2",
+  "0 <= ai, bi < n",
+  "ai != bi",
+  "No repeated edges."
+]

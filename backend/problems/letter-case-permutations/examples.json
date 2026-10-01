@@ -1,0 +1,15 @@
+[
+  {
+    "input": "s = \"a1b2\"",
+    "output": "4",
+    "explanation": "\"a1b2\", \"a1B2\", \"A1b2\", \"A1B2\"."
+  },
+  {
+    "input": "s = \"3z4\"",
+    "output": "2"
+  },
+  {
+    "input": "s = \"12345\"",
+    "output": "1"
+  }
+]

@@ -1,0 +1,6 @@
+[
+  "m == dungeon.length",
+  "n == dungeon[i].length",
+  "1 <= m, n <= 200",
+  "-1000 <= dungeon[i][j] <= 1000"
+]

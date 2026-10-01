@@ -1,0 +1,14 @@
+[
+  {
+    "input": "s = \"lee(t(c)o)de)\"",
+    "output": "\"lee(t(c)o)de\""
+  },
+  {
+    "input": "s = \"a)b(c)d\"",
+    "output": "\"ab(c)d\""
+  },
+  {
+    "input": "s = \"))((\"",
+    "output": "\"\""
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "input": "s = \"egg\", t = \"add\"",
+    "output": "true"
+  },
+  {
+    "input": "s = \"foo\", t = \"bar\"",
+    "output": "false"
+  },
+  {
+    "input": "s = \"paper\", t = \"title\"",
+    "output": "true"
+  }
+]

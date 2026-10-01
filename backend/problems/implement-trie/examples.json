@@ -1,0 +1,6 @@
+[
+  {
+    "input": "[\"Trie\",\"insert\",\"search\",\"search\",\"startsWith\",\"insert\",\"search\"]\n[[],[\"apple\"],[\"apple\"],[\"app\"],[\"app\"],[\"app\"],[\"app\"]]",
+    "output": "[null,null,true,false,true,null,true]"
+  }
+]

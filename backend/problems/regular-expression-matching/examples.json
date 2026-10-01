@@ -1,0 +1,14 @@
+[
+  {
+    "input": "s = \"aa\", p = \"a\"",
+    "output": "false"
+  },
+  {
+    "input": "s = \"aa\", p = \"a*\"",
+    "output": "true"
+  },
+  {
+    "input": "s = \"ab\", p = \".*\"",
+    "output": "true"
+  }
+]

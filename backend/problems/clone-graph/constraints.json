@@ -1,0 +1,5 @@
+[
+  "0 <= n <= 100",
+  "1 <= Node.val <= 100",
+  "The graph is connected and undirected."
+]

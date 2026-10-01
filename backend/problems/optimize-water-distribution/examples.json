@@ -1,0 +1,12 @@
+[
+  {
+    "input": "n = 3, wells = [1,2,2], pipes = [[1,2,1],[2,3,1]]",
+    "output": "3",
+    "explanation": "Build a well at house 1 (cost 1), then pipe 1-2 (cost 1) and pipe 2-3 (cost 1), total 3 — cheaper than any other combination."
+  },
+  {
+    "input": "n = 2, wells = [1,1], pipes = [[1,2,1]]",
+    "output": "2",
+    "explanation": "Build a well at house 1 (cost 1) and a pipe to house 2 (cost 1), total 2."
+  }
+]

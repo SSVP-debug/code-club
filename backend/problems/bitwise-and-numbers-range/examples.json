@@ -1,0 +1,14 @@
+[
+  {
+    "input": "left = 5, right = 7",
+    "output": "4"
+  },
+  {
+    "input": "left = 0, right = 0",
+    "output": "0"
+  },
+  {
+    "input": "left = 1, right = 2147483647",
+    "output": "0"
+  }
+]

@@ -1,0 +1,12 @@
+[
+  {
+    "input": "head = [1,2,3,4,5]",
+    "output": "3",
+    "explanation": "Middle of [1,2,3,4,5] is 3."
+  },
+  {
+    "input": "head = [1,2,3,4,5,6]",
+    "output": "4",
+    "explanation": "Two middles are 3 and 4 — return the second."
+  }
+]

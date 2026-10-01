@@ -1,0 +1,6 @@
+[
+  "1 <= people.length <= 2000",
+  "0 <= hi <= 10^6",
+  "0 <= ki < people.length",
+  "Guaranteed unique [hi, ki] pairs."
+]

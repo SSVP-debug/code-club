@@ -1,0 +1,10 @@
+[
+  {
+    "input": "root = [2,1,3]",
+    "output": "true"
+  },
+  {
+    "input": "root = [5,1,4,-1,-1,3,6]",
+    "output": "false"
+  }
+]

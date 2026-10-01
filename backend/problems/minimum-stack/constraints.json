@@ -1,0 +1,5 @@
+[
+  "-2^31 <= val <= 2^31 - 1",
+  "pop, top, getMin called only when stack is non-empty.",
+  "At most 3 * 10^4 calls."
+]

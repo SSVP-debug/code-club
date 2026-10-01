@@ -1,0 +1,5 @@
+[
+  "1 <= nums.length <= 2 * 10^4",
+  "-10 <= nums[i] <= 10",
+  "The product of any subarray fits in a 32-bit integer."
+]

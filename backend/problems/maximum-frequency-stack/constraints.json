@@ -1,0 +1,5 @@
+[
+  "0 <= val <= 10^9",
+  "At most 2 * 10^4 calls to push and pop.",
+  "Pop guarantee: stack is non-empty."
+]

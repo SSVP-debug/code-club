@@ -1,0 +1,11 @@
+[
+  {
+    "input": "s = \"ABAB\", k = 2",
+    "output": "4",
+    "explanation": "Replace 2 A's with B's or vice versa."
+  },
+  {
+    "input": "s = \"AABABBA\", k = 1",
+    "output": "4"
+  }
+]

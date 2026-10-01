@@ -1,0 +1,15 @@
+[
+  {
+    "input": "head = [3,2,0,-4], pos = 1",
+    "output": "true",
+    "explanation": "Tail connects to node at index 1."
+  },
+  {
+    "input": "head = [1,2], pos = 0",
+    "output": "true"
+  },
+  {
+    "input": "head = [1], pos = -1",
+    "output": "false"
+  }
+]

@@ -1,0 +1,4 @@
+[
+  "1 <= ransomNote.length, magazine.length <= 10^5",
+  "Both strings consist of lowercase English letters."
+]

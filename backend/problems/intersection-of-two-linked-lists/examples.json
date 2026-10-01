@@ -1,0 +1,10 @@
+[
+  {
+    "input": "intersectVal = 8, listA = [4,1,8,4,5], listB = [5,6,1,8,4,5]",
+    "output": "Intersected at 8"
+  },
+  {
+    "input": "intersectVal = 0, listA = [2,6,4], listB = [1,5]",
+    "output": "No intersection"
+  }
+]

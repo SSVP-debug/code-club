@@ -1,0 +1,5 @@
+[
+  "1 <= x <= 9",
+  "At most 100 calls to push, pop, peek, and empty.",
+  "All calls to pop and peek are valid."
+]

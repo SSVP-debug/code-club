@@ -1,0 +1,15 @@
+[
+  {
+    "input": "nums = [-1,0,1,2,-1,-4]",
+    "output": "2",
+    "explanation": "Triplets [-1,-1,2] and [-1,0,1] sum to zero."
+  },
+  {
+    "input": "nums = [0,1,1]",
+    "output": "0"
+  },
+  {
+    "input": "nums = [0,0,0]",
+    "output": "1"
+  }
+]

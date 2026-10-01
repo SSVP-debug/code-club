@@ -1,0 +1,5 @@
+[
+  "1 <= w.length <= 10^4",
+  "1 <= w[i] <= 10^5",
+  "pickIndex called at most 10^4 times"
+]

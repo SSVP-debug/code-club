@@ -1,0 +1,15 @@
+[
+  {
+    "input": "candidates = [2,3,6,7], target = 7",
+    "output": "2",
+    "explanation": "[2,2,3] and [7]."
+  },
+  {
+    "input": "candidates = [2,3,5], target = 8",
+    "output": "3"
+  },
+  {
+    "input": "candidates = [2], target = 1",
+    "output": "0"
+  }
+]

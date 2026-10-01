@@ -1,0 +1,5 @@
+[
+  "1 <= nums.length <= 6",
+  "-10 <= nums[i] <= 10",
+  "All integers in nums are unique."
+]

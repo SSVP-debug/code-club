@@ -1,0 +1,6 @@
+[
+  "1 <= key.length, prefix.length <= 50",
+  "key and prefix consist of only lowercase English letters.",
+  "1 <= val <= 1000",
+  "At most 50 calls will be made to insert and sum."
+]

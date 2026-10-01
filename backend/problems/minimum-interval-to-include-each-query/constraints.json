@@ -1,0 +1,5 @@
+[
+  "1 <= intervals.length <= 10^5",
+  "1 <= queries.length <= 10^5",
+  "queries[i] and interval values are in [1, 10^7]"
+]

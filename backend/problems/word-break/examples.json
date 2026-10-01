@@ -1,0 +1,14 @@
+[
+  {
+    "input": "s = \"leetcode\", wordDict = [\"leet\",\"code\"]",
+    "output": "true"
+  },
+  {
+    "input": "s = \"applepenapple\", wordDict = [\"apple\",\"pen\"]",
+    "output": "true"
+  },
+  {
+    "input": "s = \"catsandog\", wordDict = [\"cats\",\"dog\",\"sand\",\"and\",\"cat\"]",
+    "output": "false"
+  }
+]

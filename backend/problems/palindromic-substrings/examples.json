@@ -1,0 +1,12 @@
+[
+  {
+    "input": "s = \"abc\"",
+    "output": "3",
+    "explanation": "a, b, c"
+  },
+  {
+    "input": "s = \"aaa\"",
+    "output": "6",
+    "explanation": "a, a, a, aa, aa, aaa"
+  }
+]

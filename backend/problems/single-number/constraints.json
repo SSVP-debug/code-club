@@ -1,0 +1,4 @@
+[
+  "1 <= nums.length <= 3 * 10^4",
+  "Each element appears twice except for one."
+]

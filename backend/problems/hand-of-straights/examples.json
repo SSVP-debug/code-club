@@ -1,0 +1,10 @@
+[
+  {
+    "input": "hand = [1,2,3,6,2,3,4,7,8], groupSize = 3",
+    "output": "true"
+  },
+  {
+    "input": "hand = [1,2,3,4,5], groupSize = 4",
+    "output": "false"
+  }
+]

@@ -1,0 +1,6 @@
+[
+  {
+    "input": "[\"MyStack\",\"push\",\"push\",\"top\",\"pop\",\"empty\"]\n[[],[1],[2],[],[],[]]",
+    "output": "[null,null,null,2,2,false]"
+  }
+]

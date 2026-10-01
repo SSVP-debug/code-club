@@ -1,0 +1,14 @@
+[
+  {
+    "input": "s = \"()\"",
+    "output": "true"
+  },
+  {
+    "input": "s = \"()[]{}\"",
+    "output": "true"
+  },
+  {
+    "input": "s = \"(]\"",
+    "output": "false"
+  }
+]

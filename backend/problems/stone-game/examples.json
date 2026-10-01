@@ -1,0 +1,10 @@
+[
+  {
+    "input": "piles = [5,3,4,5]",
+    "output": "true"
+  },
+  {
+    "input": "piles = [3,7,2,3]",
+    "output": "true"
+  }
+]

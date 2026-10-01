@@ -1,0 +1,4 @@
+[
+  "1 <= numCourses <= 2000",
+  "0 <= prerequisites.length <= numCourses * (numCourses-1)"
+]

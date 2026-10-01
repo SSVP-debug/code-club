@@ -1,0 +1,5 @@
+[
+  "1 <= word.length, prefix.length <= 2000",
+  "All inputs consist of lowercase English letters.",
+  "At most 3 * 10^4 calls to insert, search, and startsWith."
+]

@@ -1,0 +1,5 @@
+[
+  "n == grid.length == grid[i].length",
+  "1 <= n <= 50",
+  "grid[i][j] is -1, 0, or 1."
+]

@@ -1,0 +1,16 @@
+[
+  {
+    "input": "n = 11",
+    "output": "3",
+    "explanation": "Binary: 1011 — three '1' bits."
+  },
+  {
+    "input": "n = 128",
+    "output": "1",
+    "explanation": "Binary: 10000000"
+  },
+  {
+    "input": "n = 2147483645",
+    "output": "30"
+  }
+]

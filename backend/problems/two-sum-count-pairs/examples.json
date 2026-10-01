@@ -1,0 +1,15 @@
+[
+  {
+    "input": "nums = [1,5,3,3,3], target = 6",
+    "output": "4",
+    "explanation": "Pairs at indices (0,1), (2,3), (2,4), (3,4)."
+  },
+  {
+    "input": "nums = [1,2,3,4,5], target = 6",
+    "output": "2"
+  },
+  {
+    "input": "nums = [1,1,1], target = 2",
+    "output": "3"
+  }
+]

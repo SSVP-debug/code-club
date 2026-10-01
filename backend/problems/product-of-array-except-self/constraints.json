@@ -1,0 +1,5 @@
+[
+  "2 <= nums.length <= 10^5",
+  "-30 <= nums[i] <= 30",
+  "The product of any prefix or suffix fits in a 32-bit integer."
+]

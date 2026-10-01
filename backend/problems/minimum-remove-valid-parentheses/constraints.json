@@ -1,0 +1,4 @@
+[
+  "1 <= s.length <= 10^5",
+  "s[i] is either '(' , ')' or a lowercase English letter."
+]

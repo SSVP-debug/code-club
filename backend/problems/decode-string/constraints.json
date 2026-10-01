@@ -1,0 +1,5 @@
+[
+  "1 <= s.length <= 30",
+  "s consists of lowercase letters, digits, and '[]'.",
+  "All integers are in range [1,300]."
+]

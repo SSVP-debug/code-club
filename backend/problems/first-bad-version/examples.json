@@ -1,0 +1,10 @@
+[
+  {
+    "input": "n = 5, bad = 4",
+    "output": "4"
+  },
+  {
+    "input": "n = 1, bad = 1",
+    "output": "1"
+  }
+]

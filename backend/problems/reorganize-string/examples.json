@@ -1,0 +1,10 @@
+[
+  {
+    "input": "s = \"aab\"",
+    "output": "\"aba\""
+  },
+  {
+    "input": "s = \"aaab\"",
+    "output": "\"\""
+  }
+]

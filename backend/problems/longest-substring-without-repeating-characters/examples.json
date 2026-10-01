@@ -1,0 +1,16 @@
+[
+  {
+    "input": "s = \"abcabcbb\"",
+    "output": "3",
+    "explanation": "Longest substring is \"abc\"."
+  },
+  {
+    "input": "s = \"bbbbb\"",
+    "output": "1"
+  },
+  {
+    "input": "s = \"pwwkew\"",
+    "output": "3",
+    "explanation": "\"wke\" has length 3."
+  }
+]

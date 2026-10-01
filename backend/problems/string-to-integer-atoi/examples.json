@@ -1,0 +1,14 @@
+[
+  {
+    "input": "s = \"42\"",
+    "output": "42"
+  },
+  {
+    "input": "s = \"   -42\"",
+    "output": "-42"
+  },
+  {
+    "input": "s = \"4193 with words\"",
+    "output": "4193"
+  }
+]

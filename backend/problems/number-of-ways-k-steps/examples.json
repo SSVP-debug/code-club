@@ -1,0 +1,11 @@
+[
+  {
+    "input": "startPos = 1, endPos = 2, k = 3",
+    "output": "3",
+    "explanation": "1→2→3→2, 1→2→1→2, 1→0→1→2"
+  },
+  {
+    "input": "startPos = 2, endPos = 5, k = 10",
+    "output": "0"
+  }
+]

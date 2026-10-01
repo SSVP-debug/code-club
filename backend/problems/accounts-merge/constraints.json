@@ -1,0 +1,5 @@
+[
+  "1 <= accounts.length <= 1000",
+  "2 <= accounts[i].length <= 10",
+  "1 <= accounts[i][j].length <= 30"
+]

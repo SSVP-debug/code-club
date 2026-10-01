@@ -1,0 +1,14 @@
+[
+  {
+    "input": "words = [\"wrt\",\"wrf\",\"er\",\"ett\",\"rftt\"]",
+    "output": "\"wertf\""
+  },
+  {
+    "input": "words = [\"z\",\"x\"]",
+    "output": "\"zx\""
+  },
+  {
+    "input": "words = [\"z\",\"x\",\"z\"]",
+    "output": "\"\""
+  }
+]

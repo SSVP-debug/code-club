@@ -1,0 +1,5 @@
+[
+  "1 <= val <= 9",
+  "At most 100 calls to push, pop, top, empty.",
+  "All pop/top calls valid."
+]

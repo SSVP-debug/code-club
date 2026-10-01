@@ -1,0 +1,17 @@
+[
+  {
+    "input": "nums = [10,5,2,6], k = 100",
+    "output": "8",
+    "explanation": "The 8 subarrays with product less than 100 are [10], [5], [2], [6], [10,5], [5,2], [2,6], [5,2,6]. Note that [10,5,2] is not included because its product is 100, which is not strictly less than 100."
+  },
+  {
+    "input": "nums = [1,2,3], k = 0",
+    "output": "0",
+    "explanation": "No product of positive integers can be less than 0, so there are no valid subarrays."
+  },
+  {
+    "input": "nums = [1], k = 2",
+    "output": "1",
+    "explanation": "The only subarray is [1], with product 1, which is less than 2."
+  }
+]

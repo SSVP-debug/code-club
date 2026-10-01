@@ -1,0 +1,10 @@
+[
+  {
+    "input": "nums = [0,1]",
+    "output": "2"
+  },
+  {
+    "input": "nums = [0,1,0]",
+    "output": "2"
+  }
+]

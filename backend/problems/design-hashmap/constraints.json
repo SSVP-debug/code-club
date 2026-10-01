@@ -1,0 +1,4 @@
+[
+  "0 <= key, value <= 10^6",
+  "At most 10^4 calls to put, get, remove."
+]

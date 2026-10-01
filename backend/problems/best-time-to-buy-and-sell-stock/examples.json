@@ -1,0 +1,11 @@
+[
+  {
+    "input": "prices = [7,1,5,3,6,4]",
+    "output": "5",
+    "explanation": "Buy day 2 (price=1), sell day 5 (price=6). Profit = 5."
+  },
+  {
+    "input": "prices = [7,6,4,3,1]",
+    "output": "0"
+  }
+]

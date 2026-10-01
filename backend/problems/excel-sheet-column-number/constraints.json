@@ -1,0 +1,4 @@
+[
+  "1 <= columnTitle.length <= 7",
+  "columnTitle consists only of uppercase English letters."
+]

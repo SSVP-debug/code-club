@@ -1,0 +1,5 @@
+[
+  "0 <= intervals.length <= 10^4",
+  "intervals[i].length == 2",
+  "0 <= newInterval[0] <= newInterval[1] <= 10^5"
+]

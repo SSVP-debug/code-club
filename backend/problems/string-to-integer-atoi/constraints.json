@@ -1,0 +1,4 @@
+[
+  "0 <= s.length <= 200",
+  "s consists of English letters, digits, ' ', '+', '-', '.'."
+]

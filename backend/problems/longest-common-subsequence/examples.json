@@ -1,0 +1,14 @@
+[
+  {
+    "input": "text1 = \"abcde\", text2 = \"ace\"",
+    "output": "3"
+  },
+  {
+    "input": "text1 = \"abc\", text2 = \"abc\"",
+    "output": "3"
+  },
+  {
+    "input": "text1 = \"abc\", text2 = \"def\"",
+    "output": "0"
+  }
+]

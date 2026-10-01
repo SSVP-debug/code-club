@@ -1,0 +1,4 @@
+[
+  "1 <= tokens.length <= 10^4",
+  "tokens[i] is either an operator (+,-,*,/) or an integer in range [-200, 200]."
+]

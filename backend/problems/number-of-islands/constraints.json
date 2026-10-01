@@ -1,0 +1,5 @@
+[
+  "1 <= grid.length <= 90000",
+  "numCols divides grid.length evenly",
+  "grid[i] is 0 or 1"
+]

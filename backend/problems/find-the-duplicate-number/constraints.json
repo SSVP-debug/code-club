@@ -1,0 +1,6 @@
+[
+  "1 <= n <= 10^5",
+  "nums.length == n + 1",
+  "1 <= nums[i] <= n",
+  "All integers except one appear once."
+]

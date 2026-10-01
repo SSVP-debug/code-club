@@ -1,0 +1,5 @@
+[
+  "1 <= key.length, value.length <= 100",
+  "1 <= timestamp <= 10^7",
+  "All calls to set are made with strictly increasing timestamp values."
+]

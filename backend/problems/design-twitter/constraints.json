@@ -1,0 +1,5 @@
+[
+  "1 <= userId, followerId, followeeId <= 500",
+  "0 <= tweetId <= 10^4",
+  "At most 3 * 10^4 calls."
+]

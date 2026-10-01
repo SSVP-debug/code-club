@@ -1,0 +1,5 @@
+[
+  "At most 10^4 calls to add and find.",
+  "-2^31 <= number <= 2^31 - 1",
+  "-2^63 <= value <= 2^63 - 1"
+]

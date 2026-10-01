@@ -1,0 +1,10 @@
+[
+  {
+    "input": "s = \"011010\", minJump = 2, maxJump = 3",
+    "output": "true"
+  },
+  {
+    "input": "s = \"01101110\", minJump = 2, maxJump = 3",
+    "output": "false"
+  }
+]

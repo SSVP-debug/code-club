@@ -1,0 +1,5 @@
+[
+  "1 <= k <= n <= 100",
+  "1 <= times.length <= 6000",
+  "times[i].length == 3"
+]

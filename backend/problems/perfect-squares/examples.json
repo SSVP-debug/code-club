@@ -1,0 +1,12 @@
+[
+  {
+    "input": "n = 12",
+    "output": "3",
+    "explanation": "12 = 4+4+4"
+  },
+  {
+    "input": "n = 13",
+    "output": "2",
+    "explanation": "13 = 4+9"
+  }
+]

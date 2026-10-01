@@ -1,0 +1,17 @@
+[
+  {
+    "input": "grid = [[0,1],[1,0]]",
+    "output": "1",
+    "explanation": "The two single-cell islands at (0,1) and (1,0) are 2 apart (Manhattan distance), so 1 flip connects them."
+  },
+  {
+    "input": "grid = [[0,1,0],[0,0,0],[0,0,1]]",
+    "output": "2",
+    "explanation": "The islands at (0,1) and (2,2) are 3 apart, so 2 flips connect them."
+  },
+  {
+    "input": "grid = [[1,1,1,1,1],[1,0,0,0,1],[1,0,1,0,1],[1,0,0,0,1],[1,1,1,1,1]]",
+    "output": "1",
+    "explanation": "The outer ring and the single center cell are separated by a ring of water only 1 cell thick at the closest point."
+  }
+]

@@ -1,0 +1,4 @@
+[
+  "1 <= s.length <= 300",
+  "s and wordDict[i] consist of lowercase English letters."
+]

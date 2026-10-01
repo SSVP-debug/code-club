@@ -1,0 +1,17 @@
+[
+  {
+    "input": "nums = [1,1,1,0,0,0,1,1,1,1,0], k = 2",
+    "output": "6",
+    "explanation": "Flip the two 0's at indices 3 and 4 to get [1,1,1,1,1,1,1,1,1,1,0], which has 6 consecutive 1's starting at index 5."
+  },
+  {
+    "input": "nums = [0,0,1,1,0,0,1,1,1,0,1,1,0,0,0,1,1,1,1], k = 3",
+    "output": "10",
+    "explanation": "Flip the three 0's at indices 4,5,9 to get a run of 10 consecutive 1's."
+  },
+  {
+    "input": "nums = [0], k = 0",
+    "output": "0",
+    "explanation": "No flips allowed and there are no 1's, so the longest run of 1's is 0."
+  }
+]

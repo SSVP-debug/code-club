@@ -1,0 +1,16 @@
+[
+  {
+    "input": "asteroids = [5,10,-5]",
+    "output": "[5,10]",
+    "explanation": "10 and -5 collide → 10 survives."
+  },
+  {
+    "input": "asteroids = [8,-8]",
+    "output": "[]",
+    "explanation": "Both explode."
+  },
+  {
+    "input": "asteroids = [10,2,-5]",
+    "output": "[10]"
+  }
+]

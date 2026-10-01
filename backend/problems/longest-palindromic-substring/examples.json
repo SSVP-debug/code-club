@@ -1,0 +1,11 @@
+[
+  {
+    "input": "s = \"babad\"",
+    "output": "\"bab\"",
+    "explanation": "\"aba\" is also valid."
+  },
+  {
+    "input": "s = \"cbbd\"",
+    "output": "\"bb\""
+  }
+]

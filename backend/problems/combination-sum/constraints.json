@@ -1,0 +1,6 @@
+[
+  "1 <= candidates.length <= 30",
+  "1 <= candidates[i] <= 200",
+  "All elements are distinct.",
+  "1 <= target <= 500"
+]

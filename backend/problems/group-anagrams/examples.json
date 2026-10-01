@@ -1,0 +1,15 @@
+[
+  {
+    "input": "strs = [\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"]",
+    "output": "3",
+    "explanation": "Three groups: [\"eat\",\"tea\",\"ate\"], [\"tan\",\"nat\"], [\"bat\"]."
+  },
+  {
+    "input": "strs = [\"\"]",
+    "output": "1"
+  },
+  {
+    "input": "strs = [\"a\"]",
+    "output": "1"
+  }
+]

@@ -1,0 +1,6 @@
+[
+  "1 <= beginWord.length <= 10",
+  "beginWord.length == endWord.length",
+  "1 <= wordList.length <= 5000",
+  "All words consist of lowercase English letters."
+]

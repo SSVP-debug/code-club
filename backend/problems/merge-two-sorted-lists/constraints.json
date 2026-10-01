@@ -1,0 +1,5 @@
+[
+  "0 <= number of nodes in each list <= 50",
+  "-100 <= Node.val <= 100",
+  "Both lists are sorted in non-decreasing order."
+]

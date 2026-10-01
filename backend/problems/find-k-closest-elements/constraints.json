@@ -1,0 +1,6 @@
+[
+  "1 <= k <= arr.length",
+  "1 <= arr.length <= 10^4",
+  "arr is sorted in ascending order.",
+  "-10^4 <= arr[i], x <= 10^4"
+]

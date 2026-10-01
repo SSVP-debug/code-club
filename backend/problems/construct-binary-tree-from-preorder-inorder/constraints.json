@@ -1,0 +1,5 @@
+[
+  "1 <= n <= 3000",
+  "-3000 <= values <= 3000",
+  "preorder and inorder have unique values."
+]

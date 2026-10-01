@@ -1,0 +1,6 @@
+[
+  "1 <= nums.length <= 5000",
+  "-10^4 <= nums[i] <= 10^4",
+  "nums is sorted and rotated.",
+  "-10^4 <= target <= 10^4"
+]

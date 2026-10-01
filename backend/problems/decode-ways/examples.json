@@ -1,0 +1,15 @@
+[
+  {
+    "input": "s = \"12\"",
+    "output": "2",
+    "explanation": "\"AB\" (1,2) or \"L\" (12)."
+  },
+  {
+    "input": "s = \"226\"",
+    "output": "3"
+  },
+  {
+    "input": "s = \"06\"",
+    "output": "0"
+  }
+]

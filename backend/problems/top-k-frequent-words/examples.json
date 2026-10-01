@@ -1,0 +1,10 @@
+[
+  {
+    "input": "words = [\"i\",\"love\",\"leetcode\",\"i\",\"love\",\"coding\"], k = 2",
+    "output": "[\"i\",\"love\"]"
+  },
+  {
+    "input": "words = [\"the\",\"day\",\"is\",\"sunny\",\"the\",\"the\",\"the\",\"sunny\",\"is\",\"is\"], k = 4",
+    "output": "[\"the\",\"is\",\"sunny\",\"day\"]"
+  }
+]

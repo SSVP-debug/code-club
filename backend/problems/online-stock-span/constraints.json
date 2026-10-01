@@ -1,0 +1,4 @@
+[
+  "0 <= price <= 10^5",
+  "At most 10^4 calls to next."
+]

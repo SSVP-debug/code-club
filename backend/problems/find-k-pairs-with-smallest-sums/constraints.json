@@ -1,0 +1,7 @@
+[
+  "1 <= nums1.length, nums2.length <= 10^5",
+  "-10^9 <= nums1[i], nums2[j] <= 10^9",
+  "nums1 and nums2 are sorted.",
+  "1 <= k <= 10^4",
+  "k <= nums1.length * nums2.length"
+]

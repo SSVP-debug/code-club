@@ -1,0 +1,5 @@
+[
+  "n == position.length == speed.length",
+  "1 <= n <= 10^5",
+  "0 < target <= 10^6"
+]

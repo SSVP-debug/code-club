@@ -1,0 +1,11 @@
+[
+  {
+    "input": "n = 19",
+    "output": "true",
+    "explanation": "1²+9²=82 → 8²+2²=68 → ... → 1"
+  },
+  {
+    "input": "n = 2",
+    "output": "false"
+  }
+]

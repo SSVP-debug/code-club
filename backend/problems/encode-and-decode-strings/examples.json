@@ -1,0 +1,11 @@
+[
+  {
+    "input": "strs = [\"lint\",\"code\",\"love\",\"you\"]",
+    "output": "[\"lint\",\"code\",\"love\",\"you\"]",
+    "explanation": "After encoding then decoding, we get back the original."
+  },
+  {
+    "input": "strs = [\"we\",\"say\",\":\",\"yes\"]",
+    "output": "[\"we\",\"say\",\":\",\"yes\"]"
+  }
+]

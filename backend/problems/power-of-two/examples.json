@@ -1,0 +1,14 @@
+[
+  {
+    "input": "n = 1",
+    "output": "true"
+  },
+  {
+    "input": "n = 16",
+    "output": "true"
+  },
+  {
+    "input": "n = 3",
+    "output": "false"
+  }
+]

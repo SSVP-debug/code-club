@@ -1,0 +1,4 @@
+[
+  "0 <= start < end <= 10^9",
+  "At most 1000 calls will be made to book."
+]

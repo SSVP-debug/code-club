@@ -1,0 +1,10 @@
+[
+  {
+    "input": "k = 2, w = 0, profits = [1,2,3], capital = [0,1,1]",
+    "output": "4"
+  },
+  {
+    "input": "k = 3, w = 0, profits = [1,2,3], capital = [0,1,2]",
+    "output": "6"
+  }
+]

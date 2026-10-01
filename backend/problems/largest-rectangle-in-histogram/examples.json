@@ -1,0 +1,10 @@
+[
+  {
+    "input": "heights = [2,1,5,6,2,3]",
+    "output": "10"
+  },
+  {
+    "input": "heights = [2,4]",
+    "output": "4"
+  }
+]

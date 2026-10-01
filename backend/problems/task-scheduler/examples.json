@@ -1,0 +1,11 @@
+[
+  {
+    "input": "tasks = [\"A\",\"A\",\"A\",\"B\",\"B\",\"B\"], n = 2",
+    "output": "8",
+    "explanation": "A->B->idle->A->B->idle->A->B"
+  },
+  {
+    "input": "tasks = [\"A\",\"A\",\"A\",\"B\",\"B\",\"B\"], n = 0",
+    "output": "6"
+  }
+]
