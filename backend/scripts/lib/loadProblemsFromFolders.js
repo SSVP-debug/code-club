@@ -4,9 +4,6 @@
  * `backend/problems/<slug>/` is the authoring source of truth. This loader
  * reconstructs the in-memory problem shape needed by maintenance, audit,
  * and migration scripts without importing `src/data/problems.js`.
- *
- * Hidden testcases are loaded server-side only. Callers must not pass the
- * returned objects into frontend/build tooling.
  */
 import fs from "fs/promises";
 import path from "path";
@@ -40,9 +37,7 @@ export async function loadProblemsFromFolders({ targetProblem = null } = {}) {
     .map((entry) => entry.name)
     .sort();
 
-  if (targetProblem) {
-    folders = folders.filter((folder) => folder === targetProblem);
-  }
+  if (targetProblem) folders = folders.filter((folder) => folder === targetProblem);
 
   const problems = [];
 
@@ -50,6 +45,8 @@ export async function loadProblemsFromFolders({ targetProblem = null } = {}) {
     const folderPath = path.join(PROBLEMS_DIR, folder);
     const meta = await readJson(path.join(folderPath, "meta.json"));
     const description = await fs.readFile(path.join(folderPath, "description.md"), "utf8");
+    const examples = await readJson(path.join(folderPath, "examples.json"));
+    const constraints = await readJson(path.join(folderPath, "constraints.json"));
     const testcases = await readJson(path.join(folderPath, "testcases.json"));
     const hiddentestcases = await readJson(path.join(folderPath, "hidden-testcases.json"));
     const hints = await readJson(path.join(folderPath, "hints.json"));
@@ -59,6 +56,8 @@ export async function loadProblemsFromFolders({ targetProblem = null } = {}) {
     const parsed = ProblemFolderSchema.safeParse({
       meta,
       description,
+      examples,
+      constraints,
       visibleTestcases: testcases,
       hiddenTestcases: hiddentestcases,
       starterCode,
@@ -75,8 +74,8 @@ export async function loadProblemsFromFolders({ targetProblem = null } = {}) {
     problems.push({
       ...meta,
       description,
-      examples: meta.examples ?? [],
-      constraints: meta.constraints ?? [],
+      examples,
+      constraints,
       testcases,
       hiddentestcases,
       starterCode,
