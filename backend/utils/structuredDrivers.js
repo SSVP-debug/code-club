@@ -22,13 +22,13 @@ function jsArrayLiteral(values) {
 
 function javaListHelper() {
   return `
-static class ListNode {
+class ListNode {
   int val;
   ListNode next;
   ListNode(int val) { this.val = val; }
 }
 
-static ListNode buildList(int[] values) {
+ListNode buildList(int[] values) {
   ListNode dummy = new ListNode(0);
   ListNode tail = dummy;
   for (int value : values) {
@@ -38,7 +38,7 @@ static ListNode buildList(int[] values) {
   return dummy.next;
 }
 
-static String listToJson(ListNode head) {
+String listToJson(ListNode head) {
   StringBuilder out = new StringBuilder("[");
   boolean first = true;
   while (head != null) {
@@ -151,9 +151,8 @@ export function generate({ language, userCode, fn, returnType, args, paramTypes 
   if (!supports({ returnType, paramTypes })) return null;
 
   const lists = listArgs(args, paramTypes);
-  const unsupported = args.filter(({ key }) => isListType(paramTypes[key]) === false && /ListNode/.test(paramTypes[key] || ""));
-  if (unsupported.length) {
-    throw new Error(`structured list driver: unsupported argument contract for ${unsupported.map((a) => a.key).join(", ")}`);
+  if (lists.length === 0 && !isListType(returnType)) {
+    throw new Error("structured list driver: a ListNode contract must identify at least one list argument or list return");
   }
 
   if (language === "java") {
