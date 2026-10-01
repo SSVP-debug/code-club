@@ -6,24 +6,12 @@
   "topic": "Stacks",
   "pattern": "auxiliary stack",
   "sourceType": "core",
-  "functionName": "minStack",
+  "functionName": "MinStack",
   "estimatedTime": "15–20 min",
-  "companies": [
-    "Amazon",
-    "Google",
-    "Apple",
-    "Bloomberg"
-  ],
-  "relatedProblems": [
-    "valid-parentheses",
-    "daily-temperatures",
-    "kth-largest-element"
-  ],
+  "companies": ["Amazon", "Google", "Apple", "Bloomberg"],
+  "relatedProblems": ["valid-parentheses", "daily-temperatures", "kth-largest-element"],
   "returnType": {},
   "paramTypes": {},
   "comparisonMode": "exact",
-  "operationSequence": {
-    "enabled": false,
-    "resultMode": "all"
-  }
+  "operationSequence": { "enabled": true, "resultMode": "returningOnly" }
 }
