@@ -2,14 +2,13 @@
  * useProblems.js
  *
  * Fetches problems from the MongoDB backend via GET /api/problems.
- * Falls back to the static problems.js file if the API is unreachable.
+ * Falls back to a generated, public-safe problem catalog if the API is
+ * unreachable or the database has no seeded problems.
  *
- * staticProblems (src/data/problems.js) is ~7k lines / the full 250-problem
- * catalog. It's only ever needed on the fallback path (API down or DB
- * seeded-empty) — the common case is the API succeeding and this data
- * never being touched. It's dynamically imported below so Vite code-splits
- * it into its own chunk instead of shipping it in the main bundle on every
- * page load (audit finding, Aug 2026 — see problems-bundle-bloat note).
+ * The fallback is generated from backend/problems/<slug>/ and dynamically
+ * imported only on the fallback path. It contains no hidden testcases and no
+ * editorial content, so it cannot become a second hand-authored source of
+ * truth or reintroduce the old hidden-test bundle leak.
  */
 
 import { useEffect, useState } from "react";
@@ -24,6 +23,13 @@ function enrichProblems(problemList, acceptanceRates = {}) {
     // enough submissions yet", which ProblemCard treats differently from 0%.
     acceptanceRate: acceptanceRates[problem.slug]?.rate ?? null,
   }));
+}
+
+async function loadFallbackProblems(acceptanceRates = {}) {
+  const { default: fallbackProblems } = await import(
+    "../data/generated/problemFallback"
+  );
+  return enrichProblems(fallbackProblems, acceptanceRates);
 }
 
 export function useProblems() {
@@ -47,7 +53,7 @@ export function useProblems() {
         // so apiFetchOptional (not apiFetch, which throws for a guest
         // with no Firebase user) is used here — same request either way
         // for an authenticated caller, but guests reach the real API
-        // instead of falling straight to the static fallback below.
+        // instead of falling straight to the fallback below.
         const [data, acceptanceRates] = await Promise.all([
           apiFetchOptional("/api/problems"),
           apiFetchOptional("/api/problems/stats/acceptance").catch((err) => {
@@ -59,11 +65,12 @@ export function useProblems() {
         if (cancelled) return;
 
         if (!data || data.length === 0) {
-          // DB seeded but empty — use static fallback so page stays functional
-          console.info("[useProblems] API returned 0 problems. Using static fallback.");
-          const { default: staticProblems } = await import("../data/problems");
+          // DB seeded but empty — use generated fallback so the page stays
+          // functional without coupling the frontend to the authoring files.
+          console.info("[useProblems] API returned 0 problems. Using generated fallback.");
+          const fallbackProblems = await loadFallbackProblems(acceptanceRates);
           if (cancelled) return;
-          setProblems(enrichProblems(staticProblems, acceptanceRates));
+          setProblems(fallbackProblems);
         } else {
           setProblems(enrichProblems(data, acceptanceRates));
         }
@@ -71,10 +78,12 @@ export function useProblems() {
         if (cancelled) return;
 
         console.error("[useProblems] API fetch failed:", err.message);
-        // Non-breaking: show static problems so the page still works
-        const { default: staticProblems } = await import("../data/problems");
+        // Non-breaking: show generated public-safe problems so discovery still
+        // works when the backend is unavailable. Opening/submitting a problem
+        // still requires the backend, as expected.
+        const fallbackProblems = await loadFallbackProblems();
         if (cancelled) return;
-        setProblems(enrichProblems(staticProblems));
+        setProblems(fallbackProblems);
         setError("Could not load problems from server. Showing cached problem set.");
       } finally {
         if (!cancelled) setLoading(false);
