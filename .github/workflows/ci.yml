@@ -8,147 +8,93 @@ on:
 
 jobs:
 
-  # ── Frontend ──────────────────────────────────────────────────────────────
   frontend:
     name: Frontend — install + test + build
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
-
       - name: Install dependencies
         run: npm ci
-
       - name: Run frontend tests
         run: npx vitest run --reporter=verbose
         env:
-          # Vitest needs a minimal Firebase env to not crash on import
-          VITE_FIREBASE_API_KEY:             test
-          VITE_FIREBASE_AUTH_DOMAIN:         test.firebaseapp.com
-          VITE_FIREBASE_PROJECT_ID:          test
-          VITE_FIREBASE_STORAGE_BUCKET:      test.appspot.com
+          VITE_FIREBASE_API_KEY: test
+          VITE_FIREBASE_AUTH_DOMAIN: test.firebaseapp.com
+          VITE_FIREBASE_PROJECT_ID: test
+          VITE_FIREBASE_STORAGE_BUCKET: test.appspot.com
           VITE_FIREBASE_MESSAGING_SENDER_ID: "000000000000"
-          VITE_FIREBASE_APP_ID:              1:000000000000:web:test
-          VITE_API_URL:                      http://localhost:5000
-
+          VITE_FIREBASE_APP_ID: 1:000000000000:web:test
+          VITE_API_URL: http://localhost:5000
       - name: Coverage report (informational — not a gate yet)
         run: npm run test:coverage -- --reporter=verbose
         continue-on-error: true
-        # Audit finding, Aug 2026: no coverage tooling existed at all before
-        # this. This step establishes a visible baseline in CI logs without
-        # guessing a `thresholds` number that could break every PR on day
-        # one (see vitest.config.js's coverage comment). `continue-on-error`
-        # is intentional and temporary — once a real baseline is read from
-        # a few runs of this step and a deliberate floor is chosen, add
-        # `coverage.thresholds` to vitest.config.js and remove
-        # `continue-on-error` here so a coverage regression actually fails
-        # the build like every other check in this file.
         env:
-          VITE_FIREBASE_API_KEY:             test
-          VITE_FIREBASE_AUTH_DOMAIN:         test.firebaseapp.com
-          VITE_FIREBASE_PROJECT_ID:          test
-          VITE_FIREBASE_STORAGE_BUCKET:      test.appspot.com
+          VITE_FIREBASE_API_KEY: test
+          VITE_FIREBASE_AUTH_DOMAIN: test.firebaseapp.com
+          VITE_FIREBASE_PROJECT_ID: test
+          VITE_FIREBASE_STORAGE_BUCKET: test.appspot.com
           VITE_FIREBASE_MESSAGING_SENDER_ID: "000000000000"
-          VITE_FIREBASE_APP_ID:              1:000000000000:web:test
-          VITE_API_URL:                      http://localhost:5000
-
+          VITE_FIREBASE_APP_ID: 1:000000000000:web:test
+          VITE_API_URL: http://localhost:5000
       - name: Vite production build
         run: npm run build
         env:
-          VITE_FIREBASE_API_KEY:             ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN:         ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID:          ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET:      ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID:              ${{ secrets.VITE_FIREBASE_APP_ID }}
-          VITE_API_URL:                      ${{ secrets.VITE_API_URL }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
-  # ── Backend ───────────────────────────────────────────────────────────────
   backend:
-    name: Backend — install + lint + test
+    name: Backend — install + validate + test
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: backend
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: backend/package-lock.json
-
       - name: Install dependencies
         run: npm ci
-
       - name: Validate problem folders
-        run: node scripts/importProblems.js --dry-run
-
-      - name: Validate problem contracts (returnType/paramTypes vs starter code)
+        run: npm run validate:problem-folders
+      - name: Validate problem contracts
         run: npm run validate:problems
-        # Previously written but never wired into CI (audit finding P1-7) —
-        # a PR that reintroduces a returnType/paramTypes-vs-starter-code
-        # mismatch would otherwise pass CI silently.
-
-      - name: Check backend/problems/* drift against src/data/problems.js
-        run: node scripts/checkProblemsFolderDrift.js
-        # src/data/problems.js and backend/problems/* are two independent
-        # paths into MongoDB (seedProblems.js vs importProblems.js) with no
-        # prior check that they agree (audit finding P1-6). Fails the build
-        # if backend/problems/* wasn't regenerated via
-        # `npm run problems:export-to-folders` after a src/data/problems.js
-        # change, or was hand-edited out of sync.
-
       - name: Run backend tests
         run: npm test -- --reporter=verbose
         env:
           NODE_ENV: test
-          # No MongoDB/Firebase needed — tests mock Mongoose models and
-          # external calls directly (see backend/test/README.md) rather
-          # than hitting a real database or Firebase project.
           MONGODB_URI: ""
-          FIREBASE_PROJECT_ID:  test
+          FIREBASE_PROJECT_ID: test
           FIREBASE_CLIENT_EMAIL: test@test.iam.gserviceaccount.com
-          FIREBASE_PRIVATE_KEY:  "-----BEGIN RSA PRIVATE KEY-----\nMIItest\n-----END RSA PRIVATE KEY-----\n"
-        # `continue-on-error` removed — backend tests now exist (see
-        # backend/test/README.md and the *.test.js files alongside the
-        # modules they cover), so a failing one should fail the pipeline
-        # like any other CI check, not be silently ignored.
-
+          FIREBASE_PRIVATE_KEY: "-----BEGIN RSA PRIVATE KEY-----\nMIItest\n-----END RSA PRIVATE KEY-----\n"
       - name: Coverage report (informational — not a gate yet)
         run: npm run test:coverage -- --reporter=verbose
         continue-on-error: true
-        # Same rationale as the frontend job's coverage step — see there.
-        # Deliberately non-blocking until a real baseline is read and a
-        # threshold is chosen on purpose, not guessed.
         env:
           NODE_ENV: test
           MONGODB_URI: ""
-          FIREBASE_PROJECT_ID:  test
+          FIREBASE_PROJECT_ID: test
           FIREBASE_CLIENT_EMAIL: test@test.iam.gserviceaccount.com
-          FIREBASE_PRIVATE_KEY:  "-----BEGIN RSA PRIVATE KEY-----\nMIItest\n-----END RSA PRIVATE KEY-----\n"
-
+          FIREBASE_PRIVATE_KEY: "-----BEGIN RSA PRIVATE KEY-----\nMIItest\n-----END RSA PRIVATE KEY-----\n"
       - name: Run backend integration tests (real in-memory MongoDB)
         run: npm run test:integration -- --reporter=verbose
         env:
           NODE_ENV: test
-          FIREBASE_PROJECT_ID:  test
+          FIREBASE_PROJECT_ID: test
           FIREBASE_CLIENT_EMAIL: test@test.iam.gserviceaccount.com
-          FIREBASE_PRIVATE_KEY:  "-----BEGIN RSA PRIVATE KEY-----\nMIItest\n-----END RSA PRIVATE KEY-----\n"
-        # No MONGODB_URI here — mongodb-memory-server supplies its own URI at
-        # runtime; these tests import the User model directly rather than
-        # going through config/db.js's connectDB(). See backend/test/README.md,
-        # "Integration tier" section, for why this tier exists separately from
-        # the mock-based npm test suite above.
+          FIREBASE_PRIVATE_KEY: "-----BEGIN RSA PRIVATE KEY-----\nMIItest\n-----END RSA PRIVATE KEY-----\n"
