@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { compareProblems, pairKey, scanProblemDuplicates } from "./problemDuplicateDetection.js";
 
@@ -14,7 +15,7 @@ const base = {
 };
 
 function clone(overrides = {}) {
-  return { ...base, ...overrides, problemKey: overrides.problemKey || crypto.randomUUID() };
+  return { ...base, ...overrides, problemKey: overrides.problemKey || randomUUID() };
 }
 
 describe("problem duplicate detection", () => {
