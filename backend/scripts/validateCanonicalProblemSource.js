@@ -1,6 +1,10 @@
 /**
- * Fails if the retired frontend problem catalog or folder exporter reappears.
- * The standard problem bank must remain authored under backend/problems/<slug>/.
+ * Fails if the retired frontend problem catalog or folder exporter reappears,
+ * or if application/runtime code imports the retired catalog.
+ *
+ * Tests and the legacy contract-test helper are allowed to mention the old
+ * path temporarily because Vitest resolves that path through the canonical
+ * folder loader. They are not authoring sources or runtime dependencies.
  */
 import fs from "fs/promises";
 import path from "path";
@@ -60,6 +64,20 @@ async function walk(dir) {
   return results;
 }
 
+function stripComments(source) {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, "\n")
+    .replace(/(^|\s)\/\/.*$/gm, "$1");
+}
+
+function isTestFile(filePath) {
+  return /(?:\.test|\.spec)\.(?:js|jsx|ts|tsx|mjs|cjs)$/.test(filePath);
+}
+
+function isLegacyContractHelper(filePath) {
+  return path.basename(filePath) === "validateProblemContracts.js";
+}
+
 async function main() {
   const failures = [];
 
@@ -69,7 +87,9 @@ async function main() {
 
   for (const root of SCAN_ROOTS) {
     for (const filePath of await walk(root)) {
-      const source = await fs.readFile(filePath, "utf8");
+      if (isTestFile(filePath) || isLegacyContractHelper(filePath)) continue;
+
+      const source = stripComments(await fs.readFile(filePath, "utf8"));
       if (FORBIDDEN_IMPORT_PATTERNS.some((pattern) => pattern.test(source))) {
         failures.push(`legacy problem import found: ${path.relative(ROOT, filePath)}`);
       }
