@@ -13,6 +13,7 @@
     "validate:problems": "node --import ./utils/problemIdentityBootstrap.js scripts/validateProblemContractsFromFolders.js",
     "validate:problem-folders": "node --import ./utils/problemIdentityBootstrap.js scripts/importProblems.js --dry-run",
     "audit:problems-languages": "node --import ./utils/problemIdentityBootstrap.js scripts/auditProblemsAgainstLanguageRegistry.js",
+    "audit:problem-duplicates": "node --import ./utils/problemIdentityBootstrap.js scripts/auditProblemDuplicates.js",
     "validate:problem-identity": "node --import ./utils/problemIdentityBootstrap.js scripts/validateProblemIdentity.js",
     "problems:export-to-folders": "node --import ./utils/problemIdentityBootstrap.js scripts/exportProblemsToFolders.js",
     "problems:import-from-folders": "node --import ./utils/problemIdentityBootstrap.js scripts/importProblems.js",
