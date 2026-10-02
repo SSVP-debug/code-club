@@ -1,4 +1,4 @@
-/** C operation-sequence driver. Supports scalar, bool, void, int* returns and TreeNode constructors. */
+/** C operation-sequence driver. Supports scalar, bool, void, and TreeNode constructors. */
 
 function esc(s) { return String(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"'); }
 function scalarLiteral(v) { if (typeof v === 'string') return `"${esc(v)}"`; if (typeof v === 'boolean') return v ? 'true' : 'false'; return String(v); }
@@ -39,16 +39,18 @@ export function generateCOperationSequence({ userCode, className, constructorArg
     const method=opNames[i], args=opArgsList[i]||[], ret=inferReturnType(userCode,className,method);
     if(!ret) throw new Error(`C operation driver: cannot find return type for ${className}_${method}`);
     const argNames=[];
-    args.forEach((v,j)=>{const name=`_op${i}Arg${j}`;if(Array.isArray(v)){body.push(`int ${name}[] = {${v.join(', ')}};`,`int ${name}Size = ${v.length};`);argNames.push(name,`${name}Size`);}else{body.push(`${typeof v==='string'?'char*':typeof v==='boolean'?'bool':'int'} ${name} = ${scalarLiteral(v)};`);argNames.push(name);}});
-    const call=`${className}_${method}(obj${argNames.length?', ':''}${argNames.join(', ')}`;
-    if(ret==='void'){body.push(`${call});`);if(resultMode==='all')body.push(`if (_outCount++) printf(","); printf("null");`);}
-    else if(ret==='int*'){body.push(`int _returnSize${i}=0; int* _result${i}=${call}${argNames.length?', ':''}&_returnSize${i});`);body.push(`if (_outCount++) printf(","); printf("["); for(int _j=0;_j<_returnSize${i};_j++){if(_j)printf(",");printf("%d",_result${i}[_j]);} printf("]");`);}
-    else if(ret==='bool'){body.push(`bool _result${i}=${call}); if (_outCount++) printf(","); printf(_result${i}?"true":"false");`);}
-    else if(ret==='char*'){body.push(`char* _result${i}=${call}); if (_outCount++) printf(","); printf("\\\"%s\\\"",_result${i});`);}
-    else{body.push(`${ret} _result${i}=${call}); if (_outCount++) printf(","); printf("%lld",(long long)_result${i});`);}
+    const block=[];
+    args.forEach((v,j)=>{const name=`_op${i}_arg${j}`;if(Array.isArray(v)){const vals=v.map(scalarLiteral).join(', ');block.push(`int ${name}[] = {${vals}};`,`int ${name}Size = ${v.length};`);argNames.push(name,`${name}Size`);}else{block.push(`${typeof v==='string'?'char*':typeof v==='boolean'?'bool':'int'} ${name} = ${scalarLiteral(v)};`);argNames.push(name);}});
+    const call=`${className}_${method}(_instance${argNames.length?', ':''}${argNames.join(', ')}`;
+    if(ret==='void'){block.push(`${call});`);if(resultMode==='all')block.push(`if (_outCount++) printf(","); printf("null");`);}
+    else if(ret==='int*'||ret==='int**'||ret==='char**'||ret==='char***') throw new Error(`C operation driver: ${className}.${method}() returns "${ret}", which is not a supported operation-sequence result type (void, bool, int, long long, double, char*)`);
+    else if(ret==='bool'){block.push(`bool _r = ${call}); if (_outCount++) printf(","); printf(_r ? "true" : "false");`);}
+    else if(ret==='char*'){block.push(`char* _r = ${call}); if (_outCount++) printf(","); printf("\\\"%s\\\"", _r);`);}
+    else{block.push(`${ret} _r = (${ret}) ${call}); if (_outCount++) printf(","); printf("%lld", (long long)_r);`);}
+    body.push(`{\n    ${block.join('\n    ')}\n  }`);
   }
   body.push(`printf("]\\n");`);
   const helper=treeNeeded?treeHelper():'';
-  const ctor=`${className}* obj = ${className}_create(${ctorCall.join(', ')});`;
+  const ctor=`${className}* _instance = ${className}_create(${ctorCall.join(', ')});`;
   return `${includes}\n${helper}\n${userCode}\nint main(void){\n  ${ctorDecls.join('\n  ')}\n  ${ctor}\n  ${body.join('\n  ')}\n  return 0;\n}\n`;
 }
