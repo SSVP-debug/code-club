@@ -75,7 +75,7 @@ jobs:
       - name: Validate problem contracts
         run: npm run validate:problems
       - name: Audit problem duplicates
-        run: node --import ./utils/problemIdentityBootstrap.js scripts/auditProblemDuplicates.js
+        run: npm run audit:problem-duplicates
       - name: Run backend tests
         run: npm test -- --reporter=verbose
         env:
