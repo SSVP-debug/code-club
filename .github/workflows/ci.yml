@@ -70,6 +70,8 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - name: Install dependencies
         run: npm ci
+      - name: Validate canonical problem source
+        run: npm run validate:problems-canonical
       - name: Validate problem folders
         run: npm run validate:problem-folders
       - name: Validate problem contracts
