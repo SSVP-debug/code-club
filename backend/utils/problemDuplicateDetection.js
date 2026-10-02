@@ -78,8 +78,15 @@ export function loadDuplicateDispositions() {
   };
 }
 
+// P1 makes problemKey the durable identity. During the P1 -> P4 folder migration,
+// legacy folders may not carry problemKey yet, so slug is the deterministic fallback.
+// This keeps dispositions stable without ever treating slug as the internal identity.
+export function problemDispositionIdentity(problem) {
+  return problem.problemKey || problem.slug || String(problem.id);
+}
+
 export function pairKey(problemA, problemB) {
-  return [problemA.problemKey, problemB.problemKey].sort().join("::");
+  return [problemDispositionIdentity(problemA), problemDispositionIdentity(problemB)].sort().join("::");
 }
 
 export function scanProblemDuplicates(problems, { probableThreshold = 0.68, dispositions = loadDuplicateDispositions() } = {}) {
