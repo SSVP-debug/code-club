@@ -25,6 +25,12 @@ describe("problem duplicate detection", () => {
     expect(pairKey(a, b)).toBe(pairKey(b, a));
   });
 
+  it("falls back to slug for legacy folder dispositions", () => {
+    const a = clone({ problemKey: undefined, slug: "min-stack" });
+    const b = clone({ problemKey: undefined, slug: "minimum-stack" });
+    expect(pairKey(a, b)).toBe("min-stack::minimum-stack");
+  });
+
   it("detects exact duplicates by identity fingerprint", () => {
     const a = clone();
     const b = clone({ identityFingerprint: a.identityFingerprint });
@@ -45,6 +51,22 @@ describe("problem duplicate detection", () => {
     expect(result.exactDuplicates).toHaveLength(0);
     expect(result.probableDuplicates).toHaveLength(1);
     expect(result.probableDuplicates[0].score).toBeGreaterThanOrEqual(0.68);
+  });
+
+  it("suppresses an intentionally dispositioned pair", () => {
+    const a = clone({ problemKey: undefined, slug: "min-stack" });
+    const b = clone({
+      problemKey: undefined,
+      slug: "minimum-stack",
+      title: "Minimum Stack",
+      description: "Design a stack that supports push, pop, top, and retrieving the minimum value in constant time.",
+      functionName: "MinStack",
+      identityFingerprint: "b".repeat(64),
+    });
+    const dispositions = { pairs: new Set(["min-stack::minimum-stack"]), fingerprints: new Set() };
+    const result = scanProblemDuplicates([a, b], { dispositions });
+    expect(result.exactDuplicates).toHaveLength(0);
+    expect(result.probableDuplicates).toHaveLength(0);
   });
 
   it("does not flag unrelated problems", () => {
