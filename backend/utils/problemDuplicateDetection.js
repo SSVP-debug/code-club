@@ -7,8 +7,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DISPOSITIONS_PATH = path.resolve(__dirname, "../config/problemDuplicateDispositions.json");
 const TOKEN_RE = /[a-z0-9]+/gi;
 
-// Keep this deliberately small and conservative. These are common interchangeable
-// terms in problem statements, not a general-purpose synonym engine.
 const SEMANTIC_EQUIVALENTS = new Map([
   ["element", "value"],
   ["elements", "value"],
@@ -63,24 +61,25 @@ export function compareProblems(a, b) {
   const description = descriptionSimilarity(a, b);
   const fn = functionSimilarity(a, b);
   const contract = contractSimilarity(a, b);
-
-  // Description is the strongest semantic signal; title/function/contract
-  // strengthen the review signal without pretending this is an NLP classifier.
   const score = description * 0.62 + title * 0.18 + fn * 0.10 + contract * 0.10;
   return { score, title, description, functionName: fn, contract };
 }
 
 export function loadDuplicateDispositions() {
   const parsed = JSON.parse(fs.readFileSync(DISPOSITIONS_PATH, "utf8"));
+  const pairs = new Set(
+    (parsed.pairs || [])
+      .map((entry) => typeof entry === "string" ? entry : entry?.key)
+      .filter(Boolean)
+  );
   return {
-    pairs: new Set(parsed.pairs || []),
+    pairs,
     fingerprints: new Set(parsed.fingerprints || []),
   };
 }
 
 // P1 makes problemKey the durable identity. During the P1 -> P4 folder migration,
 // legacy folders may not carry problemKey yet, so slug is the deterministic fallback.
-// This keeps dispositions stable without ever treating slug as the internal identity.
 export function problemDispositionIdentity(problem) {
   return problem.problemKey || problem.slug || String(problem.id);
 }
