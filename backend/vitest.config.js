@@ -10,6 +10,7 @@ export default defineConfig({
   test: {
     environment: "node",
     globals: true,
+    setupFiles: ["./utils/problemIdentityBootstrap.js"],
     include: ["**/*.test.js"],
     exclude: ["node_modules", "problems", "**/*.integration.test.js"],
 
