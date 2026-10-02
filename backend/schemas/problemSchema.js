@@ -42,6 +42,16 @@ export const StarterCodeSchema = languageMapSchema({
     label: "starterCode",
 });
 
+// Identity is optional at the legacy-folder boundary during the P1 rollout.
+// New records receive these values server-side from problemIdentityBootstrap;
+// P4 will make them mandatory in the authoring/scaffolding contract.
+export const ProblemIdentitySchema = z.object({
+    problemKey: z.string().uuid().optional(),
+    familyKey: z.string().uuid().optional(),
+    variantOf: z.string().uuid().nullable().optional(),
+    identityFingerprint: z.string().regex(/^[a-f0-9]{64}$/).optional(),
+});
+
 export const MetaSchema = z.object({
     id: z.number().int().positive(),
     slug: z.string().min(1),
@@ -61,7 +71,7 @@ export const MetaSchema = z.object({
         enabled: z.boolean().default(false),
         resultMode: z.enum(["all", "returningOnly"]).default("all"),
     }).default({}),
-});
+}).merge(ProblemIdentitySchema);
 
 export const ProblemFolderSchema = z.object({
     meta: MetaSchema,
