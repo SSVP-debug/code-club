@@ -7,8 +7,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DISPOSITIONS_PATH = path.resolve(__dirname, "../config/problemDuplicateDispositions.json");
 const TOKEN_RE = /[a-z0-9]+/gi;
 
+// Keep this deliberately small and conservative. These are common interchangeable
+// terms in problem statements, not a general-purpose synonym engine.
+const SEMANTIC_EQUIVALENTS = new Map([
+  ["element", "value"],
+  ["elements", "value"],
+]);
+
 function textTokens(value) {
-  return new Set(String(value ?? "").toLowerCase().match(TOKEN_RE) || []);
+  const tokens = String(value ?? "").toLowerCase().match(TOKEN_RE) || [];
+  return new Set(tokens.map((token) => SEMANTIC_EQUIVALENTS.get(token) || token));
 }
 
 function jaccard(a, b) {
