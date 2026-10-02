@@ -1,5 +1,11 @@
 {
   "version": 1,
-  "pairs": [],
+  "pairs": [
+    {
+      "key": "min-stack::minimum-stack",
+      "status": "intentional-variant",
+      "reason": "Same Min Stack problem concept with two intentional execution contracts: returningOnly operation-sequence results versus all operation results. Preserve both during P2; canonical consolidation/reference migration belongs to P6."
+    }
+  ],
   "fingerprints": []
 }
