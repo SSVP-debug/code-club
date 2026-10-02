@@ -56,23 +56,32 @@ code-club/
 │   ├── firebase/         # Firebase init (auth export)
 │   ├── hooks/            # useProblems, useRunCode, useTimer, useDashboardData, usePanelResize...
 │   ├── pages/            # Dashboard, ProblemsPage, ProblemDetailsPage, Profile, Contests, Pricing,
-│   │                      # TpoDashboard, RecruiterDashboard, InterviewMode, Certifications...
+│   │                     # TpoDashboard, RecruiterDashboard, InterviewMode, Certifications...
 │   ├── components/       # ProtectedRoute, ProblemEditor, ProblemResults, SubmissionHistory...
 │   ├── services/         # api.js, compiler.js, judgeService.js, progressService.js...
 │   ├── utils/            # generateDriverCode, parseJudge0Result, editorStorage, formatters
-│   └── data/             # problems.js (250+ problems, seeded into MongoDB)
+│   └── data/             # generated public fallback only; canonical problem authoring lives in backend/problems/
 ├── backend/
 │   ├── config/           # db.js, env.js, firebaseAdmin.js, judge0.js, logger.js, featureFlags.js
-│   ├── middleware/        # auth.js (requireAuth), roleGuard.js, rateLimiter.js, premiumGate.js
-│   ├── models/            # User, Submission, Problem, Contest, Assignment, Ambassador, SkillsTest
+│   ├── middleware/       # auth.js (requireAuth), roleGuard.js, rateLimiter.js, premiumGate.js
+│   ├── models/           # User, Submission, Problem, Contest, Assignment, Ambassador, SkillsTest
 │   ├── routes/            # see docs/api-contracts.md for the full list
-│   └── scripts/           # seedProblems.js, backfillXP.js
+│   ├── problems/          # canonical problem authoring source: one folder per problem
+│   └── scripts/           # seedProblems.js, importProblems.js, audits and migrations
 ├── docs/                 # architecture.md, api-contracts.md, database-schema.md, judge0-setup.md
 ├── .github/
 │   └── workflows/        # ci.yml
 ├── public/               # manifest.webmanifest, sw.js, icons — PWA assets
 └── vercel.json
 ```
+
+### Problem authoring source of truth
+
+All standard DSA problems are authored under `backend/problems/<slug>/`. MongoDB is seeded from these folders with `cd backend && npm run seed`.
+
+The frontend consumes the public problem catalog through `GET /api/problems`. The generated fallback under `src/data/generated/problemFallback.js` is derived from the canonical folders for resilience only; it is not an authoring source.
+
+There is no legacy `src/data/problems.js` catalog and no folder-export mirror step. Problem metadata, starter code, visible/hidden testcases, hints, and editorials belong to the canonical problem folder structure.
 
 ---
 
@@ -138,10 +147,22 @@ Backend: http://localhost:5000
 
 ```bash
 cd backend
-node scripts/seedProblems.js
+npm run seed
 ```
 
-Seeds all 250+ problems from `src/data/problems.js` into MongoDB. Upserts on `slug`, so it's safe to re-run.
+Seeds the canonical problem folders from `backend/problems/` into MongoDB. The folder bank is the only standard problem authoring source.
+
+### 5. Validate the problem bank
+
+```bash
+cd backend
+npm run validate:problems
+npm run validate:problem-folders
+npm run audit:problems-languages
+npm run audit:problem-duplicates
+```
+
+These checks operate on `backend/problems/` directly; there is no export-from-frontend-catalog step.
 
 ---
 
@@ -155,20 +176,20 @@ Seeds all 250+ problems from `src/data/problems.js` into MongoDB. Upserts on `sl
 4. Build command: `npm run build`
 5. Output directory: `dist`
 6. Add all `VITE_*` environment variables
-7. Set `VITE_API_URL` to your Railway backend URL
+7. Set `VITE_API_URL` to your backend URL
 
 ### Backend → Railway
 
 1. Go to [railway.app](https://railway.app) and create a new project from GitHub
 2. In service settings, set **Root Directory** to `backend`
 3. Railway auto-detects `npm start` from `package.json`
-4. Add all environment variables from `backend/.env.example` (Redis via Railway's add-on injects `REDIS_URL` automatically if you use it)
+4. Add all environment variables from `backend/.env.example`
 5. Set `FRONTEND_URL` to your Vercel deployment URL
 6. Set `NODE_ENV=production`
 
 After deploying both, update:
-- Vercel: `VITE_API_URL` → your Railway backend URL
-- Railway: `FRONTEND_URL` → your Vercel frontend URL
+- Vercel: `VITE_API_URL` → your backend URL
+- Backend: `FRONTEND_URL` → your Vercel frontend URL
 
 For Judge0 in production, see `docs/judge0-setup.md` — the public `ce.judge0.com` instance is fine for dev but rate-limited and not suitable for real traffic.
 
