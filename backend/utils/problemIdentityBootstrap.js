@@ -17,6 +17,7 @@ function addIdentityFields(schema) {
       required: true,
       immutable: true,
       unique: true,
+      sparse: true,
       index: true,
       trim: true,
     },
