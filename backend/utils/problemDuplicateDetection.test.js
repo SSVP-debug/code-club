@@ -15,7 +15,9 @@ const base = {
 };
 
 function clone(overrides = {}) {
-  return { ...base, ...overrides, problemKey: overrides.problemKey || randomUUID() };
+  const result = { ...base, ...overrides };
+  if (!("problemKey" in overrides)) result.problemKey = randomUUID();
+  return result;
 }
 
 describe("problem duplicate detection", () => {
