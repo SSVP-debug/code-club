@@ -46,6 +46,7 @@ export function generateCOperationSequence({ userCode, className, constructorArg
     else if(ret==='int*'||ret==='int**'||ret==='char**'||ret==='char***') throw new Error(`C operation driver: ${className}.${method}() returns "${ret}", which is not a supported operation-sequence result type (void, bool, int, long long, double, char*)`);
     else if(ret==='bool'){block.push(`bool _r = ${call}); if (_outCount++) printf(","); printf(_r ? "true" : "false");`);}
     else if(ret==='char*'){block.push(`char* _r = ${call}); if (_outCount++) printf(","); printf("\\\"%s\\\"", _r);`);}
+    else if(ret==='int'){block.push(`int _r = (int) ${call}); if (_outCount++) printf(","); printf("%d", _r);`);}
     else{block.push(`${ret} _r = (${ret}) ${call}); if (_outCount++) printf(","); printf("%lld", (long long)_r);`);}
     body.push(`{\n    ${block.join('\n    ')}\n  }`);
   }

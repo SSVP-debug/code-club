@@ -51,7 +51,8 @@ describe("Plan 014 — ListNode structured driver", () => {
     expect(driver).toContain("struct ListNode");
     expect(driver).toContain("struct ListNode* head = buildList(headValues, headSize);");
     expect(driver).toContain("bool result = isPalindrome(head);");
-    expect(driver).toContain('printf(result ? "true\\n" : "false\\n");');
+    expect(driver).toContain('printf(result ? "true" : "false");');
+    expect(driver).toContain('printf("\\n");');
   });
 
   it("handles an empty linked-list testcase without inventing a zero-length C array", () => {
