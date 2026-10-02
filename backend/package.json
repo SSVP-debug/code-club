@@ -12,6 +12,7 @@
     "seed:code-club-edition": "node scripts/seedCodeClubEdition.js",
     "validate:problems": "node --import ./utils/problemIdentityBootstrap.js scripts/validateProblemContractsFromFolders.js",
     "validate:problem-folders": "node --import ./utils/problemIdentityBootstrap.js scripts/importProblems.js --dry-run",
+    "validate:problems-canonical": "node scripts/validateCanonicalProblemSource.js",
     "audit:problems-languages": "node --import ./utils/problemIdentityBootstrap.js scripts/auditProblemsAgainstLanguageRegistry.js",
     "audit:problem-duplicates": "node --import ./utils/problemIdentityBootstrap.js scripts/auditProblemDuplicates.js",
     "validate:problem-identity": "node --import ./utils/problemIdentityBootstrap.js scripts/validateProblemIdentity.js",
