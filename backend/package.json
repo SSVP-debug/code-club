@@ -12,6 +12,7 @@
     "seed:code-club-edition": "node scripts/seedCodeClubEdition.js",
     "problems:create": "node scripts/createProblem.js",
     "problems:check": "node scripts/problemAuthoringChecklist.js",
+    "audit:problem-content": "node scripts/auditProblemContentQuality.js",
     "validate:problem-authoring": "node --import ./utils/problemIdentityBootstrap.js scripts/validateProblemAuthoring.js",
     "validate:problem-batch": "node scripts/validateProblemBatch.js",
     "validate:problems": "node --import ./utils/problemIdentityBootstrap.js scripts/validateProblemContractsFromFolders.js",
