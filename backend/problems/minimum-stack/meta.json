@@ -5,16 +5,21 @@
   "difficulty": "Medium",
   "topic": "Stacks",
   "pattern": "auxiliary min stack",
-  "sourceType": "core",
+  "sourceType": "variant",
   "functionName": "MinStack",
   "estimatedTime": "20–35 min",
   "companies": [],
-  "relatedProblems": [],
+  "relatedProblems": ["min-stack"],
   "returnType": {},
   "paramTypes": {},
   "comparisonMode": "exact",
   "operationSequence": {
     "enabled": true,
-    "resultMode": "all"
-  }
+    "resultMode": "returningOnly"
+  },
+  "enabled": false,
+  "problemKey": "924f5c62-a8e2-495d-a54d-e786f6f95130",
+  "familyKey": "0c5d38b4-062e-42d1-964f-8831139cdd52",
+  "variantOf": "0c5d38b4-062e-42d1-964f-8831139cdd52",
+  "identityFingerprint": "72d3416210160bace40f567afc296c1ca26b3887995ebe769f3384075813eafe"
 }
