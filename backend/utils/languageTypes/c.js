@@ -22,11 +22,11 @@
  *      column counts across their own testcases) — see cDeclaration()'s
  *      comment for the full story (Plan 012 Batch 6).
  *
- * Known, intentional limitation: only scalars, 1D arrays, and rectangular
- * 2D arrays of int/string/bool are covered. Extend this file (and its
- * test) the day a problem actually needs more — same posture
- * inferCppType/inferJavaType already take with their own short
- * whitelists, not an attempt at universal inference.
+ * Numeric arrays are inferred from their element values. Integer arrays
+ * become `int[]`; arrays containing any non-integer numeric value become
+ * `double[]`. This keeps the inference safe for real-valued testcases
+ * without requiring every such problem to carry redundant `paramTypes.c`
+ * metadata, while an explicit declared type still always wins.
  */
 
 export function escapeCString(str) {
@@ -48,6 +48,11 @@ export function inferCType(value, declaredType) {
     }
     if (typeof value[0] === "string") return "char*[]";
     if (typeof value[0] === "boolean") return "bool[]";
+    if (typeof value[0] === "number") {
+      return value.some((entry) => typeof entry !== "number" || !Number.isInteger(entry))
+        ? "double[]"
+        : "int[]";
+    }
     return "int[]";
   }
 
@@ -85,13 +90,6 @@ export function formatCValue(value) {
 }
 
 /**
- * Build the declaration line(s) for one argument in a C driver. Returns a
- * single string — the array cases embed their own companion-variable
- * line(s) with `\n  ` so the caller can just join every argument's
- * declaration with `\n  ` the same way cppDeclaration's caller does,
- * without needing to know which arguments are scalars vs. arrays.
- */
-/**
  * Resolve whether an argument is scalar / 1D array / 2D array — needed
  * by both cDeclaration (below) and languageDrivers/c.js's call-arg
  * builders, and must be a SINGLE source of truth for both. Plan 012
@@ -124,28 +122,6 @@ export function cDeclaration(key, value, declaredType) {
   const dimensionality = resolveCDimensionality(value, declaredType);
 
   if (dimensionality === "2d") {
-    // 2D — Plan 012 Batch 6 correction: a genuinely fixed-size C array
-    // (`int matrix[3][4] = {...}`) only type-checks against a function
-    // parameter declaring the SAME trailing column count (a 2D array
-    // parameter's declared column width is part of its type in C, unlike
-    // its row count, which always decays to a pointer regardless of what
-    // you write there) — and this catalog's own testcases confirmed the
-    // real failure mode directly: `rotate-image`/`set-matrix-zeroes`/
-    // `game-of-life`/`walls-and-gates` all have DIFFERENT column counts
-    // across their own testcases (e.g. rotate-image: 3x3, 4x4, 1x1, 2x2).
-    // The SAME starter-code signature has to work for every one of them,
-    // so a fixed-column-width parameter type is simply wrong — it would
-    // compile (possibly with only a warning) and then silently index
-    // memory using the WRONG stride for any testcase whose column count
-    // doesn't match the one baked into the signature.
-    //
-    // Fixed by using the real, standard LeetCode-C 2D convention instead:
-    // `int** matrix` (an array of independently-allocated row pointers)
-    // with `int matrixRows` and a PER-ROW `int matrixColSize[]` (not a
-    // single shared column count) — this is also what handles a
-    // genuinely ragged 2D array correctly, not just a rectangular one,
-    // even though every current 2D testcase in this catalog happens to
-    // be rectangular.
     const elementType = type.replace(/\[\]\[\]$/, "");
     const rows = value.length;
     const rowVars = value.map((row, i) => {
