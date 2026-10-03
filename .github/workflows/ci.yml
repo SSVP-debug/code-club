@@ -78,21 +78,6 @@ jobs:
         run: npm run validate:problems
       - name: Audit problem duplicates
         run: npm run audit:problem-duplicates
-      - name: Capture canonical contract diagnostics
-        if: always()
-        run: |
-          node --input-type=module <<'NODE'
-          import fs from 'node:fs';
-          import { loadProblemsFromFolders } from './scripts/lib/loadProblemsFromFolders.js';
-          import { validateProblems } from './scripts/validateProblemContracts.js';
-          const problems = await loadProblemsFromFolders();
-          const errors = validateProblems(problems);
-          const report = errors.length
-            ? [`Found ${errors.length} canonical contract error(s):`, ...errors.map((error) => `- ${error}`)].join('\n')
-            : `Canonical problem bank: ${problems.length} problems, no contract errors.`;
-          fs.writeFileSync('contract-errors.txt', `${report}\n`, 'utf8');
-          console.log(report);
-          NODE
       - name: Run backend tests
         run: npm test -- --reporter=verbose
         env:
@@ -101,13 +86,6 @@ jobs:
           FIREBASE_PROJECT_ID: test
           FIREBASE_CLIENT_EMAIL: test@test.iam.gserviceaccount.com
           FIREBASE_PRIVATE_KEY: "-----BEGIN RSA PRIVATE KEY-----\nMIItest\n-----END RSA PRIVATE KEY-----\n"
-      - name: Upload canonical contract diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: p3-contract-diagnostics
-          path: backend/contract-errors.txt
-          if-no-files-found: warn
       - name: Coverage report (informational — not a gate yet)
         run: npm run test:coverage -- --reporter=verbose
         continue-on-error: true
