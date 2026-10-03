@@ -13,5 +13,9 @@
   "returnType": {},
   "paramTypes": {},
   "comparisonMode": "exact",
-  "operationSequence": { "enabled": true, "resultMode": "returningOnly" }
+  "operationSequence": { "enabled": true, "resultMode": "returningOnly" },
+  "problemKey": "0c5d38b4-062e-42d1-964f-8831139cdd52",
+  "familyKey": "0c5d38b4-062e-42d1-964f-8831139cdd52",
+  "variantOf": null,
+  "identityFingerprint": "53509e6128d45af7bbfb91bd81394ff59cb25e72e1764bb03bbe17b5da10f4ed"
 }
