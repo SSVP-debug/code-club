@@ -1,5 +1,5 @@
 /** Canonical execution-contract validation for backend/problems/<slug>/. */
-import loadProblemsFromFolders from "./lib/loadProblemsFromFolders.js";
+import { loadProblemsFromFolders } from "./lib/loadProblemsFromFolders.js";
 import { generateDriverCode } from "../utils/generateDriverCode.js";
 import { SUPPORTED_LANGUAGE_KEYS, REQUIRED_STARTER_LANGUAGE_KEYS } from "../config/languages.js";
 
@@ -22,9 +22,7 @@ function validateProblem(problem) {
   for (const language of SUPPORTED_LANGUAGE_KEYS) {
     const code = problem.starterCode?.[language];
     if (!code?.trim()) {
-      if (REQUIRED_STARTER_LANGUAGE_KEYS.includes(language)) {
-        errors.push(`${problem.slug}: starterCode.${language} missing/empty`);
-      }
+      if (REQUIRED_STARTER_LANGUAGE_KEYS.includes(language)) errors.push(`${problem.slug}: starterCode.${language} missing/empty`);
       continue;
     }
 
@@ -36,12 +34,6 @@ function validateProblem(problem) {
     }
   }
 
-  // C is intentionally an enabled-but-optional language. It must never be
-  // treated as production-required by this validator unless it is added to
-  // REQUIRED_STARTER_LANGUAGE_KEYS in the language registry. This keeps the
-  // canonical bank honest for the four problems whose linked-list/complex
-  // C contracts are not implemented by the current driver.
-
   if (!problem.testcases?.length) errors.push(`${problem.slug}: no visible testcases`);
   if (!problem.hiddentestcases?.length) errors.push(`${problem.slug}: no hidden testcases`);
 
@@ -50,17 +42,8 @@ function validateProblem(problem) {
     for (const language of ["java", "cpp", "c"]) {
       if (!problem.starterCode?.[language]) continue;
       try {
-        const generated = generateDriverCode(
-          language,
-          problem.starterCode[language],
-          testcase.input,
-          problem.functionName,
-          problem.returnType?.[language],
-          problem.paramTypes?.[language]
-        );
-        if (/\bObject\s+\w+\s*=/.test(generated)) {
-          errors.push(`${problem.slug}: generated ${language} driver contains Object argument declaration`);
-        }
+        const generated = generateDriverCode(language, problem.starterCode[language], testcase.input, problem.functionName, problem.returnType?.[language], problem.paramTypes?.[language]);
+        if (/\bObject\s+\w+\s*=/.test(generated)) errors.push(`${problem.slug}: generated ${language} driver contains Object argument declaration`);
       } catch (error) {
         errors.push(`${problem.slug}: driver generation failed for ${language}: ${error.message}`);
       }
