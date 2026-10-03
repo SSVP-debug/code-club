@@ -1,31 +1,14 @@
 [
   {
     "input": {
-      "ops": [
-        "push",
-        "push",
-        "getMin",
-        "pop",
-        "getMin"
-      ],
-      "vals": [
-        [
-          2
-        ],
-        [
-          1
-        ],
-        [],
-        [],
-        []
+      "operations": [
+        ["push", 2],
+        ["push", 1],
+        ["getMin"],
+        ["pop"],
+        ["getMin"]
       ]
     },
-    "expectedOutput": [
-      null,
-      null,
-      1,
-      null,
-      2
-    ]
+    "expectedOutput": [1, 2]
   }
 ]
