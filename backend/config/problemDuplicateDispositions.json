@@ -1,10 +1,12 @@
 {
-  "version": 1,
+  "version": 2,
   "pairs": [
     {
       "key": "min-stack::minimum-stack",
-      "status": "intentional-variant",
-      "reason": "Same Min Stack problem concept with two intentional execution contracts: returningOnly operation-sequence results versus all operation results. Preserve both during P2; canonical consolidation/reference migration belongs to P6."
+      "status": "retired-duplicate",
+      "canonicalSlug": "min-stack",
+      "retiredSlug": "minimum-stack",
+      "reason": "The two records represent the same Min Stack problem. P6 canonicalizes the operation-sequence contract to embedded operations with returningOnly results, migrates persisted references to min-stack, and keeps minimum-stack as a disabled compatibility record rather than silently deleting historical data."
     }
   ],
   "fingerprints": []
