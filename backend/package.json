@@ -17,6 +17,7 @@
     "validate:problems-canonical": "node scripts/validateCanonicalProblemSource.js",
     "audit:problems-languages": "node --import ./utils/problemIdentityBootstrap.js scripts/auditProblemsAgainstLanguageRegistry.js",
     "audit:problem-duplicates": "node --import ./utils/problemIdentityBootstrap.js scripts/auditProblemDuplicates.js",
+    "audit:problem-bank": "node --import ./utils/problemIdentityBootstrap.js scripts/auditProblemBank.js",
     "validate:problem-identity": "node --import ./utils/problemIdentityBootstrap.js scripts/validateProblemIdentity.js",
     "problems:import-from-folders": "node --import ./utils/problemIdentityBootstrap.js scripts/importProblems.js",
     "backfill-xp": "node scripts/backfillXP.js",
@@ -39,7 +40,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.107.0",
     "@google/genai": "^2.18.0",
-    "@sentry/node": "^10.63.0",
+    "@sentry/node": "^10.0.0",
     "cors": "^2.8.6",
     "csv-parse": "^6.2.1",
     "dotenv": "^17.4.2",
@@ -53,7 +54,7 @@
     "pino": "^9.14.0",
     "pino-http": "^10.5.0",
     "pino-pretty": "^13.1.3",
-    "qrcode": "^1.5.3",
+    "qrcode": "^1.5.0",
     "razorpay": "^2.9.4",
     "resend": "^4.0.1",
     "zod": "^4.4.3"
