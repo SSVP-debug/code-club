@@ -20,7 +20,6 @@ const JSON_MODE = process.argv.includes("--json");
 const problems = await loadProblemsFromFolders();
 const slugs = new Set(problems.map((problem) => problem.slug));
 const problemKeys = new Map();
-const familyKeys = new Map();
 const ids = new Map();
 const findings = [];
 
@@ -52,7 +51,13 @@ for (const problem of problems) {
   }
 
   duplicate(problemKeys, problemKey, slug, "problemKey");
-  duplicate(familyKeys, familyKey, slug, "familyKey");
+
+  // Multiple problems sharing a familyKey is intentional: familyKey groups
+  // variants. Integrity is checked by validating the UUID and variantOf link,
+  // not by treating family membership as duplication.
+  if (familyKey === undefined || familyKey === null || familyKey === "") {
+    add(slug, "WARN", "familyKey", "legacy problem is missing familyKey; P6 migration must backfill it");
+  }
 
   if (!problemKey || !familyKey || !identityFingerprint) {
     add(slug, "WARN", "identity", "legacy problem is missing problemKey/familyKey/identityFingerprint; P6 migration must backfill these fields");
@@ -127,6 +132,12 @@ for (const problem of problems) {
         add(slug, "FAIL", "operation-sequence", `testcase ${index} does not match a supported operation-sequence shape`);
       } else if (shape.opNames.length !== shape.opArgsList.length) {
         add(slug, "FAIL", "operation-sequence", `testcase ${index} has mismatched operation and argument counts`);
+      }
+
+      if (operationSequence.resultMode === "returningOnly" && Array.isArray(testcase?.expectedOutput)) {
+        if (testcase.expectedOutput.some((value) => value === null)) {
+          add(slug, "FAIL", "operation-sequence-results", `testcase ${index} contains null output under returningOnly mode`);
+        }
       }
     }
   }
