@@ -40,7 +40,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.107.0",
     "@google/genai": "^2.18.0",
-    "@sentry/node": "^10.0.0",
+    "@sentry/node": "^10.63.0",
     "cors": "^2.8.6",
     "csv-parse": "^6.2.1",
     "dotenv": "^17.4.2",
