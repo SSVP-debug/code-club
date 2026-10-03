@@ -76,6 +76,8 @@ jobs:
         run: npm run validate:problem-folders
       - name: Validate problem authoring checklist
         run: npm run validate:problem-authoring
+      - name: Audit full problem bank
+        run: npm run audit:problem-bank
       - name: Validate problem contracts
         run: npm run validate:problems
       - name: Audit problem duplicates
