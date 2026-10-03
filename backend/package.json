@@ -53,13 +53,12 @@
     "pino": "^9.14.0",
     "pino-http": "^10.5.0",
     "pino-pretty": "^13.1.3",
-    "qrcode": "^1.5.3",
+    "qrcode": "^1.5.0",
     "razorpay": "^2.9.4",
     "resend": "^4.0.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@anthropic-ai/sdk": "^0.107.0",
     "@vitest/coverage-v8": "^3.2.7",
     "mongodb-memory-server": "^11.2.0",
     "nodemon": "^3.1.14",
