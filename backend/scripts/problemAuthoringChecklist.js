@@ -26,14 +26,30 @@ if (!slug) {
   ];
   const checks = [];
 
-  const read = async (name) => fs.readFile(path.join(folder, name), "utf8");
+  const inspectContent = (name, content) => {
+    const trimmed = content.trim();
+    const todoCount = (content.match(/\b(?:TODO|TBD)\b/gi) || []).length;
+    let empty = trimmed.length === 0;
+
+    // JSON arrays are authoring inputs; an empty array is still incomplete.
+    if (!empty && name.endsWith(".json")) {
+      try {
+        const parsed = JSON.parse(content);
+        empty = Array.isArray(parsed) && parsed.length === 0;
+      } catch {
+        // Parsing/contract validation is handled by the dedicated validators.
+      }
+    }
+
+    return { name, exists: true, empty, todoCount };
+  };
+
   for (const name of files) {
     try {
-      const content = await read(name);
-      const todoCount = (content.match(/\b(?:TODO|TBD)\b/gi) || []).length;
-      checks.push({ name, exists: true, todoCount });
+      const content = await fs.readFile(path.join(folder, name), "utf8");
+      checks.push(inspectContent(name, content));
     } catch {
-      checks.push({ name, exists: false, todoCount: 0 });
+      checks.push({ name, exists: false, empty: false, todoCount: 0 });
     }
   }
 
@@ -42,19 +58,21 @@ if (!slug) {
     const name = `starter/${key}.${language.extension}`;
     try {
       const content = await fs.readFile(path.join(folder, "starter", `${key}.${language.extension}`), "utf8");
-      checks.push({ name, exists: true, todoCount: (content.match(/\b(?:TODO|TBD)\b/gi) || []).length });
+      checks.push(inspectContent(name, content));
     } catch {
-      checks.push({ name, exists: false, todoCount: 0 });
+      checks.push({ name, exists: false, empty: false, todoCount: 0 });
     }
   }
 
   const missing = checks.filter((item) => !item.exists).map((item) => item.name);
+  const emptyFiles = checks.filter((item) => item.exists && item.empty).map((item) => item.name);
   const todoFiles = checks.filter((item) => item.todoCount > 0).map((item) => ({ name: item.name, count: item.todoCount }));
   const report = {
-    version: 1,
+    version: 2,
     slug,
-    readyForStrictValidation: missing.length === 0 && todoFiles.length === 0,
+    readyForStrictValidation: missing.length === 0 && emptyFiles.length === 0 && todoFiles.length === 0,
     missing,
+    emptyFiles,
     todoFiles,
     checks,
     nextCommand: `npm run validate:problem-authoring -- --problem=${slug}`,
@@ -65,6 +83,7 @@ if (!slug) {
   } else {
     console.log(`Authoring checklist: ${slug}`);
     console.log(`Missing files: ${missing.length}`);
+    console.log(`Empty files: ${emptyFiles.length}`);
     console.log(`Files containing TODO/TBD: ${todoFiles.length}`);
     console.log(report.readyForStrictValidation ? "Ready for strict validation." : `Next: ${report.nextCommand}`);
   }
