@@ -14,14 +14,14 @@ describe("problem content quality audit", () => {
     expect(report.mode).toBe("legacy-audit");
   });
 
-  it("detects known legacy authoring gaps", () => {
-    const report = JSON.parse(run(["--problem=two-sum", "--json"]));
+  it("detects a known legacy authoring gap", () => {
+    const report = JSON.parse(run(["--problem=reverse-linked-list", "--json"]));
     expect(report.total).toBe(1);
-    expect(report.reports[0].slug).toBe("two-sum");
+    expect(report.reports[0].slug).toBe("reverse-linked-list");
     expect(report.reports[0].learnerReady).toBe(false);
   });
 
   it("fails strict validation for an incomplete legacy problem", () => {
-    expect(() => run(["--problem=two-sum", "--strict", "--json"])).toThrow();
+    expect(() => run(["--problem=reverse-linked-list", "--strict", "--json"])).toThrow();
   });
 });
