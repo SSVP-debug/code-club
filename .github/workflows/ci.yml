@@ -78,6 +78,8 @@ jobs:
         run: npm run validate:problem-authoring
       - name: Audit full problem bank
         run: npm run audit:problem-bank
+      - name: Validate P6 migration plan
+        run: npm run migrate:problem-bank:p6 -- --json
       - name: Validate problem contracts
         run: npm run validate:problems
       - name: Audit problem duplicates
