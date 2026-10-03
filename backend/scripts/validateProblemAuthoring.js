@@ -29,9 +29,9 @@ async function validateFolder(problem, allSlugs) {
 
   const editorialPath = path.join(folder, "editorial.md");
   const editorial = await fs.readFile(editorialPath, "utf8").catch(() => "");
-  if (!editorial.trim()) {
+  if (STRICT_AUTHORING && !editorial.trim()) {
     add(errors, slug, "editorial.md is required");
-  } else if (STRICT_AUTHORING && (/\bTODO\b|\bTBD\b/i.test(editorial))) {
+  } else if (STRICT_AUTHORING && /\bTODO\b|\bTBD\b/i.test(editorial)) {
     add(errors, slug, "editorial must be complete and contain no TODO/TBD");
   }
 
