@@ -39,16 +39,8 @@ async function writeCanonical(plan) {
     if (APPLY) {
       await fs.writeFile(metaPath, `${JSON.stringify(meta, null, 2)}\n`, "utf8");
       if (item.slug === RETIRED_SLUG) {
-        await fs.writeFile(
-          path.join(PROBLEMS_DIR, item.slug, "testcases.json"),
-          `${JSON.stringify(testcases, null, 2)}\n`,
-          "utf8"
-        );
-        await fs.writeFile(
-          path.join(PROBLEMS_DIR, item.slug, "hidden-testcases.json"),
-          `${JSON.stringify(hiddentestcases, null, 2)}\n`,
-          "utf8"
-        );
+        await fs.writeFile(path.join(PROBLEMS_DIR, item.slug, "testcases.json"), `${JSON.stringify(testcases, null, 2)}\n`, "utf8");
+        await fs.writeFile(path.join(PROBLEMS_DIR, item.slug, "hidden-testcases.json"), `${JSON.stringify(hiddentestcases, null, 2)}\n`, "utf8");
       }
     }
     writes.push(item.slug);
@@ -61,57 +53,49 @@ async function migrateMongoReferences() {
   if (!APPLY) return { skipped: true, reason: "dry-run; add --apply" };
 
   await connectDB();
-  const stringResults = [];
+  const results = [];
 
   for (const Model of [Submission, Reflection]) {
-    const result = await Model.updateMany(
-      { problemSlug: RETIRED_SLUG },
-      { $set: { problemSlug: CANONICAL_SLUG } }
-    );
-    stringResults.push({ collection: Model.collection.name, matched: result.matchedCount, modified: result.modifiedCount });
+    const result = await Model.updateMany({ problemSlug: RETIRED_SLUG }, { $set: { problemSlug: CANONICAL_SLUG } });
+    results.push({ collection: Model.collection.name, matched: result.matchedCount, modified: result.modifiedCount });
   }
 
+  // Split add/remove into two writes. MongoDB rejects conflicting update
+  // operators that target the same array path in one update document.
   for (const Model of [User, SkillsTest]) {
-    const result = await Model.updateMany(
-      { solvedSlugs: RETIRED_SLUG },
-      {
-        $addToSet: { solvedSlugs: CANONICAL_SLUG },
-        $pull: { solvedSlugs: RETIRED_SLUG },
-      }
-    );
-    stringResults.push({ collection: Model.collection.name, matched: result.matchedCount, modified: result.modifiedCount });
+    const add = await Model.updateMany({ solvedSlugs: RETIRED_SLUG }, { $addToSet: { solvedSlugs: CANONICAL_SLUG } });
+    const remove = await Model.updateMany({ solvedSlugs: RETIRED_SLUG }, { $pull: { solvedSlugs: RETIRED_SLUG } });
+    results.push({ collection: Model.collection.name, matched: add.matchedCount, modified: add.modifiedCount + remove.modifiedCount });
   }
 
-  const contest = await Contest.updateMany(
+  const contestAdd = await Contest.updateMany(
     { "participants.solvedSlugs": RETIRED_SLUG },
-    {
-      $addToSet: { "participants.$[participant].solvedSlugs": CANONICAL_SLUG },
-      $pull: { "participants.$[participant].solvedSlugs": RETIRED_SLUG },
-    },
+    { $addToSet: { "participants.$[participant].solvedSlugs": CANONICAL_SLUG } },
     { arrayFilters: [{ "participant.solvedSlugs": RETIRED_SLUG }] }
   );
-  stringResults.push({ collection: Contest.collection.name, matched: contest.matchedCount, modified: contest.modifiedCount });
+  const contestRemove = await Contest.updateMany(
+    { "participants.solvedSlugs": RETIRED_SLUG },
+    { $pull: { "participants.$[participant].solvedSlugs": RETIRED_SLUG } },
+    { arrayFilters: [{ "participant.solvedSlugs": RETIRED_SLUG }] }
+  );
+  results.push({ collection: Contest.collection.name, matched: contestAdd.matchedCount, modified: contestAdd.modifiedCount + contestRemove.modifiedCount });
 
-  const battle = await BattleRoom.updateMany(
+  const battleAdd = await BattleRoom.updateMany(
     { "teams.solvedSlugs": RETIRED_SLUG },
-    {
-      $addToSet: { "teams.$[team].solvedSlugs": CANONICAL_SLUG },
-      $pull: { "teams.$[team].solvedSlugs": RETIRED_SLUG },
-    },
+    { $addToSet: { "teams.$[team].solvedSlugs": CANONICAL_SLUG } },
     { arrayFilters: [{ "team.solvedSlugs": RETIRED_SLUG }] }
   );
-  stringResults.push({ collection: BattleRoom.collection.name, matched: battle.matchedCount, modified: battle.modifiedCount });
-
-  // The retired document remains as a disabled compatibility record. This is
-  // deliberate: historical submissions and analytics can still be inspected
-  // while all new discovery/execution resolves to the canonical slug.
-  const retired = await Problem.updateOne(
-    { slug: RETIRED_SLUG },
-    { $set: { enabled: false } }
+  const battleRemove = await BattleRoom.updateMany(
+    { "teams.solvedSlugs": RETIRED_SLUG },
+    { $pull: { "teams.$[team].solvedSlugs": RETIRED_SLUG } },
+    { arrayFilters: [{ "team.solvedSlugs": RETIRED_SLUG }] }
   );
-  stringResults.push({ collection: Problem.collection.name, matched: retired.matchedCount, modified: retired.modifiedCount });
+  results.push({ collection: BattleRoom.collection.name, matched: battleAdd.matchedCount, modified: battleAdd.modifiedCount + battleRemove.modifiedCount });
 
-  return { skipped: false, results: stringResults };
+  const retired = await Problem.updateOne({ slug: RETIRED_SLUG }, { $set: { enabled: false } });
+  results.push({ collection: Problem.collection.name, matched: retired.matchedCount, modified: retired.modifiedCount });
+
+  return { skipped: false, results };
 }
 
 const problems = await loadProblemsFromFolders();
