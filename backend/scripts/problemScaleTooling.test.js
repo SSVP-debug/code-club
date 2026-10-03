@@ -8,10 +8,10 @@ const run = (script, args) => execFileSync("node", [script, ...args], {
 
 describe("problem scale tooling", () => {
   it("reports legacy authoring gaps without mutating the canonical bank", () => {
-    const output = run("scripts/problemAuthoringChecklist.js", ["--problem=two-sum", "--json"]);
+    const output = run("scripts/problemAuthoringChecklist.js", ["--problem=reverse-linked-list", "--json"]);
     const report = JSON.parse(output);
 
-    expect(report.slug).toBe("two-sum");
+    expect(report.slug).toBe("reverse-linked-list");
     expect(report.readyForStrictValidation).toBe(false);
     expect(Array.isArray(report.todoFiles)).toBe(true);
     expect(report.nextCommand).toContain("validate:problem-authoring");
