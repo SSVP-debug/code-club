@@ -66,9 +66,10 @@ function publicCatalogProjection() {
 
 export const getProblems = async (req, res) => {
   try {
+    const query = req.query ?? {};
     const hasCatalogQuery = [
       "page", "limit", "search", "difficulty", "topic", "pattern", "company",
-    ].some((key) => req.query[key] !== undefined);
+    ].some((key) => query[key] !== undefined);
 
     // Legacy full-catalog mode is retained for existing consumers. New
     // clients should send page/limit so every catalog read is bounded.
@@ -91,9 +92,9 @@ export const getProblems = async (req, res) => {
       return res.json(problems);
     }
 
-    const page = parsePositiveInt(req.query.page, 1);
-    const limit = Math.min(parsePositiveInt(req.query.limit, DEFAULT_PAGE_SIZE), MAX_PAGE_SIZE);
-    const filter = buildCatalogFilter(req.query);
+    const page = parsePositiveInt(query.page, 1);
+    const limit = Math.min(parsePositiveInt(query.limit, DEFAULT_PAGE_SIZE), MAX_PAGE_SIZE);
+    const filter = buildCatalogFilter(query);
     const cacheKey = `${PROBLEMS_CACHE_KEY}:${JSON.stringify({ page, limit, filter })}`;
 
     const { value: payload, cacheStatus } = await getOrSetCache(
@@ -145,7 +146,7 @@ export const getProblemBySlug = async (req, res) => {
     }
 
     const solvedSlugs = req.userDoc?.solvedSlugs ?? [];
-    const pathId = req.query.path || null;
+    const pathId = req.query?.path || null;
 
     const [prevProblem, recommendedNext] = await Promise.all([
       Problem.findOne({ id: { $lt: problem.id } })
