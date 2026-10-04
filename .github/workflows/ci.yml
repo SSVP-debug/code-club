@@ -77,7 +77,7 @@ jobs:
       - name: Validate problem authoring checklist
         run: npm run validate:problem-authoring
       - name: Audit problem content quality
-        run: npm run audit:problem-content -- --json
+        run: npm run audit:problem-content -- --strict --json
       - name: Audit full problem bank
         run: npm run audit:problem-bank
       - name: Validate P6 migration plan
