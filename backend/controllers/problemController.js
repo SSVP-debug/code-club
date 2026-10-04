@@ -30,7 +30,20 @@ function parsePositiveInt(value, fallback) {
 }
 
 function buildCatalogFilter(query) {
-  const filter = { visibility: { $ne: "contest" }, enabled: { $ne: false } };
+  const filter = {
+    visibility: { $ne: "contest" },
+    enabled: { $ne: false },
+  };
+
+  // Browse's standard catalog must stay separate from Code Club Edition
+  // campaigns and unreleased/coming-soon problems. Other catalog consumers
+  // can omit scope to retain the broader catalog behavior.
+  if (query.scope === "standard") {
+    filter.$and = [
+      { $or: [{ campaignCode: { $exists: false } }, { campaignCode: null }, { campaignCode: "" }] },
+      { comingSoon: { $ne: true } },
+    ];
+  }
 
   if (query.difficulty && ["Easy", "Medium", "Hard"].includes(query.difficulty)) {
     filter.difficulty = query.difficulty;
@@ -68,7 +81,7 @@ export const getProblems = async (req, res) => {
   try {
     const query = req.query ?? {};
     const hasCatalogQuery = [
-      "page", "limit", "search", "difficulty", "topic", "pattern", "company",
+      "page", "limit", "search", "difficulty", "topic", "pattern", "company", "scope",
     ].some((key) => query[key] !== undefined);
 
     // Legacy full-catalog mode is retained for existing consumers. New
@@ -101,6 +114,15 @@ export const getProblems = async (req, res) => {
       cacheKey,
       CACHE_TTL_SECONDS,
       async () => {
+        const topicFilter = query.scope === "standard"
+          ? { ...buildCatalogFilter({ scope: "standard" }) }
+          : { visibility: { $ne: "contest" }, enabled: { $ne: false } };
+        delete topicFilter.difficulty;
+        delete topicFilter.topic;
+        delete topicFilter.pattern;
+        delete topicFilter.companies;
+        delete topicFilter.$or;
+
         const [problems, total, topics] = await Promise.all([
           Problem.find(filter)
             .select(publicCatalogProjection())
@@ -109,10 +131,7 @@ export const getProblems = async (req, res) => {
             .limit(limit)
             .lean(),
           Problem.countDocuments(filter),
-          Problem.distinct("topic", {
-            visibility: { $ne: "contest" },
-            enabled: { $ne: false },
-          }),
+          Problem.distinct("topic", topicFilter),
         ]);
 
         return {
