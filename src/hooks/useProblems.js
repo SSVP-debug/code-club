@@ -26,6 +26,7 @@ export function useProblems(options = {}) {
     searchTerm = "",
     selectedDifficulty = "All",
     selectedTopic = "All",
+    scope = "",
   } = options;
 
   const [problems, setProblems] = useState([]);
@@ -58,6 +59,7 @@ export function useProblems(options = {}) {
           if (search) params.set("search", search);
           if (selectedDifficulty !== "All") params.set("difficulty", selectedDifficulty);
           if (selectedTopic !== "All") params.set("topic", selectedTopic);
+          if (scope) params.set("scope", scope);
 
           const data = await apiFetchOptional(`/api/problems?${params.toString()}`);
           if (cancelled) return;
@@ -171,7 +173,7 @@ export function useProblems(options = {}) {
 
     fetchProblems();
     return () => { cancelled = true; };
-  }, [paginated, page, limit, searchTerm, selectedDifficulty, selectedTopic]);
+  }, [paginated, page, limit, searchTerm, selectedDifficulty, selectedTopic, scope]);
 
   return { problems, loading, error, pagination, topics };
 }
