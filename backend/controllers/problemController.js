@@ -1,6 +1,6 @@
 import Problem from "../models/Problem.js";
 import Submission from "../models/Submission.js";
-import { getOrSetCache, invalidateCache } from "../utils/cache.js";
+import { getOrSetCache, invalidateCache, invalidateCachePrefix } from "../utils/cache.js";
 import { XP_BY_DIFFICULTY } from "../utils/computeXP.js";
 import { getNextBestProblem } from "../utils/recommendNextProblem.js";
 import { canAccessContestProblem } from "../services/contestProblemAccess.js";
@@ -17,7 +17,7 @@ function withXP(problem) {
 }
 
 export async function invalidateProblemsCache() {
-  await invalidateCache("problems:catalog", { prefix: true });
+  await invalidateCachePrefix(`${PROBLEMS_CACHE_KEY}:`);
 }
 
 export async function invalidateAcceptanceRatesCache() {
@@ -30,10 +30,7 @@ function parsePositiveInt(value, fallback) {
 }
 
 function buildCatalogFilter(query) {
-  const filter = {
-    visibility: { $ne: "contest" },
-    enabled: { $ne: false },
-  };
+  const filter = { visibility: { $ne: "contest" }, enabled: { $ne: false } };
 
   if (query.difficulty && ["Easy", "Medium", "Hard"].includes(query.difficulty)) {
     filter.difficulty = query.difficulty;
@@ -73,10 +70,8 @@ export const getProblems = async (req, res) => {
       "page", "limit", "search", "difficulty", "topic", "pattern", "company",
     ].some((key) => req.query[key] !== undefined);
 
-    // Backward-compatible full-catalog mode is retained only for existing
-    // consumers. New clients should always send page/limit. This lets us
-    // migrate the frontend without a flag day while making the API itself
-    // capable of bounded reads.
+    // Legacy full-catalog mode is retained for existing consumers. New
+    // clients should send page/limit so every catalog read is bounded.
     if (!hasCatalogQuery) {
       const { value: problems, cacheStatus } = await getOrSetCache(
         `${PROBLEMS_CACHE_KEY}:all`,
