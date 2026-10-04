@@ -101,7 +101,7 @@ export const getProblems = async (req, res) => {
       cacheKey,
       CACHE_TTL_SECONDS,
       async () => {
-        const [problems, total] = await Promise.all([
+        const [problems, total, topics] = await Promise.all([
           Problem.find(filter)
             .select(publicCatalogProjection())
             .sort({ id: 1 })
@@ -109,6 +109,10 @@ export const getProblems = async (req, res) => {
             .limit(limit)
             .lean(),
           Problem.countDocuments(filter),
+          Problem.distinct("topic", {
+            visibility: { $ne: "contest" },
+            enabled: { $ne: false },
+          }),
         ]);
 
         return {
@@ -116,6 +120,7 @@ export const getProblems = async (req, res) => {
           page,
           limit,
           total,
+          topics: topics.filter(Boolean).sort((a, b) => a.localeCompare(b)),
           hasNext: page * limit < total,
           hasPrevious: page > 1,
         };
