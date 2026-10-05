@@ -3,6 +3,8 @@ import { logger } from "../config/logger.js";
 import { hashNormalizedCode } from "../utils/codeNormalization.js";
 import { pickEncouragementMessage } from "../utils/encouragementMessages.js";
 import { getStudentDayKey } from "../utils/studentDay.js";
+import { recordProblemProgress } from "../services/problemProgressService.js";
+import { recordProblemSubmissionStats } from "../services/problemStatsService.js";
 
 export function toClientSubmission(doc) {
   return {
@@ -20,35 +22,11 @@ export function toClientSubmission(doc) {
     actualOutput: doc.actualOutput,
     encouragementMessage: doc.encouragementMessage ?? null,
     time: new Date(doc.createdAt).toISOString(),
-    // IST calendar day this submission falls on — must agree with the
-    // shared day-key policy (backend/utils/studentDay.js) so "did I
-    // attempt something today" checks (e.g. DailyMissionCard.jsx) use the
-    // same day boundary as streak/quiz/challenge, not a UTC one.
     date: getStudentDayKey(doc.createdAt),
     createdAt: doc.createdAt,
   };
 }
 
-// ── recordVerifiedSubmission ─────────────────────────────────────────────────
-// The ONLY place a Submission document is written. Not an HTTP handler —
-// called exclusively from backend/routes/judge.js, immediately after a real
-// Judge0-graded run, using values *this server just computed* (status,
-// passed/total counts, visible/hidden split, expected/actual output on a
-// visible-testcase failure). Nothing here is client-supplied.
-//
-// Security history: this function replaces what used to be a public
-// `POST /api/submissions` handler that did `Submission.create({ userId,
-// ...req.body })` — i.e. it trusted a client-sent `status`/`passed`/`total`
-// wholesale, with only Zod shape validation (types/lengths), not truthfulness.
-// Any authenticated user could POST `{ status: "Accepted", passed: total }`
-// directly and be recorded as having solved a problem without Judge0 ever
-// running their code — which then fed XP, achievements, certificates, and
-// the recruiter-facing public profile. See docs/security-fixes/2026-07-solve-integrity.md.
-//
-// `code` is capped defensively even though the caller (judge.js) already
-// validates it via Zod — this function has no HTTP-layer validation of its
-// own, so it re-enforces the model's own maxlength expectation rather than
-// relying on the caller never changing.
 export async function recordVerifiedSubmission({
   userId,
   problemSlug,
@@ -63,42 +41,20 @@ export async function recordVerifiedSubmission({
   executionTime,
   expectedOutput,
   actualOutput,
-  // Optional contest context (Fest Readiness Audit, P0-1) — null for
-  // ordinary practice submissions. Recorded as-is; this function does not
-  // validate contest membership/timing itself (see
-  // services/contestScoring.js for that) — it only persists the link so
-  // it's possible to prove, after the fact, that a given contest solve
-  // corresponds to a real server-graded submission.
   contestId = null,
-  // Optional Battle Room context — null for ordinary submissions. Same
-  // trust model as contestId: persisted as-is, not validated here (see
-  // services/battleRoomScoring.js for that) — this only records the link
-  // so a Battle Room solve can be proven, after the fact, against a real
-  // server-graded submission.
   battleRoomId = null,
-  // Minimum-viable versioning follow-up — see Submission.js's
-  // `problemVersion` field comment. Optional/nullable so any other
-  // future caller of this function doesn't need to plumb it through
-  // just to keep working.
   problemVersion = null,
 }) {
   if (!SUBMISSION_STATUSES.includes(status)) {
     throw new Error(`recordVerifiedSubmission: invalid status "${status}"`);
   }
 
-  // ── Wrong-answer encouragement engine ───────────────────────────────────
-  // Only computed for non-Accepted submissions — an Accepted result gets
-  // its own (randomized, non-persisted) celebratory copy purely on the
-  // frontend, since there's no "same attempt again" case to dedupe there.
   let normalizedCodeHash = null;
   let encouragementMessage = null;
 
   if (status !== "Accepted") {
     normalizedCodeHash = hashNormalizedCode(code, language);
 
-    // Most recent non-Accepted attempt by this user on this exact problem —
-    // used to decide whether this is "the same wrong code again" (reuse its
-    // message) or "an actual new attempt" (pick a different one).
     const previous = await Submission.findOne({
       userId,
       problemSlug,
@@ -115,7 +71,7 @@ export async function recordVerifiedSubmission({
     });
   }
 
-  return Submission.create({
+  const submission = await Submission.create({
     userId,
     problemSlug,
     problemTitle,
@@ -135,14 +91,45 @@ export async function recordVerifiedSubmission({
     battleRoomId: battleRoomId || null,
     problemVersion,
   });
+
+  // Submission remains the immutable audit/source-of-truth record. These
+  // two derived stores make high-volume reads bounded:
+  //   - UserProblemProgress: one row per user/problem
+  //   - ProblemStats: one row per problem
+  // A failure in either derived write must never turn a successful Judge0
+  // result into a failed submission response; the durable Submission row
+  // already exists and the next reconciliation/backfill can repair it.
+  const [progressResult, statsResult] = await Promise.allSettled([
+    recordProblemProgress({
+      userId,
+      problemSlug,
+      accepted: status === "Accepted",
+      executionTime,
+      attemptedAt: submission.createdAt,
+    }),
+    recordProblemSubmissionStats({
+      problemSlug,
+      accepted: status === "Accepted",
+      submittedAt: submission.createdAt,
+    }),
+  ]);
+
+  if (progressResult.status === "rejected") {
+    logger.error(
+      { err: progressResult.reason, userId: String(userId), problemSlug },
+      "[Submissions] UserProblemProgress write failed"
+    );
+  }
+  if (statsResult.status === "rejected") {
+    logger.error(
+      { err: statsResult.reason, problemSlug },
+      "[Submissions] ProblemStats write failed"
+    );
+  }
+
+  return submission;
 }
 
-// ── POST /api/submissions ────────────────────────────────────────────────────
-// REMOVED as a client-writable endpoint (see recordVerifiedSubmission's
-// comment above for why). The route itself now returns 410 Gone — see
-// backend/routes/submissions.js — this handler is kept only so any stray
-// import doesn't break the build, and to give a clear error if something
-// still references it directly instead of through the route.
 export async function createSubmission(req, res) {
   logger.warn(
     { userId: req.userDoc?._id?.toString() },
@@ -161,7 +148,6 @@ export async function listSubmissions(req, res) {
 
   try {
     const { problemSlug } = req.query;
-
     const filter = { userId: req.userDoc._id };
     if (problemSlug) filter.problemSlug = problemSlug;
 
