@@ -1,5 +1,5 @@
 import Problem from "../models/Problem.js";
-import Submission from "../models/Submission.js";
+import ProblemStats from "../models/ProblemStats.js";
 import { getOrSetCache, invalidateCache, invalidateCachePrefix } from "../utils/cache.js";
 import { XP_BY_DIFFICULTY } from "../utils/computeXP.js";
 import { getNextBestProblem } from "../utils/recommendNextProblem.js";
@@ -8,9 +8,10 @@ import { canAccessContestProblem } from "../services/contestProblemAccess.js";
 const PROBLEMS_CACHE_KEY = "problems:catalog";
 const CACHE_TTL_SECONDS = 5 * 60;
 const ACCEPTANCE_CACHE_KEY = "problems:acceptanceRates";
-const ACCEPTANCE_CACHE_TTL_SECONDS = 15 * 60;
+const ACCEPTANCE_CACHE_TTL_SECONDS = 5 * 60;
 const DEFAULT_PAGE_SIZE = 30;
 const MAX_PAGE_SIZE = 100;
+const MAX_ACCEPTANCE_SLUGS = 100;
 
 function withXP(problem) {
   return { ...problem, xp: XP_BY_DIFFICULTY[problem.difficulty] ?? null };
@@ -35,9 +36,6 @@ function buildCatalogFilter(query) {
     enabled: { $ne: false },
   };
 
-  // Browse's standard catalog must stay separate from Code Club Edition
-  // campaigns and unreleased/coming-soon problems. Other catalog consumers
-  // can omit scope to retain the broader catalog behavior.
   if (query.scope === "standard") {
     filter.$and = [
       { $or: [{ campaignCode: { $exists: false } }, { campaignCode: null }, { campaignCode: "" }] },
@@ -84,8 +82,6 @@ export const getProblems = async (req, res) => {
       "page", "limit", "search", "difficulty", "topic", "pattern", "company", "scope",
     ].some((key) => query[key] !== undefined);
 
-    // Legacy full-catalog mode is retained for existing consumers. New
-    // clients should send page/limit so every catalog read is bounded.
     if (!hasCatalogQuery) {
       const { value: problems, cacheStatus } = await getOrSetCache(
         `${PROBLEMS_CACHE_KEY}:all`,
@@ -194,25 +190,34 @@ export const getProblemBySlug = async (req, res) => {
 
 export const getAcceptanceRates = async (req, res) => {
   try {
+    const requestedSlugs = String(req.query?.slugs || "")
+      .split(",")
+      .map((slug) => slug.trim())
+      .filter(Boolean)
+      .slice(0, MAX_ACCEPTANCE_SLUGS);
+
+    const scopeKey = requestedSlugs.length
+      ? requestedSlugs.slice().sort().join(",")
+      : "all";
+
     const { value: rates, cacheStatus } = await getOrSetCache(
-      ACCEPTANCE_CACHE_KEY,
+      `${ACCEPTANCE_CACHE_KEY}:${scopeKey}`,
       ACCEPTANCE_CACHE_TTL_SECONDS,
       async () => {
-        const grouped = await Submission.aggregate([
-          { $group: {
-            _id: "$problemSlug",
-            total: { $sum: 1 },
-            accepted: { $sum: { $cond: [{ $eq: ["$status", "Accepted"] }, 1, 0] } },
-          } },
-        ]);
+        const filter = requestedSlugs.length
+          ? { problemSlug: { $in: requestedSlugs } }
+          : {};
+        const rows = await ProblemStats.find(filter)
+          .select("problemSlug attempts accepted -_id")
+          .lean();
 
         const map = {};
-        for (const row of grouped) {
-          if (!row._id || row.total === 0) continue;
-          map[row._id] = {
+        for (const row of rows) {
+          if (!row.problemSlug || row.attempts === 0) continue;
+          map[row.problemSlug] = {
             accepted: row.accepted,
-            total: row.total,
-            rate: Math.round((row.accepted / row.total) * 100),
+            total: row.attempts,
+            rate: Math.round((row.accepted / row.attempts) * 100),
           };
         }
         return map;
