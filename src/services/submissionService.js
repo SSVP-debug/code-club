@@ -1,14 +1,20 @@
 import { apiFetch } from "./api";
 
-export async function getSubmissions(problemSlug = null) {
-  
-  let url = "/api/submissions";
+export async function getSubmissions(problemSlug = null, options = {}) {
+  const params = new URLSearchParams();
 
   if (problemSlug) {
-    url += `?problemSlug=${encodeURIComponent(problemSlug)}`;
+    params.set("problemSlug", problemSlug);
+  }
+  if (options.limit !== undefined) {
+    params.set("limit", String(options.limit));
+  }
+  if (options.cursor) {
+    params.set("cursor", options.cursor);
   }
 
-  return apiFetch(url);
+  const query = params.toString();
+  return apiFetch(query ? `/api/submissions?${query}` : "/api/submissions");
 }
 
 // NOTE: createSubmission (POST /api/submissions) was removed. It used to
