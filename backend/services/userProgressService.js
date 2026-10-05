@@ -1,13 +1,16 @@
 import User from "../models/User.js";
+import { syncSolvedProblemProgress } from "./problemProgressService.js";
 
 /**
  * Persist progress fields.
- * Currently the User model remains the source of truth.
- * This service exists so the controller won't need to change
- * when progress is later extracted into its own model.
+ *
+ * User remains the compatibility/aggregate store for existing consumers,
+ * while UserProblemProgress is the scalable per-user/problem source for
+ * future reads. Keeping both writes here gives the migration one stable
+ * seam and lets old clients continue working during the rollout.
  */
 export async function saveProgress(userId, progress) {
-  return User.updateOne(
+  const userWrite = User.updateOne(
     { _id: userId },
     {
       $set: {
@@ -24,4 +27,13 @@ export async function saveProgress(userId, progress) {
       },
     }
   );
+
+  const problemWrite = syncSolvedProblemProgress(
+    userId,
+    progress.solvedSlugs,
+    new Date()
+  );
+
+  const [userResult] = await Promise.all([userWrite, problemWrite]);
+  return userResult;
 }
