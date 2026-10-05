@@ -20,6 +20,7 @@ async function loadFallbackProblems(acceptanceRates = {}) {
 
 export function useProblems(options = {}) {
   const {
+    enabled = true,
     paginated = false,
     page = 1,
     limit = 30,
@@ -30,7 +31,7 @@ export function useProblems(options = {}) {
   } = options;
 
   const [problems, setProblems] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -42,6 +43,12 @@ export function useProblems(options = {}) {
   const [topics, setTopics] = useState([]);
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false);
+      setError(null);
+      return undefined;
+    }
+
     let cancelled = false;
 
     async function fetchProblems() {
@@ -173,7 +180,7 @@ export function useProblems(options = {}) {
 
     fetchProblems();
     return () => { cancelled = true; };
-  }, [paginated, page, limit, searchTerm, selectedDifficulty, selectedTopic, scope]);
+  }, [enabled, paginated, page, limit, searchTerm, selectedDifficulty, selectedTopic, scope]);
 
   return { problems, loading, error, pagination, topics };
 }
