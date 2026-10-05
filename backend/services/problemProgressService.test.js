@@ -1,8 +1,10 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
-const findOneAndUpdate = vi.fn();
-const bulkWrite = vi.fn();
-const find = vi.fn();
+const { findOneAndUpdate, bulkWrite, find } = vi.hoisted(() => ({
+  findOneAndUpdate: vi.fn(),
+  bulkWrite: vi.fn(),
+  find: vi.fn(),
+}));
 
 vi.mock("../models/UserProblemProgress.js", () => ({
   default: { findOneAndUpdate, bulkWrite, find },
