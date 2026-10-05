@@ -18,18 +18,74 @@ async function loadFallbackProblems(acceptanceRates = {}) {
   return enrichProblems(fallbackProblems, acceptanceRates);
 }
 
-export function useProblems() {
+export function useProblems(options = {}) {
+  const {
+    enabled = true,
+    paginated = false,
+    page = 1,
+    limit = 30,
+    searchTerm = "",
+    selectedDifficulty = "All",
+    selectedTopic = "All",
+    scope = "",
+  } = options;
+
   const [problems, setProblems] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit,
+    total: 0,
+    hasNext: false,
+    hasPrevious: false,
+  });
+  const [topics, setTopics] = useState([]);
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false);
+      setError(null);
+      return undefined;
+    }
+
     let cancelled = false;
 
     async function fetchProblems() {
       try {
         setLoading(true);
         setError(null);
+
+        if (paginated) {
+          const params = new URLSearchParams({
+            page: String(page),
+            limit: String(limit),
+          });
+
+          const search = searchTerm.trim();
+          if (search) params.set("search", search);
+          if (selectedDifficulty !== "All") params.set("difficulty", selectedDifficulty);
+          if (selectedTopic !== "All") params.set("topic", selectedTopic);
+          if (scope) params.set("scope", scope);
+
+          const data = await apiFetchOptional(`/api/problems?${params.toString()}`);
+          if (cancelled) return;
+
+          if (!data || !Array.isArray(data.problems)) {
+            throw new Error("Invalid paginated problem response");
+          }
+
+          setProblems(enrichProblems(data.problems));
+          setPagination({
+            page: data.page ?? page,
+            limit: data.limit ?? limit,
+            total: data.total ?? 0,
+            hasNext: Boolean(data.hasNext),
+            hasPrevious: Boolean(data.hasPrevious),
+          });
+          setTopics(Array.isArray(data.topics) ? data.topics : []);
+          return;
+        }
 
         const [data, acceptanceRates] = await Promise.all([
           apiFetchOptional("/api/problems"),
@@ -45,16 +101,78 @@ export function useProblems() {
           const fallbackProblems = await loadFallbackProblems(acceptanceRates);
           if (cancelled) return;
           setProblems(fallbackProblems);
+          setPagination({
+            page: 1,
+            limit: fallbackProblems.length,
+            total: fallbackProblems.length,
+            hasNext: false,
+            hasPrevious: false,
+          });
+          setTopics([...new Set(fallbackProblems.map((p) => p.topic).filter(Boolean))].sort());
         } else {
-          setProblems(enrichProblems(data, acceptanceRates));
+          const enriched = enrichProblems(data, acceptanceRates);
+          setProblems(enriched);
+          setPagination({
+            page: 1,
+            limit: enriched.length,
+            total: enriched.length,
+            hasNext: false,
+            hasPrevious: false,
+          });
+          setTopics([...new Set(enriched.map((p) => p.topic).filter(Boolean))].sort());
         }
       } catch (err) {
         if (cancelled) return;
         console.error("[useProblems] API fetch failed:", err.message);
-        const fallbackProblems = await loadFallbackProblems();
-        if (cancelled) return;
-        setProblems(fallbackProblems);
-        setError("Could not load problems from server. Showing cached problem set.");
+
+        try {
+          const fallbackProblems = await loadFallbackProblems();
+          if (cancelled) return;
+
+          if (paginated) {
+            const term = searchTerm.trim().toLowerCase();
+            const filtered = fallbackProblems.filter((problem) => {
+              const matchesDifficulty =
+                selectedDifficulty === "All" || problem.difficulty === selectedDifficulty;
+              const matchesTopic =
+                selectedTopic === "All" || problem.topic === selectedTopic;
+              const matchesSearch =
+                !term ||
+                problem.title?.toLowerCase().includes(term) ||
+                problem.slug?.toLowerCase().includes(term) ||
+                problem.topic?.toLowerCase().includes(term) ||
+                problem.pattern?.toLowerCase().includes(term) ||
+                problem.companies?.some((company) => company.toLowerCase().includes(term));
+              return matchesDifficulty && matchesTopic && matchesSearch;
+            });
+            const start = (page - 1) * limit;
+            const pageProblems = filtered.slice(start, start + limit);
+            setProblems(pageProblems);
+            setPagination({
+              page,
+              limit,
+              total: filtered.length,
+              hasNext: start + limit < filtered.length,
+              hasPrevious: page > 1,
+            });
+            setTopics([...new Set(fallbackProblems.map((p) => p.topic).filter(Boolean))].sort());
+          } else {
+            setProblems(fallbackProblems);
+            setPagination({
+              page: 1,
+              limit: fallbackProblems.length,
+              total: fallbackProblems.length,
+              hasNext: false,
+              hasPrevious: false,
+            });
+            setTopics([...new Set(fallbackProblems.map((p) => p.topic).filter(Boolean))].sort());
+          }
+          setError("Could not load problems from server. Showing cached problem set.");
+        } catch (fallbackError) {
+          console.error("[useProblems] Fallback load failed:", fallbackError.message);
+          setError("Could not load problems.");
+          setProblems([]);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -62,7 +180,7 @@ export function useProblems() {
 
     fetchProblems();
     return () => { cancelled = true; };
-  }, []);
+  }, [enabled, paginated, page, limit, searchTerm, selectedDifficulty, selectedTopic, scope]);
 
-  return { problems, loading, error };
+  return { problems, loading, error, pagination, topics };
 }
