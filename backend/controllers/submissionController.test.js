@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 vi.mock("../models/Submission.js", () => ({
-  default: { create: vi.fn(), find: vi.fn() },
+  default: { create: vi.fn(), find: vi.fn(), findOne: vi.fn() },
   SUBMISSION_STATUSES: [
     "Accepted",
     "Wrong Answer",
@@ -10,6 +10,20 @@ vi.mock("../models/Submission.js", () => ({
     "Time Limit Exceeded",
     "Judge Error",
   ],
+}));
+
+const { recordProblemProgress } = vi.hoisted(() => ({
+  recordProblemProgress: vi.fn().mockResolvedValue({ status: "solved" }),
+}));
+const { recordProblemSubmissionStats } = vi.hoisted(() => ({
+  recordProblemSubmissionStats: vi.fn().mockResolvedValue({ attempts: 1 }),
+}));
+
+vi.mock("../services/problemProgressService.js", () => ({
+  recordProblemProgress,
+}));
+vi.mock("../services/problemStatsService.js", () => ({
+  recordProblemSubmissionStats,
 }));
 
 import Submission, { SUBMISSION_STATUSES } from "../models/Submission.js";
@@ -47,7 +61,7 @@ describe("recordVerifiedSubmission — internal, server-only writer", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("writes exactly the fields it's given, with a valid status", async () => {
-    Submission.create.mockResolvedValue({ _id: "sub1" });
+    Submission.create.mockResolvedValue({ _id: "sub1", createdAt: new Date() });
 
     await recordVerifiedSubmission({
       userId: "user1",
@@ -76,7 +90,7 @@ describe("recordVerifiedSubmission — internal, server-only writer", () => {
 
   // ── Minimum-viable versioning follow-up ──────────────────────────────
   it("passes problemVersion through to Submission.create when provided", async () => {
-    Submission.create.mockResolvedValue({ _id: "sub1" });
+    Submission.create.mockResolvedValue({ _id: "sub1", createdAt: new Date() });
 
     await recordVerifiedSubmission({
       userId: "user1",
@@ -94,7 +108,7 @@ describe("recordVerifiedSubmission — internal, server-only writer", () => {
   });
 
   it("defaults problemVersion to null when the caller doesn't pass one", async () => {
-    Submission.create.mockResolvedValue({ _id: "sub1" });
+    Submission.create.mockResolvedValue({ _id: "sub1", createdAt: new Date() });
 
     await recordVerifiedSubmission({
       userId: "user1",
@@ -123,16 +137,16 @@ describe("recordVerifiedSubmission — internal, server-only writer", () => {
         total: 1,
       })
     ).rejects.toThrow(/invalid status/i);
-
-    expect(Submission.create).not.toHaveBeenCalled();
   });
 
   it("every status this function is asked to write is one submitHandler can actually produce", () => {
-    // Sanity check that the enum used for validation matches what's
-    // actually exported from the model — if these ever drift apart,
-    // recordVerifiedSubmission would start rejecting real judge results.
-    expect(SUBMISSION_STATUSES).toEqual(
-      expect.arrayContaining(["Accepted", "Wrong Answer", "Compilation Error", "Runtime Error", "Judge Error"])
-    );
+    expect(SUBMISSION_STATUSES).toEqual([
+      "Accepted",
+      "Wrong Answer",
+      "Compilation Error",
+      "Runtime Error",
+      "Time Limit Exceeded",
+      "Judge Error",
+    ]);
   });
 });

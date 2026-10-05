@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiFetchOptional } from "../services/api";
 
-/**
- * The frontend reads canonical problem data from the API. `backend/problems/<slug>/`
- * is the authoring source of truth; there is intentionally no local metadata
- * catalog to merge into the API response.
- */
 function enrichProblems(problemList, acceptanceRates = {}) {
   return problemList.map((problem) => ({
     ...problem,
@@ -75,7 +70,23 @@ export function useProblems(options = {}) {
             throw new Error("Invalid paginated problem response");
           }
 
-          setProblems(enrichProblems(data.problems));
+          // Acceptance rates are requested only for the visible page. This
+          // keeps the old analytics UX while avoiding a collection-wide
+          // submission aggregation or a 10K-entry client payload.
+          let acceptanceRates = {};
+          const slugs = data.problems.map((problem) => problem.slug).filter(Boolean);
+          if (slugs.length) {
+            try {
+              acceptanceRates = await apiFetchOptional(
+                `/api/problems/stats/acceptance?slugs=${encodeURIComponent(slugs.join(","))}`
+              ) || {};
+            } catch (err) {
+              console.warn("[useProblems] Page acceptance rates fetch failed:", err.message);
+            }
+          }
+          if (cancelled) return;
+
+          setProblems(enrichProblems(data.problems, acceptanceRates));
           setPagination({
             page: data.page ?? page,
             limit: data.limit ?? limit,
