@@ -47,14 +47,14 @@ function problemQuery(rows) {
 describe("admin analytics scalability", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("aggregates registration trends in Mongo instead of materializing users", async () => {
+  it("aggregates registration trends using the canonical User signup timestamp", async () => {
     User.aggregate.mockResolvedValue([{ _id: 0, count: 2 }]);
     const res = mockRes();
 
     await getRegistrationTrends({ query: {} }, res);
 
     expect(User.aggregate).toHaveBeenCalledWith(expect.arrayContaining([
-      expect.objectContaining({ $match: expect.objectContaining({ createdAt: expect.any(Object) }) }),
+      expect.objectContaining({ $match: expect.objectContaining({ joinedDate: expect.any(Object) }) }),
       expect.objectContaining({ $group: expect.any(Object) }),
     ]));
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ bucket: "daily", trend: expect.any(Array) }));
@@ -109,6 +109,9 @@ describe("admin analytics scalability", () => {
 
     expect(Submission.aggregate).not.toHaveBeenCalled();
     expect(ProblemStats.find).toHaveBeenCalledTimes(2);
+    expect(ProblemStats.find.mock.calls[0][0]).toEqual({ accepted: { $gt: 0 } });
+    expect(ProblemStats.find.mock.results[0].value.sort).toHaveBeenCalledWith({ accepted: -1, problemSlug: 1 });
+    expect(ProblemStats.find.mock.results[1].value.sort).toHaveBeenCalledWith({ accepted: 1, problemSlug: 1 });
     expect(res.json).toHaveBeenCalledWith({
       mostSolved: [{ slug: "two-sum", title: "Two Sum", difficulty: "Easy", acceptedCount: 50 }],
       leastSolved: [{ slug: "reverse-string", title: "Reverse String", difficulty: "Easy", acceptedCount: 5 }],
