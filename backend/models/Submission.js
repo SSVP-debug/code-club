@@ -73,8 +73,8 @@ const submissionSchema = new mongoose.Schema(
     // fact. `null`/absent for every submission recorded before this
     // field existed; treat that the same as "unknown," not "version 0."
     // Lets a later reader notice "this submission's verdict was computed
-    // under a grading contract that has since changed" without needing
-    // to store or reconstruct the actual old testcases/contract.
+    // under a grading contract that has since changed" without needing to
+    // store or reconstruct the actual old testcases/contract.
     problemVersion: {
       type: Number,
       default: null,
@@ -157,6 +157,11 @@ const submissionSchema = new mongoose.Schema(
 // ── Indexes ────────────────────────────────────────────────────────────────────
 // Compound index: covers listSubmissions (userId + createdAt) — the primary query
 submissionSchema.index({ userId: 1, createdAt: -1 });
+
+// Cursor pagination adds `_id` as a deterministic tie-breaker when two
+// submissions share the same millisecond timestamp. This keeps page boundaries
+// stable without using skip/offset as history grows.
+submissionSchema.index({ userId: 1, createdAt: -1, _id: -1 });
 
 // Compound index: covers per-problem submission filter (userId + problemSlug)
 submissionSchema.index({ userId: 1, problemSlug: 1 });
