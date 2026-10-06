@@ -11,9 +11,13 @@ try {
   await mongoose.connect(uri);
 
   const indexes = [
-    [User, { createdAt: -1 }, "analytics_user_created_at"],
+    // Registration analytics use the User model's explicit signup timestamp.
+    [User, { joinedDate: -1 }, "analytics_user_joined_date"],
+    // Submission trend, active-user, and retention windows all filter by createdAt.
     [Submission, { createdAt: 1 }, "analytics_submission_created_at"],
-    [ProblemStats, { accepted: 1 }, "analytics_problem_stats_accepted"],
+    // Problem popularity ranks by accepted count with a deterministic slug tie-breaker.
+    [ProblemStats, { accepted: -1, problemSlug: 1 }, "analytics_problem_stats_accepted_desc"],
+    [ProblemStats, { accepted: 1, problemSlug: 1 }, "analytics_problem_stats_accepted_asc"],
   ];
 
   for (const [model, key, name] of indexes) {

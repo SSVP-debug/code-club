@@ -18,15 +18,16 @@ function resolveBucket(req) {
   return VALID_BUCKETS.includes(bucket) ? bucket : "daily";
 }
 
-async function aggregateTimeTrend(Model, bucket, now = new Date()) {
+async function aggregateTimeTrend(Model, bucket, dateField = "createdAt", now = new Date()) {
   const templates = bucketByPeriod([], bucket, DEFAULT_PERIODS[bucket], now);
   const firstStart = new Date(templates[0].start);
   const lastEnd = new Date(templates[templates.length - 1].end);
   const unit = bucket === "monthly" ? "month" : "day";
   const divisor = bucket === "weekly" ? 7 : 1;
+  const datePath = `$${dateField}`;
 
   const rows = await Model.aggregate([
-    { $match: { createdAt: { $gte: firstStart, $lt: lastEnd } } },
+    { $match: { [dateField]: { $gte: firstStart, $lt: lastEnd } } },
     {
       $group: {
         _id: {
@@ -35,7 +36,7 @@ async function aggregateTimeTrend(Model, bucket, now = new Date()) {
               {
                 $dateDiff: {
                   startDate: firstStart,
-                  endDate: "$createdAt",
+                  endDate: datePath,
                   unit,
                   timezone: "UTC",
                 },
@@ -56,7 +57,8 @@ async function aggregateTimeTrend(Model, bucket, now = new Date()) {
 export async function getRegistrationTrends(req, res) {
   try {
     const bucket = resolveBucket(req);
-    const trend = await aggregateTimeTrend(User, bucket);
+    // User does not use Mongoose timestamps; joinedDate is the canonical signup timestamp.
+    const trend = await aggregateTimeTrend(User, bucket, "joinedDate");
     return res.json({ bucket, trend });
   } catch (err) {
     logger.error({ err }, "[Admin] registration trends error");
