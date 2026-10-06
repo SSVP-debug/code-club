@@ -37,10 +37,10 @@ function participantQuery(value) {
           let left = a[field]; let right = b[field];
           if (left instanceof Date) left = left.getTime();
           if (right instanceof Date) right = right.getTime();
-          const leftValue = left?.toString?.() ?? left;
-          const rightValue = right?.toString?.() ?? right;
-          if (leftValue === rightValue) continue;
-          return (leftValue < rightValue ? -1 : 1) * direction;
+          if (left?.toString && typeof left !== "number") left = left.toString();
+          if (right?.toString && typeof right !== "number") right = right.toString();
+          if (left === right) continue;
+          return (left < right ? -1 : 1) * direction;
         }
         return 0;
       });
