@@ -1,41 +1,14 @@
 /**
- * adminAnalyticsController.js — admin console analytics endpoints
- * (plan 007). Split into its own file for the same reason
- * collegeController.js/adminProblemController.js were: adminController.js
- * had already reached 898 lines by plan 006, well past judgeController.js
- * (588, the next-largest, never split).
+ * Admin-wide analytics endpoints.
  *
- * ── Scope note — read before extending this file ───────────────────────
- * This is admin-wide, aggregate analytics (registrations, retention,
- * submission trends across ALL users). It is NOT the same page as
- * src/pages/Analytics.jsx, which is an individual student's own personal
- * performance dashboard (scoped to req.userDoc via useAppContext on the
- * frontend, not touched by this plan at all — confirmed by reading it
- * before writing this file, per plan 007's Context section).
- *
- * ── Time-bucketing ──────────────────────────────────────────────────────
- * Bucket-boundary math lives in ../utils/timeBuckets.js, not here — kept
- * separate so it's unit-testable against fixed mock dates without mocking
- * Mongoose. This file's job is just: fetch raw timestamps, hand them to
- * bucketByPeriod().
- *
- * ── "Active users" — a judgment call, resolved here not in code review ──
- * The spec asks for "active-user counts over a rolling window." There's no
- * lastLogin-style timestamp on User (checked backend/models/User.js) — the
- * only real per-user activity signal is Submission.createdAt. So "active"
- * here means "made at least one submission in the window," not the
- * User.status account-status field plan 003/004 use (that's an admin
- * suspend/activate flag, not an activity signal — a suspended user made no
- * submissions either way, and an active-status user who's never opened the
- * app wouldn't show as "active" under that field). Returned as two rolling
- * snapshot numbers (last 7 / last 30 days), not a time series — a full
- * activity trend line is a reasonable future addition but out of scope for
- * "keep this simple," per the plan's own framing for the retention metric.
+ * Scalability rule: never materialize an unbounded timestamp collection in Node.
+ * Trend endpoints aggregate only their bounded reporting window in MongoDB.
  */
 import User from "../models/User.js";
 import Problem from "../models/Problem.js";
+import ProblemStats from "../models/ProblemStats.js";
 import Submission from "../models/Submission.js";
-import { bucketByPeriod } from "../utils/timeBuckets.js";
+import { bucketByPeriod, DEFAULT_PERIODS } from "../utils/timeBuckets.js";
 import { logger } from "../config/logger.js";
 
 const VALID_BUCKETS = ["daily", "weekly", "monthly"];
@@ -45,15 +18,45 @@ function resolveBucket(req) {
   return VALID_BUCKETS.includes(bucket) ? bucket : "daily";
 }
 
-// ── GET /api/admin/analytics/registrations?bucket=daily|weekly|monthly ─────
+async function aggregateTimeTrend(Model, bucket, now = new Date()) {
+  const templates = bucketByPeriod([], bucket, DEFAULT_PERIODS[bucket], now);
+  const firstStart = new Date(templates[0].start);
+  const lastEnd = new Date(templates[templates.length - 1].end);
+  const unit = bucket === "monthly" ? "month" : "day";
+  const divisor = bucket === "weekly" ? 7 : 1;
+
+  const rows = await Model.aggregate([
+    { $match: { createdAt: { $gte: firstStart, $lt: lastEnd } } },
+    {
+      $group: {
+        _id: {
+          $floor: {
+            $divide: [
+              {
+                $dateDiff: {
+                  startDate: firstStart,
+                  endDate: "$createdAt",
+                  unit,
+                  timezone: "UTC",
+                },
+              },
+              divisor,
+            ],
+          },
+        },
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const counts = new Map(rows.map((row) => [Number(row._id), row.count]));
+  return templates.map((template, index) => ({ ...template, count: counts.get(index) || 0 }));
+}
+
 export async function getRegistrationTrends(req, res) {
   try {
     const bucket = resolveBucket(req);
-    const users = await User.find({}).select("createdAt").lean();
-    const trend = bucketByPeriod(
-      users.map((u) => u.createdAt),
-      bucket
-    );
+    const trend = await aggregateTimeTrend(User, bucket);
     return res.json({ bucket, trend });
   } catch (err) {
     logger.error({ err }, "[Admin] registration trends error");
@@ -61,15 +64,10 @@ export async function getRegistrationTrends(req, res) {
   }
 }
 
-// ── GET /api/admin/analytics/submissions?bucket=daily|weekly|monthly ───────
 export async function getSubmissionTrends(req, res) {
   try {
     const bucket = resolveBucket(req);
-    const submissions = await Submission.find({}).select("createdAt").lean();
-    const trend = bucketByPeriod(
-      submissions.map((s) => s.createdAt),
-      bucket
-    );
+    const trend = await aggregateTimeTrend(Submission, bucket);
     return res.json({ bucket, trend });
   } catch (err) {
     logger.error({ err }, "[Admin] submission trends error");
@@ -77,10 +75,6 @@ export async function getSubmissionTrends(req, res) {
   }
 }
 
-// ── GET /api/admin/analytics/active-users ───────────────────────────────────
-// See the "Active users" note in the file header for why this is
-// submission-based, not User.status-based, and why it's two rolling
-// snapshot numbers rather than a bucketed trend.
 export async function getActiveUserTrends(req, res) {
   try {
     const now = new Date();
@@ -94,22 +88,13 @@ export async function getActiveUserTrends(req, res) {
       Submission.distinct("userId", { createdAt: { $gte: thirtyDaysAgo } }),
     ]);
 
-    return res.json({
-      last7Days: last7Days.length,
-      last30Days: last30Days.length,
-    });
+    return res.json({ last7Days: last7Days.length, last30Days: last30Days.length });
   } catch (err) {
     logger.error({ err }, "[Admin] active user trends error");
     return res.status(500).json({ error: "Failed to load active user trends." });
   }
 }
 
-// ── GET /api/admin/analytics/retention ──────────────────────────────────────
-// Single rolling week-over-week percentage, per plan 007's explicit scope
-// note ("one rolling week-over-week percentage is enough... a full cohort-
-// retention engine is out of scope"). "Active in week N" = made >= 1
-// submission during that 7-day window (same activity signal as
-// getActiveUserTrends above).
 export async function getRetentionMetric(req, res) {
   try {
     const now = new Date();
@@ -125,10 +110,6 @@ export async function getRetentionMetric(req, res) {
 
     const weekN1Set = new Set(weekN1Users.map(String));
     const retainedCount = weekNUsers.filter((id) => weekN1Set.has(String(id))).length;
-
-    // Divide-by-zero guard, same pattern as getDashboardMetrics'
-    // acceptanceRate (plan 004) — no week-N-1 activity means "no data yet,"
-    // not "0% retention" (which would misleadingly imply everyone churned).
     const retentionPercent = weekN1Set.size > 0 ? Math.round((retainedCount / weekN1Set.size) * 100) : null;
 
     return res.json({
@@ -143,61 +124,59 @@ export async function getRetentionMetric(req, res) {
   }
 }
 
-// ── GET /api/admin/analytics/problems?limit=10 ──────────────────────────────
-// Most/least solved, ranked by ACCEPTED-submission count — per plan 007's
-// explicit definition, not by distinct-solver count (a different, also
-// reasonable metric, but not what was asked for here).
-//
-// "Least solved" only ranks problems with >=1 accepted submission — a
-// problem with zero accepted submissions never appears in a $group over
-// Submission at all. Rather than silently treating "no data" as "tied for
-// least popular" (which would misleadingly mix "barely solved" with
-// "nobody has ever attempted it"), those are surfaced separately via
-// `neverSolvedCount` — same "don't fabricate a number that looks
-// plausible but isn't" principle plan 004's escape hatch used for
-// acceptance rate.
 export async function getProblemPopularity(req, res) {
   try {
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
 
-    const [grouped, totalCatalogProblems] = await Promise.all([
-      Submission.aggregate([
-        { $match: { status: "Accepted" } },
-        { $group: { _id: "$problemSlug", acceptedCount: { $sum: 1 } } },
-      ]),
-      // Same catalog-visibility filter as getProblems (problemController.js)
-      // — don't count contest-only problems the public list wouldn't show.
+    const [mostSolved, leastSolved, totalCatalogProblems, solvedCatalogProblems] = await Promise.all([
+      ProblemStats.find({ accepted: { $gt: 0 } })
+        .sort({ accepted: -1, problemSlug: 1 })
+        .limit(limit)
+        .select("problemSlug accepted -_id")
+        .lean(),
+      ProblemStats.find({ accepted: { $gt: 0 } })
+        .sort({ accepted: 1, problemSlug: 1 })
+        .limit(limit)
+        .select("problemSlug accepted -_id")
+        .lean(),
       Problem.countDocuments({ visibility: { $ne: "contest" } }),
+      Problem.aggregate([
+        { $match: { visibility: { $ne: "contest" } } },
+        {
+          $lookup: {
+            from: "problemstats",
+            localField: "slug",
+            foreignField: "problemSlug",
+            as: "stats",
+          },
+        },
+        { $match: { "stats.accepted": { $gt: 0 } } },
+        { $count: "count" },
+      ]),
     ]);
 
-    const sorted = [...grouped].sort((a, b) => b.acceptedCount - a.acceptedCount);
-    const mostSolvedSlugs = sorted.slice(0, limit);
-    const leastSolvedSlugs = sorted.slice(-limit).reverse();
-    // With fewer than 2*limit problems having any accepted submissions
-    // (expected at "zero real users yet" volume), most/least legitimately
-    // overlap — that's correct, not a bug: with only a handful of solved
-    // problems, they ARE simultaneously the most- and least-solved ones.
-
-    const slugsNeeded = [...new Set([...mostSolvedSlugs, ...leastSolvedSlugs].map((r) => r._id))];
+    const slugsNeeded = [...new Set([
+      ...mostSolved.map((row) => row.problemSlug),
+      ...leastSolved.map((row) => row.problemSlug),
+    ])];
     const problems = await Problem.find({ slug: { $in: slugsNeeded } })
       .select("slug title difficulty")
       .lean();
     const problemBySlug = Object.fromEntries(problems.map((p) => [p.slug, p]));
 
-    const withTitles = (rows) =>
-      rows
-        .filter((r) => problemBySlug[r._id]) // drop slugs with no live Problem doc (e.g. deleted since)
-        .map((r) => ({
-          slug: r._id,
-          title: problemBySlug[r._id].title,
-          difficulty: problemBySlug[r._id].difficulty,
-          acceptedCount: r.acceptedCount,
-        }));
+    const withTitles = (rows) => rows
+      .filter((row) => problemBySlug[row.problemSlug])
+      .map((row) => ({
+        slug: row.problemSlug,
+        title: problemBySlug[row.problemSlug].title,
+        difficulty: problemBySlug[row.problemSlug].difficulty,
+        acceptedCount: row.accepted,
+      }));
 
     return res.json({
-      mostSolved: withTitles(mostSolvedSlugs),
-      leastSolved: withTitles(leastSolvedSlugs),
-      neverSolvedCount: Math.max(0, totalCatalogProblems - grouped.length),
+      mostSolved: withTitles(mostSolved),
+      leastSolved: withTitles(leastSolved),
+      neverSolvedCount: Math.max(0, totalCatalogProblems - (solvedCatalogProblems[0]?.count || 0)),
     });
   } catch (err) {
     logger.error({ err }, "[Admin] problem popularity error");
@@ -205,14 +184,6 @@ export async function getProblemPopularity(req, res) {
   }
 }
 
-// ── GET /api/admin/analytics/languages ──────────────────────────────────────
-// By submission count per language (all submissions, any status) — per
-// plan 007's definition, distinct from getProblemPopularity's
-// accepted-only count. Submission.language is required on every document
-// (backend/models/Submission.js) and records what an individual submission
-// actually used, not what a problem merely supports (Problem's
-// starterCode keys) — confirmed per plan 007 step 3 before building this,
-// so there's no gap to flag here.
 export async function getLanguagePopularity(req, res) {
   try {
     const grouped = await Submission.aggregate([
@@ -220,9 +191,7 @@ export async function getLanguagePopularity(req, res) {
       { $sort: { count: -1 } },
     ]);
 
-    return res.json({
-      languages: grouped.map((row) => ({ language: row._id, count: row.count })),
-    });
+    return res.json({ languages: grouped.map((row) => ({ language: row._id, count: row.count })) });
   } catch (err) {
     logger.error({ err }, "[Admin] language popularity error");
     return res.status(500).json({ error: "Failed to load language popularity." });

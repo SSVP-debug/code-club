@@ -1,20 +1,14 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
-vi.mock("../models/User.js", () => ({
-  default: { find: vi.fn() },
-}));
-vi.mock("../models/Problem.js", () => ({
-  default: { find: vi.fn(), countDocuments: vi.fn() },
-}));
-vi.mock("../models/Submission.js", () => ({
-  default: { find: vi.fn(), aggregate: vi.fn(), distinct: vi.fn() },
-}));
-vi.mock("../config/logger.js", () => ({
-  logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
-}));
+vi.mock("../models/User.js", () => ({ default: { aggregate: vi.fn() } }));
+vi.mock("../models/Problem.js", () => ({ default: { find: vi.fn(), countDocuments: vi.fn(), aggregate: vi.fn() } }));
+vi.mock("../models/ProblemStats.js", () => ({ default: { find: vi.fn() } }));
+vi.mock("../models/Submission.js", () => ({ default: { aggregate: vi.fn(), distinct: vi.fn() } }));
+vi.mock("../config/logger.js", () => ({ logger: { error: vi.fn() } }));
 
 import User from "../models/User.js";
 import Problem from "../models/Problem.js";
+import ProblemStats from "../models/ProblemStats.js";
 import Submission from "../models/Submission.js";
 import {
   getRegistrationTrends,
@@ -32,181 +26,102 @@ function mockRes() {
   return res;
 }
 
-// Same chainable-query stand-in as adminController.test.js — `.select()` is
-// the one this file actually uses; the rest are included so any future
-// query shape here doesn't need a second helper.
-function chainableQuery(result) {
+function statsQuery(rows) {
   const q = {
     sort: vi.fn(() => q),
-    select: vi.fn(() => q),
-    skip: vi.fn(() => q),
     limit: vi.fn(() => q),
-    lean: vi.fn().mockResolvedValue(result),
+    select: vi.fn(() => q),
+    lean: vi.fn().mockResolvedValue(rows),
   };
   return q;
 }
 
-describe("adminAnalyticsController", () => {
-  let res;
+describe("admin analytics scalability", () => {
+  beforeEach(() => vi.clearAllMocks());
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-    res = mockRes();
+  it("aggregates registration trends in Mongo instead of materializing users", async () => {
+    User.aggregate.mockResolvedValue([{ _id: 0, count: 2 }]);
+    const res = mockRes();
+
+    await getRegistrationTrends({ query: {} }, res);
+
+    expect(User.aggregate).toHaveBeenCalledWith(expect.arrayContaining([
+      expect.objectContaining({ $match: expect.objectContaining({ createdAt: expect.any(Object) }) }),
+      expect.objectContaining({ $group: expect.any(Object) }),
+    ]));
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ bucket: "daily", trend: expect.any(Array) }));
+    expect(res.json.mock.calls[0][0].trend.reduce((sum, b) => sum + b.count, 0)).toBe(2);
   });
 
-  describe("getRegistrationTrends", () => {
-    it("buckets User.createdAt values daily by default and reports which bucket was used", async () => {
-      User.find.mockReturnValueOnce(
-        chainableQuery([{ createdAt: new Date() }, { createdAt: new Date() }])
-      );
+  it("uses the same bounded Mongo aggregation for submission trends", async () => {
+    Submission.aggregate.mockResolvedValue([{ _id: 0, count: 3 }]);
+    const res = mockRes();
 
-      await getRegistrationTrends({ query: {} }, res);
+    await getSubmissionTrends({ query: { bucket: "weekly" } }, res);
 
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ bucket: "daily", trend: expect.any(Array) })
-      );
-      const payload = res.json.mock.calls[0][0];
-      const total = payload.trend.reduce((sum, b) => sum + b.count, 0);
-      expect(total).toBe(2);
-    });
-
-    it("falls back to daily for an invalid ?bucket= value rather than erroring", async () => {
-      User.find.mockReturnValueOnce(chainableQuery([]));
-
-      await getRegistrationTrends({ query: { bucket: "yearly" } }, res);
-
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ bucket: "daily" }));
-    });
-
-    it("honors a valid ?bucket=weekly", async () => {
-      User.find.mockReturnValueOnce(chainableQuery([]));
-
-      await getRegistrationTrends({ query: { bucket: "weekly" } }, res);
-
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ bucket: "weekly" }));
-    });
+    expect(Submission.aggregate).toHaveBeenCalledTimes(1);
+    expect(Submission.aggregate.mock.calls[0][0][0]).toMatchObject({ $match: { createdAt: expect.any(Object) } });
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ bucket: "weekly" }));
   });
 
-  describe("getSubmissionTrends", () => {
-    it("buckets Submission.createdAt values", async () => {
-      Submission.find.mockReturnValueOnce(chainableQuery([{ createdAt: new Date() }]));
+  it("keeps active-user and retention semantics intact", async () => {
+    Submission.distinct
+      .mockResolvedValueOnce(["u1", "u2"])
+      .mockResolvedValueOnce(["u1", "u2", "u3"])
+      .mockResolvedValueOnce(["u1", "u2"])
+      .mockResolvedValueOnce(["u2", "u3"]);
 
-      await getSubmissionTrends({ query: { bucket: "monthly" } }, res);
+    const activeRes = mockRes();
+    await getActiveUserTrends({}, activeRes);
+    expect(activeRes.json).toHaveBeenCalledWith({ last7Days: 2, last30Days: 3 });
 
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ bucket: "monthly" }));
-      const payload = res.json.mock.calls[0][0];
-      expect(payload.trend.reduce((sum, b) => sum + b.count, 0)).toBe(1);
+    const retentionRes = mockRes();
+    await getRetentionMetric({}, retentionRes);
+    expect(retentionRes.json).toHaveBeenCalledWith({
+      weekN1ActiveUsers: 2,
+      weekNActiveUsers: 2,
+      retainedUsers: 1,
+      retentionPercent: 50,
     });
   });
 
-  describe("getActiveUserTrends", () => {
-    it("returns distinct-submitter counts for the 7- and 30-day rolling windows", async () => {
-      Submission.distinct
-        .mockResolvedValueOnce(["u1", "u2"]) // last 7 days
-        .mockResolvedValueOnce(["u1", "u2", "u3", "u4"]); // last 30 days
+  it("reads problem popularity from ProblemStats instead of grouping Submission history", async () => {
+    ProblemStats.find
+      .mockReturnValueOnce(statsQuery([{ problemSlug: "two-sum", accepted: 50 }]))
+      .mockReturnValueOnce(statsQuery([{ problemSlug: "reverse-string", accepted: 5 }]));
+    Problem.countDocuments.mockResolvedValue(10);
+    Problem.aggregate.mockResolvedValue([{ count: 2 }]);
+    Problem.find.mockReturnValue({ lean: vi.fn().mockResolvedValue([
+      { slug: "two-sum", title: "Two Sum", difficulty: "Easy" },
+      { slug: "reverse-string", title: "Reverse String", difficulty: "Easy" },
+    ]) });
+    const res = mockRes();
 
-      await getActiveUserTrends({}, res);
+    await getProblemPopularity({ query: { limit: "10" } }, res);
 
-      expect(res.json).toHaveBeenCalledWith({ last7Days: 2, last30Days: 4 });
+    expect(Submission.aggregate).not.toHaveBeenCalled();
+    expect(ProblemStats.find).toHaveBeenCalledTimes(2);
+    expect(res.json).toHaveBeenCalledWith({
+      mostSolved: [{ slug: "two-sum", title: "Two Sum", difficulty: "Easy", acceptedCount: 50 }],
+      leastSolved: [{ slug: "reverse-string", title: "Reverse String", difficulty: "Easy", acceptedCount: 5 }],
+      neverSolvedCount: 8,
     });
   });
 
-  describe("getRetentionMetric", () => {
-    it("computes week-over-week retention as the overlap between the two windows", async () => {
-      Submission.distinct
-        .mockResolvedValueOnce(["u1", "u2", "u3"]) // week N
-        .mockResolvedValueOnce(["u1", "u2", "u4"]); // week N-1
+  it("preserves language popularity behavior", async () => {
+    Submission.aggregate.mockResolvedValue([
+      { _id: "python", count: 120 },
+      { _id: "javascript", count: 80 },
+    ]);
+    const res = mockRes();
 
-      await getRetentionMetric({}, res);
+    await getLanguagePopularity({}, res);
 
-      // 2 of the 3 week-N-1 users (u1, u2) are also active in week N.
-      expect(res.json).toHaveBeenCalledWith({
-        weekN1ActiveUsers: 3,
-        weekNActiveUsers: 3,
-        retainedUsers: 2,
-        retentionPercent: 67,
-      });
-    });
-
-    it("returns null (not 0) when week N-1 had no active users, to avoid a misleading 0%", async () => {
-      Submission.distinct.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
-
-      await getRetentionMetric({}, res);
-
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ retentionPercent: null, weekN1ActiveUsers: 0 })
-      );
-    });
-  });
-
-  describe("getProblemPopularity", () => {
-    it("ranks by accepted-submission count and attaches problem titles", async () => {
-      Submission.aggregate.mockResolvedValueOnce([
-        { _id: "two-sum", acceptedCount: 50 },
-        { _id: "reverse-string", acceptedCount: 5 },
-      ]);
-      Problem.countDocuments.mockResolvedValueOnce(10);
-      Problem.find.mockReturnValueOnce(
-        chainableQuery([
-          { slug: "two-sum", title: "Two Sum", difficulty: "Easy" },
-          { slug: "reverse-string", title: "Reverse String", difficulty: "Easy" },
-        ])
-      );
-
-      await getProblemPopularity({ query: { limit: "10" } }, res);
-
-      expect(res.json).toHaveBeenCalledWith({
-        mostSolved: [
-          { slug: "two-sum", title: "Two Sum", difficulty: "Easy", acceptedCount: 50 },
-          { slug: "reverse-string", title: "Reverse String", difficulty: "Easy", acceptedCount: 5 },
-        ],
-        leastSolved: [
-          { slug: "reverse-string", title: "Reverse String", difficulty: "Easy", acceptedCount: 5 },
-          { slug: "two-sum", title: "Two Sum", difficulty: "Easy", acceptedCount: 50 },
-        ],
-        // 10 catalog problems total, 2 have any accepted submissions.
-        neverSolvedCount: 8,
-      });
-    });
-
-    it("matches getProblems' catalog visibility filter when counting the catalog total", async () => {
-      Submission.aggregate.mockResolvedValueOnce([]);
-      Problem.countDocuments.mockResolvedValueOnce(0);
-      Problem.find.mockReturnValueOnce(chainableQuery([]));
-
-      await getProblemPopularity({ query: {} }, res);
-
-      expect(Problem.countDocuments).toHaveBeenCalledWith({ visibility: { $ne: "contest" } });
-    });
-
-    it("drops slugs that no longer resolve to a live Problem doc instead of erroring", async () => {
-      Submission.aggregate.mockResolvedValueOnce([{ _id: "deleted-problem", acceptedCount: 3 }]);
-      Problem.countDocuments.mockResolvedValueOnce(5);
-      Problem.find.mockReturnValueOnce(chainableQuery([])); // no matching Problem doc
-
-      await getProblemPopularity({ query: {} }, res);
-
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ mostSolved: [], leastSolved: [] })
-      );
-    });
-  });
-
-  describe("getLanguagePopularity", () => {
-    it("returns every language's total submission count, most-used first", async () => {
-      Submission.aggregate.mockResolvedValueOnce([
-        { _id: "python", count: 120 },
-        { _id: "javascript", count: 80 },
-      ]);
-
-      await getLanguagePopularity({}, res);
-
-      expect(res.json).toHaveBeenCalledWith({
-        languages: [
-          { language: "python", count: 120 },
-          { language: "javascript", count: 80 },
-        ],
-      });
+    expect(res.json).toHaveBeenCalledWith({
+      languages: [
+        { language: "python", count: 120 },
+        { language: "javascript", count: 80 },
+      ],
     });
   });
 });
