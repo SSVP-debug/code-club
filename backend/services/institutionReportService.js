@@ -3,7 +3,6 @@ import Cohort from "../models/Cohort.js";
 import CohortMembership from "../models/CohortMembership.js";
 import Assignment from "../models/Assignment.js";
 import UserProblemProgress from "../models/UserProblemProgress.js";
-import { topicStatsToObject } from "../utils/topicStats.js";
 
 function parseDate(value, fallback) {
   if (!value) return fallback;
@@ -37,10 +36,6 @@ export async function getInstitutionReportOverview({ college, from, to }) {
     ],
   };
 
-  // Keep the large per-student arrays inside MongoDB. The previous
-  // implementation transferred solvedSlugs/topicStats for every student and
-  // then performed the report arithmetic in Node. This aggregation returns a
-  // single small document for the institution-wide totals instead.
   const [studentTotals = {}] = await User.aggregate([
     { $match: studentMatch },
     {
@@ -50,11 +45,7 @@ export async function getInstitutionReportOverview({ college, from, to }) {
         optedOut: { $sum: { $cond: [{ $eq: [{ $ifNull: ["$visibleToTpo", true] }, false] }, 1, 0] } },
         totalSolved: {
           $sum: {
-            $cond: [
-              visibleStudentExpr(),
-              { $size: { $ifNull: ["$solvedSlugs", []] } },
-              0,
-            ],
+            $cond: [visibleStudentExpr(), { $size: { $ifNull: ["$solvedSlugs", []] } }, 0],
           },
         },
         totalEasy: { $sum: { $cond: [visibleStudentExpr(), { $ifNull: ["$solvedDifficulty.easy", 0] }, 0] } },
@@ -96,16 +87,12 @@ export async function getInstitutionReportOverview({ college, from, to }) {
     : [];
 
   const cohortStudentIds = new Set(memberships.map((membership) => String(membership.studentId)));
-  const visibleStudentIdDocs = await User.find(studentMatch)
-    .select("_id visibleToTpo")
-    .lean();
+  const visibleStudentIdDocs = await User.find(studentMatch).select("_id visibleToTpo").lean();
   const visibleStudentIds = visibleStudentIdDocs
     .filter((student) => student.visibleToTpo !== false)
     .map((student) => student._id);
   const visibleStudentIdSet = new Set(visibleStudentIds.map((id) => String(id)));
 
-  // Cohort aggregates still run entirely in MongoDB. Only one small result per
-  // cohort/topic is returned to Node, rather than one document per student.
   const cohortScalarRows = cohorts.length
     ? await User.aggregate([
         { $match: studentMatch },
@@ -211,9 +198,6 @@ export async function getInstitutionReportOverview({ college, from, to }) {
     .select("problemSlugs cohortId status createdAt")
     .lean();
 
-  // Assignment completion is derived from the scalable per-user/problem
-  // collection. We only transfer user ids (not solvedSlugs arrays) and let
-  // MongoDB count solved rows per assignment audience.
   const membershipsByCohort = new Map();
   for (const membership of memberships) {
     const key = String(membership.cohortId);
@@ -249,7 +233,43 @@ export async function getInstitutionReportOverview({ college, from, to }) {
       { $count: "completed" },
     ]);
 
-    completedAssignments += completionRows[0]?.completed || 0;
+    let completed = completionRows[0]?.completed || 0;
+
+    // Legacy assignments predate UserProblemProgress. Preserve their existing
+    // completion semantics without transferring solvedSlugs to Node: MongoDB
+    // performs the intersection/count in the database. Once progress exists
+    // for a user, progress is authoritative and the legacy fallback excludes
+    // that user to avoid double counting.
+    const progressUsers = await UserProblemProgress.aggregate([
+      { $match: { userId: { $in: audienceIds } } },
+      { $group: { _id: "$userId" } },
+      { $project: { _id: 1 } },
+    ]);
+    const progressUserIds = progressUsers.map((row) => row._id);
+    const legacyAudienceIds = audienceIds.filter(
+      (id) => !progressUserIds.some((progressId) => String(progressId) === String(id))
+    );
+
+    if (legacyAudienceIds.length) {
+      const legacyRows = await User.aggregate([
+        { $match: { _id: { $in: legacyAudienceIds }, ...studentMatch } },
+        {
+          $project: {
+            completed: {
+              $eq: [
+                { $size: { $setIntersection: [{ $ifNull: ["$solvedSlugs", []] }, assignment.problemSlugs] } },
+                assignment.problemSlugs.length,
+              ],
+            },
+          },
+        },
+        { $match: { completed: true } },
+        { $count: "completed" },
+      ]);
+      completed += legacyRows[0]?.completed || 0;
+    }
+
+    completedAssignments += completed;
     assignmentCompletions += audienceIds.length;
   }
 
