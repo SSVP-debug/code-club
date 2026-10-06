@@ -12,7 +12,7 @@ import Problem from "../models/Problem.js";
 import Submission from "../models/Submission.js";
 import Reflection from "../models/Reflection.js";
 import User from "../models/User.js";
-import Contest from "../models/Contest.js";
+import ContestParticipant from "../models/ContestParticipant.js";
 import BattleRoom from "../models/BattleRoom.js";
 import SkillsTest from "../models/SkillsTest.js";
 
@@ -60,25 +60,23 @@ async function migrateMongoReferences() {
     results.push({ collection: Model.collection.name, matched: result.matchedCount, modified: result.modifiedCount });
   }
 
-  // Split add/remove into two writes. MongoDB rejects conflicting update
-  // operators that target the same array path in one update document.
   for (const Model of [User, SkillsTest]) {
     const add = await Model.updateMany({ solvedSlugs: RETIRED_SLUG }, { $addToSet: { solvedSlugs: CANONICAL_SLUG } });
     const remove = await Model.updateMany({ solvedSlugs: RETIRED_SLUG }, { $pull: { solvedSlugs: RETIRED_SLUG } });
     results.push({ collection: Model.collection.name, matched: add.matchedCount, modified: add.modifiedCount + remove.modifiedCount });
   }
 
-  const contestAdd = await Contest.updateMany(
-    { "participants.solvedSlugs": RETIRED_SLUG },
-    { $addToSet: { "participants.$[participant].solvedSlugs": CANONICAL_SLUG } },
-    { arrayFilters: [{ "participant.solvedSlugs": RETIRED_SLUG }] }
+  // Contest participation is now a separate collection; do not write the
+  // retired slug back into the removed Contest.participants[] array.
+  const contestAdd = await ContestParticipant.updateMany(
+    { solvedSlugs: RETIRED_SLUG },
+    { $addToSet: { solvedSlugs: CANONICAL_SLUG } }
   );
-  const contestRemove = await Contest.updateMany(
-    { "participants.solvedSlugs": RETIRED_SLUG },
-    { $pull: { "participants.$[participant].solvedSlugs": RETIRED_SLUG } },
-    { arrayFilters: [{ "participant.solvedSlugs": RETIRED_SLUG }] }
+  const contestRemove = await ContestParticipant.updateMany(
+    { solvedSlugs: RETIRED_SLUG },
+    { $pull: { solvedSlugs: RETIRED_SLUG } }
   );
-  results.push({ collection: Contest.collection.name, matched: contestAdd.matchedCount, modified: contestAdd.modifiedCount + contestRemove.modifiedCount });
+  results.push({ collection: ContestParticipant.collection.name, matched: contestAdd.matchedCount, modified: contestAdd.modifiedCount + contestRemove.modifiedCount });
 
   const battleAdd = await BattleRoom.updateMany(
     { "teams.solvedSlugs": RETIRED_SLUG },

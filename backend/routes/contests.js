@@ -1,6 +1,7 @@
 import { Router } from "express";
 import crypto from "crypto";
 import Contest from "../models/Contest.js";
+import ContestParticipant from "../models/ContestParticipant.js";
 import Problem from "../models/Problem.js";
 import Submission from "../models/Submission.js";
 import { requireRole } from "../middleware/roleGuard.js";
@@ -10,18 +11,28 @@ import { awardContestSolve } from "../services/contestScoring.js";
 
 const router = Router();
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-function syncContestStatus(contest) {
+function contestStatus(contest) {
   const now = new Date();
-  if (now < new Date(contest.startsAt)) contest.status = "upcoming";
-  else if (now > new Date(contest.endsAt)) contest.status = "ended";
-  else contest.status = "active";
+  if (now < new Date(contest.startsAt)) return "upcoming";
+  if (now > new Date(contest.endsAt)) return "ended";
+  return "active";
 }
 
-function computeRankings(participants) {
+function rankParticipants(participants) {
   return [...participants]
-    .sort((a, b) => b.score - a.score || a.joinedAt - b.joinedAt)
-    .map((p, i) => ({ ...p, rank: i + 1 }));
+    .sort((a, b) => Number(b.score || 0) - Number(a.score || 0)
+      || new Date(a.joinedAt).getTime() - new Date(b.joinedAt).getTime()
+      || a._id.toString().localeCompare(b._id.toString()))
+    .map((participant, index) => ({ ...participant, rank: index + 1 }));
+}
+
+async function participantCounts(contestIds) {
+  if (!contestIds.length) return new Map();
+  const rows = await ContestParticipant.aggregate([
+    { $match: { contestId: { $in: contestIds } } },
+    { $group: { _id: "$contestId", count: { $sum: 1 } } },
+  ]);
+  return new Map(rows.map((row) => [row._id.toString(), row.count]));
 }
 
 // ── GET /api/contests ─────────────────────────────────────────────────────────
@@ -29,49 +40,32 @@ router.get("/", async (req, res) => {
   try {
     const { status = "active,upcoming", type = "public" } = req.query;
     const statuses = status.split(",");
-
-    // Short TTL: contest status/participant counts change as people join,
-    // but this is a browse/list page, not a leaderboard — 30s staleness is
-    // fine and avoids re-querying on every page load during rush periods.
     const cacheKey = `contests:list:${status}:${type}`;
-    const { value: result, cacheStatus } = await getOrSetCache(
-      cacheKey,
-      30,
-      async () => {
-        const contests = await Contest.find({
-          type: type === "all" ? { $in: ["public","private"] } : type,
-          status: { $in: statuses },
-        })
-          .select("title description type status startsAt endsAt problemSlugs participants createdBy")
-          .sort({ startsAt: 1 })
-          .limit(50)
-          .lean();
 
-        // Sync status based on current time
-        const now = new Date();
-        return contests.map(c => {
-          const isUpcoming = now < new Date(c.startsAt);
-          return {
-            ...c,
-            participantCount: c.participants?.length ?? 0,
-            problemCount:     c.problemSlugs?.length ?? 0,
-            participants:     undefined, // don't leak full participant list in index
-            // Fest Readiness Audit, P0-2: this list is a single shared,
-            // unpersonalized cache (see cacheKey above) served to every
-            // caller regardless of who they are — there's no way to
-            // special-case "unless you're the organizer" here without
-            // breaking that sharing. An upcoming contest's problemSlugs
-            // (which, notably, `type=private` callers can request for
-            // EVERY private contest at once, not just ones they're
-            // involved in) must not be exposed here at all; problemCount
-            // above already covers "how many problems," which is the
-            // documented acceptable level of detail pre-start.
-            problemSlugs:     isUpcoming ? undefined : c.problemSlugs,
-            isActive:         now >= new Date(c.startsAt) && now <= new Date(c.endsAt),
-          };
-        });
-      }
-    );
+    const { value: result, cacheStatus } = await getOrSetCache(cacheKey, 30, async () => {
+      const contests = await Contest.find({
+        type: type === "all" ? { $in: ["public", "private"] } : type,
+        status: { $in: statuses },
+      })
+        .select("title description type status startsAt endsAt problemSlugs createdBy")
+        .sort({ startsAt: 1 })
+        .limit(50)
+        .lean();
+
+      const counts = await participantCounts(contests.map((contest) => contest._id));
+      const now = new Date();
+
+      return contests.map((contest) => {
+        const isUpcoming = now < new Date(contest.startsAt);
+        return {
+          ...contest,
+          participantCount: counts.get(contest._id.toString()) || 0,
+          problemCount: contest.problemSlugs?.length ?? 0,
+          problemSlugs: isUpcoming ? undefined : contest.problemSlugs,
+          isActive: now >= new Date(contest.startsAt) && now <= new Date(contest.endsAt),
+        };
+      });
+    });
 
     res.set("X-Cache", cacheStatus);
     return res.json({ contests: result });
@@ -84,7 +78,6 @@ router.get("/", async (req, res) => {
 router.post("/", requireRole("admin", "tpo"), async (req, res) => {
   try {
     const { title, description, problemSlugs, startsAt, endsAt } = req.body;
-
     if (!title || !problemSlugs?.length || !startsAt || !endsAt) {
       return res.status(400).json({ error: "title, problemSlugs, startsAt, endsAt required." });
     }
@@ -92,22 +85,22 @@ router.post("/", requireRole("admin", "tpo"), async (req, res) => {
       return res.status(400).json({ error: "endsAt must be after startsAt." });
     }
 
-    // Validate all slugs exist
     const found = await Problem.countDocuments({ slug: { $in: problemSlugs } });
     if (found !== problemSlugs.length) {
       return res.status(400).json({ error: "One or more problem slugs are invalid." });
     }
 
     const start = new Date(startsAt);
-    const end   = new Date(endsAt);
-    const now   = new Date();
-
+    const end = new Date(endsAt);
+    const now = new Date();
     const contest = await Contest.create({
-      title, description: description || "",
+      title,
+      description: description || "",
       type: "public",
       status: now < start ? "upcoming" : now > end ? "ended" : "active",
       createdBy: req.userDoc._id,
-      startsAt: start, endsAt: end,
+      startsAt: start,
+      endsAt: end,
       durationMs: end - start,
       problemSlugs,
     });
@@ -119,128 +112,75 @@ router.post("/", requireRole("admin", "tpo"), async (req, res) => {
   }
 });
 
-// ── Phase 12B guardrails for student-hosted private contests ──────────────────
-// TPO/Admin are exempt (unchanged behavior — they run official, larger-scale
-// college contests and are already trusted staff, not the abuse surface this
-// is guarding against).
 const STUDENT_CONTEST_LIMITS = {
-  MAX_PROBLEMS:      8,
-  MAX_PARTICIPANTS:  100,
-  MIN_DURATION_MS:   30 * 60 * 1000,       // 30 minutes
-  MAX_DURATION_MS:   4 * 60 * 60 * 1000,   // 4 hours
+  MAX_PROBLEMS: 8,
+  MAX_PARTICIPANTS: 100,
+  MIN_DURATION_MS: 30 * 60 * 1000,
+  MAX_DURATION_MS: 4 * 60 * 60 * 1000,
 };
 
-// ── POST /api/contests/private — create private contest (090, extended 12B/12C) ─
-// TPO/Admin: unrestricted, as before. Student: guardrailed per Phase 12B,
-// plus the "verified account required" gate as of Phase 12C
-// (education.emailVerified).
-//
-// Deliberate: this checks emailVerified only, NOT collegeStatus === "verified".
-// Hosting a student-created private contest doesn't grant the creator
-// "official college" status or list the contest under an institution's
-// official rankings (Contest.collegeDomain is sourced only from tpoProfile,
-// never from student education — confirmed unused here). The gate's real
-// purpose is "prove this is a real student with a real institutional inbox,"
-// which emailVerified alone satisfies. Requiring full college approval here
-// would be a stricter regression for students at not-yet-reviewed
-// institutions, who have every right to host their own private contest.
+// ── POST /api/contests/private — create private contest ───────────────────────
 router.post("/private", requireRole("student", "tpo", "admin"), async (req, res) => {
   try {
     const { title, description, problemSlugs, startsAt, endsAt } = req.body;
     const isStudent = req.userDoc.role === "student";
-
     if (!title || !problemSlugs?.length || !startsAt || !endsAt) {
       return res.status(400).json({ error: "title, problemSlugs, startsAt, endsAt required." });
     }
 
     const start = new Date(startsAt);
-    const end   = new Date(endsAt);
-    const now   = new Date();
-
-    if (end <= start) {
-      return res.status(400).json({ error: "endsAt must be after startsAt." });
-    }
+    const end = new Date(endsAt);
+    const now = new Date();
+    if (end <= start) return res.status(400).json({ error: "endsAt must be after startsAt." });
 
     let maxParticipants = null;
     let allowLateJoin = true;
-
     if (isStudent) {
-      // Phase 12C shipped student college verification — enforcing the
-      // "verified account required" guardrail now that it's actually
-      // possible to. "Verified" here means education.emailVerified (college
-      // email confirmed) since that's the only verification concept
-      // students have; there's no separate generic account-verification
-      // flag in this codebase to check instead. See the module-level note
-      // above for why this is emailVerified and not full collegeStatus.
       if (!req.userDoc.education?.emailVerified) {
-        return res.status(403).json({
-          error: "Verify your college email before hosting a contest.",
-          code: "HOST_NOT_VERIFIED",
-        });
+        return res.status(403).json({ error: "Verify your college email before hosting a contest.", code: "HOST_NOT_VERIFIED" });
       }
 
       const durationMs = end - start;
       if (durationMs < STUDENT_CONTEST_LIMITS.MIN_DURATION_MS || durationMs > STUDENT_CONTEST_LIMITS.MAX_DURATION_MS) {
-        return res.status(400).json({
-          error: "Contest duration must be between 30 minutes and 4 hours.",
-        });
+        return res.status(400).json({ error: "Contest duration must be between 30 minutes and 4 hours." });
       }
-
       if (problemSlugs.length > STUDENT_CONTEST_LIMITS.MAX_PROBLEMS) {
-        return res.status(400).json({
-          error: `Hosted contests can have at most ${STUDENT_CONTEST_LIMITS.MAX_PROBLEMS} problems.`,
-        });
+        return res.status(400).json({ error: `Hosted contests can have at most ${STUDENT_CONTEST_LIMITS.MAX_PROBLEMS} problems.` });
       }
 
       const requestedCap = Number(req.body.maxParticipants) || STUDENT_CONTEST_LIMITS.MAX_PARTICIPANTS;
       maxParticipants = Math.min(Math.max(requestedCap, 2), STUDENT_CONTEST_LIMITS.MAX_PARTICIPANTS);
-
       allowLateJoin = Boolean(req.body.allowLateJoin);
 
-      // One active hosted contest at a time.
       const existingActive = await Contest.findOne({
         createdBy: req.userDoc._id,
         type: "private",
         status: { $in: ["upcoming", "active"] },
       }).lean();
-
       if (existingActive) {
-        return res.status(409).json({
-          error: "You already have an active or upcoming hosted contest. It must end before you can host another.",
-        });
+        return res.status(409).json({ error: "You already have an active or upcoming hosted contest. It must end before you can host another." });
       }
     }
 
-    // Validate all slugs exist
     const found = await Problem.countDocuments({ slug: { $in: problemSlugs } });
     if (found !== problemSlugs.length) {
       return res.status(400).json({ error: "One or more problem slugs are invalid." });
     }
 
-    // Fest Readiness Audit, P1-5: retry once on the (astronomically
-    // unlikely — 1-in-16.7M) chance of a collision, now that inviteCode
-    // has a real uniqueness constraint (models/Contest.js) instead of
-    // silently allowing two contests to share one code. A single retry is
-    // enough — a second collision in a row is not worth engineering
-    // around for a collection this small.
-    const MAX_INVITE_CODE_ATTEMPTS = 2;
     let contest;
-    for (let attempt = 1; attempt <= MAX_INVITE_CODE_ATTEMPTS; attempt++) {
-      const inviteCode = crypto.randomBytes(3).toString("hex").toUpperCase(); // 6-char e.g. "A3F9B2"
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      const inviteCode = crypto.randomBytes(3).toString("hex").toUpperCase();
       try {
         contest = await Contest.create({
-          title, description: description || "",
+          title,
+          description: description || "",
           type: "private",
           status: now < start ? "upcoming" : "active",
-          createdBy:    req.userDoc._id,
+          createdBy: req.userDoc._id,
           inviteCode,
-          // Bug fix: this previously read req.userDoc.collegeDomain, which
-          // doesn't exist at the top level — the real field is nested under
-          // tpoProfile, so this was always null regardless of the creator's
-          // college. Only meaningful for TPO-created contests; students don't
-          // have a verified college domain until Phase 12C.
           collegeDomain: req.userDoc.tpoProfile?.collegeDomain || null,
-          startsAt: start, endsAt: end,
+          startsAt: start,
+          endsAt: end,
           durationMs: end - start,
           problemSlugs,
           maxParticipants,
@@ -248,10 +188,7 @@ router.post("/private", requireRole("student", "tpo", "admin"), async (req, res)
         });
         break;
       } catch (err) {
-        const isDuplicateInviteCode = err.code === 11000 && err.keyPattern?.inviteCode;
-        if (isDuplicateInviteCode && attempt < MAX_INVITE_CODE_ATTEMPTS) {
-          continue;
-        }
+        if (err.code === 11000 && err.keyPattern?.inviteCode && attempt < 2) continue;
         throw err;
       }
     }
@@ -263,7 +200,11 @@ router.post("/private", requireRole("student", "tpo", "admin"), async (req, res)
   }
 });
 
-// ── POST /api/contests/join-private — join via invite code (090) ──────────────
+async function findParticipant(contestId, userId) {
+  return ContestParticipant.findOne({ contestId, userId }).lean();
+}
+
+// ── POST /api/contests/join-private — join via invite code ────────────────────
 router.post("/join-private", async (req, res) => {
   try {
     const { inviteCode } = req.body;
@@ -272,45 +213,34 @@ router.post("/join-private", async (req, res) => {
     const contest = await Contest.findOne({ inviteCode: inviteCode.toUpperCase(), type: "private" });
     if (!contest) return res.status(404).json({ error: "Invalid invite code." });
 
-    // Fest Readiness Audit implementation, found while writing contest
-    // lifecycle tests (P1-4): `contest.status` as stored is only ever set
-    // once, at creation time ("upcoming" or "active" — see POST /private
-    // above). It was never refreshed against the clock before these
-    // status checks ran, so a contest created as "upcoming" would still
-    // read as "upcoming" here forever, even long after it had actually
-    // gone active or ended — meaning the "contest has ended" and "late
-    // join disabled" checks just below could silently never fire.
-    // syncContestStatus() already existed for exactly this (defined at the
-    // top of this file) but was never actually called anywhere. Wiring it
-    // in here is the fix — not a new mechanism, just using the one that
-    // was already built.
-    syncContestStatus(contest);
-    if (contest.status === "ended") return res.status(410).json({ error: "Contest has ended." });
+    const status = contestStatus(contest);
+    if (status === "ended") return res.status(410).json({ error: "Contest has ended." });
 
-    const alreadyJoined = contest.participants.some(
-      p => p.userId.toString() === req.userDoc._id.toString()
-    );
-    if (alreadyJoined) {
-      return res.json({ alreadyJoined: true, contestId: contest._id });
-    }
+    const existing = await findParticipant(contest._id, req.userDoc._id);
+    if (existing) return res.json({ alreadyJoined: true, contestId: contest._id });
 
-    // Phase 12B guardrails — checked after alreadyJoined so a participant
-    // who already joined can always re-fetch their contestId, even if the
-    // contest has since filled up or moved past its start time.
-    if (contest.maxParticipants && contest.participants.length >= contest.maxParticipants) {
-      return res.status(409).json({ error: "This contest is full." });
+    if (contest.maxParticipants) {
+      const count = await ContestParticipant.countDocuments({ contestId: contest._id });
+      if (count >= contest.maxParticipants) return res.status(409).json({ error: "This contest is full." });
     }
-    if (contest.status === "active" && !contest.allowLateJoin) {
+    if (status === "active" && !contest.allowLateJoin) {
       return res.status(403).json({ error: "This contest has already started and isn't accepting late joins." });
     }
 
-    contest.participants.push({
-      userId:      req.userDoc._id,
-      username:    req.userDoc.username,
-      displayName: req.userDoc.displayName,
-      solvedSlugs: [], score: 0, joinedAt: new Date(),
-    });
-    await contest.save();
+    try {
+      await ContestParticipant.create({
+        contestId: contest._id,
+        userId: req.userDoc._id,
+        username: req.userDoc.username,
+        displayName: req.userDoc.displayName,
+        solvedSlugs: [],
+        score: 0,
+        joinedAt: new Date(),
+      });
+    } catch (err) {
+      if (err.code === 11000) return res.json({ alreadyJoined: true, contestId: contest._id });
+      throw err;
+    }
 
     return res.json({ success: true, contestId: contest._id, title: contest.title });
   } catch (err) {
@@ -318,38 +248,62 @@ router.post("/join-private", async (req, res) => {
   }
 });
 
-// ── GET /api/contests/mine — contests the caller has participated in (12D) ────
-// Must stay registered BEFORE GET /:id below — otherwise Express would try
-// to match "mine" as the :id param instead of hitting this route.
-//
-// Fills the gap flagged back in 12A: there was no "contests I've joined"
-// query at all, which is why ClubPage's private-contest preview had to be
-// an honest empty-state instead of real data. This is that endpoint —
-// powers Profile's contest history, and could later back that preview too.
+// ── GET /api/contests/mine — contests the caller has participated in ──────────
 router.get("/mine", requireAuth, async (req, res) => {
   try {
-    const contests = await Contest.find({ "participants.userId": req.userDoc._id })
-      .sort({ endsAt: -1 })
+    const mine = await ContestParticipant.find({ userId: req.userDoc._id })
+      .sort({ joinedAt: -1 })
       .limit(50)
-      .select("title type status startsAt endsAt problemSlugs participants")
       .lean();
+    const contestIds = mine.map((participant) => participant.contestId);
+    if (!contestIds.length) return res.json({ contests: [] });
 
-    const history = contests.map((c) => {
-      const ranked = computeRankings(c.participants || []);
-      const mine = ranked.find((p) => p.userId?.toString() === req.userDoc._id.toString());
-      return {
-        _id: c._id,
-        title: c.title,
-        type: c.type,
-        status: c.status,
-        endsAt: c.endsAt,
-        problemCount: c.problemSlugs.length,
-        participantCount: ranked.length,
-        myRank: mine?.rank ?? null,
-        myScore: mine?.score ?? 0,
-        mySolvedCount: mine?.solvedSlugs?.length ?? 0,
-      };
-    });
+    const contests = await Contest.find({ _id: { $in: contestIds } })
+      .select("title type status startsAt endsAt problemSlugs")
+      .lean();
+    const contestById = new Map(contests.map((contest) => [contest._id.toString(), contest]));
+
+    // Windowed ranking keeps this endpoint bounded even when a contest has a
+    // very large participant set; MongoDB computes the rank before returning
+    // only the 50 participant rows belonging to this user.
+    const rankedMine = await ContestParticipant.aggregate([
+      { $match: { contestId: { $in: contestIds } } },
+      {
+        $setWindowFields: {
+          partitionBy: "$contestId",
+          sortBy: { score: -1, joinedAt: 1, _id: 1 },
+          output: { rank: { $documentNumber: {} } },
+        },
+      },
+      { $match: { userId: req.userDoc._id } },
+      { $project: { contestId: 1, score: 1, solvedSlugs: 1, rank: 1 } },
+    ]);
+    const rankedByContest = new Map(rankedMine.map((row) => [row.contestId.toString(), row]));
+
+    const history = mine
+      .map((participant) => {
+        const contest = contestById.get(participant.contestId.toString());
+        if (!contest) return null;
+        const ranked = rankedByContest.get(participant.contestId.toString()) || participant;
+        return {
+          _id: contest._id,
+          title: contest.title,
+          type: contest.type,
+          status: contest.status,
+          endsAt: contest.endsAt,
+          problemCount: contest.problemSlugs.length,
+          participantCount: undefined,
+          myRank: ranked.rank ?? null,
+          myScore: ranked.score ?? 0,
+          mySolvedCount: ranked.solvedSlugs?.length ?? 0,
+        };
+      })
+      .filter(Boolean);
+
+    // Fill participant counts in one aggregation rather than materializing
+    // every participant document in Node.
+    const counts = await participantCounts(contestIds);
+    for (const row of history) row.participantCount = counts.get(row._id.toString()) || 0;
 
     return res.json({ contests: history });
   } catch (err) {
@@ -361,38 +315,43 @@ router.get("/mine", requireAuth, async (req, res) => {
 // ── GET /api/contests/:id — contest detail + ranked leaderboard ───────────────
 router.get("/:id", async (req, res) => {
   try {
-    const contest = await Contest.findById(req.params.id).lean();
+    const contest = await Contest.findById(req.params.id).select("title description type status createdBy startsAt endsAt problemSlugs inviteCode collegeDomain maxParticipants allowLateJoin createdAt updatedAt").lean();
     if (!contest) return res.status(404).json({ error: "Contest not found." });
 
-    // Sync status
-    const now = new Date();
-    const status = now < new Date(contest.startsAt) ? "upcoming"
-                 : now > new Date(contest.endsAt)   ? "ended"
-                 : "active";
-
-    const ranked = computeRankings(contest.participants || []);
-
-    // Find requesting user's position
-    const myEntry = ranked.find(p => p.userId?.toString() === req.userDoc?._id?.toString());
-
-    // ── Contest detail leak (Fest Readiness Audit, P0-2) ────────────────────
-    // Before start, only the organizer gets the real problemSlugs — even a
-    // joined participant must wait for the contest to actually go active.
-    // problemCount is always safe to return ("3 problems" is fine; the
-    // actual slugs, before anyone is meant to see them, are not).
+    const status = contestStatus(contest);
     const isOrganizer = contest.createdBy?.toString() === req.userDoc?._id?.toString();
     const revealProblems = status !== "upcoming" || isOrganizer;
+
+    const [leaderboardRows, participantCount, mine] = await Promise.all([
+      ContestParticipant.find({ contestId: contest._id })
+        .sort({ score: -1, joinedAt: 1, _id: 1 })
+        .limit(100)
+        .lean(),
+      ContestParticipant.countDocuments({ contestId: contest._id }),
+      req.userDoc?._id ? findParticipant(contest._id, req.userDoc._id) : null,
+    ]);
+
+    const leaderboard = leaderboardRows.map((participant, index) => ({ ...participant, rank: index + 1 }));
+    const myRank = mine ? await ContestParticipant.countDocuments({
+      contestId: contest._id,
+      $or: [
+        { score: { $gt: mine.score } },
+        { score: mine.score, joinedAt: { $lt: mine.joinedAt } },
+        { score: mine.score, joinedAt: mine.joinedAt, _id: { $lt: mine._id } },
+      ],
+    }) + 1 : null;
 
     return res.json({
       ...contest,
       status,
-      problemSlugs:  revealProblems ? contest.problemSlugs : undefined,
-      problemCount:  contest.problemSlugs?.length ?? 0,
-      leaderboard: ranked.slice(0, 100),
-      myRank:        myEntry?.rank ?? null,
-      myScore:       myEntry?.score ?? 0,
-      mySolvedSlugs: myEntry?.solvedSlugs ?? [],
-      isJoined:      !!myEntry,
+      problemSlugs: revealProblems ? contest.problemSlugs : undefined,
+      problemCount: contest.problemSlugs?.length ?? 0,
+      participantCount,
+      leaderboard,
+      myRank,
+      myScore: mine?.score ?? 0,
+      mySolvedSlugs: mine?.solvedSlugs ?? [],
+      isJoined: !!mine,
     });
   } catch (err) {
     return res.status(500).json({ error: "Failed to load contest." });
@@ -402,24 +361,27 @@ router.get("/:id", async (req, res) => {
 // ── POST /api/contests/:id/join — join a public contest ──────────────────────
 router.post("/:id/join", async (req, res) => {
   try {
-    const contest = await Contest.findById(req.params.id);
+    const contest = await Contest.findById(req.params.id).select("title type startsAt endsAt");
     if (!contest) return res.status(404).json({ error: "Contest not found." });
     if (contest.type === "private") return res.status(403).json({ error: "Use invite code to join private contests." });
 
-    // Same fix as POST /join-private above — see that route's comment.
-    syncContestStatus(contest);
-    if (contest.status === "ended") return res.status(410).json({ error: "Contest has ended." });
+    if (contestStatus(contest) === "ended") return res.status(410).json({ error: "Contest has ended." });
+    if (await findParticipant(contest._id, req.userDoc._id)) return res.json({ alreadyJoined: true });
 
-    const alreadyJoined = contest.participants.some(
-      p => p.userId.toString() === req.userDoc._id.toString()
-    );
-    if (alreadyJoined) return res.json({ alreadyJoined: true });
-
-    contest.participants.push({
-      userId: req.userDoc._id, username: req.userDoc.username,
-      displayName: req.userDoc.displayName, solvedSlugs: [], score: 0,
-    });
-    await contest.save();
+    try {
+      await ContestParticipant.create({
+        contestId: contest._id,
+        userId: req.userDoc._id,
+        username: req.userDoc.username,
+        displayName: req.userDoc.displayName,
+        solvedSlugs: [],
+        score: 0,
+        joinedAt: new Date(),
+      });
+    } catch (err) {
+      if (err.code === 11000) return res.json({ alreadyJoined: true });
+      throw err;
+    }
 
     return res.json({ success: true });
   } catch (err) {
@@ -428,21 +390,6 @@ router.post("/:id/join", async (req, res) => {
 });
 
 // ── POST /api/contests/:id/solve — legacy contest-solve endpoint ──────────────
-// Fest Readiness Audit, P0-1: this used to award contest credit purely on
-// the strength of a client-sent `{ slug }` — no proof the caller ever
-// actually solved anything was required. That is no longer true.
-//
-// The real, trusted scoring path is now controllers/judgeController.js's
-// submitHandler, which calls services/contestScoring.js's
-// awardContestSolve() itself, immediately after computing a real Accepted
-// verdict — see that file. This endpoint is kept only for any caller that
-// hasn't migrated to sending `contestId` directly on POST /api/judge/submit
-// (see src/hooks/useProblemSolver.js, which no longer calls this route as
-// of the same change). It is NOT a second, independent way to score:
-// before calling the same awardContestSolve(), it first requires proof —
-// a real Submission document, written by the judge itself, showing this
-// exact user was Accepted on this exact problem within this exact contest.
-// No such Submission exists → no credit, full stop.
 router.post("/:id/solve", async (req, res) => {
   try {
     const { slug } = req.body;
@@ -454,19 +401,11 @@ router.post("/:id/solve", async (req, res) => {
       contestId: req.params.id,
       status: "Accepted",
     });
-
     if (!proof) {
-      return res.status(403).json({
-        error: "No verified Accepted submission found for this problem in this contest.",
-      });
+      return res.status(403).json({ error: "No verified Accepted submission found for this problem in this contest." });
     }
 
-    const result = await awardContestSolve({
-      contestId: req.params.id,
-      userId: req.userDoc._id,
-      slug,
-    });
-
+    const result = await awardContestSolve({ contestId: req.params.id, userId: req.userDoc._id, slug });
     if (!result.ok) {
       const statusByReason = {
         contest_not_found: 404,
@@ -474,9 +413,7 @@ router.post("/:id/solve", async (req, res) => {
         problem_not_in_contest: 400,
         not_joined: 403,
       };
-      return res
-        .status(statusByReason[result.reason] ?? 400)
-        .json({ error: "Unable to record contest solve.", reason: result.reason });
+      return res.status(statusByReason[result.reason] ?? 400).json({ error: "Unable to record contest solve.", reason: result.reason });
     }
 
     return res.json({

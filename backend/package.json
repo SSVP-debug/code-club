@@ -32,6 +32,8 @@
     "backfill:problem-progress:dry-run": "node scripts/backfillProblemProgress.js --dry-run",
     "migrate:college-schema": "node scripts/migrateCollegeSchema.js",
     "migrate:college-schema:dry-run": "node scripts/migrateCollegeSchema.js --dry-run",
+    "migrate:contest-participants": "node scripts/migrateContestParticipants.js",
+    "migrate:contest-participants:dry-run": "node scripts/migrateContestParticipants.js --dry-run",
     "weekly-review": "node scripts/sendWeeklyReviewEmails.js",
     "weekly-review:dry-run": "node scripts/sendWeeklyReviewEmails.js --dry-run",
     "assignment-auto-reminders": "node scripts/sendAssignmentAutoReminders.js",
