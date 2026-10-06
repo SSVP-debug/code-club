@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import Cohort from "../models/Cohort.js";
 import CohortMembership from "../models/CohortMembership.js";
 import Assignment from "../models/Assignment.js";
+import UserProblemProgress from "../models/UserProblemProgress.js";
 import { topicStatsToObject } from "../utils/topicStats.js";
 
 function parseDate(value, fallback) {
@@ -10,32 +11,23 @@ function parseDate(value, fallback) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-export async function getInstitutionReportOverview({
-  college,
-  from,
-  to,
-}) {
+function visibleStudentExpr() {
+  return { $ne: [{ $ifNull: ["$visibleToTpo", true] }, false] };
+}
+
+export async function getInstitutionReportOverview({ college, from, to }) {
   if (!college?._id) throw new Error("College is required.");
 
   const end = parseDate(to, new Date());
   const start = parseDate(from, new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000));
-  if (!start || !end) {
+  if (!start || !end || start > end) {
     const error = new Error("Invalid report date range.");
-    error.code = "INVALID_DATE_RANGE";
-    throw error;
-  }
-  if (start > end) {
-    const error = new Error("Report start date must be before end date.");
     error.code = "INVALID_DATE_RANGE";
     throw error;
   }
 
   const collegeId = college._id;
   const domains = (college.domains || []).map((domain) => domain.toLowerCase());
-
-  // TPO visibility is the canonical student population for institutional
-  // reporting. Opted-out students are counted separately and never included
-  // in performance metrics.
   const studentMatch = {
     role: "student",
     $or: [
@@ -45,38 +37,56 @@ export async function getInstitutionReportOverview({
     ],
   };
 
-  const students = await User.find(studentMatch)
-    .select("totalXP solvedSlugs solvedDifficulty currentStreak topicStats visibleToTpo joinedDate")
-    .lean();
+  // Keep the large per-student arrays inside MongoDB. The previous
+  // implementation transferred solvedSlugs/topicStats for every student and
+  // then performed the report arithmetic in Node. This aggregation returns a
+  // single small document for the institution-wide totals instead.
+  const [studentTotals = {}] = await User.aggregate([
+    { $match: studentMatch },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: { $cond: [visibleStudentExpr(), 1, 0] } },
+        optedOut: { $sum: { $cond: [{ $eq: [{ $ifNull: ["$visibleToTpo", true] }, false] }, 1, 0] } },
+        totalSolved: {
+          $sum: {
+            $cond: [
+              visibleStudentExpr(),
+              { $size: { $ifNull: ["$solvedSlugs", []] } },
+              0,
+            ],
+          },
+        },
+        totalEasy: { $sum: { $cond: [visibleStudentExpr(), { $ifNull: ["$solvedDifficulty.easy", 0] }, 0] } },
+        totalMedium: { $sum: { $cond: [visibleStudentExpr(), { $ifNull: ["$solvedDifficulty.medium", 0] }, 0] } },
+        totalHard: { $sum: { $cond: [visibleStudentExpr(), { $ifNull: ["$solvedDifficulty.hard", 0] }, 0] } },
+        active: {
+          $sum: {
+            $cond: [
+              { $and: [visibleStudentExpr(), { $gt: [{ $ifNull: ["$currentStreak", 0] }, 0] }] },
+              1,
+              0,
+            ],
+          },
+        },
+      },
+    },
+  ]);
 
-  const visibleStudents = students.filter((student) => student.visibleToTpo !== false);
-  const optedOutStudents = students.filter((student) => student.visibleToTpo === false);
-
-  const totalStudents = visibleStudents.length;
-  const totalSolved = visibleStudents.reduce(
-    (sum, student) => sum + (student.solvedSlugs?.length || 0),
-    0
-  );
-  const totalEasy = visibleStudents.reduce(
-    (sum, student) => sum + (student.solvedDifficulty?.easy || 0),
-    0
-  );
-  const totalMedium = visibleStudents.reduce(
-    (sum, student) => sum + (student.solvedDifficulty?.medium || 0),
-    0
-  );
-  const totalHard = visibleStudents.reduce(
-    (sum, student) => sum + (student.solvedDifficulty?.hard || 0),
-    0
-  );
-  const activeStudents = visibleStudents.filter((student) => (student.currentStreak || 0) > 0).length;
+  const totalStudents = studentTotals.total || 0;
+  const totalSolved = studentTotals.totalSolved || 0;
+  const totalEasy = studentTotals.totalEasy || 0;
+  const totalMedium = studentTotals.totalMedium || 0;
+  const totalHard = studentTotals.totalHard || 0;
+  const activeStudents = studentTotals.active || 0;
+  const optedOutCount = studentTotals.optedOut || 0;
 
   const cohorts = await Cohort.find({ collegeId })
     .select("_id name academicYear graduatingYear branch section status")
     .lean();
   const activeCohorts = cohorts.filter((cohort) => cohort.status !== "archived").length;
-
   const cohortIds = cohorts.map((cohort) => cohort._id);
+
   const memberships = cohortIds.length
     ? await CohortMembership.find({
         cohortId: { $in: cohortIds },
@@ -86,72 +96,89 @@ export async function getInstitutionReportOverview({
     : [];
 
   const cohortStudentIds = new Set(memberships.map((membership) => String(membership.studentId)));
-  const assignmentQuery = {
-    $or: [
-      { collegeId },
-      ...(domains.length
-        ? [{ collegeId: null, collegeDomain: { $in: domains } }]
-        : []),
-    ],
-    createdAt: { $gte: start, $lte: end },
-  };
-  const assignments = await Assignment.find(assignmentQuery)
-    .select("problemSlugs cohortId status createdAt")
+  const visibleStudentIdDocs = await User.find(studentMatch)
+    .select("_id visibleToTpo")
     .lean();
+  const visibleStudentIds = visibleStudentIdDocs
+    .filter((student) => student.visibleToTpo !== false)
+    .map((student) => student._id);
+  const visibleStudentIdSet = new Set(visibleStudentIds.map((id) => String(id)));
 
-  const visibleStudentIds = new Set(visibleStudents.map((student) => String(student._id)));
-  const solvedByStudent = new Map(
-    visibleStudents.map((student) => [String(student._id), new Set(student.solvedSlugs || [])])
-  );
+  // Cohort aggregates still run entirely in MongoDB. Only one small result per
+  // cohort/topic is returned to Node, rather than one document per student.
+  const cohortScalarRows = cohorts.length
+    ? await User.aggregate([
+        { $match: studentMatch },
+        { $match: { visibleToTpo: { $ne: false } } },
+        {
+          $lookup: {
+            from: "cohortmemberships",
+            localField: "_id",
+            foreignField: "studentId",
+            as: "memberships",
+          },
+        },
+        { $unwind: "$memberships" },
+        { $match: { "memberships.cohortId": { $in: cohortIds }, "memberships.status": "active" } },
+        {
+          $group: {
+            _id: "$memberships.cohortId",
+            memberCount: { $sum: 1 },
+            totalSolved: { $sum: { $size: { $ifNull: ["$solvedSlugs", []] } } },
+            totalEasy: { $sum: { $ifNull: ["$solvedDifficulty.easy", 0] } },
+            totalMedium: { $sum: { $ifNull: ["$solvedDifficulty.medium", 0] } },
+            totalHard: { $sum: { $ifNull: ["$solvedDifficulty.hard", 0] } },
+            active: { $sum: { $cond: [{ $gt: [{ $ifNull: ["$currentStreak", 0] }, 0] }, 1, 0] } },
+          },
+        },
+      ])
+    : [];
 
-  // ── Per-cohort breakdown ─────────────────────────────────────────────────
-  // A TPO managing several cohorts needs these same solved/streak/topic
-  // numbers sliced per cohort, not just as one college-wide total. Reuses
-  // the students/cohorts/memberships already loaded above — no extra
-  // queries. Kept as its own top-level `cohortBreakdown` key (a sibling of
-  // `cohorts`, not nested inside it) so the existing `cohorts` summary
-  // object's shape — asserted elsewhere with `toEqual` — is untouched.
-  const studentsById = new Map(visibleStudents.map((student) => [String(student._id), student]));
-  const membershipsByCohort = new Map();
-  for (const membership of memberships) {
-    const key = String(membership.cohortId);
-    if (!membershipsByCohort.has(key)) membershipsByCohort.set(key, []);
-    membershipsByCohort.get(key).push(String(membership.studentId));
+  const cohortTopicRows = cohorts.length
+    ? await User.aggregate([
+        { $match: studentMatch },
+        { $match: { visibleToTpo: { $ne: false } } },
+        {
+          $lookup: {
+            from: "cohortmemberships",
+            localField: "_id",
+            foreignField: "studentId",
+            as: "memberships",
+          },
+        },
+        { $unwind: "$memberships" },
+        { $match: { "memberships.cohortId": { $in: cohortIds }, "memberships.status": "active" } },
+        { $project: { cohortId: "$memberships.cohortId", topicStats: { $objectToArray: { $ifNull: ["$topicStats", {}] } } } },
+        { $unwind: { path: "$topicStats", preserveNullAndEmptyArrays: false } },
+        {
+          $group: {
+            _id: { cohortId: "$cohortId", topic: "$topicStats.k" },
+            totalSolves: { $sum: { $ifNull: ["$topicStats.v", 0] } },
+          },
+        },
+      ])
+    : [];
+
+  const scalarByCohort = new Map(cohortScalarRows.map((row) => [String(row._id), row]));
+  const topicsByCohort = new Map();
+  for (const row of cohortTopicRows) {
+    const key = String(row._id.cohortId);
+    if (!topicsByCohort.has(key)) topicsByCohort.set(key, []);
+    topicsByCohort.get(key).push({ topic: row._id.topic, totalSolves: row.totalSolves || 0 });
   }
 
   const cohortBreakdown = cohorts
     .map((cohort) => {
-      const cohortKey = String(cohort._id);
-      const memberIds = (membershipsByCohort.get(cohortKey) || []).filter((studentId) =>
-        visibleStudentIds.has(studentId)
-      );
-      const members = memberIds.map((studentId) => studentsById.get(studentId)).filter(Boolean);
-
-      const memberCount = members.length;
-      const totalSolved = members.reduce((sum, student) => sum + (student.solvedSlugs?.length || 0), 0);
-      const totalEasy = members.reduce((sum, student) => sum + (student.solvedDifficulty?.easy || 0), 0);
-      const totalMedium = members.reduce((sum, student) => sum + (student.solvedDifficulty?.medium || 0), 0);
-      const totalHard = members.reduce((sum, student) => sum + (student.solvedDifficulty?.hard || 0), 0);
-      const activeMembers = members.filter((student) => (student.currentStreak || 0) > 0).length;
-
-      // topicStats is stored as a Mongoose Map (topic -> solve count), which
-      // .lean() surfaces as a plain object, not an array — see
-      // utils/topicStats.js, the same helper the rest of the codebase uses
-      // to read it.
-      const topicTotals = new Map();
-      for (const student of members) {
-        const stats = topicStatsToObject(student.topicStats);
-        for (const [topic, count] of Object.entries(stats)) {
-          topicTotals.set(topic, (topicTotals.get(topic) || 0) + (count || 0));
-        }
-      }
-      const topTopics = [...topicTotals.entries()]
-        .map(([topic, totalSolves]) => ({ topic, totalSolves }))
+      const key = String(cohort._id);
+      const row = scalarByCohort.get(key) || {};
+      const memberCount = row.memberCount || 0;
+      const total = row.totalSolved || 0;
+      const active = row.active || 0;
+      const topTopics = (topicsByCohort.get(key) || [])
         .sort((a, b) => b.totalSolves - a.totalSolves)
         .slice(0, 5);
-
       return {
-        cohortId: cohortKey,
+        cohortId: key,
         name: cohort.name,
         academicYear: cohort.academicYear,
         graduatingYear: cohort.graduatingYear,
@@ -159,64 +186,87 @@ export async function getInstitutionReportOverview({
         section: cohort.section ?? null,
         status: cohort.status,
         memberCount,
-        totalSolved,
-        averageSolved: memberCount ? Math.round((totalSolved / memberCount) * 10) / 10 : 0,
-        difficulty: { easy: totalEasy, medium: totalMedium, hard: totalHard },
-        active: activeMembers,
-        activePercent: memberCount ? Math.round((activeMembers / memberCount) * 100) : 0,
+        totalSolved: total,
+        averageSolved: memberCount ? Math.round((total / memberCount) * 10) / 10 : 0,
+        difficulty: {
+          easy: row.totalEasy || 0,
+          medium: row.totalMedium || 0,
+          hard: row.totalHard || 0,
+        },
+        active,
+        activePercent: memberCount ? Math.round((active / memberCount) * 100) : 0,
         topTopics,
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  const unassignedVisibleCount = visibleStudents.filter(
-    (student) => !cohortStudentIds.has(String(student._id))
-  ).length;
+  const assignmentQuery = {
+    $or: [
+      { collegeId },
+      ...(domains.length ? [{ collegeId: null, collegeDomain: { $in: domains } }] : []),
+    ],
+    createdAt: { $gte: start, $lte: end },
+  };
+  const assignments = await Assignment.find(assignmentQuery)
+    .select("problemSlugs cohortId status createdAt")
+    .lean();
+
+  // Assignment completion is derived from the scalable per-user/problem
+  // collection. We only transfer user ids (not solvedSlugs arrays) and let
+  // MongoDB count solved rows per assignment audience.
+  const membershipsByCohort = new Map();
+  for (const membership of memberships) {
+    const key = String(membership.cohortId);
+    if (!membershipsByCohort.has(key)) membershipsByCohort.set(key, []);
+    if (visibleStudentIdSet.has(String(membership.studentId))) {
+      membershipsByCohort.get(key).push(membership.studentId);
+    }
+  }
 
   let assignedStudents = 0;
   let completedAssignments = 0;
   let assignmentCompletions = 0;
 
   for (const assignment of assignments) {
-    const audience = assignment.cohortId
-      ? memberships
-          .filter((membership) => String(membership.cohortId) === String(assignment.cohortId))
-          .map((membership) => String(membership.studentId))
-          .filter((studentId) => visibleStudentIds.has(studentId))
-      : [...visibleStudentIds].filter((studentId) => {
-          // Legacy college-wide assignments use the institution population.
-          return solvedByStudent.has(studentId);
-        });
+    const audienceIds = assignment.cohortId
+      ? (membershipsByCohort.get(String(assignment.cohortId)) || [])
+      : visibleStudentIds;
 
-    assignedStudents += audience.length;
-    for (const studentId of audience) {
-      const solved = solvedByStudent.get(studentId) || new Set();
-      if (assignment.problemSlugs.every((slug) => solved.has(slug))) {
-        completedAssignments += 1;
-      }
-    }
-    assignmentCompletions += audience.length;
+    assignedStudents += audienceIds.length;
+    if (!audienceIds.length || !assignment.problemSlugs.length) continue;
+
+    const completionRows = await UserProblemProgress.aggregate([
+      {
+        $match: {
+          userId: { $in: audienceIds },
+          problemSlug: { $in: assignment.problemSlugs },
+          status: "solved",
+        },
+      },
+      { $group: { _id: "$userId", solvedCount: { $addToSet: "$problemSlug" } } },
+      { $project: { solvedCount: { $size: "$solvedCount" } } },
+      { $match: { solvedCount: assignment.problemSlugs.length } },
+      { $count: "completed" },
+    ]);
+
+    completedAssignments += completionRows[0]?.completed || 0;
+    assignmentCompletions += audienceIds.length;
   }
 
+  const unassignedVisibleCount = visibleStudentIds.length - [...visibleStudentIdSet].filter((id) => cohortStudentIds.has(id)).length;
+
   return {
-    range: {
-      from: start.toISOString(),
-      to: end.toISOString(),
-    },
+    range: { from: start.toISOString(), to: end.toISOString() },
     students: {
       total: totalStudents,
-      optedOut: optedOutStudents.length,
+      optedOut: optedOutCount,
       active: activeStudents,
       activePercent: totalStudents ? Math.round((activeStudents / totalStudents) * 100) : 0,
     },
     problems: {
       totalSolved,
       averageSolved: totalStudents ? Math.round((totalSolved / totalStudents) * 10) / 10 : 0,
-      difficulty: {
-        easy: totalEasy,
-        medium: totalMedium,
-        hard: totalHard,
-      },
+      difficulty: { easy: totalEasy, medium: totalMedium, hard: totalHard },
     },
     cohorts: {
       total: cohorts.length,
@@ -225,9 +275,7 @@ export async function getInstitutionReportOverview({
       activeMemberships: cohortStudentIds.size,
     },
     cohortBreakdown,
-    unassignedStudents: {
-      count: unassignedVisibleCount,
-    },
+    unassignedStudents: { count: unassignedVisibleCount },
     assignments: {
       total: assignments.length,
       active: assignments.filter((assignment) => assignment.status !== "archived").length,
