@@ -8,7 +8,7 @@ import Problem from "../models/Problem.js";
 import Submission from "../models/Submission.js";
 import Reflection from "../models/Reflection.js";
 import User from "../models/User.js";
-import Contest from "../models/Contest.js";
+import ContestParticipant from "../models/ContestParticipant.js";
 import BattleRoom from "../models/BattleRoom.js";
 import SkillsTest from "../models/SkillsTest.js";
 
@@ -47,13 +47,14 @@ const checks = [
   [Reflection, "problemSlug"],
   [User, "solvedSlugs"],
   [SkillsTest, "solvedSlugs"],
+  [ContestParticipant, "solvedSlugs"],
 ];
 for (const [Model, field] of checks) {
   const count = await Model.countDocuments({ [field]: RETIRED_SLUG });
   if (count > 0) addFailure("reference-consistency", `${Model.collection.name}: ${count} document(s) still reference ${RETIRED_SLUG}`);
 }
 
-for (const [Model, field] of [[Contest, "participants.solvedSlugs"], [BattleRoom, "teams.solvedSlugs"]]) {
+for (const [Model, field] of [[BattleRoom, "teams.solvedSlugs"]]) {
   const count = await Model.countDocuments({ [field]: RETIRED_SLUG });
   if (count > 0) addFailure("nested-reference-consistency", `${Model.collection.name}: ${count} document(s) still reference ${RETIRED_SLUG}`);
 }
