@@ -36,6 +36,14 @@ function statsQuery(rows) {
   return q;
 }
 
+function problemQuery(rows) {
+  const q = {
+    select: vi.fn(() => q),
+    lean: vi.fn().mockResolvedValue(rows),
+  };
+  return q;
+}
+
 describe("admin analytics scalability", () => {
   beforeEach(() => vi.clearAllMocks());
 
@@ -91,10 +99,10 @@ describe("admin analytics scalability", () => {
       .mockReturnValueOnce(statsQuery([{ problemSlug: "reverse-string", accepted: 5 }]));
     Problem.countDocuments.mockResolvedValue(10);
     Problem.aggregate.mockResolvedValue([{ count: 2 }]);
-    Problem.find.mockReturnValue({ lean: vi.fn().mockResolvedValue([
+    Problem.find.mockReturnValue(problemQuery([
       { slug: "two-sum", title: "Two Sum", difficulty: "Easy" },
       { slug: "reverse-string", title: "Reverse String", difficulty: "Easy" },
-    ]) });
+    ]));
     const res = mockRes();
 
     await getProblemPopularity({ query: { limit: "10" } }, res);
