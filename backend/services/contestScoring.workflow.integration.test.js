@@ -10,8 +10,7 @@ import { startTestMongo, clearTestMongo, stopTestMongo } from "../test/mongoMemo
 //   2. awardContestSolve's own rule matrix (not participant / not active /
 //      wrong problem / duplicate-solve atomicity), exercised directly
 //      against real Contest documents — these are genuine MongoDB query/
-//      update semantics (the atomic $elemMatch-guarded findOneAndUpdate)
-//      that a mocked Contest model could easily assert incorrectly.
+//      update semantics against the ContestParticipant source of truth.
 
 const callJudge0 = vi.fn();
 
@@ -23,6 +22,7 @@ vi.mock("../controllers/compilerController.js", async (importOriginal) => {
 const { submitHandler } = await import("../controllers/judgeController.js");
 const { awardContestSolve, CONTEST_SOLVE_REJECTION } = await import("./contestScoring.js");
 const { default: Contest } = await import("../models/Contest.js");
+const { default: ContestParticipant } = await import("../models/ContestParticipant.js");
 const { default: User } = await import("../models/User.js");
 const { seedProblem } = await import("../test/fixtures/problem.js");
 
@@ -61,6 +61,10 @@ async function seedContest({ status = "active", participants = [], problemSlugs 
     participants,
     ...timing,
   });
+}
+
+async function findParticipant(contestId, userId) {
+  return ContestParticipant.findOne({ contestId, userId }).lean();
 }
 
 describe("Accepted Submission → Contest: submitHandler wiring (real Mongo, mocked Judge0)", () => {
@@ -106,8 +110,7 @@ describe("Accepted Submission → Contest: submitHandler wiring (real Mongo, moc
 
     await submitHandler(req, res);
 
-    const reloaded = await Contest.findById(contest._id).lean();
-    const participant = reloaded.participants.find((p) => p.userId.toString() === user._id.toString());
+    const participant = await findParticipant(contest._id, user._id);
     expect(participant.score).toBe(100);
     expect(participant.solvedSlugs).toContain("two-sum");
   });
@@ -138,14 +141,13 @@ describe("Accepted Submission → Contest: submitHandler wiring (real Mongo, moc
 
     await submitHandler(req, res);
 
-    const reloaded = await Contest.findById(contest._id).lean();
-    const participant = reloaded.participants.find((p) => p.userId.toString() === user._id.toString());
+    const participant = await findParticipant(contest._id, user._id);
     expect(participant.score).toBe(0);
     expect(participant.solvedSlugs).toEqual([]);
   });
 });
 
-describe("awardContestSolve — rule matrix (real Mongo Contest documents)", () => {
+describe("awardContestSolve — rule matrix (real Mongo ContestParticipant documents)", () => {
   beforeAll(async () => {
     await startTestMongo();
   }, 60_000);
@@ -189,9 +191,9 @@ describe("awardContestSolve — rule matrix (real Mongo Contest documents)", () 
     expect(second.alreadySolved).toBe(true);
     expect(second.score).toBe(100);
 
-    const reloaded = await Contest.findById(contest._id).lean();
-    expect(reloaded.participants[0].score).toBe(100);
-    expect(reloaded.participants[0].solvedSlugs).toEqual(["two-sum"]);
+    const participant = await findParticipant(contest._id, user._id);
+    expect(participant.score).toBe(100);
+    expect(participant.solvedSlugs).toEqual(["two-sum"]);
   });
 
   it("rejects a solve from a user who never joined the contest", async () => {
@@ -204,8 +206,8 @@ describe("awardContestSolve — rule matrix (real Mongo Contest documents)", () 
     expect(result.ok).toBe(false);
     expect(result.reason).toBe(CONTEST_SOLVE_REJECTION.NOT_JOINED);
 
-    const reloaded = await Contest.findById(contest._id).lean();
-    expect(reloaded.participants.length).toBe(0);
+    const participant = await findParticipant(contest._id, nonParticipant._id);
+    expect(participant).toBeNull();
   });
 
   it("rejects a solve against a contest that has already ended", async () => {
@@ -256,8 +258,8 @@ describe("awardContestSolve — rule matrix (real Mongo Contest documents)", () 
     // increment must have actually landed.
     expect([a.alreadySolved, b.alreadySolved].filter((v) => v === false).length).toBe(1);
 
-    const reloaded = await Contest.findById(contest._id).lean();
-    expect(reloaded.participants[0].score).toBe(100);
-    expect(reloaded.participants[0].solvedSlugs).toEqual(["two-sum"]);
+    const participant = await findParticipant(contest._id, user._id);
+    expect(participant.score).toBe(100);
+    expect(participant.solvedSlugs).toEqual(["two-sum"]);
   });
 });
