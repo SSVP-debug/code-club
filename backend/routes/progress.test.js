@@ -6,9 +6,13 @@ vi.mock("../models/Submission.js", () => ({
 vi.mock("../models/Problem.js", () => ({
   default: { find: vi.fn() },
 }));
+vi.mock("../models/UserProblemProgress.js", () => ({
+  default: { find: vi.fn() },
+}));
 
 import Submission from "../models/Submission.js";
 import Problem from "../models/Problem.js";
+import UserProblemProgress from "../models/UserProblemProgress.js";
 import { verifyAgainstSubmissions, validateSlugs } from "./progress.js";
 
 function mockRes() {
@@ -22,9 +26,18 @@ function mockLog() {
   return { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() };
 }
 
-// Submission.find(...).distinct(...) — chainable mock helper.
+// Chainable distinct() mocks for the two scalable verification sources.
 function mockFindDistinct(resolvedSlugs) {
   Submission.find.mockReturnValue({
+    distinct: vi.fn().mockResolvedValue(resolvedSlugs),
+  });
+  UserProblemProgress.find.mockReturnValue({
+    distinct: vi.fn().mockResolvedValue([]),
+  });
+}
+
+function mockProgressDistinct(resolvedSlugs) {
+  UserProblemProgress.find.mockReturnValue({
     distinct: vi.fn().mockResolvedValue(resolvedSlugs),
   });
 }
@@ -103,6 +116,7 @@ describe("verifyAgainstSubmissions — the core solve-integrity fix", () => {
   });
 
   it("does not re-query already-trusted (previously persisted) solvedSlugs", async () => {
+    mockProgressDistinct(["already-solved"]);
     const req = {
       body: { solvedSlugs: ["already-solved"] },
       userDoc: { _id: "user1", solvedSlugs: ["already-solved"] },
@@ -111,13 +125,18 @@ describe("verifyAgainstSubmissions — the core solve-integrity fix", () => {
 
     await verifyAgainstSubmissions(req, res, next);
 
+    expect(UserProblemProgress.find).toHaveBeenCalledWith({
+      userId: "user1",
+      problemSlug: { $in: ["already-solved"] },
+      status: "solved",
+    });
     expect(Submission.find).not.toHaveBeenCalled();
     expect(req.verifiedNewSlugs).toEqual([]);
     expect(next).toHaveBeenCalledOnce();
   });
 
   it("fails closed (treats everything as unverified) if the Submission query itself errors", async () => {
-    Submission.find.mockReturnValue({
+    UserProblemProgress.find.mockReturnValue({
       distinct: vi.fn().mockRejectedValue(new Error("Mongo down")),
     });
     const req = {
