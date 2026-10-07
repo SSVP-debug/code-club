@@ -1,4 +1,5 @@
 import UserProblemProgress from "../models/UserProblemProgress.js";
+import { getStudentDayKey } from "../utils/studentDay.js";
 
 /**
  * Record one server-verified submission in the scalable per-user/problem
@@ -21,6 +22,7 @@ export async function recordProblemProgress({
     inc.acceptedCount = 1;
     set.status = "solved";
     set.solvedAt = attemptedAt;
+    set.solvedDay = getStudentDayKey(attemptedAt);
   }
 
   if (Number.isFinite(Number(executionTime))) {
@@ -78,4 +80,18 @@ export async function getSolvedSlugs(userId) {
     .select("problemSlug -_id")
     .lean();
   return rows.map((row) => row.problemSlug);
+}
+
+
+export async function getActivityDays(userId) {
+  const rows = await UserProblemProgress.find({
+    userId,
+    status: "solved",
+    solvedDay: { $ne: null },
+  })
+    .select("solvedDay -_id")
+    .sort({ solvedDay: 1 })
+    .lean();
+
+  return rows.map((row) => row.solvedDay);
 }

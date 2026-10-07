@@ -14,6 +14,7 @@ import {
   recordProblemProgress,
   syncSolvedProblemProgress,
   getSolvedSlugs,
+  getActivityDays,
 } from "./problemProgressService.js";
 
 describe("problemProgressService", () => {
@@ -71,5 +72,29 @@ describe("problemProgressService", () => {
       "two-sum",
       "valid-parentheses",
     ]);
+  });
+});
+
+
+describe("getActivityDays", () => {
+  it("reads only indexed solved-day keys", async () => {
+    const lean = vi.fn().mockResolvedValue([
+      { solvedDay: "2026-09-06" },
+      { solvedDay: "2026-09-07" },
+    ]);
+    const sort = vi.fn().mockReturnValue({ lean });
+    find.mockReturnValue({
+      select: vi.fn().mockReturnValue({ sort }),
+    });
+
+    await expect(getActivityDays("user-1")).resolves.toEqual([
+      "2026-09-06",
+      "2026-09-07",
+    ]);
+    expect(find).toHaveBeenCalledWith({
+      userId: "user-1",
+      status: "solved",
+      solvedDay: { $ne: null },
+    });
   });
 });

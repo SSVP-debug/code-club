@@ -7,6 +7,7 @@ const userProblemProgressSchema = new mongoose.Schema(
     status: { type: String, enum: ["attempted", "solved"], default: "attempted", index: true },
     firstAttemptAt: { type: Date, default: Date.now },
     solvedAt: { type: Date, default: null },
+    solvedDay: { type: String, default: null },
     attemptCount: { type: Number, default: 0, min: 0 },
     acceptedCount: { type: Number, default: 0, min: 0 },
     bestRuntime: { type: Number, default: null, min: 0 },
@@ -21,6 +22,7 @@ const userProblemProgressSchema = new mongoose.Schema(
 userProblemProgressSchema.index({ userId: 1, problemSlug: 1 }, { unique: true });
 userProblemProgressSchema.index({ userId: 1, status: 1, lastAttemptAt: -1 });
 userProblemProgressSchema.index({ userId: 1, status: 1, problemSlug: 1 });
+userProblemProgressSchema.index({ userId: 1, status: 1, solvedDay: 1 });
 userProblemProgressSchema.index({ problemSlug: 1, status: 1 });
 
 const UserProblemProgress = mongoose.model("UserProblemProgress", userProblemProgressSchema);

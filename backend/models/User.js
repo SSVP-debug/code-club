@@ -199,25 +199,6 @@ const userSchema = new mongoose.Schema(
       default: [],
     },
 
-    // ── Saved Problems (private "read later" bookmarks) ─────────────────
-    // Not to be confused with pinnedProblems above — that's a solved-only,
-    // capped, PUBLIC-profile showcase. This is a private, unlimited,
-    // any-status (solved or not) bookmark list, only ever shown to the
-    // owner inside the app (Saved view). No title/difficulty denormalized
-    // here on purpose — the frontend already has the full problem catalog
-    // loaded client-side (useProblems()) whenever this list is rendered,
-    // so there's no per-view join cost to avoid, unlike the public-profile
-    // case pinnedProblems was built for.
-    savedProblems: {
-      type: [
-        {
-          slug: String,
-          savedAt: { type: Date, default: Date.now },
-        },
-      ],
-      default: [],
-    },
-
     // ── Recruiter Snapshot (Phase 9C) ───────────────────────────────────
     // NOT to be confused with recruiterProfile above — that's for users
     // whose role IS "recruiter". This is what a STUDENT fills in so

@@ -3,6 +3,7 @@ import Submission from "../models/Submission.js";
 import { getOrSetCache, invalidateCache } from "../utils/cache.js";
 import { getLevel } from "../utils/xpLevel.js";
 import { topicStatsToObject } from "../utils/topicStats.js";
+import { getSolvedSlugs, getActivityDays } from "../services/problemProgressService.js";
 
 // Shorter TTL than problems/leaderboard (2 min vs 5 min) — this endpoint is
 // what recruiters and "share my profile" links hit, and a user who just
@@ -61,6 +62,11 @@ async function fetchProfile(username) {
   if (!user) return null;
   if (!user.isProfilePublic) return { private: true, data: null };
 
+  const [solvedSlugs, activityDates] = await Promise.all([
+    getSolvedSlugs(user._id),
+    getActivityDays(user._id),
+  ]);
+
   const level = getLevel(user.totalXP || 0);
 
   // ── Language breakdown — from accepted submissions ─────────────────────
@@ -107,13 +113,13 @@ async function fetchProfile(username) {
       joinedDate:      user.joinedDate,
       totalXP:         user.totalXP || 0,
       level,
-      solvedCount:     user.solvedSlugs?.length ?? 0,
+      solvedCount:     solvedSlugs.length,
       currentStreak:   user.currentStreak || 0,
       longestStreak:   user.longestStreak || 0,
       solvedDifficulty: user.solvedDifficulty || { easy: 0, medium: 0, hard: 0 },
       topicStats:      topicStatsToObject(user.topicStats),
       achievements:    user.achievements || [],
-      activityDates:   user.activityDates || [],
+      activityDates,
       // New fields for recruiter-useful profile
       languageBreakdown,
       recentSolves,
