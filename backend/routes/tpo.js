@@ -1988,7 +1988,7 @@ router.post("/assignments/:id/archive", requireRole("tpo", "admin"), requireVeri
 // see the identical note on GET /api/assignments/student above. A student
 // who opted out of TPO analytics still receives and is nudged about
 // assignments they're a target of.
-async function resolveAssignmentAudience(req, res, selectFields = "_id solvedCount") {
+async function resolveAssignmentAudience(req, res, selectFields = "_id") {
   const domain = req.userDoc.tpoProfile?.collegeDomain?.toLowerCase();
   if (!domain && req.userDoc.role !== "admin") {
     res.status(400).json({ error: "No college domain set on this TPO account." });
@@ -2047,7 +2047,17 @@ async function resolveAssignmentAudience(req, res, selectFields = "_id solvedCou
     }).select(selectFields).lean();
   }
 
-  return { assignment, students };
+  const solvedByStudentId = await getSolvedSlugsForUsers(
+    students.map((student) => student._id),
+    assignment.problemSlugs
+  );
+  return {
+    assignment,
+    students: students.map((student) => ({
+      ...student,
+      _solvedSlugs: solvedByStudentId.get(String(student._id)) || new Set(),
+    })),
+  };
 }
 
 // ── POST /api/tpo/assignments/:id/remind ────────────────────────────────────
@@ -2060,7 +2070,7 @@ export async function handleRemindAssignment(req, res) {
   if (b2bGate(req, res)) return;
 
   try {
-    const resolved = await resolveAssignmentAudience(req, res, "_id solvedCount");
+    const resolved = await resolveAssignmentAudience(req, res, "_id");
     if (!resolved) return;
     const { assignment, students } = resolved;
 
@@ -2069,7 +2079,7 @@ export async function handleRemindAssignment(req, res) {
     }
 
     const incomplete = students.filter(s =>
-      !assignment.problemSlugs.every(slug => (s.solvedCount || []).includes(slug))
+      !assignment.problemSlugs.every(slug => (s._solvedSlugs || new Set()).has(slug))
     );
 
     if (incomplete.length === 0) {
@@ -2111,14 +2121,14 @@ export async function handleAssignmentCompletion(req, res) {
   if (b2bGate(req, res)) return;
 
   try {
-    const resolved = await resolveAssignmentAudience(req, res, "_id displayName email solvedCount");
+    const resolved = await resolveAssignmentAudience(req, res, "_id displayName email");
     if (!resolved) return;
     const { assignment, students } = resolved;
 
     let completedCount = 0;
     const stragglers = [];
     for (const student of students) {
-      const solved = new Set(student.solvedCount || []);
+      const solved = student._solvedSlugs || new Set();
       const missingSlugs = assignment.problemSlugs.filter((slug) => !solved.has(slug));
       if (missingSlugs.length === 0) {
         completedCount += 1;
@@ -2397,7 +2407,7 @@ router.get("/report/pdf", requireRole("tpo", "admin"),
         doc.fontSize(8).fillColor("#3f3f46").font("Helvetica");
         doc.text(String(i + 1), 50, ty);
         doc.text(student.displayName || "—", 90, ty, { width: 220 });
-        doc.text(String(student.solvedCount?.length ?? 0), 320, ty);
+        doc.text(String(student.solvedCount ?? 0), 320, ty);
         doc.text(String(student.currentStreak ?? 0), 380, ty);
         doc.text(String(student.totalXP ?? 0), 450, ty);
         ty += 16;
