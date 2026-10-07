@@ -72,7 +72,7 @@ const userSchema = new mongoose.Schema(
     // predates this and is already wired through progress.js/userController.js
     // — left untouched). Populated either by manual entry or by the
     // /api/leetcode/fetch proxy pre-filling the form for the student to
-    // confirm. Not fed into totalXP/solvedSlugs — LeetCode problems aren't
+    // confirm. Not fed into totalXP/solvedCount — LeetCode problems aren't
     // in this platform's own catalog, so there's nothing to map them to;
     // this exists purely as recruiter-facing supplementary proof of work
     // on the public profile.
@@ -255,8 +255,8 @@ const userSchema = new mongoose.Schema(
     // ever been a student — combined with /api/init unconditionally
     // returning progressToClient(req.userDoc) regardless of role, this
     // is what let a TPO session render leftover student XP/streak/solved
-    // data. The student-track fields on this schema (totalXP,
-    // currentStreak, solvedSlugs, etc.) were never moved into a separate
+    // data. The student-track aggregate fields on this schema (totalXP,
+    // currentStreak, solvedCount, etc.) were never moved into a separate
     // subdocument — doing so would touch dozens of call sites (judge
     // submission recording, leaderboard, public profile, XP utils...)
     // for a codebase this size. Instead, isolation is enforced at the
