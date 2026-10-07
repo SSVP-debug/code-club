@@ -16,6 +16,10 @@ vi.mock("../utils/cache.js", () => ({
   getOrSetCache: vi.fn(async (key, ttl, fetchFn) => ({ value: await fetchFn(), cacheStatus: "MISS" })),
   invalidateCachePrefix: vi.fn().mockResolvedValue(undefined),
 }));
+vi.mock("../services/problemProgressService.js", () => ({
+  getSolvedSlugs: vi.fn(),
+  getSolvedSlugsForUsers: vi.fn(),
+}));
 vi.mock("../models/Assignment.js", () => ({
   default: { findOne: vi.fn(), create: vi.fn(), find: vi.fn() },
 }));
@@ -55,6 +59,7 @@ vi.mock("../services/cohortDashboardService.js", () => ({
 import User from "../models/User.js";
 import College from "../models/College.js";
 import Assignment from "../models/Assignment.js";
+import { getSolvedSlugsForUsers } from "../services/problemProgressService.js";
 import { createNotificationBulk } from "../services/notificationService.js";
 import { getSettings } from "../services/settingsService.js";
 import { resolveCollegeDomains, getCollegeForTpo } from "../services/tpoTeamService.js";
@@ -120,6 +125,7 @@ describe("handleRemindAssignment", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     res = mockRes();
+    getSolvedSlugsForUsers.mockImplementation((ids) => new Map(ids.map((id) => [String(id), new Set()])));
     Assignment.findOne.mockReturnValue({ lean: vi.fn().mockResolvedValue(assignmentDoc) });
   });
 
@@ -143,12 +149,20 @@ describe("handleRemindAssignment", () => {
     User.find.mockReturnValue({
       select: vi.fn().mockReturnValue({
         lean: vi.fn().mockResolvedValue([
-          { _id: "student-done", solvedSlugs: ["two-sum", "valid-parentheses"] },
-          { _id: "student-partial", solvedSlugs: ["two-sum"] },
-          { _id: "student-none", solvedSlugs: [] },
+          { _id: "student-done" },
+          { _id: "student-partial" },
+          { _id: "student-none" },
         ]),
       }),
     });
+    getSolvedSlugsForUsers.mockResolvedValue(new Map([
+      ["student-done", new Set(["two-sum", "valid-parentheses"])],
+      ["student-partial", new Set(["two-sum"])],
+      ["student-none", new Set()],
+    ]));
+    getSolvedSlugsForUsers.mockResolvedValue(new Map([
+      ["student-done", new Set(["two-sum", "valid-parentheses"])],
+    ]));
     const req = { params: { id: "assignment1" }, userDoc: tpoUserDoc };
 
     await handleRemindAssignment(req, res);
@@ -166,7 +180,7 @@ describe("handleRemindAssignment", () => {
     User.find.mockReturnValue({
       select: vi.fn().mockReturnValue({
         lean: vi.fn().mockResolvedValue([
-          { _id: "student-done", solvedSlugs: ["two-sum", "valid-parentheses"] },
+          { _id: "student-done" },
         ]),
       }),
     });
@@ -221,12 +235,17 @@ describe("handleAssignmentCompletion", () => {
     User.find.mockReturnValue({
       select: vi.fn().mockReturnValue({
         lean: vi.fn().mockResolvedValue([
-          { _id: "student-done", displayName: "Dana Done", email: "dana@x.edu", solvedSlugs: ["two-sum", "valid-parentheses"] },
-          { _id: "student-partial", displayName: "Pat Partial", email: "pat@x.edu", solvedSlugs: ["two-sum"] },
-          { _id: "student-none", displayName: "Al None", email: "al@x.edu", solvedSlugs: [] },
+          { _id: "student-done", displayName: "Dana Done", email: "dana@x.edu" },
+          { _id: "student-partial", displayName: "Pat Partial", email: "pat@x.edu" },
+          { _id: "student-none", displayName: "Al None", email: "al@x.edu" },
         ]),
       }),
     });
+    getSolvedSlugsForUsers.mockResolvedValue(new Map([
+      ["student-done", new Set(["two-sum", "valid-parentheses"])],
+      ["student-partial", new Set(["two-sum"])],
+      ["student-none", new Set()],
+    ]));
     const req = { params: { id: "assignment1" }, userDoc: tpoUserDoc };
 
     await handleAssignmentCompletion(req, res);
