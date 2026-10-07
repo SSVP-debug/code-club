@@ -80,7 +80,7 @@ export async function getColleges(req, res) {
           // array over the wire — only the computed size per document.
           User.aggregate([
             { $match: { "education.collegeId": college._id, role: "student" } },
-            { $group: { _id: null, total: { $sum: { $size: { $ifNull: ["$solvedSlugs", []] } } } } },
+            { $group: { _id: null, total: { $sum: "$solvedCount" } } },
           ]),
         ]);
 
