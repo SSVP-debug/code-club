@@ -97,7 +97,7 @@ router.get("/global", async (req, res) => {
             { $limit: candidateLimit },
             {
               $addFields: {
-                solvedCount: { $size: { $ifNull: ["$solvedSlugs", []] } },
+                solvedCount: { $ifNull: ["$solvedCount", 0] },
               },
             },
             // solvedCount remains the secondary ranking criterion.
@@ -175,7 +175,7 @@ router.get("/college", requireAuth, async (req, res) => {
             { $limit: COLLEGE_MAX_RANKED },
             {
               $addFields: {
-                solvedCount: { $size: { $ifNull: ["$solvedSlugs", []] } },
+                solvedCount: { $ifNull: ["$solvedCount", 0] },
               },
             },
             { $sort: { totalXP: -1, solvedCount: -1, _id: 1 } },
