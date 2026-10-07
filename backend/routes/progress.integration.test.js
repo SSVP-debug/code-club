@@ -134,7 +134,7 @@ describe("Accepted Submission → Progress workflow (real Mongo)", () => {
     await runProgressChain(req(user, { problemSlug: "two-sum" }), res);
 
     const reloaded = await User.findById(user._id).lean();
-    expect(reloaded.solvedSlugs).toEqual(["two-sum"]);
+    expect(reloaded.solvedCount).toBe(1);
     expect(reloaded.totalXP).toBe(10);
   });
 
@@ -149,7 +149,7 @@ describe("Accepted Submission → Progress workflow (real Mongo)", () => {
     await runProgressChain(req(attacker, { problemSlug: "two-sum" }), res);
 
     const reloadedAttacker = await User.findById(attacker._id).lean();
-    expect(reloadedAttacker.solvedSlugs).toEqual([]);
+    expect(reloadedAttacker.solvedCount).toBe(0);
     expect(reloadedAttacker.totalXP).toBe(0);
   });
 
