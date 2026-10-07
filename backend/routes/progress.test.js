@@ -1,10 +1,10 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 vi.mock("../models/Submission.js", () => ({
-  default: { find: vi.fn(), exists: vi.fn() },
+  default: { find: vi.fn() },
 }));
 vi.mock("../models/Problem.js", () => ({
-  default: { find: vi.fn() },
+  default: { find: vi.fn(), exists: vi.fn() },
 }));
 vi.mock("../models/UserProblemProgress.js", () => ({
   default: { find: vi.fn() },
