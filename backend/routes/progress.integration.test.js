@@ -21,6 +21,7 @@ const { validateSlugs, verifyAgainstSubmissions } = await import("./progress.js"
 const { putProgress } = await import("../controllers/progressController.js");
 const { default: Submission } = await import("../models/Submission.js");
 const { default: User } = await import("../models/User.js");
+const { default: UserProblemProgress } = await import("../models/UserProblemProgress.js");
 const { seedProblem } = await import("../test/fixtures/problem.js");
 
 function mockRes() {
@@ -120,6 +121,13 @@ describe("Accepted Submission → Progress workflow (real Mongo)", () => {
   it("is idempotent: re-submitting an already-solved slug does not double-credit XP", async () => {
     const problem = await seedProblem();
     const user = await seedUser({ solvedSlugs: ["two-sum"], totalXP: 10 });
+    await UserProblemProgress.create({
+      userId: user._id,
+      problemSlug: "two-sum",
+      status: "solved",
+      solvedAt: new Date(),
+      solvedDay: "2026-10-07",
+    });
     await Submission.create({ userId: user._id, problemSlug: "two-sum", language: "python", status: "Accepted" });
 
     const res = mockRes();
