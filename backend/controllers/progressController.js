@@ -41,7 +41,8 @@ export function progressToClient(user, solvedSlugsOverride = null, activityDates
   const { currentStreak } = calculateStreak(activityDates);
 
   return {
-    solvedSlugs: solvedSlugsOverride ?? (user.solvedSlugs || []),
+    solvedSlugs: solvedSlugsOverride ?? [],
+    solvedCount: solvedSlugsOverride?.length ?? user.solvedCount ?? 0,
     topicStats: topicStatsToObject(user.topicStats),
     activityDates,
     achievements: user.achievements || [],
@@ -65,6 +66,7 @@ export function progressToClient(user, solvedSlugsOverride = null, activityDates
 export function emptyProgress() {
   return {
     solvedSlugs: [],
+    solvedCount: 0,
     topicStats: {},
     activityDates: [],
     achievements: [],
