@@ -18,6 +18,9 @@ vi.mock("../services/problemProgressService.js", () => ({
     "2026-09-12",
   ]),
 }));
+vi.mock("../services/dailyChallengeService.js", () => ({
+  getDailyChallengeHistory: vi.fn().mockResolvedValue([]),
+}));
 vi.mock("../services/userSavedProblemService.js", () => ({
   listSavedProblems: vi.fn().mockResolvedValue([]),
 }));
