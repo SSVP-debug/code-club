@@ -91,18 +91,18 @@ const userSchema = new mongoose.Schema(
       default: Date.now,
     },
 
-    solvedSlugs: {
-      type: [String],
-      default: [],
-    },
     topicStats: {
       type: Map,
       of: Number,
       default: {},
     },
-    activityDates: {
-      type: [String],
-      default: [],
+    // Scalar solved count — replaces the unbounded solvedSlugs array on User.
+    // UserProblemProgress remains the per-problem source of truth.
+    solvedCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+      index: true,
     },
     solvedDifficulty: {
       easy: { type: Number, default: 0, min: 0 },
@@ -516,18 +516,6 @@ const userSchema = new mongoose.Schema(
     preferences: {
       blankEditorByDefault: { type: Boolean, default: false }, // skip starter code on new problems
       hideDifficultyLabels: { type: Boolean, default: false }, // hide Easy/Medium/Hard badge on problem pages
-    },
-
-    dailyChallengeHistory: {
-      type: [
-        {
-          date: String,
-          slug: String,
-          completed: Boolean,
-          completedAt: Date,
-        },
-      ],
-      default: [],
     },
 
     // ── Daily Quiz Gate (backend/controllers/dailyQuizController.js) ─────
