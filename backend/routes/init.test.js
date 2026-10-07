@@ -8,7 +8,15 @@ vi.mock("../models/Submission.js", () => ({
 }));
 vi.mock("../services/problemProgressService.js", () => ({
   getSolvedSlugs: vi.fn().mockResolvedValue(["two-sum"]),
-  getActivityDays: vi.fn().mockResolvedValue(["2026-09-06"]),
+  getActivityDays: vi.fn().mockResolvedValue([
+    "2026-09-06",
+    "2026-09-07",
+    "2026-09-08",
+    "2026-09-09",
+    "2026-09-10",
+    "2026-09-11",
+    "2026-09-12",
+  ]),
 }));
 vi.mock("../services/userSavedProblemService.js", () => ({
   listSavedProblems: vi.fn().mockResolvedValue([]),
