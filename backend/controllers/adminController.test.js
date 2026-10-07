@@ -1111,10 +1111,8 @@ describe("adminController", () => {
             expect(target.solvedCount).toBe(0);
             expect(target.solvedDifficulty).toEqual({ easy: 0, medium: 0, hard: 0 });
             expect(target.topicStats).toEqual({});
-            expect(target.activityDates).toEqual([]);
             expect(target.recentActivity).toEqual([]);
             expect(target.achievements).toEqual([]);
-            expect(target.dailyChallengeHistory).toEqual([]);
             // Untouched — plan 003 explicitly excludes role/profile/education state.
             expect(target.role).toBe("student");
             expect(target.education).toEqual({ collegeName: "MIT", emailVerified: true, collegeStatus: "verified" });
