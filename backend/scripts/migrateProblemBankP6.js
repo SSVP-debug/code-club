@@ -11,10 +11,10 @@ import connectDB from "../config/db.js";
 import Problem from "../models/Problem.js";
 import Submission from "../models/Submission.js";
 import Reflection from "../models/Reflection.js";
-import User from "../models/User.js";
 import ContestParticipant from "../models/ContestParticipant.js";
 import BattleRoom from "../models/BattleRoom.js";
 import SkillsTest from "../models/SkillsTest.js";
+import UserProblemProgress from "../models/UserProblemProgress.js";
 
 const APPLY = process.argv.includes("--apply");
 const MONGO = process.argv.includes("--mongo");
@@ -60,11 +60,29 @@ async function migrateMongoReferences() {
     results.push({ collection: Model.collection.name, matched: result.matchedCount, modified: result.modifiedCount });
   }
 
-  for (const Model of [User, SkillsTest]) {
-    const add = await Model.updateMany({ solvedSlugs: RETIRED_SLUG }, { $addToSet: { solvedSlugs: CANONICAL_SLUG } });
-    const remove = await Model.updateMany({ solvedSlugs: RETIRED_SLUG }, { $pull: { solvedSlugs: RETIRED_SLUG } });
-    results.push({ collection: Model.collection.name, matched: add.matchedCount, modified: add.modifiedCount + remove.modifiedCount });
-  }
+  const progressAdd = await UserProblemProgress.updateMany(
+    { problemSlug: RETIRED_SLUG },
+    { $set: { problemSlug: CANONICAL_SLUG } }
+  );
+  results.push({
+    collection: UserProblemProgress.collection.name,
+    matched: progressAdd.matchedCount,
+    modified: progressAdd.modifiedCount,
+  });
+
+  const skillsAdd = await SkillsTest.updateMany(
+    { solvedSlugs: RETIRED_SLUG },
+    { $addToSet: { solvedSlugs: CANONICAL_SLUG } }
+  );
+  const skillsRemove = await SkillsTest.updateMany(
+    { solvedSlugs: RETIRED_SLUG },
+    { $pull: { solvedSlugs: RETIRED_SLUG } }
+  );
+  results.push({
+    collection: SkillsTest.collection.name,
+    matched: skillsAdd.matchedCount,
+    modified: skillsAdd.modifiedCount + skillsRemove.modifiedCount,
+  });
 
   // Contest participation is now a separate collection; do not write the
   // retired slug back into the removed Contest.participants[] array.
