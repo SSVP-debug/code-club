@@ -29,6 +29,8 @@
     "backfill-roles": "node scripts/backfillAuthorizedRoles.js",
     "backfill-roles:dry-run": "node scripts/backfillAuthorizedRoles.js --dry-run",
     "backfill:problem-progress": "node scripts/backfillProblemProgress.js",
+    "migrate:user-solved-count": "node scripts/migrateUserSolvedCount.js",
+    "migrate:user-solved-count:dry-run": "node scripts/migrateUserSolvedCount.js --dry-run",
     "backfill:problem-progress:dry-run": "node scripts/backfillProblemProgress.js --dry-run",
     "migrate:college-schema": "node scripts/migrateCollegeSchema.js",
     "migrate:college-schema:dry-run": "node scripts/migrateCollegeSchema.js --dry-run",
