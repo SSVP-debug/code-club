@@ -1,4 +1,6 @@
+import "../config/env.js";
 import mongoose from "mongoose";
+import connectDB from "../config/db.js";
 import User from "../models/User.js";
 import UserSavedProblem from "../models/UserSavedProblem.js";
 
@@ -6,9 +8,7 @@ const BATCH_SIZE = 500;
 
 async function run() {
   const dryRun = process.argv.includes("--dry-run");
-  if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is required");
-
-  await mongoose.connect(process.env.MONGODB_URI);
+  await connectDB();
 
   let scanned = 0;
   let migrated = 0;
