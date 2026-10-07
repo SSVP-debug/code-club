@@ -3,6 +3,7 @@ vi.mock("../services/problemProgressService.js", () => ({
   getActivityDays: vi.fn().mockResolvedValue([
     "2026-09-06","2026-09-07","2026-09-08","2026-09-09","2026-09-10","2026-09-11","2026-09-12",
   ]),
+  getDailyChallengeHistory: vi.fn().mockResolvedValue([]),
 }));
 
 import { describe, expect, it, vi, afterEach } from "vitest";
@@ -55,7 +56,7 @@ describe("progressToClient — role-agnostic, always the real data", () => {
     // since a person's real solve history doesn't change just because
     // they're currently looking at their TPO dashboard.
     const tpoWithLeftoverStudentData = makeStudentLikeUser("tpo");
-    const result = progressToClient(tpoWithLeftoverStudentData);
+    const result = progressToClient(tpoWithLeftoverStudentData, tpoWithLeftoverStudentData.solvedSlugs, tpoWithLeftoverStudentData.activityDates);
     expect(result.totalXP).toBe(4200);
     expect(result.currentStreak).toBe(7);
     expect(result.solvedSlugs).toEqual(["two-sum", "valid-parentheses"]);
