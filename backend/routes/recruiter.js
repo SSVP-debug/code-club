@@ -207,7 +207,7 @@ router.get(
           // report an inflated `total`).
           const [aggResult] = await User.aggregate([
             { $match: filter },
-            { $addFields: { solvedCount: { $size: { $ifNull: ["$solvedSlugs", []] } } } },
+            
             { $match: { solvedCount: { $gte: minSolvedNum, $lte: maxSolvedNum } } },
             { $sort: { totalXP: -1 } },
             {
@@ -283,7 +283,7 @@ router.get(
 router.get("/verify/:username", async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username })
-      .select("username displayName solvedSlugs profileSignature")
+      .select("username displayName solvedCount profileSignature")
       .lean();
 
     if (!user) return res.status(404).json({ error: "User not found." });
@@ -299,7 +299,7 @@ router.get("/verify/:username", async (req, res) => {
     const expected = crypto.createHmac("sha256", secret).update(payload).digest("hex");
 
     const verified = expected === sig.hash;
-    const currentCount = user.solvedSlugs?.length ?? 0;
+    const currentCount = user.solvedCount ?? 0;
     const countMatch = currentCount === sig.solvedCount;
 
     return res.json({
