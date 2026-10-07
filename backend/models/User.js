@@ -91,18 +91,12 @@ const userSchema = new mongoose.Schema(
       default: Date.now,
     },
 
-    solvedSlugs: {
-      type: [String],
-      default: [],
-    },
+    // Scalar solve count; the per-problem source of truth is UserProblemProgress.
+    solvedCount: { type: Number, default: 0, min: 0, index: true },
     topicStats: {
       type: Map,
       of: Number,
       default: {},
-    },
-    activityDates: {
-      type: [String],
-      default: [],
     },
     solvedDifficulty: {
       easy: { type: Number, default: 0, min: 0 },
@@ -518,17 +512,6 @@ const userSchema = new mongoose.Schema(
       hideDifficultyLabels: { type: Boolean, default: false }, // hide Easy/Medium/Hard badge on problem pages
     },
 
-    dailyChallengeHistory: {
-      type: [
-        {
-          date: String,
-          slug: String,
-          completed: Boolean,
-          completedAt: Date,
-        },
-      ],
-      default: [],
-    },
 
     // ── Daily Quiz Gate (backend/controllers/dailyQuizController.js) ─────
     // Schema-drift fix: dailyQuizController.js has been reading/writing
