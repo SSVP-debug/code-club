@@ -14,7 +14,6 @@ export async function saveProgress(userId, progress, newSolvedSlugs = []) {
     { _id: userId },
     {
       $set: {
-        solvedSlugs: progress.solvedSlugs,
         topicStats: progress.topicStats,
         solvedDifficulty: progress.solvedDifficulty,
         recentActivity: progress.recentActivity,
@@ -22,6 +21,7 @@ export async function saveProgress(userId, progress, newSolvedSlugs = []) {
         longestStreak: progress.longestStreak,
         lastActivityDate: progress.lastActivityDate,
         totalXP: progress.totalXP,
+        solvedCount: progress.solvedCount,
         achievements: progress.achievements,
       },
     }
