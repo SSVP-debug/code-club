@@ -160,9 +160,6 @@ describe("handleRemindAssignment", () => {
       ["student-partial", new Set(["two-sum"])],
       ["student-none", new Set()],
     ]));
-    getSolvedSlugsForUsers.mockResolvedValue(new Map([
-      ["student-done", new Set(["two-sum", "valid-parentheses"])],
-    ]));
     const req = { params: { id: "assignment1" }, userDoc: tpoUserDoc };
 
     await handleRemindAssignment(req, res);
@@ -177,6 +174,9 @@ describe("handleRemindAssignment", () => {
   });
 
   it("short-circuits with remindedCount: 0 and does not call createNotificationBulk when everyone is done", async () => {
+    getSolvedSlugsForUsers.mockResolvedValue(new Map([
+      ["student-done", new Set(["two-sum", "valid-parentheses"])],
+    ]));
     User.find.mockReturnValue({
       select: vi.fn().mockReturnValue({
         lean: vi.fn().mockResolvedValue([
