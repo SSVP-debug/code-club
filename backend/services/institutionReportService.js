@@ -45,7 +45,7 @@ export async function getInstitutionReportOverview({ college, from, to }) {
         optedOut: { $sum: { $cond: [{ $eq: [{ $ifNull: ["$visibleToTpo", true] }, false] }, 1, 0] } },
         totalSolved: {
           $sum: {
-            $cond: [visibleStudentExpr(), { $size: { $ifNull: ["$solvedSlugs", []] } }, 0],
+            $cond: [visibleStudentExpr(), { $ifNull: ["$solvedCount", 0] }, 0],
           },
         },
         totalEasy: { $sum: { $cond: [visibleStudentExpr(), { $ifNull: ["$solvedDifficulty.easy", 0] }, 0] } },
@@ -111,7 +111,7 @@ export async function getInstitutionReportOverview({ college, from, to }) {
           $group: {
             _id: "$memberships.cohortId",
             memberCount: { $sum: 1 },
-            totalSolved: { $sum: { $size: { $ifNull: ["$solvedSlugs", []] } } },
+            totalSolved: { $sum: { $ifNull: ["$solvedCount", 0] } },
             totalEasy: { $sum: { $ifNull: ["$solvedDifficulty.easy", 0] } },
             totalMedium: { $sum: { $ifNull: ["$solvedDifficulty.medium", 0] } },
             totalHard: { $sum: { $ifNull: ["$solvedDifficulty.hard", 0] } },
@@ -236,7 +236,7 @@ export async function getInstitutionReportOverview({ college, from, to }) {
     let completed = completionRows[0]?.completed || 0;
 
     // Legacy assignments predate UserProblemProgress. Preserve their existing
-    // completion semantics without transferring solvedSlugs to Node: MongoDB
+    // completion semantics without transferring solvedCount to Node: MongoDB
     // performs the intersection/count in the database. Once progress exists
     // for a user, progress is authoritative and the legacy fallback excludes
     // that user to avoid double counting.
@@ -257,7 +257,7 @@ export async function getInstitutionReportOverview({ college, from, to }) {
           $project: {
             completed: {
               $eq: [
-                { $size: { $setIntersection: [{ $ifNull: ["$solvedSlugs", []] }, assignment.problemSlugs] } },
+                { $size: { $setIntersection: [{ $ifNull: ["$solvedCount", []] }, assignment.problemSlugs] } },
                 assignment.problemSlugs.length,
               ],
             },
