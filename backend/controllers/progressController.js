@@ -12,6 +12,7 @@ import { logger } from "../config/logger.js";
 import { topicStatsToObject, topicStatsFromObject } from "../utils/topicStats.js";
 import { saveProgress } from "../services/userProgressService.js";
 import { getActivityDays, getSolvedSlugs } from "../services/problemProgressService.js";
+import { getDailyChallengeHistory } from "../services/dailyChallengeService.js";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -36,15 +37,15 @@ export function progressToClient(user, solvedSlugsOverride = null, activityDates
   // write would occur to trigger calculateStreak() again.
   //
   // longestStreak remains persisted because it is a historical maximum.
-  const activityDates = activityDatesOverride ?? (user.activityDates || []);
+  const activityDates = activityDatesOverride ?? [];
   const { currentStreak } = calculateStreak(activityDates);
 
   return {
     solvedSlugs: solvedSlugsOverride ?? (user.solvedSlugs || []),
     topicStats: topicStatsToObject(user.topicStats),
-    activityDates: activityDatesOverride ?? (user.activityDates || []),
+    activityDates,
     achievements: user.achievements || [],
-    dailyChallengeHistory: user.dailyChallengeHistory || [],
+    dailyChallengeHistory: user._dailyChallengeHistory || [],
     solvedDifficulty: user.solvedDifficulty || { easy: 0, medium: 0, hard: 0 },
     recentActivity: user.recentActivity || [],
     currentStreak,
@@ -95,7 +96,8 @@ export async function progressToClientForRole(user, solvedSlugsOverride = null, 
   if (user?.role !== "student") return emptyProgress();
   const solvedSlugs = solvedSlugsOverride ?? await getSolvedSlugs(user._id);
   const activityDates = activityDatesOverride ?? await getActivityDays(user._id);
-  return progressToClient(user, solvedSlugs, activityDates);
+  const dailyChallengeHistory = await getDailyChallengeHistory(user._id);
+  return progressToClient({ ...user, _dailyChallengeHistory: dailyChallengeHistory }, solvedSlugs, activityDates);
 }
 
 // ── Route handlers ─────────────────────────────────────────────────────────────
@@ -258,7 +260,7 @@ export async function putProgress(req, res) {
     // isn't in saveProgress's allowed field list; it gets its own small,
     // separate update instead of riding along on the old single .save().
     await saveProgress(req.userDoc._id, {
-      solvedSlugs: solvedSlugsForXP,
+      solvedCount: solvedSlugsForXP.length,
       topicStats: topicStatsToObject(req.userDoc.topicStats),
       solvedDifficulty: {
         easy: req.userDoc.solvedDifficulty?.easy || 0,
