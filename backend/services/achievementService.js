@@ -5,7 +5,7 @@ import { topicStatsToObject } from "../utils/topicStats.js";
 export function evaluateAchievements(user) {
   const unlocked  = [];
   const existing  = new Set((user.achievements || []).map(a => a.key));
-  const solved    = user.solvedSlugs?.length ?? 0;
+  const solved    = user.solvedCount ?? 0;
   const easy      = user.solvedDifficulty?.easy   ?? 0;
   const medium    = user.solvedDifficulty?.medium  ?? 0;
   const hard      = user.solvedDifficulty?.hard    ?? 0;
