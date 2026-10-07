@@ -24,7 +24,7 @@ The largest and most central model — one document per person, regardless of ro
 | `leetcodeUsername` | String | Predates the LeetCode-import feature; kept for backwards compatibility. |
 | `leetcodeStats` | `{ easySolved, mediumSolved, hardSolved, totalSolved, source: "manual"\|"api", lastSyncedAt }` | Populated manually or via `/api/leetcode/fetch`. **Not** fed into `totalXP`/`solvedSlugs` — LeetCode problems aren't part of Code Club's own catalog. |
 | `joinedDate` | Date, default now | |
-| `solvedSlugs` | `[String]` | **The single source of truth for XP.** Every derived stat (leaderboard rank, dashboard XP, certification eligibility) is computed from this array's length × difficulty weight at read time — never stored as a mutable counter the client can influence. |
+| `solvedCount` | `Number` | Scalar aggregate of server-verified Code Club solves. The per-problem source of truth is `UserProblemProgress`; XP is maintained incrementally server-side. |
 | `topicStats` | Map<String, Number> | Solve count per topic (e.g. "Dynamic Programming" → 12). |
 | `activityDates` | `[String]` | Used for streak + heatmap calculation. |
 | `solvedDifficulty` | `{ easy, medium, hard }` (Numbers) | |
