@@ -8,6 +8,7 @@ import {
 } from "../controllers/progressController.js";
 import Problem from "../models/Problem.js";
 import Submission from "../models/Submission.js";
+import UserProblemProgress from "../models/UserProblemProgress.js";
 
 const router = Router();
 
@@ -19,6 +20,8 @@ const router = Router();
 //   Zod + slug existence check closes that vector entirely.
 
 const progressSchema = z.object({
+  // Preferred write path: one server-verified newly solved problem.
+  problemSlug: z.string().min(1).max(200).regex(/^[a-z0-9-]+$/).optional(),
   // Array of problem slugs — each must be a valid slug format
   solvedSlugs: z
     .array(
@@ -85,7 +88,7 @@ const progressSchema = z.object({
 // Runs after Zod validation. Verifies every submitted slug actually exists
 // in the problems collection — prevents marking fake problems as solved.
 export async function validateSlugs(req, res, next) {
-  const { solvedSlugs } = req.body;
+  const { solvedSlugs, problemSlug } = req.body;
 
   if (!solvedSlugs || solvedSlugs.length === 0) return next();
 
@@ -143,11 +146,8 @@ export async function verifyAgainstSubmissions(req, res, next) {
     return next();
   }
 
-  const { solvedSlugs } = req.body;
-  const alreadyTrusted = new Set(req.userDoc?.solvedSlugs || []);
-  const claimed = [...new Set(solvedSlugs || [])].filter(
-    (slug) => !alreadyTrusted.has(slug)
-  );
+  const { solvedSlugs, problemSlug } = req.body;
+  const claimed = [...new Set([...(solvedSlugs || []), problemSlug].filter(Boolean))];
 
   if (claimed.length === 0) {
     req.verifiedNewSlugs = [];
@@ -155,14 +155,27 @@ export async function verifyAgainstSubmissions(req, res, next) {
   }
 
   try {
-    const verified = await Submission.find({
+    // UserProblemProgress is the scalable source of truth for solves.
+    // Filter previously-persisted solves before touching Submission so a
+    // repeated progress write does not re-query the submission history.
+    const alreadySolved = await UserProblemProgress.find({
       userId: req.userDoc._id,
       problemSlug: { $in: claimed },
-      status: "Accepted",
+      status: "solved",
     }).distinct("problemSlug");
+    const alreadySolvedSet = new Set(alreadySolved);
+    const untrustedClaims = claimed.filter((slug) => !alreadySolvedSet.has(slug));
+
+    const verified = untrustedClaims.length === 0
+      ? []
+      : await Submission.find({
+        userId: req.userDoc._id,
+        problemSlug: { $in: untrustedClaims },
+        status: "Accepted",
+      }).distinct("problemSlug");
 
     const verifiedSet = new Set(verified);
-    const rejected = claimed.filter((slug) => !verifiedSet.has(slug));
+    const rejected = untrustedClaims.filter((slug) => !verifiedSet.has(slug));
 
     if (rejected.length > 0) {
       req.log.warn(
@@ -171,7 +184,7 @@ export async function verifyAgainstSubmissions(req, res, next) {
       );
     }
 
-    req.verifiedNewSlugs = verified;
+    req.verifiedNewSlugs = verified.filter((slug) => !alreadySolvedSet.has(slug));
     next();
   } catch (err) {
     // Fail closed, not open: if we can't verify, treat nothing as verified

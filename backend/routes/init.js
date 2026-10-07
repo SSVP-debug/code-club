@@ -16,15 +16,15 @@ import { Router } from "express";
 import User from "../models/User.js";
 import Submission from "../models/Submission.js";
 import { progressToClientForRole } from "../controllers/progressController.js";
+import { getSolvedSlugs, getActivityDays } from "../services/problemProgressService.js";
 import { getStudentDayKey } from "../utils/studentDay.js";
+import { listSavedProblems } from "../services/userSavedProblemService.js";
 
 const router = Router();
 
 router.get("/", async (req, res) => {
   try {
     if (!req.userDoc) {
-      // MongoDB is down but Firebase auth passed — return empty scaffold
-      // so the frontend can still render rather than hard-crashing.
       return res.json({
         progress: {
           solvedSlugs: [],
@@ -47,27 +47,29 @@ router.get("/", async (req, res) => {
       });
     }
 
-    // Submission history is student-track data, same as progress below —
-    // only fetch/return it when the session's ACTIVE role is "student".
-    // Skipping the query entirely for TPO/recruiter/admin sessions is both
-    // the role-isolation fix (a TPO must never see a leftover Student
-    // registration's submission history) and a free perf win (no query to
-    // run in the first place).
-    const submissions =
+    // Submission history and solved-problem progress are student-track data.
+    // Keep the two reads in parallel; UserProblemProgress is the scalable
+    // source for solved slugs while User remains the compatibility store for
+    // the other progress fields during this migration phase.
+    const [submissions, solvedSlugs, activityDates, savedProblems] = await Promise.all([
       req.userDoc.role === "student"
-        ? await Submission
+        ? Submission
             .find({ userId: req.userDoc._id })
             .sort({ createdAt: -1 })
             .limit(50)
             .lean()
-        : [];
+        : Promise.resolve([]),
+      req.userDoc.role === "student"
+        ? getSolvedSlugs(req.userDoc._id)
+        : Promise.resolve([]),
+      req.userDoc.role === "student"
+        ? getActivityDays(req.userDoc._id)
+        : Promise.resolve([]),
+      req.userDoc.role === "student"
+        ? listSavedProblems(req.userDoc._id)
+        : Promise.resolve([]),
+    ]);
 
-    // Admin impersonation state — req.actingAdminDoc is only set (by
-    // requireAuth) while an admin is actively viewing as someone else.
-    // `user.role` above already reflects the impersonated target (by
-    // design, so the rest of the app behaves exactly as that user); this
-    // block is purely so the UI can show "Impersonating X" instead of the
-    // normal "Admin Preview" strip, and offer an Exit action.
     const impersonation = req.actingAdminDoc
       ? {
           active: true,
@@ -81,10 +83,6 @@ router.get("/", async (req, res) => {
     return res.json({
       user: {
         role: req.userDoc.role,
-        // Authorized roles vs the single active `role` above — see
-        // models/User.js's role/roles comment. Lets the frontend offer a
-        // real workspace switch (WorkspaceSwitcher.jsx) to any account
-        // with more than one, not just admin.
         roles: req.userDoc.roles?.length ? req.userDoc.roles : ["student"],
         username: req.userDoc.username || "",
         leetcodeUsername: req.userDoc.leetcodeUsername || "",
@@ -99,7 +97,7 @@ router.get("/", async (req, res) => {
           hideDifficultyLabels: req.userDoc.preferences?.hideDifficultyLabels ?? false,
         },
         pinnedProblems: req.userDoc.pinnedProblems || [],
-        savedProblems: req.userDoc.savedProblems || [],
+        savedProblems,
         developerProfile: {
           githubUrl: req.userDoc.developerProfile?.githubUrl ?? null,
           linkedinUrl: req.userDoc.developerProfile?.linkedinUrl ?? null,
@@ -110,14 +108,7 @@ router.get("/", async (req, res) => {
       },
 
       impersonation,
-
-      // Role-gated — see progressToClientForRole's comment in
-      // progressController.js. Returns real solvedSlugs/XP/streak/etc.
-      // only when `role === "student"`; any other active role (tpo,
-      // recruiter, admin) gets the same zeroed shape as the `_dbDown`
-      // fallback above, regardless of what this document's student-track
-      // fields actually hold from a prior registration.
-      progress: progressToClientForRole(req.userDoc),
+      progress: await progressToClientForRole(req.userDoc, solvedSlugs, activityDates),
 
       submissions: submissions.map((doc) => ({
         id: doc._id.toString(),
@@ -133,13 +124,10 @@ router.get("/", async (req, res) => {
         expectedOutput: doc.expectedOutput,
         actualOutput: doc.actualOutput,
         time: new Date(doc.createdAt).toISOString(),
-        // Same IST day-key policy as submissionController.js's
-        // toClientSubmission() — see backend/utils/studentDay.js.
         date: getStudentDayKey(doc.createdAt),
         createdAt: doc.createdAt,
       })),
     });
-
   } catch (err) {
     req.log.error({ err }, "[/api/init] Error");
     return res.status(500).json({ error: "Failed to load initial data." });

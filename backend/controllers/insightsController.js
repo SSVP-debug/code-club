@@ -1,5 +1,6 @@
 import Submission from "../models/Submission.js";
 import { topicStatsToObject } from "../utils/topicStats.js";
+import { getSolvedSlugs } from "../services/problemProgressService.js";
 
 // POST /api/insights — returns Claude-generated coaching text
 // req.userDoc is guaranteed by requireAuth middleware
@@ -57,7 +58,7 @@ export async function getInsights(req, res) {
     hard: 0,
   };
 
-  const totalSolved = userDoc.solvedSlugs?.length ?? 0;
+  const totalSolved = (await getSolvedSlugs(userDoc._id)).length;
 
   // ── 3. Check if user has enough data for meaningful insights ──────────
   if (totalSolved === 0 && totalSubmissions === 0) {

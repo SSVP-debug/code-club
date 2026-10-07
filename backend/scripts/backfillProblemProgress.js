@@ -14,6 +14,7 @@ import mongoose from "mongoose";
 import Submission from "../models/Submission.js";
 import UserProblemProgress from "../models/UserProblemProgress.js";
 import ProblemStats from "../models/ProblemStats.js";
+import { getStudentDayKey } from "../utils/studentDay.js";
 
 const DRY_RUN = process.argv.includes("--dry-run");
 const BATCH_SIZE = 500;
@@ -60,6 +61,7 @@ async function backfillUserProblemProgress() {
             status: solved ? "solved" : "attempted",
             firstAttemptAt: row.firstAttemptAt,
             solvedAt: solved ? row.solvedAt : null,
+            solvedDay: solved && row.solvedAt ? getStudentDayKey(row.solvedAt) : null,
             attemptCount: row.attemptCount,
             acceptedCount: row.acceptedCount,
             lastAttemptAt: row.lastAttemptAt,

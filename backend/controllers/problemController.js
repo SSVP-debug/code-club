@@ -4,6 +4,7 @@ import { getOrSetCache, invalidateCache, invalidateCachePrefix } from "../utils/
 import { XP_BY_DIFFICULTY } from "../utils/computeXP.js";
 import { getNextBestProblem } from "../utils/recommendNextProblem.js";
 import { canAccessContestProblem } from "../services/contestProblemAccess.js";
+import { getSolvedSlugs } from "../services/problemProgressService.js";
 
 const PROBLEMS_CACHE_KEY = "problems:catalog";
 const CACHE_TTL_SECONDS = 5 * 60;
@@ -165,7 +166,7 @@ export const getProblemBySlug = async (req, res) => {
       if (!allowed) return res.status(404).json({ message: "Problem not found" });
     }
 
-    const solvedSlugs = req.userDoc?.solvedSlugs ?? [];
+    const solvedSlugs = req.userDoc ? await getSolvedSlugs(req.userDoc._id) : [];
     const pathId = req.query?.path || null;
 
     const [prevProblem, recommendedNext] = await Promise.all([

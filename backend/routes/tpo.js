@@ -18,6 +18,7 @@ import { createNotification, createNotificationBulk } from "../services/notifica
 import { isDomainAutoVerified, isConsumerEmailDomain } from "../utils/domainVerification.js";
 import { looksLikeEmailAddress } from "../utils/collegeNameHeuristics.js";
 import { getSettings } from "../services/settingsService.js";
+import { getSolvedSlugs } from "../services/problemProgressService.js";
 import {
   getCollegeForTpo,
   isPrimaryTpo,
@@ -2224,7 +2225,7 @@ studentAssignmentsRouter.get("/", async (req, res) => {
       : [];
     const cohortById = new Map(cohorts.map((cohort) => [String(cohort._id), cohort]));
 
-    const solvedSet = new Set(req.userDoc.solvedSlugs || []);
+    const solvedSet = new Set(await getSolvedSlugs(req.userDoc._id));
 
     const enriched = assignments.map((assignment) => {
       const solvedCount = assignment.problemSlugs.filter((slug) => solvedSet.has(slug)).length;

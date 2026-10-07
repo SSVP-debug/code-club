@@ -1,7 +1,7 @@
 import { calculateStreak } from "../utils/calculateStreak.js";
 import { getStudentDayKey } from "../utils/studentDay.js";
 import { evaluateAchievements } from "../services/achievementService.js";
-import { computeXPFromSlugs, buildDifficultyMap, XP_BY_DIFFICULTY } from "../utils/computeXP.js";
+import { XP_BY_DIFFICULTY } from "../utils/computeXP.js";
 import Problem from "../models/Problem.js";
 import User from "../models/User.js";
 import { invalidateLeaderboardCaches } from "../routes/leaderboard.js";
@@ -11,6 +11,7 @@ import { createNotification } from "../services/notificationService.js";
 import { logger } from "../config/logger.js";
 import { topicStatsToObject, topicStatsFromObject } from "../utils/topicStats.js";
 import { saveProgress } from "../services/userProgressService.js";
+import { getActivityDays, getSolvedSlugs } from "../services/problemProgressService.js";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -19,38 +20,29 @@ import { saveProgress } from "../services/userProgressService.js";
  * Falls back to querying MongoDB for the difficulty map.
  * Returns 0 if the query fails — never crashes.
  */
-async function recomputeXP(solvedSlugs) {
-  if (!solvedSlugs || solvedSlugs.length === 0) return 0;
-
-  try {
-    const problems = await Problem
-      .find({ slug: { $in: solvedSlugs } })
-      .select("slug difficulty")
-      .lean();
-
-    const difficultyMap = buildDifficultyMap(problems);
-    return computeXPFromSlugs(solvedSlugs, difficultyMap);
-  } catch (err) {
-    logger.error({ err }, "[Progress] XP recompute failed");
-    return null; // null = keep existing, don't overwrite
-  }
+function xpForProblems(problems) {
+  return problems.reduce(
+    (sum, problem) => sum + (XP_BY_DIFFICULTY[problem.difficulty] || 0),
+    0
+  );
 }
 
 // ── Public serialiser ──────────────────────────────────────────────────────────
 
-export function progressToClient(user) {
+export function progressToClient(user, solvedSlugsOverride = null, activityDatesOverride = null) {
   // currentStreak is derived from activityDates on every read, not only when
   // a new solve is saved. Without this, a value such as "2" could remain
   // visible indefinitely after the student stopped practicing, because no
   // write would occur to trigger calculateStreak() again.
   //
   // longestStreak remains persisted because it is a historical maximum.
-  const { currentStreak } = calculateStreak(user.activityDates || []);
+  const activityDates = activityDatesOverride ?? (user.activityDates || []);
+  const { currentStreak } = calculateStreak(activityDates);
 
   return {
-    solvedSlugs: user.solvedSlugs || [],
+    solvedSlugs: solvedSlugsOverride ?? (user.solvedSlugs || []),
     topicStats: topicStatsToObject(user.topicStats),
-    activityDates: user.activityDates || [],
+    activityDates: activityDatesOverride ?? (user.activityDates || []),
     achievements: user.achievements || [],
     dailyChallengeHistory: user.dailyChallengeHistory || [],
     solvedDifficulty: user.solvedDifficulty || { easy: 0, medium: 0, hard: 0 },
@@ -99,15 +91,17 @@ export function emptyProgress() {
 // recruiter session to render a previous Student registration's leftover
 // XP/streak/solved data — see models/User.js's role/roles comment for the
 // full root-cause writeup.
-export function progressToClientForRole(user) {
+export async function progressToClientForRole(user, solvedSlugsOverride = null, activityDatesOverride = null) {
   if (user?.role !== "student") return emptyProgress();
-  return progressToClient(user);
+  const solvedSlugs = solvedSlugsOverride ?? await getSolvedSlugs(user._id);
+  const activityDates = activityDatesOverride ?? await getActivityDays(user._id);
+  return progressToClient(user, solvedSlugs, activityDates);
 }
 
 // ── Route handlers ─────────────────────────────────────────────────────────────
 
 export async function getProgress(req, res) {
-  return res.json(progressToClientForRole(req.userDoc));
+  return res.json(await progressToClientForRole(req.userDoc));
 }
 
 export async function putProgress(req, res) {
@@ -141,8 +135,9 @@ export async function putProgress(req, res) {
     // that this server independently confirmed via a real Accepted
     // Submission. Anything the client claimed without one was already
     // dropped (and logged) before we got here.
+    const existingSolvedSlugs = new Set(await getSolvedSlugs(req.userDoc._id));
     const newSlugs = (req.verifiedNewSlugs || []).filter(
-      (slug) => !req.userDoc.solvedSlugs.includes(slug)
+      (slug) => !existingSolvedSlugs.has(slug)
     );
 
     if (newSlugs.length > 0) {
@@ -171,7 +166,7 @@ export async function putProgress(req, res) {
         // confirmed the slug exists) — skip defensively rather than throw.
         if (!problem) continue;
 
-        req.userDoc.solvedSlugs.push(slug);
+        // User.solvedSlugs is now compatibility-only; the authoritative solve row is written by saveProgress below.
 
         if (problem.topic) {
           nextTopicStats[problem.topic] = (nextTopicStats[problem.topic] || 0) + 1;
@@ -198,11 +193,12 @@ export async function putProgress(req, res) {
       // verified at least one new Accepted submission), so — and only
       // so — it's safe to add. A client can no longer backfill arbitrary
       // past dates to inflate a streak.
-      const activityDates = new Set(req.userDoc.activityDates || []);
-      activityDates.add(today);
-      req.userDoc.activityDates = [...activityDates];
-
-      const { currentStreak, longestStreak } = calculateStreak(req.userDoc.activityDates);
+      // Activity history is derived from UserProblemProgress instead of an
+      // ever-growing array on User. The newly verified solve makes today an
+      // activity day even before its progress row is committed below.
+      const activityDates = await getActivityDays(req.userDoc._id);
+      if (!activityDates.includes(today)) activityDates.push(today);
+      const { currentStreak, longestStreak } = calculateStreak(activityDates);
       req.userDoc.currentStreak = currentStreak;
       req.userDoc.longestStreak = Math.max(req.userDoc.longestStreak || 0, longestStreak);
       req.userDoc.lastActivityDate = today;
@@ -215,10 +211,18 @@ export async function putProgress(req, res) {
     // ── Server-side XP recomputation ──────────────────────────────────────
     // Always recompute from the (now fully verified) solved slugs — never
     // trust client-supplied XP.
-    const freshXP = await recomputeXP(req.userDoc.solvedSlugs);
-    if (freshXP !== null) {
-      req.userDoc.totalXP = freshXP;
+    const solvedSlugsForXP = [...existingSolvedSlugs, ...newSlugs];
+    // XP is a scalar aggregate, so update it incrementally from the newly
+    // verified problems. Re-reading every solved problem on every submission
+    // would make solve latency grow linearly with the student's history.
+    if (newSlugs.length > 0) {
+      req.userDoc.totalXP = (req.userDoc.totalXP || 0) + xpForProblems(
+        await Problem.find({ slug: { $in: newSlugs } }).select("difficulty").lean()
+      );
     }
+    // Keep the legacy User field populated during the zero-downtime migration.
+    // Reads no longer depend on it; UserProblemProgress is authoritative.
+    req.userDoc.solvedSlugs = solvedSlugsForXP;
 
     // ── Achievement evaluation ─────────────────────────────────────────────
     const newlyUnlocked = evaluateAchievements(req.userDoc);
@@ -254,9 +258,8 @@ export async function putProgress(req, res) {
     // isn't in saveProgress's allowed field list; it gets its own small,
     // separate update instead of riding along on the old single .save().
     await saveProgress(req.userDoc._id, {
-      solvedSlugs: req.userDoc.solvedSlugs,
+      solvedSlugs: solvedSlugsForXP,
       topicStats: topicStatsToObject(req.userDoc.topicStats),
-      activityDates: req.userDoc.activityDates,
       solvedDifficulty: {
         easy: req.userDoc.solvedDifficulty?.easy || 0,
         medium: req.userDoc.solvedDifficulty?.medium || 0,
@@ -274,7 +277,7 @@ export async function putProgress(req, res) {
         key: a.key,
         unlockedAt: a.unlockedAt,
       })),
-    });
+    }, newSlugs);
 
     if (leetcodeUsername !== undefined) {
       await User.updateOne(
@@ -326,7 +329,8 @@ export async function putProgress(req, res) {
       );
     }
 
-    const response = progressToClient(req.userDoc);
+    const responseActivityDates = await getActivityDays(req.userDoc._id);
+    const response = progressToClient(req.userDoc, solvedSlugsForXP, responseActivityDates);
     if (newlyUnlocked.length > 0) {
       response.newAchievements = newlyUnlocked;
     }

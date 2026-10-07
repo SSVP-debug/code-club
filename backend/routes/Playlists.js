@@ -1,5 +1,6 @@
 import { Router } from "express";
 import Playlist from "../models/Playlist.js";
+import { getSolvedSlugs } from "../services/problemProgressService.js";
 
 const router = Router();
 
@@ -30,7 +31,7 @@ router.get("/", async (req, res) => {
       $or: [{ isOfficial: true }, { ownerId: req.userDoc._id }],
     }).sort({ isOfficial: -1, createdAt: 1 });
 
-    const solvedSlugs = req.userDoc.solvedSlugs || [];
+    const solvedSlugs = await getSolvedSlugs(req.userDoc._id);
     res.json({ playlists: docs.map((d) => serializePlaylist(d, solvedSlugs)) });
   } catch (err) {
     req.log?.error?.({ err }, "[Playlists] GET / failed");
@@ -66,7 +67,7 @@ router.post("/", async (req, res) => {
       problemSlugs: [...new Set(problemSlugs)], // de-dupe defensively
     });
 
-    res.status(201).json({ playlist: serializePlaylist(doc, req.userDoc.solvedSlugs || []) });
+    res.status(201).json({ playlist: serializePlaylist(doc, await getSolvedSlugs(req.userDoc._id)) });
   } catch (err) {
     req.log?.error?.({ err }, "[Playlists] POST / failed");
     res.status(500).json({ error: "Failed to create playlist." });
@@ -116,7 +117,7 @@ router.patch("/:id", async (req, res) => {
 
     await doc.save();
 
-    res.json({ playlist: serializePlaylist(doc, req.userDoc.solvedSlugs || []) });
+    res.json({ playlist: serializePlaylist(doc, await getSolvedSlugs(req.userDoc._id)) });
   } catch (err) {
     req.log?.error?.({ err }, "[Playlists] PATCH /:id failed");
     res.status(500).json({ error: "Failed to update playlist." });

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import crypto from "crypto";
 import { getProfileSignSecret } from "../config/env.js";
+import { getSolvedSlugs } from "../services/problemProgressService.js";
 
 const router = Router();
 
@@ -10,7 +11,7 @@ router.post("/sign", async (req, res) => {
     if (!req.userDoc) return res.status(503).json({ error: "Database unavailable." });
 
     const secret     = getProfileSignSecret();
-    const solvedCount = req.userDoc.solvedSlugs?.length ?? 0;
+    const solvedCount = (await getSolvedSlugs(req.userDoc._id)).length;
     const signedAt   = new Date();
     const payload    = `${req.userDoc._id}:${solvedCount}:${signedAt.toISOString()}`;
     const hash       = crypto.createHmac("sha256", secret).update(payload).digest("hex");

@@ -9,14 +9,13 @@ import { syncSolvedProblemProgress } from "./problemProgressService.js";
  * future reads. Keeping both writes here gives the migration one stable
  * seam and lets old clients continue working during the rollout.
  */
-export async function saveProgress(userId, progress) {
+export async function saveProgress(userId, progress, newSolvedSlugs = []) {
   const userWrite = User.updateOne(
     { _id: userId },
     {
       $set: {
         solvedSlugs: progress.solvedSlugs,
         topicStats: progress.topicStats,
-        activityDates: progress.activityDates,
         solvedDifficulty: progress.solvedDifficulty,
         recentActivity: progress.recentActivity,
         currentStreak: progress.currentStreak,
@@ -30,7 +29,7 @@ export async function saveProgress(userId, progress) {
 
   const problemWrite = syncSolvedProblemProgress(
     userId,
-    progress.solvedSlugs,
+    newSolvedSlugs,
     new Date()
   );
 

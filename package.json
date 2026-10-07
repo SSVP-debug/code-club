@@ -20,7 +20,13 @@
     "ensure:indexes:leaderboard": "node backend/scripts/ensureLeaderboardIndexes.js",
     "ensure:indexes:analytics": "node backend/scripts/ensureAnalyticsIndexes.js",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "migrate:contest-participants": "node backend/scripts/migrateContestParticipants.js",
+    "migrate:contest-participants:dry-run": "node backend/scripts/migrateContestParticipants.js --dry-run",
+    "migrate:user-saved-problems": "node backend/scripts/migrateUserSavedProblems.js",
+    "migrate:user-saved-problems:dry-run": "node backend/scripts/migrateUserSavedProblems.js --dry-run",
+    "backfill:problem-progress": "node backend/scripts/backfillProblemProgress.js",
+    "backfill:problem-progress:dry-run": "node backend/scripts/backfillProblemProgress.js --dry-run"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",

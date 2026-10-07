@@ -1,10 +1,5 @@
 import { apiFetch } from "./api";
 import { getSubmissions } from "./submissionService";
-import { getStudentDayKey } from "../utils/studentDay";
-
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-const toISODate = (dates = []) => [...new Set(dates.filter(d => ISO_DATE.test(d)))];
-
 const DEFAULT_PROGRESS = {
   solvedSlugs: [],
   topicStats: {},
@@ -32,46 +27,14 @@ export async function initProgress() {
   return getProgress();
 }
 
-export async function markProblemSolved(currentProgress, problemSlug) {
-  const solvedSlugs = Array.from(
-    new Set([...(currentProgress.solvedSlugs || []), problemSlug])
-  );
+export async function markProblemSolved(_currentProgress, problemSlug) {
+  if (!problemSlug) throw new Error("problemSlug is required");
 
-  const today = getStudentDayKey();
-  // ← FIX A: sanitize legacy locale-format dates before they hit Zod
-  const activityDates = Array.from(
-    new Set([...toISODate(currentProgress.activityDates), today])
-  );
-
-  // ← FIX B: don't re-increment — appContext already did it
-  const solvedDifficulty = {
-    easy: currentProgress.solvedDifficulty?.easy ?? 0,
-    medium: currentProgress.solvedDifficulty?.medium ?? 0,
-    hard: currentProgress.solvedDifficulty?.hard ?? 0,
-  };
-
-  // ← FIX C: pass topicStats through so it persists
-  const topicStats = currentProgress.topicStats || {};
-
-  // ← FIX D: pass recentActivity through
-  const recentActivity = currentProgress.recentActivity || [];
-
-  // NOTE: totalXP is intentionally NOT included.
-  // The backend computes XP server-side from solvedSlugs × difficulty weights.
-  // Sending it from the client would be ignored and is a security risk.
-  const requestBody = {
-    solvedSlugs,
-    activityDates,
-    solvedDifficulty,
-    topicStats,
-    recentActivity,
-  };
-
-  
-
+  // The server already owns the full solved set. Send only the newly
+  // accepted problem so request size stays O(1) as a student's history grows.
   return apiFetch("/api/progress", {
     method: "PUT",
-    body: JSON.stringify(requestBody),
+    body: JSON.stringify({ problemSlug }),
   });
 }
 

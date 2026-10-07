@@ -1,3 +1,10 @@
+vi.mock("../services/problemProgressService.js", () => ({
+  getSolvedSlugs: vi.fn().mockResolvedValue(["two-sum", "valid-parentheses"]),
+  getActivityDays: vi.fn().mockResolvedValue([
+    "2026-09-06","2026-09-07","2026-09-08","2026-09-09","2026-09-10","2026-09-11","2026-09-12",
+  ]),
+}));
+
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { progressToClient, progressToClientForRole, emptyProgress } from "./progressController.js";
 
@@ -56,19 +63,19 @@ describe("progressToClient — role-agnostic, always the real data", () => {
 });
 
 describe("progressToClientForRole — the read-boundary fix", () => {
-  it("returns real progress data for an active student role", () => {
+  it("returns real progress data for an active student role", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-09-12T10:00:00.000Z"));
     const student = makeStudentLikeUser("student");
-    const result = progressToClientForRole(student);
+    const result = await progressToClientForRole(student);
     expect(result.totalXP).toBe(4200);
     expect(result.currentStreak).toBe(7);
     expect(result.solvedSlugs).toEqual(["two-sum", "valid-parentheses"]);
   });
 
-  it("REGRESSION: never exposes leftover student data for an active tpo role", () => {
+  it("REGRESSION: never exposes leftover student data for an active tpo role", async () => {
     const tpoWithLeftoverStudentData = makeStudentLikeUser("tpo");
-    const result = progressToClientForRole(tpoWithLeftoverStudentData);
+    const result = await progressToClientForRole(tpoWithLeftoverStudentData);
     expect(result).toEqual(emptyProgress());
     expect(result.totalXP).toBe(0);
     expect(result.currentStreak).toBe(0);
@@ -76,20 +83,20 @@ describe("progressToClientForRole — the read-boundary fix", () => {
     expect(result.achievements).toEqual([]);
   });
 
-  it("REGRESSION: never exposes leftover student data for an active recruiter role", () => {
+  it("REGRESSION: never exposes leftover student data for an active recruiter role", async () => {
     const recruiterWithLeftoverStudentData = makeStudentLikeUser("recruiter");
-    const result = progressToClientForRole(recruiterWithLeftoverStudentData);
+    const result = await progressToClientForRole(recruiterWithLeftoverStudentData);
     expect(result).toEqual(emptyProgress());
   });
 
-  it("returns the empty scaffold for an admin session too", () => {
+  it("returns the empty scaffold for an admin session too", async () => {
     const admin = makeStudentLikeUser("admin");
-    const result = progressToClientForRole(admin);
+    const result = await progressToClientForRole(admin);
     expect(result).toEqual(emptyProgress());
   });
 
-  it("handles a null/undefined user defensively (matches _dbDown callers)", () => {
-    expect(progressToClientForRole(null)).toEqual(emptyProgress());
-    expect(progressToClientForRole(undefined)).toEqual(emptyProgress());
+  it("handles a null/undefined user defensively (matches _dbDown callers)", async () => {
+    await expect(progressToClientForRole(null)).resolves.toEqual(emptyProgress());
+    await expect(progressToClientForRole(undefined)).resolves.toEqual(emptyProgress());
   });
 });

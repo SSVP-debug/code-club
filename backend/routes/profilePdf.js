@@ -5,6 +5,7 @@ import { PREMIUM_FEATURES } from "../middleware/premiumGate.js";
 import { SITE_URL } from "../config/site.js";
 import { getLevel } from "../utils/xpLevel.js";
 import { topicStatsToObject } from "../utils/topicStats.js";
+import { getSolvedSlugs } from "../services/problemProgressService.js";
 
 const require = createRequire(import.meta.url);
 const router  = Router();
@@ -42,7 +43,8 @@ router.get("/", async (req, res) => {
     }
 
     const level        = getLevel(user.totalXP || 0);
-    const solved       = user.solvedSlugs?.length ?? 0;
+    const solvedSlugs = await getSolvedSlugs(user._id);
+    const solved       = solvedSlugs.length;
     const easy         = user.solvedDifficulty?.easy   ?? 0;
     const medium       = user.solvedDifficulty?.medium ?? 0;
     const hard         = user.solvedDifficulty?.hard   ?? 0;
