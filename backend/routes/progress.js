@@ -146,7 +146,7 @@ export async function verifyAgainstSubmissions(req, res, next) {
     return next();
   }
 
-  const { solvedSlugs } = req.body;
+  const { solvedSlugs, problemSlug } = req.body;
   const claimed = [...new Set([...(solvedSlugs || []), problemSlug].filter(Boolean))];
 
   if (claimed.length === 0) {
@@ -155,24 +155,27 @@ export async function verifyAgainstSubmissions(req, res, next) {
   }
 
   try {
-    const verified = await Submission.find({
-      userId: req.userDoc._id,
-      problemSlug: { $in: claimed },
-      status: "Accepted",
-    }).distinct("problemSlug");
-
-    // UserProblemProgress is the scalable source of truth. A submission
-    // proves the solve; this query keeps the verification path independent
-    // from the legacy User.solvedSlugs array.
+    // UserProblemProgress is the scalable source of truth for solves.
+    // Filter previously-persisted solves before touching Submission so a
+    // repeated progress write does not re-query the submission history.
     const alreadySolved = await UserProblemProgress.find({
       userId: req.userDoc._id,
-      problemSlug: { $in: verified },
+      problemSlug: { $in: claimed },
       status: "solved",
     }).distinct("problemSlug");
     const alreadySolvedSet = new Set(alreadySolved);
+    const untrustedClaims = claimed.filter((slug) => !alreadySolvedSet.has(slug));
+
+    const verified = untrustedClaims.length === 0
+      ? []
+      : await Submission.find({
+        userId: req.userDoc._id,
+        problemSlug: { $in: untrustedClaims },
+        status: "Accepted",
+      }).distinct("problemSlug");
 
     const verifiedSet = new Set(verified);
-    const rejected = claimed.filter((slug) => !verifiedSet.has(slug));
+    const rejected = untrustedClaims.filter((slug) => !verifiedSet.has(slug));
 
     if (rejected.length > 0) {
       req.log.warn(
