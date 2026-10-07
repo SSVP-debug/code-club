@@ -235,40 +235,6 @@ export async function getInstitutionReportOverview({ college, from, to }) {
 
     let completed = completionRows[0]?.completed || 0;
 
-    // Legacy assignments predate UserProblemProgress. Preserve their existing
-    // completion semantics without transferring solvedCount to Node: MongoDB
-    // performs the intersection/count in the database. Once progress exists
-    // for a user, progress is authoritative and the legacy fallback excludes
-    // that user to avoid double counting.
-    const progressUsers = await UserProblemProgress.aggregate([
-      { $match: { userId: { $in: audienceIds } } },
-      { $group: { _id: "$userId" } },
-      { $project: { _id: 1 } },
-    ]);
-    const progressUserIds = progressUsers.map((row) => row._id);
-    const legacyAudienceIds = audienceIds.filter(
-      (id) => !progressUserIds.some((progressId) => String(progressId) === String(id))
-    );
-
-    if (legacyAudienceIds.length) {
-      const legacyRows = await User.aggregate([
-        { $match: { _id: { $in: legacyAudienceIds }, ...studentMatch } },
-        {
-          $project: {
-            completed: {
-              $eq: [
-                { $size: { $setIntersection: [{ $ifNull: ["$solvedCount", []] }, assignment.problemSlugs] } },
-                assignment.problemSlugs.length,
-              ],
-            },
-          },
-        },
-        { $match: { completed: true } },
-        { $count: "completed" },
-      ]);
-      completed += legacyRows[0]?.completed || 0;
-    }
-
     completedAssignments += completed;
     assignmentCompletions += audienceIds.length;
   }
