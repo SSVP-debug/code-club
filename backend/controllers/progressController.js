@@ -220,9 +220,6 @@ export async function putProgress(req, res) {
         await Problem.find({ slug: { $in: newSlugs } }).select("difficulty").lean()
       );
     }
-    // Keep the legacy User field populated during the zero-downtime migration.
-    // Reads no longer depend on it; UserProblemProgress is authoritative.
-    req.userDoc.solvedSlugs = solvedSlugsForXP;
 
     // ── Achievement evaluation ─────────────────────────────────────────────
     const newlyUnlocked = evaluateAchievements(req.userDoc);
@@ -273,6 +270,7 @@ export async function putProgress(req, res) {
       longestStreak: req.userDoc.longestStreak,
       lastActivityDate: req.userDoc.lastActivityDate,
       totalXP: req.userDoc.totalXP,
+      solvedCount: solvedSlugsForXP.length,
       achievements: req.userDoc.achievements.map((a) => ({
         key: a.key,
         unlockedAt: a.unlockedAt,
