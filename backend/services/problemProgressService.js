@@ -64,6 +64,7 @@ export async function syncSolvedProblemProgress(userId, slugs, solvedAt = new Da
           userId,
           problemSlug,
           firstAttemptAt: solvedAt,
+          solvedDay: getStudentDayKey(solvedAt),
           attemptCount: 1,
           acceptedCount: 1,
         },
