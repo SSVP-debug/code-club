@@ -18,7 +18,7 @@ import { createNotification, createNotificationBulk } from "../services/notifica
 import { isDomainAutoVerified, isConsumerEmailDomain } from "../utils/domainVerification.js";
 import { looksLikeEmailAddress } from "../utils/collegeNameHeuristics.js";
 import { getSettings } from "../services/settingsService.js";
-import { getSolvedSlugs } from "../services/problemProgressService.js";
+import { getSolvedSlugs, getSolvedSlugsForUsers } from "../services/problemProgressService.js";
 import {
   getCollegeForTpo,
   isPrimaryTpo,
@@ -1861,29 +1861,18 @@ router.get("/assignments", requireRole("tpo", "admin"), requireVerified, async (
     }
 
     const legacyStudents = collegeDomains.length
-      ? await User.find({ emailDomain: { $in: collegeDomains }, role: "student" })
-          .select("_id solvedCount")
-          .lean()
+      ? await User.find({ emailDomain: { $in: collegeDomains }, role: "student" }).select("_id").lean()
       : [];
 
     const cohortStudentIds = [...studentIdsByCohort.values()]
       .flatMap((ids) => [...ids]);
     const allStudentIds = [...new Set([
-      ...legacyStudents.map((s) => String(s._id)),
+      ...legacyStudents.map((student) => String(student._id)),
       ...cohortStudentIds,
     ])];
 
-    const cohortStudents = allStudentIds.length
-      ? await User.find({
-          _id: { $in: allStudentIds },
-          role: "student",
-        })
-          .select("_id solvedCount")
-          .lean()
-      : [];
-    const solvedByStudentId = new Map(
-      cohortStudents.map((student) => [String(student._id), student.solvedCount || []])
-    );
+    const problemSlugs = [...new Set(assignments.flatMap((assignment) => assignment.problemSlugs || []))];
+    const solvedByStudentId = await getSolvedSlugsForUsers(allStudentIds, problemSlugs);
 
     const legacyStudentIds = new Set(legacyStudents.map((s) => String(s._id)));
 
@@ -1902,8 +1891,8 @@ router.get("/assignments", requireRole("tpo", "admin"), requireVerified, async (
       const totalStudents = audienceIds.size;
       let completedCount = 0;
       for (const studentId of audienceIds) {
-        const solved = solvedByStudentId.get(studentId) || [];
-        if (assignment.problemSlugs.every((slug) => solved.includes(slug))) {
+        const solved = solvedByStudentId.get(studentId) || new Set();
+        if (assignment.problemSlugs.every((slug) => solved.has(slug))) {
           completedCount += 1;
         }
       }
