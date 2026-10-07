@@ -1434,9 +1434,9 @@ router.get("/students", requireRole("tpo", "admin"),
           const [aggResult] = await User.aggregate([
             { $match: { emailDomain: { $in: collegeDomains }, role: "student", visibleToTpo: { $ne: false }, ...searchMatch } },
             // solvedCount computed here, once, in Mongo — the raw
-            // `solvedSlugs` array itself is never selected/projected out
+            // `solvedCount` array itself is never selected/projected out
             // below, so it never crosses into Node for this endpoint.
-            { $addFields: { solvedCount: { $size: { $ifNull: ["$solvedSlugs", []] } } } },
+            { $addFields: { solvedCount: { $ifNull: ["$solvedCount", 0] } } },
             { $sort: sortSpec },
             {
               $facet: {
@@ -1536,12 +1536,12 @@ router.get("/dashboard", requireRole("tpo", "admin"),
         async () => {
           // Two facets in one round-trip against the same $match filter:
           // "summary" sums the per-student numeric fields directly (no
-          // need to pull solvedSlugs/solvedDifficulty into Node just to
+          // need to pull solvedCount/solvedDifficulty into Node just to
           // add them up), and "topicCoverage" unwinds each student's
           // topicStats array and sums counts per topic in Mongo. Both used
           // to be a single forEach over every student document pulled
           // into Node — fine at "hundreds of students," but transferring
-          // every student's full solvedSlugs/topicStats array over the
+          // every student's full solvedCount/topicStats array over the
           // wire just to add up numbers doesn't hold as a college's
           // student count grows.
           const [aggResult] = await User.aggregate([
@@ -1560,7 +1560,7 @@ router.get("/dashboard", requireRole("tpo", "admin"),
                     $group: {
                       _id: null,
                       totalStudents: { $sum: 1 },
-                      totalSolved: { $sum: { $size: { $ifNull: ["$solvedSlugs", []] } } },
+                      totalSolved: { $sum: { $ifNull: ["$solvedCount", 0] } },
                       totalEasy: { $sum: { $ifNull: ["$solvedDifficulty.easy", 0] } },
                       totalMedium: { $sum: { $ifNull: ["$solvedDifficulty.medium", 0] } },
                       totalHard: { $sum: { $ifNull: ["$solvedDifficulty.hard", 0] } },
@@ -1862,7 +1862,7 @@ router.get("/assignments", requireRole("tpo", "admin"), requireVerified, async (
 
     const legacyStudents = collegeDomains.length
       ? await User.find({ emailDomain: { $in: collegeDomains }, role: "student" })
-          .select("_id solvedSlugs")
+          .select("_id solvedCount")
           .lean()
       : [];
 
@@ -1878,11 +1878,11 @@ router.get("/assignments", requireRole("tpo", "admin"), requireVerified, async (
           _id: { $in: allStudentIds },
           role: "student",
         })
-          .select("_id solvedSlugs")
+          .select("_id solvedCount")
           .lean()
       : [];
     const solvedByStudentId = new Map(
-      cohortStudents.map((student) => [String(student._id), student.solvedSlugs || []])
+      cohortStudents.map((student) => [String(student._id), student.solvedCount || []])
     );
 
     const legacyStudentIds = new Set(legacyStudents.map((s) => String(s._id)));
@@ -1999,7 +1999,7 @@ router.post("/assignments/:id/archive", requireRole("tpo", "admin"), requireVeri
 // see the identical note on GET /api/assignments/student above. A student
 // who opted out of TPO analytics still receives and is nudged about
 // assignments they're a target of.
-async function resolveAssignmentAudience(req, res, selectFields = "_id solvedSlugs") {
+async function resolveAssignmentAudience(req, res, selectFields = "_id solvedCount") {
   const domain = req.userDoc.tpoProfile?.collegeDomain?.toLowerCase();
   if (!domain && req.userDoc.role !== "admin") {
     res.status(400).json({ error: "No college domain set on this TPO account." });
@@ -2071,7 +2071,7 @@ export async function handleRemindAssignment(req, res) {
   if (b2bGate(req, res)) return;
 
   try {
-    const resolved = await resolveAssignmentAudience(req, res, "_id solvedSlugs");
+    const resolved = await resolveAssignmentAudience(req, res, "_id solvedCount");
     if (!resolved) return;
     const { assignment, students } = resolved;
 
@@ -2080,7 +2080,7 @@ export async function handleRemindAssignment(req, res) {
     }
 
     const incomplete = students.filter(s =>
-      !assignment.problemSlugs.every(slug => (s.solvedSlugs || []).includes(slug))
+      !assignment.problemSlugs.every(slug => (s.solvedCount || []).includes(slug))
     );
 
     if (incomplete.length === 0) {
@@ -2122,14 +2122,14 @@ export async function handleAssignmentCompletion(req, res) {
   if (b2bGate(req, res)) return;
 
   try {
-    const resolved = await resolveAssignmentAudience(req, res, "_id displayName email solvedSlugs");
+    const resolved = await resolveAssignmentAudience(req, res, "_id displayName email solvedCount");
     if (!resolved) return;
     const { assignment, students } = resolved;
 
     let completedCount = 0;
     const stragglers = [];
     for (const student of students) {
-      const solved = new Set(student.solvedSlugs || []);
+      const solved = new Set(student.solvedCount || []);
       const missingSlugs = assignment.problemSlugs.filter((slug) => !solved.has(slug));
       if (missingSlugs.length === 0) {
         completedCount += 1;
@@ -2355,7 +2355,7 @@ router.get("/report/pdf", requireRole("tpo", "admin"),
           },
         ],
       })
-        .select("displayName totalXP solvedSlugs currentStreak")
+        .select("displayName totalXP solvedCount currentStreak")
         .sort({ totalXP: -1 })
         .lean();
 
@@ -2408,7 +2408,7 @@ router.get("/report/pdf", requireRole("tpo", "admin"),
         doc.fontSize(8).fillColor("#3f3f46").font("Helvetica");
         doc.text(String(i + 1), 50, ty);
         doc.text(student.displayName || "—", 90, ty, { width: 220 });
-        doc.text(String(student.solvedSlugs?.length ?? 0), 320, ty);
+        doc.text(String(student.solvedCount?.length ?? 0), 320, ty);
         doc.text(String(student.currentStreak ?? 0), 380, ty);
         doc.text(String(student.totalXP ?? 0), 450, ty);
         ty += 16;
