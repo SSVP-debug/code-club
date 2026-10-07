@@ -18,6 +18,7 @@ import Submission from "../models/Submission.js";
 import { progressToClientForRole } from "../controllers/progressController.js";
 import { getSolvedSlugs, getActivityDays } from "../services/problemProgressService.js";
 import { getStudentDayKey } from "../utils/studentDay.js";
+import DailyChallengeCompletion from "../models/DailyChallengeCompletion.js";
 import { listSavedProblems } from "../services/userSavedProblemService.js";
 
 const router = Router();
@@ -51,7 +52,7 @@ router.get("/", async (req, res) => {
     // Keep the two reads in parallel; UserProblemProgress is the scalable
     // source for solved slugs while User remains the compatibility store for
     // the other progress fields during this migration phase.
-    const [submissions, solvedSlugs, activityDates, savedProblems] = await Promise.all([
+    const [submissions, solvedSlugs, activityDates, savedProblems, dailyChallengeHistory] = await Promise.all([
       req.userDoc.role === "student"
         ? Submission
             .find({ userId: req.userDoc._id })
@@ -67,6 +68,13 @@ router.get("/", async (req, res) => {
         : Promise.resolve([]),
       req.userDoc.role === "student"
         ? listSavedProblems(req.userDoc._id)
+        : Promise.resolve([]),
+      req.userDoc.role === "student"
+        ? DailyChallengeCompletion.find({ userId: req.userDoc._id })
+            .select("date slug completedAt -_id")
+            .sort({ date: -1 })
+            .limit(30)
+            .lean()
         : Promise.resolve([]),
     ]);
 
@@ -108,7 +116,10 @@ router.get("/", async (req, res) => {
       },
 
       impersonation,
-      progress: await progressToClientForRole(req.userDoc, solvedSlugs, activityDates),
+      progress: {
+        ...(await progressToClientForRole(req.userDoc, solvedSlugs, activityDates)),
+        dailyChallengeHistory,
+      },
 
       submissions: submissions.map((doc) => ({
         id: doc._id.toString(),
