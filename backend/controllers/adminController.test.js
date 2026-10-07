@@ -37,6 +37,8 @@ vi.mock("../models/AdminAuditLog.js", () => ({
 vi.mock("../models/Submission.js", () => ({
     default: { deleteMany: vi.fn(), countDocuments: vi.fn() },
 }));
+vi.mock("../models/UserProblemProgress.js", () => ({ default: { deleteMany: vi.fn().mockResolvedValue({}) } }));
+vi.mock("../models/DailyChallengeCompletion.js", () => ({ default: { deleteMany: vi.fn().mockResolvedValue({}) } }));
 vi.mock("../models/Notification.js", () => ({
     default: { deleteMany: vi.fn() },
 }));
@@ -1106,7 +1108,7 @@ describe("adminController", () => {
             expect(target.longestStreak).toBe(0);
             expect(target.lastActivityDate).toBeNull();
             expect(target.totalXP).toBe(0);
-            expect(target.solvedSlugs).toEqual([]);
+            expect(target.solvedCount).toBe(0);
             expect(target.solvedDifficulty).toEqual({ easy: 0, medium: 0, hard: 0 });
             expect(target.topicStats).toEqual({});
             expect(target.activityDates).toEqual([]);
