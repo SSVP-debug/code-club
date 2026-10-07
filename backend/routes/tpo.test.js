@@ -213,6 +213,7 @@ describe("handleAssignmentCompletion", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     res = mockRes();
+    getSolvedSlugsForUsers.mockImplementation((ids) => new Map(ids.map((id) => [String(id), new Set()])));
     Assignment.findOne.mockReturnValue({ lean: vi.fn().mockResolvedValue(assignmentDoc) });
   });
 
