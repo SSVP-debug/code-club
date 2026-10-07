@@ -97,7 +97,7 @@ describe("Accepted Submission → Progress workflow (real Mongo)", () => {
     await runProgressChain(req(user, { problemSlug: "two-sum" }), res);
 
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ problemSlug: "two-sum", totalXP: 10 })
+      expect.objectContaining({ solvedSlugs: ["two-sum"], solvedCount: 1, totalXP: 10 })
     );
 
     const reloaded = await User.findById(user._id).lean();
