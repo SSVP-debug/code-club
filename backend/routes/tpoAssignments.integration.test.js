@@ -11,6 +11,7 @@ const { default: Cohort } = await import("../models/Cohort.js");
 const { default: CohortMembership } = await import("../models/CohortMembership.js");
 const { default: Assignment } = await import("../models/Assignment.js");
 const { default: Notification } = await import("../models/Notification.js");
+const { default: UserProblemProgress } = await import("../models/UserProblemProgress.js");
 
 function mockRes() {
   const res = {};
@@ -95,14 +96,14 @@ describe("TPO-4 cohort assignments — real Mongo integration", () => {
       email: "a@a.edu",
       role: "student",
       roles: ["student"],
-      solvedSlugs: ["p1", "p2"],
+      solvedCount: 2,
     });
     const studentB = await User.create({
       firebaseUid: "fb-student-b",
       email: "b@b.edu",
       role: "student",
       roles: ["student"],
-      solvedSlugs: ["p1"],
+      solvedCount: 1,
     });
     const outsider = await User.create({
       firebaseUid: "fb-outsider",
@@ -129,6 +130,14 @@ describe("TPO-4 cohort assignments — real Mongo integration", () => {
         status: "active",
         addedBy: tpo._id,
       },
+    ]);
+    
+    await UserProblemProgress.create([
+      { userId: studentA._id, problemSlug: "p1", status: "solved", solvedAt: new Date() },
+      { userId: studentA._id, problemSlug: "p2", status: "solved", solvedAt: new Date() },
+      { userId: studentB._id, problemSlug: "p1", status: "solved", solvedAt: new Date() },
+      { userId: outsider._id, problemSlug: "p1", status: "solved", solvedAt: new Date() },
+      { userId: outsider._id, problemSlug: "p2", status: "solved", solvedAt: new Date() },
     ]);
 
     return { college, tpo, cohort, studentA, studentB, outsider };
@@ -319,7 +328,7 @@ describe("TPO-4 cohort assignments — real Mongo integration", () => {
     });
 
     const { getAssignmentAudience } = await import("../services/assignmentAudienceService.js");
-    const audience = await getAssignmentAudience(assignment.toObject(), "_id solvedSlugs");
+    const audience = await getAssignmentAudience(assignment.toObject(), "_id");
     const audienceIds = audience.map((s) => s._id.toString()).sort();
 
     expect(audienceIds).toEqual([studentA._id.toString(), studentB._id.toString()].sort());
