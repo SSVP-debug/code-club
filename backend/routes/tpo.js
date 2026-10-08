@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import crypto from "crypto";
 import { logger } from "../config/logger.js";
 import User from "../models/User.js";
+import UserProblemProgress from "../models/UserProblemProgress.js";
 import { B2B_ENABLED, B2B_BILLING_ENABLED, B2B_PRICING } from "../config/featureFlags.js";
 import Assignment from "../models/Assignment.js";
 import Cohort from "../models/Cohort.js";
@@ -1791,6 +1792,31 @@ router.post("/assignments", requireRole("tpo", "admin"), requireVerified, async 
   }
 });
 
+async function getSolvedSlugsByUserIds(userIds, problemSlugs = null) {
+  const ids = [...new Set(userIds.map((id) => String(id)))];
+  if (!ids.length) return new Map();
+
+  const match = {
+    userId: { $in: ids.map((id) => new mongoose.Types.ObjectId(id)) },
+    status: "solved",
+  };
+  if (Array.isArray(problemSlugs) && problemSlugs.length) {
+    match.problemSlug = { $in: [...new Set(problemSlugs)] };
+  }
+
+  const rows = await UserProblemProgress.find(match)
+    .select("userId problemSlug")
+    .lean();
+
+  const solvedByStudentId = new Map();
+  for (const row of rows) {
+    const key = String(row.userId);
+    if (!solvedByStudentId.has(key)) solvedByStudentId.set(key, new Set());
+    solvedByStudentId.get(key).add(row.problemSlug);
+  }
+  return solvedByStudentId;
+}
+
 // ── GET /api/tpo/assignments ────────────────────────────────────────────────
 // TPO view: all assignments they've created, with per-student completion %.
 // requireVerified added here (2026-09) — see the POST /assignments comment
@@ -1862,7 +1888,7 @@ router.get("/assignments", requireRole("tpo", "admin"), requireVerified, async (
 
     const legacyStudents = collegeDomains.length
       ? await User.find({ emailDomain: { $in: collegeDomains }, role: "student" })
-          .select("_id solvedSlugs")
+          .select("_id")
           .lean()
       : [];
 
@@ -1873,16 +1899,9 @@ router.get("/assignments", requireRole("tpo", "admin"), requireVerified, async (
       ...cohortStudentIds,
     ])];
 
-    const cohortStudents = allStudentIds.length
-      ? await User.find({
-          _id: { $in: allStudentIds },
-          role: "student",
-        })
-          .select("_id solvedSlugs")
-          .lean()
-      : [];
-    const solvedByStudentId = new Map(
-      cohortStudents.map((student) => [String(student._id), student.solvedSlugs || []])
+    const solvedByStudentId = await getSolvedSlugsByUserIds(
+      allStudentIds,
+      assignments.flatMap((assignment) => assignment.problemSlugs || [])
     );
 
     const legacyStudentIds = new Set(legacyStudents.map((s) => String(s._id)));
@@ -1902,8 +1921,8 @@ router.get("/assignments", requireRole("tpo", "admin"), requireVerified, async (
       const totalStudents = audienceIds.size;
       let completedCount = 0;
       for (const studentId of audienceIds) {
-        const solved = solvedByStudentId.get(studentId) || [];
-        if (assignment.problemSlugs.every((slug) => solved.includes(slug))) {
+        const solved = solvedByStudentId.get(studentId) || new Set();
+        if (assignment.problemSlugs.every((slug) => solved.has(slug))) {
           completedCount += 1;
         }
       }
@@ -1999,7 +2018,7 @@ router.post("/assignments/:id/archive", requireRole("tpo", "admin"), requireVeri
 // see the identical note on GET /api/assignments/student above. A student
 // who opted out of TPO analytics still receives and is nudged about
 // assignments they're a target of.
-async function resolveAssignmentAudience(req, res, selectFields = "_id solvedSlugs") {
+async function resolveAssignmentAudience(req, res, selectFields = "_id displayName email") {
   const domain = req.userDoc.tpoProfile?.collegeDomain?.toLowerCase();
   if (!domain && req.userDoc.role !== "admin") {
     res.status(400).json({ error: "No college domain set on this TPO account." });
@@ -2071,7 +2090,7 @@ export async function handleRemindAssignment(req, res) {
   if (b2bGate(req, res)) return;
 
   try {
-    const resolved = await resolveAssignmentAudience(req, res, "_id solvedSlugs");
+    const resolved = await resolveAssignmentAudience(req, res, "_id displayName email");
     if (!resolved) return;
     const { assignment, students } = resolved;
 
@@ -2079,9 +2098,14 @@ export async function handleRemindAssignment(req, res) {
       return res.status(409).json({ error: "Archived assignments cannot be reminded." });
     }
 
-    const incomplete = students.filter(s =>
-      !assignment.problemSlugs.every(slug => (s.solvedSlugs || []).includes(slug))
+    const solvedByStudentId = await getSolvedSlugsByUserIds(
+      students.map((student) => student._id),
+      assignment.problemSlugs
     );
+    const incomplete = students.filter((student) => {
+      const solved = solvedByStudentId.get(String(student._id)) || new Set();
+      return !assignment.problemSlugs.every((slug) => solved.has(slug));
+    });
 
     if (incomplete.length === 0) {
       return res.json({ remindedCount: 0, message: "Everyone has already completed this assignment." });
@@ -2122,7 +2146,7 @@ export async function handleAssignmentCompletion(req, res) {
   if (b2bGate(req, res)) return;
 
   try {
-    const resolved = await resolveAssignmentAudience(req, res, "_id displayName email solvedSlugs");
+    const resolved = await resolveAssignmentAudience(req, res, "_id displayName email");
     if (!resolved) return;
     const { assignment, students } = resolved;
 
