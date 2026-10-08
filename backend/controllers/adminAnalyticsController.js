@@ -86,11 +86,22 @@ export async function getActiveUserTrends(req, res) {
     thirtyDaysAgo.setUTCDate(thirtyDaysAgo.getUTCDate() - 30);
 
     const [last7Days, last30Days] = await Promise.all([
-      Submission.distinct("userId", { createdAt: { $gte: sevenDaysAgo } }),
-      Submission.distinct("userId", { createdAt: { $gte: thirtyDaysAgo } }),
+      Submission.aggregate([
+        { $match: { createdAt: { $gte: sevenDaysAgo } } },
+        { $group: { _id: "$userId" } },
+        { $count: "count" },
+      ]),
+      Submission.aggregate([
+        { $match: { createdAt: { $gte: thirtyDaysAgo } } },
+        { $group: { _id: "$userId" } },
+        { $count: "count" },
+      ]),
     ]);
 
-    return res.json({ last7Days: last7Days.length, last30Days: last30Days.length });
+    return res.json({
+      last7Days: last7Days[0]?.count || 0,
+      last30Days: last30Days[0]?.count || 0,
+    });
   } catch (err) {
     logger.error({ err }, "[Admin] active user trends error");
     return res.status(500).json({ error: "Failed to load active user trends." });
@@ -105,19 +116,59 @@ export async function getRetentionMetric(req, res) {
     const weekN1Start = new Date(now);
     weekN1Start.setUTCDate(weekN1Start.getUTCDate() - 14);
 
-    const [weekNUsers, weekN1Users] = await Promise.all([
-      Submission.distinct("userId", { createdAt: { $gte: weekNStart, $lt: now } }),
-      Submission.distinct("userId", { createdAt: { $gte: weekN1Start, $lt: weekNStart } }),
+    const [retentionRows] = await Promise.all([
+      Submission.aggregate([
+        { $match: { createdAt: { $gte: weekN1Start, $lt: now } } },
+        {
+          $group: {
+            _id: "$userId",
+            activePreviousWeek: {
+              $max: {
+                $cond: [
+                  { $lt: ["$createdAt", weekNStart] },
+                  1,
+                  0,
+                ],
+              },
+            },
+            activeCurrentWeek: {
+              $max: {
+                $cond: [{ $gte: ["$createdAt", weekNStart] }, 1, 0],
+              },
+            },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            weekN1ActiveUsers: { $sum: "$activePreviousWeek" },
+            weekNActiveUsers: { $sum: "$activeCurrentWeek" },
+            retainedUsers: {
+              $sum: {
+                $cond: [
+                  { $and: [{ $eq: ["$activePreviousWeek", 1] }, { $eq: ["$activeCurrentWeek", 1] }] },
+                  1,
+                  0,
+                ],
+              },
+            },
+          },
+        },
+      ]),
     ]);
-
-    const weekN1Set = new Set(weekN1Users.map(String));
-    const retainedCount = weekNUsers.filter((id) => weekN1Set.has(String(id))).length;
-    const retentionPercent = weekN1Set.size > 0 ? Math.round((retainedCount / weekN1Set.size) * 100) : null;
+    const metrics = retentionRows[0] || {
+      weekN1ActiveUsers: 0,
+      weekNActiveUsers: 0,
+      retainedUsers: 0,
+    };
+    const retentionPercent = metrics.weekN1ActiveUsers > 0
+      ? Math.round((metrics.retainedUsers / metrics.weekN1ActiveUsers) * 100)
+      : null;
 
     return res.json({
-      weekN1ActiveUsers: weekN1Set.size,
-      weekNActiveUsers: weekNUsers.length,
-      retainedUsers: retainedCount,
+      weekN1ActiveUsers: metrics.weekN1ActiveUsers,
+      weekNActiveUsers: metrics.weekNActiveUsers,
+      retainedUsers: metrics.retainedUsers,
       retentionPercent,
     });
   } catch (err) {

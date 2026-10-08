@@ -54,13 +54,23 @@ async function seedContest({ status = "active", participants = [], problemSlugs 
         ? { startsAt: new Date(now - 120_000), endsAt: new Date(now - 60_000) }
         : { startsAt: new Date(now + 60_000), endsAt: new Date(now + 120_000) };
 
-  return Contest.create({
+  const contest = await Contest.create({
     title: "Test Contest",
     createdBy: creator._id,
     problemSlugs,
-    participants,
     ...timing,
   });
+
+  if (participants.length) {
+    await ContestParticipant.insertMany(
+      participants.map((participant) => ({
+        contestId: contest._id,
+        ...participant,
+      }))
+    );
+  }
+
+  return contest;
 }
 
 async function findParticipant(contestId, userId) {
