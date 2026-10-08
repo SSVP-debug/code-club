@@ -122,7 +122,7 @@ describe("TPO-3 student placement visibility — end-to-end real Mongo", () => {
 
     const beforeStudents = await runRoute("get", "/students", tpoReq);
     expect(beforeStudents._status).toBe(200);
-    expect(beforeStudents._json.total).toBe(1);
+    expect(beforeStudents._json.students).toHaveLength(1);
     expect(beforeStudents._json.students.map((item) => item.email)).toContain(student.email);
 
     const updateRes = mockRes();
@@ -153,7 +153,7 @@ describe("TPO-3 student placement visibility — end-to-end real Mongo", () => {
 
     const afterStudents = await runRoute("get", "/students", tpoReq);
     expect(afterStudents._status).toBe(200);
-    expect(afterStudents._json.total).toBe(0);
+    expect(afterStudents._json.students).toHaveLength(0);
     expect(afterStudents._json.students).toHaveLength(0);
 
     const afterDashboard = await runRoute("get", "/dashboard", tpoReq);
