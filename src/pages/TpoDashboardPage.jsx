@@ -165,7 +165,6 @@ export default function TpoDashboardPage() {
   const [enabled, setEnabled] = useState(null);
   const [dashboard, setDashboard] = useState(null);
   const [students, setStudents] = useState([]);
-  const [studentTotal, setStudentTotal] = useState(0);
   const [studentCursorHistory, setStudentCursorHistory] = useState([]);
   const [studentNextCursor, setStudentNextCursor] = useState(null);
   const [assignments, setAssignments] = useState([]);
@@ -660,7 +659,7 @@ export default function TpoDashboardPage() {
                   </div>
                 ))}
             </div>
-            {!studentsError && studentTotal > 0 && (
+            {!studentsError && (visibleStudents.length > 0 || studentNextCursor || studentPage > 1) && (
               <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-[var(--border)] text-sm">
                 <span className="text-[var(--muted-foreground)] text-xs">
                   Page {studentPage}
