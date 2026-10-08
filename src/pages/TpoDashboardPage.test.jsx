@@ -70,15 +70,21 @@ function fakeStudentsBackend(url) {
   const params = new URLSearchParams(url.split("?")[1] || "");
   const q = (params.get("q") || "").toLowerCase();
   const sort = params.get("sort") || "xp";
-  const page = parseInt(params.get("page"), 10) || 1;
+  const cursor = params.get("cursor");
   const limit = parseInt(params.get("limit"), 10) || 25;
 
   const filtered = allStudents.filter(
     s => !q || s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q)
   );
   const sorted = [...filtered].sort(SORTERS[sort] || SORTERS.xp);
-  const start = (page - 1) * limit;
-  return Promise.resolve({ students: sorted.slice(start, start + limit), total: filtered.length, page, limit });
+  const start = cursor === "cursor-page-2" ? 1 : 0;
+  const pageStudents = sorted.slice(start, start + limit);
+  return Promise.resolve({
+    students: pageStudents,
+    nextCursor: start === 0 && sorted.length > limit ? "cursor-page-2" : null,
+    hasNext: start === 0 && sorted.length > limit,
+    limit,
+  });
 }
 
 function renderDashboard() {
@@ -177,7 +183,7 @@ describe("TpoDashboardPage — students tab", () => {
 
   it("shows pagination info and disables Previous on the first page", async () => {
     await loadDashboard();
-    await waitFor(() => expect(screen.getByText(/page 1 of 1/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/page 1/i)).toBeInTheDocument());
     expect(screen.getByRole("button", { name: /previous/i })).toBeDisabled();
   });
 
@@ -192,11 +198,11 @@ describe("TpoDashboardPage — students tab", () => {
       if (url === "/api/tpo/assignments") return Promise.resolve({ assignments: [] });
       if (url.startsWith("/api/tpo/students")) {
         const params = new URLSearchParams(url.split("?")[1] || "");
-        const page = parseInt(params.get("page"), 10) || 1;
+        const isSecondPage = params.get("cursor") === "cursor-page-2";
         return Promise.resolve({
-          students: page === 1 ? pageOneStudents : pageTwoStudents,
-          total: 26, // > 25 (STUDENTS_PAGE_SIZE) so there are two pages
-          page,
+          students: isSecondPage ? pageTwoStudents : pageOneStudents,
+          nextCursor: isSecondPage ? null : "cursor-page-2",
+          hasNext: !isSecondPage,
           limit: 25,
         });
       }
@@ -209,7 +215,7 @@ describe("TpoDashboardPage — students tab", () => {
 
     await waitFor(() => expect(screen.getByText("Page Two Student")).toBeInTheDocument());
     expect(screen.queryByText("Page One Student")).not.toBeInTheDocument();
-    expect(apiFetch).toHaveBeenCalledWith(expect.stringContaining("page=2"));
+    expect(apiFetch).toHaveBeenCalledWith(expect.stringContaining("cursor=cursor-page-2"));
     expect(screen.getByRole("button", { name: /previous/i })).not.toBeDisabled();
   });
 

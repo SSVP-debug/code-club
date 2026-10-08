@@ -165,7 +165,8 @@ export default function TpoDashboardPage() {
   const [enabled, setEnabled] = useState(null);
   const [dashboard, setDashboard] = useState(null);
   const [students, setStudents] = useState([]);
-  const [studentTotal, setStudentTotal] = useState(0);
+  const [studentCursorHistory, setStudentCursorHistory] = useState([]);
+  const [studentNextCursor, setStudentNextCursor] = useState(null);
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   // Deep-linkable via ?tab=overview|students|assignments — falls back to
@@ -200,10 +201,7 @@ export default function TpoDashboardPage() {
     const fromUrl = searchParams.get("sort");
     return STUDENT_SORT_OPTIONS.includes(fromUrl) ? fromUrl : "xp"; // "xp" | "solved" | "streak" | "name"
   });
-  const [studentPage, setStudentPage] = useState(() => {
-    const fromUrl = parseInt(searchParams.get("page"), 10);
-    return Number.isFinite(fromUrl) && fromUrl > 0 ? fromUrl : 1;
-  });
+  const [studentPage, setStudentPage] = useState(1);
   const [studentsLoading, setStudentsLoading] = useState(true);
   const [studentsError, setStudentsError] = useState(null);
   const [remindingId, setRemindingId] = useState(null);
@@ -250,19 +248,20 @@ export default function TpoDashboardPage() {
   // Deliberately a separate fetch/effect from fetchAll() above: it needs
   // to re-run on page/search/sort changes independently of the
   // dashboard/assignments data, which only load once.
-  const fetchStudents = useCallback(async ({ page, q, sort }) => {
+  const fetchStudents = useCallback(async ({ page, q, sort, cursor = null }) => {
     setStudentsLoading(true);
     setStudentsError(null);
     try {
       const params = new URLSearchParams();
-      params.set("page", String(page));
       params.set("limit", String(STUDENTS_PAGE_SIZE));
       params.set("sort", sort);
       if (q) params.set("q", q);
+      if (cursor) params.set("cursor", cursor);
 
       const data = await apiFetch(`/api/tpo/students?${params.toString()}`);
       setStudents(data.students || []);
-      setStudentTotal(data.total || 0);
+      setStudentNextCursor(data.nextCursor || null);
+      setStudentPage(page);
     } catch (err) {
       if (err.message === "Your TPO account is pending verification.") {
         setPendingVerification(true);
@@ -312,6 +311,8 @@ export default function TpoDashboardPage() {
     const timer = setTimeout(() => {
       setStudentSearch(studentSearchInput);
       setStudentPage(1); // a changed search always starts back at page 1
+      setStudentCursorHistory([]);
+      setStudentNextCursor(null);
     }, STUDENT_SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [studentSearchInput]);
@@ -319,6 +320,8 @@ export default function TpoDashboardPage() {
   function changeStudentSort(next) {
     setStudentSort(next);
     setStudentPage(1); // a changed sort always starts back at page 1
+    setStudentCursorHistory([]);
+    setStudentNextCursor(null);
   }
 
   // Fetches the current page of students whenever page/search/sort change
@@ -327,7 +330,7 @@ export default function TpoDashboardPage() {
   useEffect(() => {
     if (!isAuthenticated) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- same fetch-on-mount/fetch-on-change pattern as fetchAll() above.
-    fetchStudents({ page: studentPage, q: studentSearch, sort: studentSort });
+    fetchStudents({ page: studentPage, q: studentSearch, sort: studentSort, cursor: studentPage > 1 ? studentCursorHistory[studentPage - 2] || null : null });
   }, [fetchStudents, isAuthenticated, studentPage, studentSearch, studentSort]);
 
   // Keeps the URL in sync with page/search/sort — same deep-linkable,
@@ -372,8 +375,7 @@ export default function TpoDashboardPage() {
   // above) — `students` is already exactly the page to render, no local
   // filter/sort derivation needed.
   const visibleStudents = students;
-  const totalStudentPages = Math.max(1, Math.ceil(studentTotal / STUDENTS_PAGE_SIZE));
-
+  
   async function remindIncomplete(assignmentId) {
     setRemindingId(assignmentId);
     try {
@@ -657,10 +659,10 @@ export default function TpoDashboardPage() {
                   </div>
                 ))}
             </div>
-            {!studentsError && studentTotal > 0 && (
+            {!studentsError && (visibleStudents.length > 0 || studentNextCursor || studentPage > 1) && (
               <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-[var(--border)] text-sm">
                 <span className="text-[var(--muted-foreground)] text-xs">
-                  Page {studentPage} of {totalStudentPages} · {studentTotal} student{studentTotal === 1 ? "" : "s"}
+                  Page {studentPage}
                 </span>
                 <div className="flex items-center gap-2">
                   <button
@@ -671,8 +673,8 @@ export default function TpoDashboardPage() {
                     ← Previous
                   </button>
                   <button
-                    onClick={() => setStudentPage(p => Math.min(totalStudentPages, p + 1))}
-                    disabled={studentPage >= totalStudentPages || studentsLoading}
+                    onClick={() => { setStudentCursorHistory(h => [...h, studentNextCursor]); setStudentPage(p => p + 1); }}
+                    disabled={!studentNextCursor || studentsLoading}
                     className="px-3 py-1.5 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border-strong)] text-[var(--foreground)] text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     Next →

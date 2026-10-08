@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { logger } from "../config/logger.js";
 import crypto from "crypto";
+import mongoose from "mongoose";
 import User from "../models/User.js";
 import { getProfileSignSecret } from "../config/env.js";
 import Problem from "../models/Problem.js";
@@ -133,7 +134,25 @@ export async function handleRegister(req, res) {
 router.post("/register", requireAuth, handleRegister);
 
 // ── 084: GET /api/recruiter/candidates ───────────────────────────────────────
-// Query params: college, topic, minSolved, maxSolved, language, page, limit
+// Cursor-paginated candidate directory. The cursor is tied to the stable
+// totalXP DESC + _id ASC ordering, so deep pages never use offset $skip.
+const CANDIDATE_PAGE_SIZE = 20;
+const CANDIDATE_MAX_PAGE_SIZE = 50;
+
+function encodeCandidateCursor(totalXP, id) {
+  return Buffer.from(JSON.stringify({ totalXP, id: String(id) })).toString("base64url");
+}
+function decodeCandidateCursor(value) {
+  if (!value) return null;
+  try {
+    const decoded = JSON.parse(Buffer.from(value, "base64url").toString("utf8"));
+    if (!Number.isFinite(Number(decoded.totalXP)) || !mongoose.Types.ObjectId.isValid(decoded.id)) return null;
+    return { totalXP: Number(decoded.totalXP), id: new mongoose.Types.ObjectId(decoded.id) };
+  } catch {
+    return null;
+  }
+}
+
 router.get(
   "/candidates",
   requireAuth,
@@ -141,125 +160,71 @@ router.get(
   requireVerified,
   async (req, res) => {
     try {
-      const {
-        college,
-        topic,
-        minSolved = 0,
-        maxSolved = 9999,
-        language,
-        page = 1,
-        limit = 20,
-      } = req.query;
-
-      // Build MongoDB filter
-      const filter = {
-        role: "student",
-        isProfilePublic: true,
-      };
+      const { college, topic, minSolved = 0, maxSolved = 9999, language, cursor, limit = CANDIDATE_PAGE_SIZE } = req.query;
+      const filter = { role: "student", isProfilePublic: true };
 
       if (college) {
-        // Anchored-prefix regex on the indexed emailDomain field — Mongo can
-        // use the index for a regex anchored at the start (unlike the old
-        // unanchored `email: { $regex: "@..." }`, which forced a full
-        // collection scan). Kept as a regex rather than an exact match so
-        // recruiters can still type a partial domain (e.g. "marwadi") and
-        // match "marwadiuniversity.ac.in" — same behavior as before.
-        filter.emailDomain = { $regex: `^${college.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, $options: "i" };
+        filter.emailDomain = { $regex: `^${college.replace(/[.*+?^\${}()|[\]\\\\]/g, "\\\\$&")}`, $options: "i" };
       }
+      if (topic) filter.topicStats = { $elemMatch: { topic, count: { $gte: 1 } } };
+      if (req.query.availableForWork === "true") filter["recruiterSnapshot.availableForWork"] = true;
+      if (req.query.preferredRole) filter["recruiterSnapshot.preferredRole"] = req.query.preferredRole;
+      if (req.query.expectedGraduation) filter["recruiterSnapshot.expectedGraduation"] = req.query.expectedGraduation;
 
-      if (topic) {
-        // topicStats is an array of { topic, count } subdocuments — needs
-        // $elemMatch to find "at least one element with this topic and
-        // count >= 1". The old dot-path filter (`topicStats.${topic}`)
-        // was left over from when this was a Mongoose Map field and never
-        // matched anything after the migration to an array — this filter
-        // silently returned zero candidates whenever a topic was selected.
-        filter.topicStats = { $elemMatch: { topic, count: { $gte: 1 } } };
-      }
+      const parsedLimit = parseInt(limit, 10);
+      const limitNum = Math.min(CANDIDATE_MAX_PAGE_SIZE, Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : CANDIDATE_PAGE_SIZE);
+      const minSolvedNum = Number.isFinite(parseInt(minSolved, 10)) ? parseInt(minSolved, 10) : 0;
+      const maxSolvedNum = Number.isFinite(parseInt(maxSolved, 10)) ? parseInt(maxSolved, 10) : 9999;
+      const decodedCursor = decodeCandidateCursor(cursor);
+      if (cursor && !decodedCursor) return res.status(400).json({ error: "Invalid candidates cursor." });
 
-      if (req.query.availableForWork === "true") {
-        filter["recruiterSnapshot.availableForWork"] = true;
-      }
-      if (req.query.preferredRole) {
-        filter["recruiterSnapshot.preferredRole"] = req.query.preferredRole;
-      }
-      if (req.query.expectedGraduation) {
-        filter["recruiterSnapshot.expectedGraduation"] = req.query.expectedGraduation;
-      }
-
-      const pageNum = Math.max(1, parseInt(page));
-      const limitNum = Math.min(50, parseInt(limit));
-      const skip = (pageNum - 1) * limitNum;
-
-      const minSolvedNum = parseInt(minSolved) || 0;
-      const maxSolvedNum = parseInt(maxSolved) || 9999;
-
-      const cacheKey = `recruiter:candidates:${JSON.stringify({ college, topic, minSolved, maxSolved, language, pageNum, limitNum, availableForWork: req.query.availableForWork, preferredRole: req.query.preferredRole, expectedGraduation: req.query.expectedGraduation })}`;
+      const cacheKey = `recruiter:candidates:${JSON.stringify({ college, topic, minSolved, maxSolved, language, cursor: cursor || null, limitNum, availableForWork: req.query.availableForWork, preferredRole: req.query.preferredRole, expectedGraduation: req.query.expectedGraduation })}`;
 
       const { value: payload, cacheStatus } = await getOrSetCache(
         cacheKey,
         CANDIDATES_CACHE_TTL_SECONDS,
         async () => {
-          // solvedCount range filter now runs inside Mongo, before $skip/$limit,
-          // so pagination and `total` both reflect the filtered set (previously
-          // this filter ran in JS *after* skip/limit had already been applied,
-          // which could silently return fewer than `limit` results per page and
-          // report an inflated `total`).
-          const [aggResult] = await User.aggregate([
-            { $match: filter },
-            
-            { $match: { solvedCount: { $gte: minSolvedNum, $lte: maxSolvedNum } } },
-            { $sort: { totalXP: -1 } },
-            {
-              $facet: {
-                data: [
-                  { $skip: skip },
-                  { $limit: limitNum },
-                  {
-                    $project: {
-                      username: 1,
-                      displayName: 1,
-                      email: 1,
-                      totalXP: 1,
-                      solvedCount: 1,
-                      solvedDifficulty: 1,
-                      topicStats: 1,
-                      currentStreak: 1,
-                      profileSignature: 1,
-                      recruiterSnapshot: 1,
-                    },
-                  },
-                ],
-                totalCount: [{ $count: "count" }],
-              },
-            },
-          ]);
+          const match = { ...filter, solvedCount: { $gte: minSolvedNum, $lte: maxSolvedNum } };
+          if (decodedCursor) {
+            match.$or = [
+              { totalXP: { $lt: decodedCursor.totalXP } },
+              { totalXP: decodedCursor.totalXP, _id: { $gt: decodedCursor.id } },
+            ];
+          }
 
-          const students = aggResult?.data ?? [];
-          const total = aggResult?.totalCount?.[0]?.count ?? 0;
+          const students = await User.find(match)
+            .sort({ totalXP: -1, _id: 1 })
+            .limit(limitNum + 1)
+            .select("username displayName email totalXP solvedCount solvedDifficulty topicStats currentStreak profileSignature recruiterSnapshot")
+            .lean();
 
-          // Apply language filter via profileSignature or topicStats (best-effort)
-          const result = students.map(s => ({
-            username: s.username,
-            displayName: s.displayName,
-            college: s.email?.split("@")[1] || null,
-            totalXP: s.totalXP || 0,
-            level: getLevel(s.totalXP || 0),
-            solvedCount: s.solvedCount ?? 0,
-            easy: s.solvedDifficulty?.easy || 0,
-            medium: s.solvedDifficulty?.medium || 0,
-            hard: s.solvedDifficulty?.hard || 0,
-            currentStreak: s.currentStreak || 0,
-            topTopics: Object.entries(topicStatsToObject(s.topicStats))
-              .sort((a, b) => b[1] - a[1]).slice(0, 3).map(([t]) => t),
-            isVerified: !!s.profileSignature?.hash,
-            profileUrl: `/u/${s.username}`,
-            availableForWork: s.recruiterSnapshot?.availableForWork || false,
-            preferredRole: s.recruiterSnapshot?.preferredRole || null,
-            expectedGraduation: s.recruiterSnapshot?.expectedGraduation || null,
-          }));
+          const hasNext = students.length > limitNum;
+          const pageStudents = hasNext ? students.slice(0, limitNum) : students;
+          const last = pageStudents[pageStudents.length - 1];
 
-          return { candidates: result, total, page: pageNum, limit: limitNum };
+          return {
+            candidates: pageStudents.map(s => ({
+              username: s.username,
+              displayName: s.displayName,
+              college: s.email?.split("@")[1] || null,
+              totalXP: s.totalXP || 0,
+              level: getLevel(s.totalXP || 0),
+              solvedCount: s.solvedCount ?? 0,
+              easy: s.solvedDifficulty?.easy || 0,
+              medium: s.solvedDifficulty?.medium || 0,
+              hard: s.solvedDifficulty?.hard || 0,
+              currentStreak: s.currentStreak || 0,
+              topTopics: Object.entries(topicStatsToObject(s.topicStats)).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([t]) => t),
+              isVerified: !!s.profileSignature?.hash,
+              profileUrl: `/u/${s.username}`,
+              availableForWork: s.recruiterSnapshot?.availableForWork || false,
+              preferredRole: s.recruiterSnapshot?.preferredRole || null,
+              expectedGraduation: s.recruiterSnapshot?.expectedGraduation || null,
+            })),
+            nextCursor: hasNext && last ? encodeCandidateCursor(last.totalXP || 0, last._id) : null,
+            hasNext,
+            limit: limitNum,
+          };
         }
       );
 
