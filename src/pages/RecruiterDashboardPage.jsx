@@ -292,8 +292,9 @@ export default function RecruiterDashboardPage() {
   }
 
   const [candidates, setCandidates] = useState([]);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [cursorHistory, setCursorHistory] = useState([]);
+  const [nextCursor, setNextCursor] = useState(null);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({ college: "", topic: "", minSolved: "", maxSolved: "", preferredRole: "", expectedGraduation: "", availableForWork: false });
   const [selected, setSelected] = useState(null);
@@ -313,16 +314,12 @@ export default function RecruiterDashboardPage() {
     filtersRef.current = filters;
   }, [filters]);
 
-  const fetchCandidates = useCallback(async (p = 1) => {
+  const fetchCandidates = useCallback(async (p = 1, cursor = null) => {
     try {
       setLoading(true);
-
       const currentFilters = filtersRef.current;
-      const params = new URLSearchParams({
-        page: p,
-        limit: 20,
-      });
-
+      const params = new URLSearchParams({ limit: "20" });
+      if (cursor) params.set("cursor", cursor);
       if (currentFilters.college) params.set("college", currentFilters.college);
       if (currentFilters.topic) params.set("topic", currentFilters.topic);
       if (currentFilters.minSolved) params.set("minSolved", currentFilters.minSolved);
@@ -332,19 +329,14 @@ export default function RecruiterDashboardPage() {
       if (currentFilters.availableForWork) params.set("availableForWork", "true");
 
       const data = await apiFetch(`/api/recruiter/candidates?${params}`);
-
       setCandidates(data.candidates || []);
-      setTotal(data.total || 0);
+      setNextCursor(data.nextCursor || null);
       setPage(p);
     } catch (err) {
-      if (
-        err.message ===
-        "Your recruiter account is pending verification."
-      ) {
+      if (err.message === "Your recruiter account is pending verification.") {
         setPendingVerification(true);
         return;
       }
-
       throw err;
     } finally {
       setLoading(false);
@@ -370,7 +362,7 @@ export default function RecruiterDashboardPage() {
   useEffect(() => {
     if (!isAuthenticated) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- standard fetch-on-mount pattern: the called function is a useCallback-wrapped async fetcher that sets loading/data state after its own await, not synchronously; see src/hooks/useAdminSettings.js for the fullest write-up of this decision.
-    fetchCandidates(1);
+    fetchCandidates(1, null);
   }, [fetchCandidates, isAuthenticated]);
 
   function updateFilter(k, v) { setFilters(f => ({ ...f, [k]: v })); }
@@ -542,10 +534,10 @@ export default function RecruiterDashboardPage() {
 
                 {total > 20 && (
                   <div className="flex justify-center gap-3 mt-6">
-                    <button onClick={() => fetchCandidates(page - 1)} disabled={page === 1}
+                    <button onClick={() => fetchCandidates(page - 1, cursorHistory[page - 2] || null)} disabled={page === 1}
                       className="px-4 py-2 text-sm bg-[var(--surface)] border border-[var(--border)] text-[var(--muted-foreground)] rounded-xl disabled:opacity-40">← Prev</button>
                     <span className="text-sm text-[var(--muted-foreground)] py-2">Page {page}</span>
-                    <button onClick={() => fetchCandidates(page + 1)} disabled={candidates.length < 20}
+                    <button onClick={() => setCursorHistory(h => [...h, nextCursor]); fetchCandidates(page + 1, nextCursor)} disabled={candidates.length < 20}
                       className="px-4 py-2 text-sm bg-[var(--surface)] border border-[var(--border)] text-[var(--muted-foreground)] rounded-xl disabled:opacity-40">Next →</button>
                   </div>
                 )}
