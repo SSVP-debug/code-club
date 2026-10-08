@@ -104,8 +104,15 @@ export const getProblems = async (req, res) => {
 
     const page = parsePositiveInt(query.page, 1);
     const limit = Math.min(parsePositiveInt(query.limit, DEFAULT_PAGE_SIZE), MAX_PAGE_SIZE);
+    const cursorRaw = String(query.cursor || "").trim();
+    const cursor = cursorRaw ? Number.parseInt(cursorRaw, 10) : null;
+    if (cursorRaw && (!Number.isInteger(cursor) || cursor < 0)) {
+      return res.status(400).json({ message: "Invalid pagination cursor" });
+    }
     const filter = buildCatalogFilter(query);
-    const cacheKey = `${PROBLEMS_CACHE_KEY}:${JSON.stringify({ page, limit, filter })}`;
+    const cursorFilter = cursor !== null ? { id: { $gt: cursor } } : {};
+    const pagedFilter = { ...filter, ...cursorFilter };
+    const cacheKey = PROBLEMS_CACHE_KEY + ":" + JSON.stringify({ page, limit, cursor, filter });
 
     const { value: payload, cacheStatus } = await getOrSetCache(
       cacheKey,
@@ -121,24 +128,27 @@ export const getProblems = async (req, res) => {
         delete topicFilter.$or;
 
         const [problems, total, topics] = await Promise.all([
-          Problem.find(filter)
+          Problem.find(pagedFilter)
             .select(publicCatalogProjection())
             .sort({ id: 1 })
-            .skip((page - 1) * limit)
-            .limit(limit)
+            .limit(limit + 1)
             .lean(),
           Problem.countDocuments(filter),
           Problem.distinct("topic", topicFilter),
         ]);
 
+        const hasNext = problems.length > limit;
+        const pageProblems = hasNext ? problems.slice(0, limit) : problems;
         return {
-          problems: problems.map(withXP),
+          problems: pageProblems.map(withXP),
           page,
           limit,
           total,
+          cursor,
+          nextCursor: hasNext ? pageProblems[pageProblems.length - 1]?.id ?? null : null,
           topics: topics.filter(Boolean).sort((a, b) => a.localeCompare(b)),
-          hasNext: page * limit < total,
-          hasPrevious: page > 1,
+          hasNext,
+          hasPrevious: cursor !== null,
         };
       }
     );
