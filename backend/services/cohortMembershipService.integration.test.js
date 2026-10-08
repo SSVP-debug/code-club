@@ -140,7 +140,7 @@ describe("cohortMembershipService (real Mongo)", () => {
     const { college, tpo, cohort } = await seedCollegeAndCohort();
     const student = await User.create({
       firebaseUid: "fb-student-4", email: "preserved@a.edu", role: "student",
-      totalXP: 777, solvedSlugs: ["two-sum"],
+      totalXP: 777, solvedCount: 1,
       education: { collegeId: college._id, branch: "CSE" },
     });
 
@@ -150,7 +150,7 @@ describe("cohortMembershipService (real Mongo)", () => {
     const reloadedUser = await User.findById(student._id);
     expect(reloadedUser.role).toBe("student");
     expect(reloadedUser.totalXP).toBe(777);
-    expect(reloadedUser.solvedSlugs).toEqual(["two-sum"]);
+    expect(reloadedUser.solvedCount).toBe(1);
     expect(reloadedUser.education.collegeId.toString()).toBe(college._id.toString());
     expect(reloadedUser.education.branch).toBe("CSE");
   });
