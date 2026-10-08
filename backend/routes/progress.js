@@ -15,7 +15,7 @@ const router = Router();
 // ── Zod schema for PUT /api/progress ─────────────────────────────────────────
 //
 // Why validate here and not just trust the client:
-//   Without this, any user can POST { solvedSlugs: ["two-sum", "fake-slug-i-never-solved"] }
+//   Without this, any user could claim an arbitrary problemSlug as solved
 //   and the server saves it — marking problems as solved without ever running code.
 //   Zod + slug existence check closes that vector entirely.
 
@@ -50,7 +50,7 @@ export async function validateSlugs(req, res, next) {
 // ── Ownership check ──────────────────────────────────────────────────────────
 //
 // validateSlugs above closes one gap (fake slugs that don't exist at all)
-// but NOT the actual exploit: `{ solvedSlugs: ["two-sum", ...every real
+// but NOT the actual exploit: claiming every real
 // slug in the catalog] }` sailed straight through it, because every one of
 // those slugs *does* exist — the check never asked whether *this user*
 // actually solved any of them. That's the gap this middleware closes.
@@ -62,7 +62,7 @@ export async function validateSlugs(req, res, next) {
 // controllers/submissionController.js). Anything the client claims beyond
 // that is dropped here, not saved, and logged as a possible tampering
 // attempt — putProgress (below) only ever sees req.verifiedNewSlugs, never
-// the raw client-supplied solvedSlugs array.
+// the raw client-supplied problem claim.
 //
 // Already-solved slugs (already in req.userDoc.solvedSlugs) are excluded
 // from the lookup — they're historical/trusted, and re-checking them on
@@ -108,7 +108,7 @@ export async function verifyAgainstSubmissions(req, res, next) {
     if (rejected.length > 0) {
       req.log.warn(
         { userId: req.userDoc._id.toString(), rejected },
-        "[Progress] Rejected unverified solvedSlugs — no matching Accepted submission found for this user"
+        "[Progress] Rejected unverified solved problem claim — no matching Accepted submission found for this user"
       );
     }
 
