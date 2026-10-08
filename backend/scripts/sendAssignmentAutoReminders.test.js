@@ -8,6 +8,9 @@ const assignment = {
   problemSlugs: ["two-sum", "valid-parentheses"],
 };
 
+const solvedByStudentIds = (entries) =>
+  new Map(entries.map(([id, slugs]) => [id, new Set(slugs)]));
+
 describe("sendAssignmentAutoRemindersCore", () => {
   it("reminds only incomplete students, marks the assignment reminded, and counts correctly", async () => {
     const markReminded = vi.fn().mockResolvedValue(undefined);
@@ -16,10 +19,15 @@ describe("sendAssignmentAutoRemindersCore", () => {
     const counts = await sendAssignmentAutoRemindersCore({
       findDueAssignments: async () => [assignment],
       getAudience: async () => [
-        { _id: "done", solvedSlugs: ["two-sum", "valid-parentheses"] },
-        { _id: "partial", solvedSlugs: ["two-sum"] },
-        { _id: "none", solvedSlugs: [] },
+        { _id: "done" },
+        { _id: "partial" },
+        { _id: "none" },
       ],
+      getSolvedByStudentIds: async () => solvedByStudentIds([
+        ["done", ["two-sum", "valid-parentheses"]],
+        ["partial", ["two-sum"]],
+        ["none", []],
+      ]),
       markReminded,
       sendReminders,
     });
@@ -48,7 +56,10 @@ describe("sendAssignmentAutoRemindersCore", () => {
 
     const counts = await sendAssignmentAutoRemindersCore({
       findDueAssignments: async () => [assignment],
-      getAudience: async () => [{ _id: "done", solvedSlugs: ["two-sum", "valid-parentheses"] }],
+      getAudience: async () => [{ _id: "done" }],
+      getSolvedByStudentIds: async () => solvedByStudentIds([
+        ["done", ["two-sum", "valid-parentheses"]],
+      ]),
       markReminded,
       sendReminders,
     });
@@ -65,7 +76,8 @@ describe("sendAssignmentAutoRemindersCore", () => {
 
     const counts = await sendAssignmentAutoRemindersCore({
       findDueAssignments: async () => [assignment],
-      getAudience: async () => [{ _id: "none", solvedSlugs: [] }],
+      getAudience: async () => [{ _id: "none" }],
+      getSolvedByStudentIds: async () => solvedByStudentIds([["none", []]]),
       markReminded,
       sendReminders,
       dryRun: true,
@@ -86,8 +98,9 @@ describe("sendAssignmentAutoRemindersCore", () => {
       findDueAssignments: async () => [assignment, assignment2],
       getAudience: vi.fn(async (a) => {
         if (a._id === "assignment-1") throw new Error("Mongo blip");
-        return [{ _id: "none", solvedSlugs: [] }];
+        return [{ _id: "none" }];
       }),
+      getSolvedByStudentIds: async () => solvedByStudentIds([["none", []]]),
       markReminded,
       sendReminders,
     });
