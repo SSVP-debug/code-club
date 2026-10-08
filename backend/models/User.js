@@ -562,6 +562,7 @@ const userSchema = new mongoose.Schema(
 // more often per session than the old single unbounded fetch it replaced
 // — see docs/audits/ for the index-analysis writeup that preceded this.
 userSchema.index({ emailDomain: 1, role: 1 });
+userSchema.index({ emailDomain: 1, role: 1, visibleToTpo: 1, totalXP: -1 });
 
 // Keeps emailDomain derived from email on every save, not just at account
 // creation — see the emailDomain field comment above for why this exists

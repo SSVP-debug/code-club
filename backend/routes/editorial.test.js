@@ -12,10 +12,14 @@ vi.mock("./billing.js", () => ({
 vi.mock("../services/contestProblemAccess.js", () => ({
   canAccessContestProblem: vi.fn(),
 }));
+vi.mock("../services/problemProgressService.js", () => ({
+  getSolvedSlugs: vi.fn(),
+}));
 
 import Problem from "../models/Problem.js";
 import { isUserPremium } from "./billing.js";
 import { canAccessContestProblem } from "../services/contestProblemAccess.js";
+import { getSolvedSlugs } from "../services/problemProgressService.js";
 import editorialRouter from "./editorial.js";
 
 // editorial.js doesn't export its handlers individually — pull them off the
@@ -59,6 +63,7 @@ describe("GET /:slug (editorial)", () => {
     vi.clearAllMocks();
     res = mockRes();
     isUserPremium.mockReturnValue(false);
+    getSolvedSlugs.mockResolvedValue([]);
   });
 
   it("returns 404 when the problem doesn't exist", async () => {
@@ -101,7 +106,8 @@ describe("GET /:slug (editorial)", () => {
     });
     isUserPremium.mockReturnValue(false);
 
-    const req = mockReq({ userDoc: { _id: "u1", role: "student", solvedSlugs: ["two-sum"] } });
+    getSolvedSlugs.mockResolvedValue(["two-sum"]);
+    const req = mockReq({ userDoc: { _id: "u1", role: "student" } });
     await getHandler("get", "/")(req, res);
 
     expect(res.status).not.toHaveBeenCalledWith(403);
@@ -119,7 +125,7 @@ describe("GET /:slug (editorial)", () => {
     });
     isUserPremium.mockReturnValue(true);
 
-    const req = mockReq({ userDoc: { _id: "u1", role: "student", solvedSlugs: [] } });
+    const req = mockReq({ userDoc: { _id: "u1", role: "student" } });
     await getHandler("get", "/")(req, res);
 
     expect(res.status).not.toHaveBeenCalledWith(403);
@@ -135,7 +141,7 @@ describe("GET /:slug (editorial)", () => {
     });
     isUserPremium.mockReturnValue(false);
 
-    const req = mockReq({ userDoc: { _id: "admin1", role: "admin", solvedSlugs: [] } });
+    const req = mockReq({ userDoc: { _id: "admin1", role: "admin" } });
     await getHandler("get", "/")(req, res);
 
     expect(res.status).not.toHaveBeenCalledWith(403);
@@ -147,7 +153,8 @@ describe("GET /:slug (editorial)", () => {
     });
     isUserPremium.mockReturnValue(false);
 
-    const req = mockReq({ userDoc: { _id: "u1", role: "student", solvedSlugs: ["two-sum"] } });
+    getSolvedSlugs.mockResolvedValue(["two-sum"]);
+    const req = mockReq({ userDoc: { _id: "u1", role: "student" } });
     await getHandler("get", "/")(req, res);
 
     expect(res.json).toHaveBeenCalledWith({ slug: "two-sum", content: "", available: false });
@@ -160,7 +167,7 @@ describe("GET /:slug (editorial)", () => {
     });
     canAccessContestProblem.mockResolvedValue(false);
 
-    const req = mockReq({ params: { slug: "contest-only" }, userDoc: { _id: "u1", role: "student", solvedSlugs: [] } });
+    const req = mockReq({ params: { slug: "contest-only" }, userDoc: { _id: "u1", role: "student" } });
     await getHandler("get", "/")(req, res);
 
     expect(canAccessContestProblem).toHaveBeenCalledWith("contest-only", req.userDoc);
@@ -185,7 +192,7 @@ describe("GET /:slug (editorial)", () => {
   it("returns 500 and logs when the database call throws", async () => {
     Problem.findOne.mockImplementation(() => { throw new Error("db down"); });
 
-    const req = mockReq({ userDoc: { _id: "u1", role: "student", solvedSlugs: [] } });
+    const req = mockReq({ userDoc: { _id: "u1", role: "student" } });
     await getHandler("get", "/")(req, res);
 
     expect(req.log.error).toHaveBeenCalled();
