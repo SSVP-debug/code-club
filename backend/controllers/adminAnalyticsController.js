@@ -118,11 +118,19 @@ export async function getRetentionMetric(req, res) {
 
     const [retentionRows] = await Promise.all([
       Submission.aggregate([
-        { $match: { createdAt: { $gte: weekN1Start, $lt: now } } },
+        { $match: { createdAt: { $gte: weekN1Start, $lt: now } } }
         {
           $group: {
             _id: "$userId",
-            activePreviousWeek: { $max: 1 },
+            activePreviousWeek: {
+              $max: {
+                $cond: [
+                  { $lt: ["$createdAt", weekNStart] },
+                  1,
+                  0,
+                ],
+              },
+            },
             activeCurrentWeek: {
               $max: {
                 $cond: [{ $gte: ["$createdAt", weekNStart] }, 1, 0],

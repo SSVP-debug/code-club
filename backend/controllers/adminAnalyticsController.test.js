@@ -3,7 +3,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 vi.mock("../models/User.js", () => ({ default: { aggregate: vi.fn() } }));
 vi.mock("../models/Problem.js", () => ({ default: { find: vi.fn(), countDocuments: vi.fn(), aggregate: vi.fn() } }));
 vi.mock("../models/ProblemStats.js", () => ({ default: { find: vi.fn() } }));
-vi.mock("../models/Submission.js", () => ({ default: { aggregate: vi.fn(), distinct: vi.fn() } }));
+vi.mock("../models/Submission.js", () => ({ default: { aggregate: vi.fn() } }));
 vi.mock("../config/logger.js", () => ({ logger: { error: vi.fn() } }));
 
 import User from "../models/User.js";
@@ -73,11 +73,14 @@ describe("admin analytics scalability", () => {
   });
 
   it("keeps active-user and retention semantics intact", async () => {
-    Submission.distinct
-      .mockResolvedValueOnce(["u1", "u2"])
-      .mockResolvedValueOnce(["u1", "u2", "u3"])
-      .mockResolvedValueOnce(["u1", "u2"])
-      .mockResolvedValueOnce(["u2", "u3"]);
+    Submission.aggregate
+      .mockResolvedValueOnce([{ count: 2 }])
+      .mockResolvedValueOnce([{ count: 3 }])
+      .mockResolvedValueOnce([{
+        weekN1ActiveUsers: 2,
+        weekNActiveUsers: 2,
+        retainedUsers: 1,
+      }]);
 
     const activeRes = mockRes();
     await getActiveUserTrends({}, activeRes);
