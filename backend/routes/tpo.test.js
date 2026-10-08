@@ -504,8 +504,8 @@ describe("assignment routes — requireVerified wiring (regression for the pendi
 // recruiter.js's /candidates endpoint already established for the same
 // "search+sort+paginate a User collection" shape.
 describe("GET /students — pagination, search, sort, and authorization", () => {
-  function mockAggregateResult(data, totalCount) {
-    User.aggregate.mockResolvedValue([{ data, totalCount: [{ count: totalCount }] }]);
+  function mockAggregateResult(data) {
+    User.aggregate.mockResolvedValue([{ data }]);
   }
 
   function lastPipeline() {
@@ -527,7 +527,7 @@ describe("GET /students — pagination, search, sort, and authorization", () => 
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockAggregateResult([], 0);
+    mockAggregateResult([]);
   });
 
   describe("authentication / role / verification", () => {
@@ -608,76 +608,83 @@ describe("GET /students — pagination, search, sort, and authorization", () => 
     });
   });
 
-  describe("pagination", () => {
-    it("defaults to page 1 with the default page size when no query params are given", async () => {
+  describe("cursor pagination", () => {
+    it("defaults to the first cursor page with the default page size", async () => {
       await runRoute("get", "/students", { userDoc: verifiedTpo, query: {} });
-
       const data = facetDataStage(lastPipeline());
-      expect(data).toContainEqual({ $skip: 0 });
-      expect(data).toContainEqual({ $limit: 25 });
+      expect(data).toContainEqual({ $limit: 26 });
+      expect(data.some((stage) => "$skip" in stage)).toBe(false);
     });
 
-    it("page 2 skips exactly one page's worth of records", async () => {
-      await runRoute("get", "/students", { userDoc: verifiedTpo, query: { page: "2", limit: "10" } });
-
-      const data = facetDataStage(lastPipeline());
-      expect(data).toContainEqual({ $skip: 10 });
-      expect(data).toContainEqual({ $limit: 10 });
+    it("uses a cursor boundary instead of offset skip", async () => {
+      const cursor = Buffer.from(JSON.stringify({
+        sortKey: "xp",
+        value: 500,
+        id: "507f1f77bcf86cd799439011",
+      })).toString("base64url");
+      await runRoute("get", "/students", {
+        userDoc: verifiedTpo,
+        query: { cursor, limit: "10", sort: "xp" },
+      });
+      const match = matchStage(lastPipeline());
+      expect(match.$and).toEqual([{
+        $or: [
+          { totalXP: { $lt: 500 } },
+          { totalXP: 500, _id: { $gt: expect.any(Object) } },
+        ],
+      }]);
+      expect(facetDataStage(lastPipeline())).toContainEqual({ $limit: 11 });
+      expect(facetDataStage(lastPipeline()).some((stage) => "$skip" in stage)).toBe(false);
     });
 
-    it("a page far beyond the total simply returns an empty page, not an error", async () => {
-      mockAggregateResult([], 3); // 3 total students, but...
-      const res = await runRoute("get", "/students", { userDoc: verifiedTpo, query: { page: "999" } });
-
-      expect(res.status).not.toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ students: [], total: 3, page: 999 }));
+    it("rejects a cursor encoded for a different sort order", async () => {
+      const cursor = Buffer.from(JSON.stringify({
+        sortKey: "xp",
+        value: 500,
+        id: "507f1f77bcf86cd799439011",
+      })).toString("base64url");
+      const res = await runRoute("get", "/students", {
+        userDoc: verifiedTpo,
+        query: { cursor, sort: "name" },
+      });
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(User.aggregate).not.toHaveBeenCalled();
     });
 
-    it("response includes page/limit/total so the frontend can compute total pages", async () => {
-      mockAggregateResult([{ name: "Alice" }], 47);
-      const res = await runRoute("get", "/students", { userDoc: verifiedTpo, query: { page: "2", limit: "10" } });
-
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ students: [{ name: "Alice" }], total: 47, page: 2, limit: 10 })
-      );
+    it("does not accept the legacy page parameter as an offset", async () => {
+      await runRoute("get", "/students", { userDoc: verifiedTpo, query: { page: "999", limit: "10" } });
+      const pipeline = lastPipeline();
+      expect(facetDataStage(pipeline)).toContainEqual({ $limit: 11 });
+      expect(facetDataStage(pipeline).some((stage) => "$skip" in stage)).toBe(false);
     });
   });
 
   describe("page size normalization", () => {
     it("uses the default (25) when no limit is given", async () => {
       await runRoute("get", "/students", { userDoc: verifiedTpo, query: {} });
-      expect(facetDataStage(lastPipeline())).toContainEqual({ $limit: 25 });
+      expect(facetDataStage(lastPipeline())).toContainEqual({ $limit: 26 });
     });
 
     it("respects a valid custom limit", async () => {
       await runRoute("get", "/students", { userDoc: verifiedTpo, query: { limit: "5" } });
-      expect(facetDataStage(lastPipeline())).toContainEqual({ $limit: 5 });
+      expect(facetDataStage(lastPipeline())).toContainEqual({ $limit: 6 });
     });
 
     it("caps an excessively large limit at the maximum (50)", async () => {
       await runRoute("get", "/students", { userDoc: verifiedTpo, query: { limit: "999999" } });
-      expect(facetDataStage(lastPipeline())).toContainEqual({ $limit: 50 });
+      expect(facetDataStage(lastPipeline())).toContainEqual({ $limit: 51 });
     });
 
     it("falls back to the default for a non-numeric limit", async () => {
       await runRoute("get", "/students", { userDoc: verifiedTpo, query: { limit: "abc" } });
-      expect(facetDataStage(lastPipeline())).toContainEqual({ $limit: 25 });
+      expect(facetDataStage(lastPipeline())).toContainEqual({ $limit: 26 });
     });
 
     it("falls back to the default for a zero or negative limit", async () => {
       await runRoute("get", "/students", { userDoc: verifiedTpo, query: { limit: "0" } });
-      expect(facetDataStage(lastPipeline())).toContainEqual({ $limit: 25 });
-
+      expect(facetDataStage(lastPipeline())).toContainEqual({ $limit: 26 });
       await runRoute("get", "/students", { userDoc: verifiedTpo, query: { limit: "-5" } });
-      expect(facetDataStage(lastPipeline())).toContainEqual({ $limit: 25 });
-    });
-
-    it("falls back to page 1 for an invalid page number", async () => {
-      await runRoute("get", "/students", { userDoc: verifiedTpo, query: { page: "not-a-number" } });
-      expect(facetDataStage(lastPipeline())).toContainEqual({ $skip: 0 });
-
-      await runRoute("get", "/students", { userDoc: verifiedTpo, query: { page: "-3" } });
-      expect(facetDataStage(lastPipeline())).toContainEqual({ $skip: 0 });
+      expect(facetDataStage(lastPipeline())).toContainEqual({ $limit: 26 });
     });
   });
 
@@ -715,10 +722,10 @@ describe("GET /students — pagination, search, sort, and authorization", () => 
     });
 
     it("combines with pagination correctly", async () => {
-      await runRoute("get", "/students", { userDoc: verifiedTpo, query: { q: "krishna", page: "2", limit: "5" } });
+      await runRoute("get", "/students", { userDoc: verifiedTpo, query: { q: "krishna", limit: "5" } });
 
       expect(matchStage(lastPipeline()).$or).toBeDefined();
-      expect(facetDataStage(lastPipeline())).toContainEqual({ $skip: 5 });
+      expect(facetDataStage(lastPipeline())).toContainEqual({ $limit: 6 });
     });
   });
 
@@ -751,7 +758,7 @@ describe("GET /students — pagination, search, sort, and authorization", () => 
     it("produces a single deterministic pipeline reflecting all three", async () => {
       await runRoute("get", "/students", {
         userDoc: verifiedTpo,
-        query: { q: "krishna", sort: "name", page: "3", limit: "10" },
+        query: { q: "krishna", sort: "name", limit: "10" },
       });
 
       const pipeline = lastPipeline();
@@ -763,8 +770,8 @@ describe("GET /students — pagination, search, sort, and authorization", () => 
         })
       );
       expect(sortStage(pipeline)).toEqual({ displayName: 1, _id: 1 });
-      expect(facetDataStage(pipeline)).toContainEqual({ $skip: 20 });
-      expect(facetDataStage(pipeline)).toContainEqual({ $limit: 10 });
+      expect(facetDataStage(pipeline)).toContainEqual({ $limit: 11 });
+      expect(facetDataStage(pipeline).some((stage) => "$skip" in stage)).toBe(false);
     });
   });
 

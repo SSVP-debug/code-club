@@ -534,7 +534,7 @@ export default function RecruiterDashboardPage() {
 
                 {total > 20 && (
                   <div className="flex justify-center gap-3 mt-6">
-                    <button onClick={() => fetchCandidates(page - 1, cursorHistory[page - 2] || null)} disabled={page === 1}
+                    <button onClick={() => fetchCandidates(page - 1, page > 1 ? cursorHistory[page - 2] || null : null)} disabled={page === 1}
                       className="px-4 py-2 text-sm bg-[var(--surface)] border border-[var(--border)] text-[var(--muted-foreground)] rounded-xl disabled:opacity-40">← Prev</button>
                     <span className="text-sm text-[var(--muted-foreground)] py-2">Page {page}</span>
                     <button onClick={() => setCursorHistory(h => [...h, nextCursor]); fetchCandidates(page + 1, nextCursor)} disabled={candidates.length < 20}

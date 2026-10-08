@@ -1360,6 +1360,7 @@ const STUDENT_SORT_FIELDS = {
 };
 const STUDENTS_DEFAULT_PAGE_SIZE = 25;
 const STUDENTS_MAX_PAGE_SIZE = 50;
+
 const COHORTS_DEFAULT_PAGE_SIZE = 25;
 const COHORTS_MAX_PAGE_SIZE = 50;
 
@@ -1376,7 +1377,10 @@ function decodeStudentCursor(value, sortKey) {
     } else if (!Number.isFinite(Number(decoded.value))) {
       return null;
     }
-    return { value: sortKey === "name" ? decoded.value : Number(decoded.value), id: new mongoose.Types.ObjectId(decoded.id) };
+    return {
+      value: sortKey === "name" ? decoded.value : Number(decoded.value),
+      id: new mongoose.Types.ObjectId(decoded.id),
+    };
   } catch {
     return null;
   }
@@ -1385,77 +1389,113 @@ function buildStudentCursorFilter(sortKey, cursor) {
   if (!cursor) return null;
   const field = sortKey === "name" ? "displayName" : sortKey === "solved" ? "solvedCount" : sortKey === "streak" ? "currentStreak" : "totalXP";
   const operator = sortKey === "name" ? "$gt" : "$lt";
-  return { $or: [{ [field]: { [operator]: cursor.value } }, { [field]: cursor.value, _id: { $gt: cursor.id } }] };
+  return {
+    $or: [
+      { [field]: { [operator]: cursor.value } },
+      { [field]: cursor.value, _id: { $gt: cursor.id } },
+    ],
+  };
 }
 
 router.get("/students", requireRole("tpo", "admin"),
   requireVerified, async (req, res) => {
     if (b2bGate(req, res)) return;
+
     try {
       const domain = req.userDoc.tpoProfile?.collegeDomain;
       if (!domain) return res.status(400).json({ error: "No college domain set on this TPO account." });
 
       const collegeDomains = await resolveCollegeDomains(req.userDoc);
       const rawLimit = parseInt(req.query.limit, 10);
-      const limit = Math.min(STUDENTS_MAX_PAGE_SIZE, Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : STUDENTS_DEFAULT_PAGE_SIZE);
+      const limit = Math.min(
+        STUDENTS_MAX_PAGE_SIZE,
+        Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : STUDENTS_DEFAULT_PAGE_SIZE
+      );
+
       const sortKey = STUDENT_SORT_FIELDS[req.query.sort] ? req.query.sort : "xp";
       const decodedCursor = decodeStudentCursor(req.query.cursor, sortKey);
-      if (req.query.cursor && !decodedCursor) return res.status(400).json({ error: "Invalid students cursor." });
+      if (req.query.cursor && !decodedCursor) {
+        return res.status(400).json({ error: "Invalid students cursor." });
+      }
 
       const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
       const escapedQ = q.replace(/[.*+?^\${}()|[\]\\]/g, "\\\\$&");
-      const searchMatch = q ? { $or: [
-        { displayName: { $regex: escapedQ, $options: "i" } },
-        { email: { $regex: escapedQ, $options: "i" } },
-      ] } : {};
+      const searchMatch = q
+        ? {
+          $or: [
+            { displayName: { $regex: escapedQ, $options: "i" } },
+            { email: { $regex: escapedQ, $options: "i" } },
+          ],
+        }
+        : {};
+
       const cursorMatch = buildStudentCursorFilter(sortKey, decodedCursor);
-
       const cacheKey = `${TPO_CACHE_PREFIX}students:${domain}:${JSON.stringify({ cursor: req.query.cursor || null, limit, sortKey, q })}`;
-      const { value: payload, cacheStatus } = await getOrSetCache(cacheKey, TPO_CACHE_TTL_SECONDS, async () => {
-        const match = {
-          emailDomain: { $in: collegeDomains },
-          role: "student",
-          visibleToTpo: { $ne: false },
-          ...searchMatch,
-        };
-        if (cursorMatch) match.$and = [cursorMatch];
 
-        const students = await User.find(match)
-          .sort(STUDENT_SORT_FIELDS[sortKey])
-          .limit(limit + 1)
-          .select("displayName email totalXP solvedCount currentStreak solvedDifficulty joinedDate")
-          .lean();
+      const { value: payload, cacheStatus } = await getOrSetCache(
+        cacheKey,
+        TPO_CACHE_TTL_SECONDS,
+        async () => {
+          const match = {
+            emailDomain: { $in: collegeDomains },
+            role: "student",
+            visibleToTpo: { $ne: false },
+            ...searchMatch,
+          };
+          if (cursorMatch) match.$and = [cursorMatch];
 
-        const hasNext = students.length > limit;
-        const pageStudents = hasNext ? students.slice(0, limit) : students;
-        const last = pageStudents[pageStudents.length - 1];
-        const cursorValue = last
-          ? sortKey === "name" ? (last.displayName || "")
-            : sortKey === "solved" ? (last.solvedCount || 0)
-            : sortKey === "streak" ? (last.currentStreak || 0)
-            : (last.totalXP || 0)
-          : null;
+          const [aggResult] = await User.aggregate([
+            { $match: match },
+            { $sort: STUDENT_SORT_FIELDS[sortKey] },
+            {
+              $facet: {
+                data: [
+                  { $limit: limit + 1 },
+                  {
+                    $project: {
+                      _id: 1,
+                      name: "$displayName",
+                      email: 1,
+                      totalXP: { $ifNull: ["$totalXP", 0] },
+                      solvedCount: { $ifNull: ["$solvedCount", 0] },
+                      currentStreak: { $ifNull: ["$currentStreak", 0] },
+                      easy: { $ifNull: ["$solvedDifficulty.easy", 0] },
+                      medium: { $ifNull: ["$solvedDifficulty.medium", 0] },
+                      hard: { $ifNull: ["$solvedDifficulty.hard", 0] },
+                      joinedDate: 1,
+                    },
+                  },
+                ],
+              },
+            },
+          ]);
 
-        return {
-          students: pageStudents.map(s => ({
-            name: s.displayName,
-            email: s.email,
-            totalXP: s.totalXP ?? 0,
-            solvedCount: s.solvedCount ?? 0,
-            currentStreak: s.currentStreak ?? 0,
-            easy: s.solvedDifficulty?.easy ?? 0,
-            medium: s.solvedDifficulty?.medium ?? 0,
-            hard: s.solvedDifficulty?.hard ?? 0,
-            joinedDate: s.joinedDate,
-          })),
-          nextCursor: hasNext && last ? encodeStudentCursor(sortKey, cursorValue, last._id) : null,
-          hasNext,
-          limit,
-        };
-      });
+          const students = aggResult?.data ?? [];
+          const hasNext = students.length > limit;
+          const pageStudents = hasNext ? students.slice(0, limit) : students;
+          const last = pageStudents[pageStudents.length - 1];
+          const cursorValue = last
+            ? sortKey === "name" ? (last.name || "")
+              : sortKey === "solved" ? (last.solvedCount || 0)
+              : sortKey === "streak" ? (last.currentStreak || 0)
+              : (last.totalXP || 0)
+            : null;
+
+          return {
+            students: pageStudents,
+            nextCursor: hasNext && last ? encodeStudentCursor(sortKey, cursorValue, last._id) : null,
+            hasNext,
+            limit,
+          };
+        }
+      );
 
       res.set("X-Cache", cacheStatus);
-      return res.json({ college: req.userDoc.tpoProfile?.collegeName, domain, ...payload });
+      return res.json({
+        college: req.userDoc.tpoProfile?.collegeName,
+        domain,
+        ...payload,
+      });
     } catch (err) {
       (req.log || logger).error({ err }, "[TPO] students error");
       return res.status(500).json({ error: "Failed to load students." });
