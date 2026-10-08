@@ -4,10 +4,9 @@ import { syncSolvedProblemProgress } from "./problemProgressService.js";
 /**
  * Persist progress fields.
  *
- * User remains the compatibility/aggregate store for existing consumers,
- * while UserProblemProgress is the scalable per-user/problem source for
- * future reads. Keeping both writes here gives the migration one stable
- * seam and lets old clients continue working during the rollout.
+ * User stores only scalar progress aggregates; UserProblemProgress is the
+ * authoritative per-user/problem source. This seam keeps aggregate writes
+ * atomic while problem-level writes remain normalized.
  */
 export async function saveProgress(userId, progress, newSolvedSlugs = []) {
   const userWrite = User.updateOne(
