@@ -84,17 +84,26 @@ export async function getSolvedSlugs(userId) {
 }
 
 
-export async function getActivityDays(userId) {
-  const rows = await UserProblemProgress.find({
-    userId,
-    status: "solved",
-    solvedDay: { $ne: null },
-  })
-    .select("solvedDay -_id")
-    .sort({ solvedDay: 1 })
-    .lean();
+export async function getActivityDays(userId, days = 365) {
+  const safeDays = Math.min(Math.max(Number(days) || 365, 1), 365);
+  const cutoff = new Date();
+  cutoff.setUTCDate(cutoff.getUTCDate() - (safeDays - 1));
+  const cutoffDay = getStudentDayKey(cutoff);
 
-  return rows.map((row) => row.solvedDay);
+  const rows = await UserProblemProgress.aggregate([
+    {
+      $match: {
+        userId,
+        status: "solved",
+        solvedDay: { $gte: cutoffDay },
+      },
+    },
+    { $group: { _id: "$solvedDay" } },
+    { $sort: { _id: 1 } },
+    { $limit: safeDays },
+  ]);
+
+  return rows.map((row) => row._id);
 }
 
 

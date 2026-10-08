@@ -2,7 +2,7 @@
  * GET /api/init
  *
  * Single boot endpoint that returns everything the frontend needs on first load:
- *   - User's progress (solvedSlugs, XP, streaks, achievements, …)
+ *   - User's progress (solved state, XP, streaks, achievements, …)
  *   - User's recent submission history (last 50)
  *
  * This replaces the 3 sequential API calls that were made on app boot:
@@ -48,9 +48,7 @@ router.get("/", async (req, res) => {
     }
 
     // Submission history and solved-problem progress are student-track data.
-    // Keep the two reads in parallel; UserProblemProgress is the scalable
-    // source for solved slugs while User remains the compatibility store for
-    // the other progress fields during this migration phase.
+    // Keep the two reads in parallel; UserProblemProgress is the scalable source for per-problem solved state and activity days.
     const [submissions, solvedSlugs, activityDates, savedProblems] = await Promise.all([
       req.userDoc.role === "student"
         ? Submission
