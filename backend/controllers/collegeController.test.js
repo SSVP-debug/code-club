@@ -104,7 +104,7 @@ describe("collegeController", () => {
             });
         });
 
-        it("sums totalSolvedProblems via solvedSlugs' live array size, not a possibly-stale profileSignature.solvedCount", async () => {
+        it("sums totalSolvedProblems from the scalar solvedCount field", async () => {
             const college = makeCollege();
             College.find.mockReturnValueOnce(chainableQuery([college]));
             College.countDocuments.mockResolvedValueOnce(1);
@@ -115,7 +115,7 @@ describe("collegeController", () => {
 
             expect(User.aggregate).toHaveBeenCalledWith([
                 { $match: { "education.collegeId": "c1", role: "student" } },
-                { $group: { _id: null, total: { $sum: { $size: { $ifNull: ["$solvedSlugs", []] } } } } },
+                { $group: { _id: null, total: { $sum: "$solvedCount" } } },
             ]);
         });
 
