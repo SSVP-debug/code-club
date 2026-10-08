@@ -17,7 +17,7 @@ import { getDailyChallengeHistory } from "../services/dailyChallengeService.js";
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 /**
- * Compute a user's total XP server-side from their solvedSlugs.
+ * Compute a user's total XP server-side from verified Problem records.
  * Falls back to querying MongoDB for the difficulty map.
  * Returns 0 if the query fails — never crashes.
  */
@@ -119,7 +119,7 @@ export async function putProgress(req, res) {
       // totalXP is intentionally NOT destructured — it comes from the client
       // but is ignored. XP is always recomputed server-side below.
       //
-      // solvedSlugs / topicStats / activityDates / solvedDifficulty /
+      // problem claims / topicStats / activityDates / solvedDifficulty /
       // recentActivity are ALSO not trusted from the body anymore — see
       // req.verifiedNewSlugs below. They used to be applied directly
       // (`req.userDoc.solvedSlugs = solvedSlugs`), which meant any
@@ -139,10 +139,7 @@ export async function putProgress(req, res) {
     // that this server independently confirmed via a real Accepted
     // Submission. Anything the client claimed without one was already
     // dropped (and logged) before we got here.
-    const existingSolvedSlugs = new Set(await getSolvedSlugs(req.userDoc._id));
-    const newSlugs = (req.verifiedNewSlugs || []).filter(
-      (slug) => !existingSolvedSlugs.has(slug)
-    );
+    const newSlugs = [...new Set(req.verifiedNewSlugs || [])];
 
     if (newSlugs.length > 0) {
       // Topic/difficulty/title come from the Problem catalog, not the
@@ -169,8 +166,6 @@ export async function putProgress(req, res) {
         // Shouldn't happen (routes/progress.js's validateSlugs already
         // confirmed the slug exists) — skip defensively rather than throw.
         if (!problem) continue;
-
-        // User.solvedSlugs is now compatibility-only; the authoritative solve row is written by saveProgress below.
 
         if (problem.topic) {
           nextTopicStats[problem.topic] = (nextTopicStats[problem.topic] || 0) + 1;
@@ -212,10 +207,11 @@ export async function putProgress(req, res) {
       req.userDoc.leetcodeUsername = leetcodeUsername;
     }
 
-    // ── Server-side XP recomputation ──────────────────────────────────────
-    // Always recompute from the (now fully verified) solved slugs — never
-    // trust client-supplied XP.
-    const solvedSlugsForXP = [...existingSolvedSlugs, ...newSlugs];
+    // ── Server-side aggregate updates ─────────────────────────────────────
+    // solvedCount is persisted as a scalar; per-problem truth is in
+    // UserProblemProgress. Never rebuild a user's entire solved set here.
+    const nextSolvedCount = Math.max(0, Number(req.userDoc.solvedCount) || 0) + newSlugs.length;
+    req.userDoc.solvedCount = nextSolvedCount;
     // XP is a scalar aggregate, so update it incrementally from the newly
     // verified problems. Re-reading every solved problem on every submission
     // would make solve latency grow linearly with the student's history.
@@ -224,10 +220,6 @@ export async function putProgress(req, res) {
         await Problem.find({ slug: { $in: newSlugs } }).select("difficulty").lean()
       );
     }
-    // Keep the legacy User field populated during the zero-downtime migration.
-    // Reads no longer depend on it; UserProblemProgress is authoritative.
-    req.userDoc.solvedSlugs = solvedSlugsForXP;
-
     // ── Achievement evaluation ─────────────────────────────────────────────
     const newlyUnlocked = evaluateAchievements(req.userDoc);
     const existing = new Set(
@@ -262,7 +254,7 @@ export async function putProgress(req, res) {
     // isn't in saveProgress's allowed field list; it gets its own small,
     // separate update instead of riding along on the old single .save().
     await saveProgress(req.userDoc._id, {
-      solvedCount: solvedSlugsForXP.length,
+      solvedCount: nextSolvedCount,
       topicStats: topicStatsToObject(req.userDoc.topicStats),
       solvedDifficulty: {
         easy: req.userDoc.solvedDifficulty?.easy || 0,
@@ -334,7 +326,8 @@ export async function putProgress(req, res) {
     }
 
     const responseActivityDates = await getActivityDays(req.userDoc._id);
-    const response = progressToClient(req.userDoc, solvedSlugsForXP, responseActivityDates);
+    const responseSolvedSlugs = await getSolvedSlugs(req.userDoc._id);
+    const response = progressToClient(req.userDoc, responseSolvedSlugs, responseActivityDates);
     if (newlyUnlocked.length > 0) {
       response.newAchievements = newlyUnlocked;
     }
