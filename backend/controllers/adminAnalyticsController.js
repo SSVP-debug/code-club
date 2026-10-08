@@ -118,7 +118,7 @@ export async function getRetentionMetric(req, res) {
 
     const [retentionRows] = await Promise.all([
       Submission.aggregate([
-        { $match: { createdAt: { $gte: weekN1Start, $lt: now } } }
+        { $match: { createdAt: { $gte: weekN1Start, $lt: now } } },
         {
           $group: {
             _id: "$userId",
