@@ -440,7 +440,7 @@ export default function RecruiterDashboardPage() {
             {tab === "candidates" && (
               <>
                 <FilterBar filters={filters} onChange={updateFilter} />
-                <Button onClick={() => fetchCandidates(1)} className="mb-6">
+                <Button onClick={() => { setCursorHistory([]); setNextCursor(null); fetchCandidates(1, null); }} className="mb-6">
                   Search
                 </Button>
 
@@ -537,7 +537,7 @@ export default function RecruiterDashboardPage() {
                     <button onClick={() => fetchCandidates(page - 1, page > 1 ? cursorHistory[page - 2] || null : null)} disabled={page === 1}
                       className="px-4 py-2 text-sm bg-[var(--surface)] border border-[var(--border)] text-[var(--muted-foreground)] rounded-xl disabled:opacity-40">← Prev</button>
                     <span className="text-sm text-[var(--muted-foreground)] py-2">Page {page}</span>
-                    <button onClick={() => setCursorHistory(h => [...h, nextCursor]); fetchCandidates(page + 1, nextCursor)} disabled={!nextCursor || loading}
+                    <button onClick={() => { setCursorHistory(h => [...h, nextCursor]); fetchCandidates(page + 1, nextCursor); }} disabled={!nextCursor || loading}
                       className="px-4 py-2 text-sm bg-[var(--surface)] border border-[var(--border)] text-[var(--muted-foreground)] rounded-xl disabled:opacity-40">Next →</button>
                   </div>
                 )}
