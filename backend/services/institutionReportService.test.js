@@ -6,6 +6,7 @@ import College from "../models/College.js";
 import Cohort from "../models/Cohort.js";
 import CohortMembership from "../models/CohortMembership.js";
 import Assignment from "../models/Assignment.js";
+import UserProblemProgress from "../models/UserProblemProgress.js";
 
 describe("TPO-5 Step 1 — institution report overview", () => {
   beforeAll(async () => {
@@ -34,7 +35,7 @@ describe("TPO-5 Step 1 — institution report overview", () => {
         role: "student",
         roles: ["student"],
         totalXP: 100,
-        solvedSlugs: ["p1", "p2"],
+        solvedCount: 2,
         solvedDifficulty: { easy: 1, medium: 1, hard: 0 },
         currentStreak: 3,
         visibleToTpo: true,
@@ -45,7 +46,7 @@ describe("TPO-5 Step 1 — institution report overview", () => {
         role: "student",
         roles: ["student"],
         totalXP: 200,
-        solvedSlugs: ["p1"],
+        solvedCount: 1,
         solvedDifficulty: { easy: 1, medium: 0, hard: 0 },
         currentStreak: 0,
         visibleToTpo: true,
@@ -55,7 +56,7 @@ describe("TPO-5 Step 1 — institution report overview", () => {
         email: "out@a.edu",
         role: "student",
         roles: ["student"],
-        solvedSlugs: ["p1", "p2", "p3"],
+        solvedCount: 3,
         visibleToTpo: false,
       },
       {
@@ -63,7 +64,7 @@ describe("TPO-5 Step 1 — institution report overview", () => {
         email: "outsider@other.edu",
         role: "student",
         roles: ["student"],
-        solvedSlugs: ["p1", "p2", "p3", "p4"],
+        solvedCount: 4,
         visibleToTpo: true,
       },
     ]);
@@ -97,6 +98,11 @@ describe("TPO-5 Step 1 — institution report overview", () => {
       problemSlugs: ["p1", "p2"],
       dueDate: new Date("2026-10-01"),
     });
+    
+    await UserProblemProgress.create([
+      { userId: studentA._id, problemSlug: "p1", status: "solved", solvedAt: new Date() },
+      { userId: studentA._id, problemSlug: "p2", status: "solved", solvedAt: new Date() },
+    ]);
 
     const report = await getInstitutionReportOverview({
       college,
@@ -140,7 +146,7 @@ describe("TPO-5 Step 1 — institution report overview", () => {
       email: "student@legacy.edu",
       role: "student",
       roles: ["student"],
-      solvedSlugs: ["p1"],
+      solvedCount: 1,
       visibleToTpo: true,
     });
 
@@ -151,6 +157,13 @@ describe("TPO-5 Step 1 — institution report overview", () => {
       problemSlugs: ["p1"],
       dueDate: new Date("2026-09-20"),
       createdAt: new Date("2026-09-20"),
+    });
+    
+    await UserProblemProgress.create({
+      userId: student._id,
+      problemSlug: "p1",
+      status: "solved",
+      solvedAt: new Date("2026-09-20"),
     });
 
     await Assignment.create({
@@ -216,7 +229,7 @@ describe("TPO-5 Step 1 — institution report overview", () => {
         email: "a@breakdown.edu",
         role: "student",
         roles: ["student"],
-        solvedSlugs: ["p1", "p2"],
+        solvedCount: 2,
         solvedDifficulty: { easy: 1, medium: 1, hard: 0 },
         currentStreak: 2,
         topicStats: { Arrays: 3, Graphs: 1 },
@@ -227,7 +240,7 @@ describe("TPO-5 Step 1 — institution report overview", () => {
         email: "b@breakdown.edu",
         role: "student",
         roles: ["student"],
-        solvedSlugs: ["p1"],
+        solvedCount: 1,
         solvedDifficulty: { easy: 1, medium: 0, hard: 0 },
         currentStreak: 0,
         topicStats: { Arrays: 2 },
@@ -238,7 +251,7 @@ describe("TPO-5 Step 1 — institution report overview", () => {
         email: "c@breakdown.edu",
         role: "student",
         roles: ["student"],
-        solvedSlugs: ["p1", "p2", "p3"],
+        solvedCount: 3,
         solvedDifficulty: { easy: 1, medium: 1, hard: 1 },
         currentStreak: 5,
         topicStats: { "Dynamic Programming": 4 },
@@ -249,7 +262,7 @@ describe("TPO-5 Step 1 — institution report overview", () => {
         email: "out@breakdown.edu",
         role: "student",
         roles: ["student"],
-        solvedSlugs: ["p1", "p2", "p3", "p4"],
+        solvedCount: 4,
         visibleToTpo: false,
       },
       {
@@ -257,7 +270,7 @@ describe("TPO-5 Step 1 — institution report overview", () => {
         email: "solo@breakdown.edu",
         role: "student",
         roles: ["student"],
-        solvedSlugs: ["p1"],
+        solvedCount: 1,
         currentStreak: 1,
         visibleToTpo: true,
       },
