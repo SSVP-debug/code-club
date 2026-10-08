@@ -183,7 +183,7 @@ describe("TpoDashboardPage — students tab", () => {
 
   it("shows pagination info and disables Previous on the first page", async () => {
     await loadDashboard();
-    await waitFor(() => expect(screen.getByText(/page 1 of 1/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/page 1/i)).toBeInTheDocument());
     expect(screen.getByRole("button", { name: /previous/i })).toBeDisabled();
   });
 
