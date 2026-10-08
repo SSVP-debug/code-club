@@ -6,6 +6,14 @@ vi.mock("../models/User.js", () => ({
 vi.mock("../models/Submission.js", () => ({
   default: { find: vi.fn() },
 }));
+vi.mock("../models/DailyChallengeCompletion.js", () => ({
+  default: { find: vi.fn(() => ({
+    select: vi.fn().mockReturnThis(),
+    sort: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+    lean: vi.fn().mockResolvedValue([]),
+  })) },
+}));
 vi.mock("../services/problemProgressService.js", () => ({
   getSolvedSlugs: vi.fn().mockResolvedValue(["two-sum"]),
   getActivityDays: vi.fn().mockResolvedValue([
@@ -53,20 +61,9 @@ function makeUserDoc(overrides = {}) {
     totalXP: 4200,
     currentStreak: 7,
     longestStreak: 30,
-    solvedSlugs: ["two-sum"],
     achievements: [],
-    activityDates: [
-      "2026-09-06",
-      "2026-09-07",
-      "2026-09-08",
-      "2026-09-09",
-      "2026-09-10",
-      "2026-09-11",
-      "2026-09-12",
-    ],
     recentActivity: [],
     solvedDifficulty: { easy: 1, medium: 0, hard: 0 },
-    dailyChallengeHistory: [],
     lastActivityDate: null,
     joinedDate: new Date("2025-06-01"),
     leetcodeUsername: "",
