@@ -1419,7 +1419,7 @@ router.get("/students", requireRole("tpo", "admin"),
       }
 
       const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
-      const escapedQ = q.replace(/[.*+?^\${}()|[\]\\]/g, "\\\\$&");
+      const escapedQ = q.replace(/[.*+?^\${}()|[\]\\]/g, "\\const escapedQ = q.replace(/[.*+?^\${}()|[\]\\]/g, "\\\\$&");");
       const searchMatch = q
         ? {
           $or: [
