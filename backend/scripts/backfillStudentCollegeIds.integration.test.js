@@ -84,7 +84,7 @@ describe("backfillStudentCollegeIds (real Mongo)", () => {
     const student = await seedUser({
       email: "student@mit.edu",
       totalXP: 999,
-      solvedSlugs: ["two-sum"],
+      solvedCount: 1,
       education: { collegeId: otherCollege._id, branch: "CSE", graduationYear: 2026 },
     });
 
@@ -97,7 +97,7 @@ describe("backfillStudentCollegeIds (real Mongo)", () => {
     expect(reloaded.education.branch).toBe("CSE");
     expect(reloaded.education.graduationYear).toBe(2026);
     expect(reloaded.totalXP).toBe(999);
-    expect(reloaded.solvedSlugs).toEqual(["two-sum"]);
+    expect(reloaded.solvedCount).toBe(1);
   });
 
   it("running the real backfill twice makes zero additional writes the second time", async () => {

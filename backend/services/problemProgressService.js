@@ -64,6 +64,7 @@ export async function syncSolvedProblemProgress(userId, slugs, solvedAt = new Da
           userId,
           problemSlug,
           firstAttemptAt: solvedAt,
+          solvedDay: getStudentDayKey(solvedAt),
           attemptCount: 1,
           acceptedCount: 1,
         },
@@ -94,4 +95,30 @@ export async function getActivityDays(userId) {
     .lean();
 
   return rows.map((row) => row.solvedDay);
+}
+
+
+export async function getSolvedSlugsForUsers(userIds, problemSlugs = null) {
+  const ids = [...new Set((userIds || []).map(String))];
+  if (!ids.length) return new Map();
+
+  const filter = {
+    userId: { $in: ids },
+    status: "solved",
+  };
+  if (Array.isArray(problemSlugs) && problemSlugs.length) {
+    filter.problemSlug = { $in: [...new Set(problemSlugs)] };
+  }
+
+  const rows = await UserProblemProgress.find(filter)
+    .select("userId problemSlug -_id")
+    .lean();
+
+  const result = new Map(ids.map((id) => [id, new Set()]));
+  for (const row of rows) {
+    const key = String(row.userId);
+    if (!result.has(key)) result.set(key, new Set());
+    result.get(key).add(row.problemSlug);
+  }
+  return result;
 }

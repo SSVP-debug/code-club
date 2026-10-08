@@ -25,6 +25,8 @@
  */
 import College from "../models/College.js";
 import User from "../models/User.js";
+import UserProblemProgress from "../models/UserProblemProgress.js";
+import DailyChallengeCompletion from "../models/DailyChallengeCompletion.js";
 import ImpersonationLog from "../models/ImpersonationLog.js";
 import AdminAuditLog from "../models/AdminAuditLog.js";
 import Submission from "../models/Submission.js";
@@ -731,13 +733,11 @@ const PROGRESS_RESET_FIELDS = {
   longestStreak: 0,
   lastActivityDate: null,
   totalXP: 0,
-  solvedSlugs: [],
+  solvedCount: 0,
   solvedDifficulty: { easy: 0, medium: 0, hard: 0 },
   topicStats: {},
-  activityDates: [],
   recentActivity: [],
   achievements: [],
-  dailyChallengeHistory: [],
 };
 // Deliberately NOT included above, flagged as ambiguous rather than guessed
 // (escape hatch, plan 003): profileSignature (derived hash OF solvedCount —
@@ -911,6 +911,10 @@ export async function resetUserProgress(req, res) {
 
     Object.assign(target, PROGRESS_RESET_FIELDS);
     await target.save();
+    await Promise.all([
+      UserProblemProgress.deleteMany({ userId: target._id }),
+      DailyChallengeCompletion.deleteMany({ userId: target._id }),
+    ]);
     invalidateCachedUserByFirebaseUid(target.firebaseUid);
 
     recordAdminAction({

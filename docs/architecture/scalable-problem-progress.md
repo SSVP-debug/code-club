@@ -19,7 +19,7 @@ A server-verified submission is still persisted in `Submission` first. After tha
 
 The problem catalog's acceptance-rate endpoint now reads `ProblemStats` rather than aggregating the complete `Submission` collection. Paginated catalog callers can request rates for only the visible problem slugs.
 
-The existing `User.solvedSlugs` field remains available to legacy consumers during this phase. `UserProblemProgress` is the scalable source for future per-problem reads, filtering, and analytics.
+`UserProblemProgress` is the authoritative per-user/problem source. `User.solvedCount` is only a scalar aggregate for fast filtering, sorting, and reporting.
 
 ## Migration
 

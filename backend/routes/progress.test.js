@@ -4,7 +4,7 @@ vi.mock("../models/Submission.js", () => ({
   default: { find: vi.fn() },
 }));
 vi.mock("../models/Problem.js", () => ({
-  default: { find: vi.fn() },
+  default: { find: vi.fn(), exists: vi.fn() },
 }));
 vi.mock("../models/UserProblemProgress.js", () => ({
   default: { find: vi.fn() },
@@ -52,35 +52,28 @@ describe("verifyAgainstSubmissions — the core solve-integrity fix", () => {
     next = vi.fn();
   });
 
-  it(
-    "drops a claimed slug that has no matching Accepted submission — " +
-      "this is the exact exploit the fix closes: a client claiming every " +
-      "real slug in the catalog without ever solving them",
-    async () => {
-      mockFindDistinct([]); // server finds ZERO real Accepted submissions
-      const req = {
-        body: { solvedSlugs: ["two-sum", "fake-but-real-slug-never-solved"] },
-        userDoc: { _id: "user1", solvedSlugs: [] },
-        log: mockLog(),
-      };
+  it("drops a problem claim that has no matching Accepted submission", async () => {
+    mockFindDistinct([]);
+    const req = {
+      body: { problemSlug: "two-sum" },
+      userDoc: { _id: "user1" },
+      log: mockLog(),
+    };
 
-      await verifyAgainstSubmissions(req, res, next);
+    await verifyAgainstSubmissions(req, res, next);
 
-      expect(req.verifiedNewSlugs).toEqual([]);
-      expect(next).toHaveBeenCalledOnce();
-      expect(req.log.warn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          rejected: expect.arrayContaining(["two-sum", "fake-but-real-slug-never-solved"]),
-        }),
-        expect.any(String)
-      );
-    }
-  );
+    expect(req.verifiedNewSlugs).toEqual([]);
+    expect(next).toHaveBeenCalledOnce();
+    expect(req.log.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ rejected: ["two-sum"] }),
+      expect.any(String)
+    );
+  });
 
   it("accepts a slug that DOES have a matching Accepted submission for this user", async () => {
     mockFindDistinct(["two-sum"]);
     const req = {
-      body: { solvedSlugs: ["two-sum"] },
+      body: { problemSlug: "two-sum" },
       userDoc: { _id: "user1", solvedSlugs: [] },
       log: mockLog(),
     };
@@ -101,7 +94,7 @@ describe("verifyAgainstSubmissions — the core solve-integrity fix", () => {
   it("accepts real slugs and silently drops fabricated ones in the same request", async () => {
     mockFindDistinct(["two-sum"]); // only two-sum has a real Accepted submission
     const req = {
-      body: { solvedSlugs: ["two-sum", "forged-slug"] },
+      body: { problemSlug: "forged-slug" },
       userDoc: { _id: "user1", solvedSlugs: [] },
       log: mockLog(),
     };
@@ -118,7 +111,7 @@ describe("verifyAgainstSubmissions — the core solve-integrity fix", () => {
   it("does not re-query already-trusted (previously persisted) solvedSlugs", async () => {
     mockProgressDistinct(["already-solved"]);
     const req = {
-      body: { solvedSlugs: ["already-solved"] },
+      body: { problemSlug: "already-solved" },
       userDoc: { _id: "user1", solvedSlugs: ["already-solved"] },
       log: mockLog(),
     };
@@ -140,7 +133,7 @@ describe("verifyAgainstSubmissions — the core solve-integrity fix", () => {
       distinct: vi.fn().mockRejectedValue(new Error("Mongo down")),
     });
     const req = {
-      body: { solvedSlugs: ["two-sum"] },
+      body: { problemSlug: "two-sum" },
       userDoc: { _id: "user1", solvedSlugs: [] },
       log: mockLog(),
     };
@@ -154,7 +147,7 @@ describe("verifyAgainstSubmissions — the core solve-integrity fix", () => {
 
   it("is a no-op (nothing verified, but no crash) when req.userDoc is missing", async () => {
     const req = {
-      body: { solvedSlugs: ["two-sum"] },
+      body: { problemSlug: "two-sum" },
       userDoc: undefined,
       log: mockLog(),
     };
@@ -178,13 +171,9 @@ describe("validateSlugs — existence check only (does not, by itself, prove own
   });
 
   it("rejects a slug that isn't a real problem at all", async () => {
-    Problem.find.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        lean: vi.fn().mockResolvedValue([{ slug: "two-sum" }]),
-      }),
-    });
+    Problem.exists.mockResolvedValue(false);
     const req = {
-      body: { solvedSlugs: ["two-sum", "not-a-real-problem"] },
+      body: { problemSlug: "not-a-real-problem" },
       log: mockLog(),
     };
 
@@ -195,12 +184,8 @@ describe("validateSlugs — existence check only (does not, by itself, prove own
   });
 
   it("passes through real slugs to the next middleware (which still must verify ownership)", async () => {
-    Problem.find.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        lean: vi.fn().mockResolvedValue([{ slug: "two-sum" }]),
-      }),
-    });
-    const req = { body: { solvedSlugs: ["two-sum"] }, log: mockLog() };
+    Problem.exists.mockResolvedValue(true);
+    const req = { body: { problemSlug: "two-sum" }, log: mockLog() };
 
     await validateSlugs(req, res, next);
 
