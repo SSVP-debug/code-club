@@ -227,8 +227,8 @@ export async function getInstitutionReportOverview({ college, from, to }) {
           status: "solved",
         },
       },
-      { $group: { _id: "$userId", solvedCount: { $addToSet: "$problemSlug" } } },
-      { $project: { solvedCount: { $size: "$solvedCount" } } },
+      { $match: { problemSlug: { $in: assignment.problemSlugs } } },
+      { $group: { _id: "$userId", solvedCount: { $sum: 1 } } },
       { $match: { solvedCount: assignment.problemSlugs.length } },
       { $count: "completed" },
     ]);
