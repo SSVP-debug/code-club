@@ -53,6 +53,7 @@ import mongoose from "mongoose";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import Assignment from "../models/Assignment.js";
+import UserProblemProgress from "../models/UserProblemProgress.js";
 import { getAssignmentAudience } from "../services/assignmentAudienceService.js";
 import { createNotificationBulk } from "../services/notificationService.js";
 import { logger } from "../config/logger.js";
@@ -68,6 +69,7 @@ const REMINDER_WINDOW_MS = REMINDER_WINDOW_HOURS * 60 * 60 * 1000;
 export async function sendAssignmentAutoRemindersCore({
   findDueAssignments,
   getAudience,
+  getSolvedByStudentIds,
   markReminded,
   sendReminders,
   dryRun = false,
@@ -88,9 +90,14 @@ export async function sendAssignmentAutoRemindersCore({
     const label = `${assignment._id} (${assignment.title})`;
     try {
       const students = await getAudience(assignment);
-      const incomplete = students.filter(
-        (s) => !assignment.problemSlugs.every((slug) => (s.solvedSlugs || []).includes(slug))
-      );
+      const solvedByStudentId = getSolvedByStudentIds
+        ? await getSolvedByStudentIds(students, assignment.problemSlugs)
+        : new Map();
+      const incomplete = students.filter((student) => {
+        const solved = solvedByStudentId.get(String(student._id))
+          || new Set(student.solvedSlugs || []);
+        return !assignment.problemSlugs.every((slug) => solved.has ? solved.has(slug) : solved.includes(slug));
+      });
 
       if (incomplete.length === 0) {
         counts.skippedEveryoneDone += 1;
@@ -130,7 +137,23 @@ export function buildMongooseDeps({ windowMs = REMINDER_WINDOW_MS } = {}) {
       }).lean();
     },
 
-    getAudience: (assignment) => getAssignmentAudience(assignment, "_id solvedSlugs"),
+    getAudience: (assignment) => getAssignmentAudience(assignment, "_id"),
+    getSolvedByStudentIds: async (students, problemSlugs) => {
+      const userIds = students.map((student) => student._id);
+      const rows = await UserProblemProgress.find({
+        userId: { $in: userIds },
+        status: "solved",
+        problemSlug: { $in: problemSlugs },
+      }).select("userId problemSlug").lean();
+
+      const solvedByStudentId = new Map();
+      for (const row of rows) {
+        const key = String(row.userId);
+        if (!solvedByStudentId.has(key)) solvedByStudentId.set(key, new Set());
+        solvedByStudentId.get(key).add(row.problemSlug);
+      }
+      return solvedByStudentId;
+    },
 
     markReminded: (assignmentId) =>
       Assignment.updateOne({ _id: assignmentId }, { $set: { autoReminderSentAt: new Date() } }),
