@@ -13,6 +13,7 @@ export async function saveProgress(userId, progress, newSolvedSlugs = []) {
     { _id: userId },
     {
       $set: {
+        solvedCount: progress.solvedCount ?? 0,
         topicStats: progress.topicStats,
         solvedDifficulty: progress.solvedDifficulty,
         recentActivity: progress.recentActivity,
@@ -24,10 +25,6 @@ export async function saveProgress(userId, progress, newSolvedSlugs = []) {
       },
     }
   );
-
-  const solvedCountIncrement = newSolvedSlugs.length
-    ? { $inc: { solvedCount: newSolvedSlugs.length } }
-    : {};
 
   const problemWrite = syncSolvedProblemProgress(
     userId,
