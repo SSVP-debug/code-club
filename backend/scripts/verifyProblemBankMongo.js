@@ -7,7 +7,7 @@ import connectDB from "../config/db.js";
 import Problem from "../models/Problem.js";
 import Submission from "../models/Submission.js";
 import Reflection from "../models/Reflection.js";
-import User from "../models/User.js";
+import UserProblemProgress from "../models/UserProblemProgress.js";
 import ContestParticipant from "../models/ContestParticipant.js";
 import BattleRoom from "../models/BattleRoom.js";
 import SkillsTest from "../models/SkillsTest.js";
@@ -45,7 +45,7 @@ if (!dbBySlug.has(CANONICAL_SLUG)) addFailure("canonical-problem", `${CANONICAL_
 const checks = [
   [Submission, "problemSlug"],
   [Reflection, "problemSlug"],
-  [User, "solvedSlugs"],
+  [UserProblemProgress, "problemSlug"],
   [SkillsTest, "solvedSlugs"],
   [ContestParticipant, "solvedSlugs"],
 ];

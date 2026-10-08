@@ -94,11 +94,8 @@ export async function sendAssignmentAutoRemindersCore({
         ? await getSolvedByStudentIds(students, assignment.problemSlugs)
         : new Map();
       const incomplete = students.filter((student) => {
-        const solved = solvedByStudentId.get(String(student._id))
-          || new Set(student.solvedSlugs || []);
-        return !assignment.problemSlugs.every((slug) =>
-          solved.has ? solved.has(slug) : solved.includes(slug)
-        );
+        const solved = solvedByStudentId.get(String(student._id)) || new Set();
+        return !assignment.problemSlugs.every((slug) => solved.has(slug));
       });
 
       if (incomplete.length === 0) {
