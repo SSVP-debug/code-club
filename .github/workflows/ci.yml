@@ -56,6 +56,16 @@ jobs:
   backend:
     name: Backend — install + validate + test
     runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     defaults:
       run:
         working-directory: backend
@@ -110,3 +120,9 @@ jobs:
           FIREBASE_PROJECT_ID: test
           FIREBASE_CLIENT_EMAIL: test@test.iam.gserviceaccount.com
           FIREBASE_PRIVATE_KEY: "-----BEGIN RSA PRIVATE KEY-----\nMIItest\n-----END RSA PRIVATE KEY-----\n"
+      - name: Run Redis execution queue integration tests
+        run: npx vitest run --config vitest.integration.config.js services/executionQueue.integration.test.js --reporter=verbose
+        env:
+          NODE_ENV: test
+          REDIS_URL: redis://127.0.0.1:6379
+          RUN_REDIS_INTEGRATION_TESTS: "true"
