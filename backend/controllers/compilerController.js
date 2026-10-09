@@ -40,7 +40,7 @@ function b64Decode(str) {
 }
 
 async function fetchJudge0(sourceCode, languageId, stdin = "") {
-  return enqueueExecution(async () => {
+  return enqueueExecution(async ({ signal } = {}) => {
     // Build the URL from the env var (or default), then force base64_encoded=true.
     // This means the fix works even if JUDGE0_API_URL in Railway is missing the param.
     const rawUrl =
@@ -117,12 +117,15 @@ async function fetchJudge0(sourceCode, languageId, stdin = "") {
     let lastError;
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      if (signal?.aborted) throw signal.reason || new Error("Execution lease was lost");
       try {
         const response = await fetch(judge0Url, {
           method: "POST",
           headers: requestHeaders,
           body: requestBody,
-          signal: AbortSignal.timeout(20000),
+          signal: signal
+            ? AbortSignal.any([signal, AbortSignal.timeout(20000)])
+            : AbortSignal.timeout(20000),
         });
 
         if (!response.ok) {
@@ -172,6 +175,9 @@ async function fetchJudge0(sourceCode, languageId, stdin = "") {
         };
       } catch (err) {
         lastError = err;
+        // A queue heartbeat abort must not be treated as a transient network
+        // failure and retried after the distributed lease has been lost.
+        if (signal?.aborted) throw signal.reason || err;
 
         // Network-level failure (connection refused, DNS, timeout abort) —
         // also transient, also worth retrying within the attempt budget.
