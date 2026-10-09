@@ -121,7 +121,7 @@ jobs:
           FIREBASE_CLIENT_EMAIL: test@test.iam.gserviceaccount.com
           FIREBASE_PRIVATE_KEY: "-----BEGIN RSA PRIVATE KEY-----\nMIItest\n-----END RSA PRIVATE KEY-----\n"
       - name: Run Redis execution queue integration tests
-        run: npx vitest run services/executionQueue.integration.test.js --reporter=verbose
+        run: npx vitest run --config vitest.integration.config.js services/executionQueue.integration.test.js --reporter=verbose
         env:
           NODE_ENV: test
           REDIS_URL: redis://127.0.0.1:6379
