@@ -57,6 +57,30 @@ describe("runHandler", () => {
     );
   });
 
+  it("returns a retryable 503 when shared execution coordination is unavailable", async () => {
+    const error = Object.assign(new Error("internal Redis detail"), {
+      code: "EXECUTION_COORDINATION_UNAVAILABLE",
+    });
+    callJudge0.mockRejectedValue(error);
+    const req = {
+      body: {
+        code: "def twoSum(a): return [0,1]",
+        language: "python",
+        functionName: "twoSum",
+        testcases: [{ input: { nums: [2, 7] }, expectedOutput: [0, 1] }],
+      },
+      log: mockLog(),
+    };
+
+    await runHandler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(503);
+    expect(res.json).toHaveBeenCalledWith({
+      error: "Code execution is temporarily unavailable. Please retry shortly.",
+      code: "EXECUTION_COORDINATION_UNAVAILABLE",
+    });
+  });
+
   // ── comparisonMode: "unordered" — audit finding P0-3 ─────────────────────
   it("passes a differently-ordered array on Run when comparisonMode is unordered", async () => {
     callJudge0.mockResolvedValue({ stdout: JSON.stringify([2, 1]), stderr: null, compile_output: null });
