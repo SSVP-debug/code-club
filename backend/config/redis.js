@@ -13,7 +13,7 @@ let client = null;
 let connectionPromise = null;
 
 export async function getRedisClient() {
-  if (client?.status === "ready") return client;
+  if (client) return client;
   if (connectionPromise) return connectionPromise;
 
   const url = process.env.REDIS_URL;
