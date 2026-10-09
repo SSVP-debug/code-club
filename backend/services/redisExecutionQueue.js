@@ -26,10 +26,10 @@ const POLL_INTERVAL_MS = 150;
 const SEMAPHORE_KEY = process.env.JUDGE0_SEMAPHORE_KEY || "judge0:semaphore";
 
 const ACQUIRE_SCRIPT = `
-  ZREMRANGEBYSCORE KEYS[1] -inf ARGV[1]
-  local count = ZCARD(KEYS[1])
+  redis.call("ZREMRANGEBYSCORE", KEYS[1], "-inf", ARGV[1])
+  local count = redis.call("ZCARD", KEYS[1])
   if count < tonumber(ARGV[3]) then
-    ZADD KEYS[1] ARGV[2] ARGV[4]
+    redis.call("ZADD", KEYS[1], ARGV[2], ARGV[4])
     return 1
   end
   return 0
