@@ -29,8 +29,15 @@ export async function getRedisClient() {
     let redis;
     try {
       const { default: Redis } = await import("ioredis");
+      const configuredLeaseMs = Number.parseInt(process.env.JUDGE0_LEASE_MS || "30000", 10);
+      const leaseMs = Number.isSafeInteger(configuredLeaseMs) && configuredLeaseMs > 0
+        ? Math.max(3000, configuredLeaseMs)
+        : 30000;
       redis = new Redis(url, {
         maxRetriesPerRequest: 1,
+        // Bound Redis command latency well below the lease duration. A
+        // stalled heartbeat must fail before Redis can reclaim a live slot.
+        commandTimeout: Math.max(100, Math.min(5000, Math.floor(leaseMs / 6))),
         // Keep retrying with capped backoff. Stopping after a few attempts
         // made a transient outage permanent until the process restarted.
         retryStrategy: (times) => Math.min(times * 200, 5000),
