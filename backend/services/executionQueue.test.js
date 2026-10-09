@@ -80,12 +80,15 @@ describe("enqueueExecution", () => {
       }));
 
       const execution = enqueueExecution(job);
-      await vi.advanceTimersByTimeAsync(10000);
-
-      await expect(execution).rejects.toMatchObject({
+      // Attach the rejection assertion before advancing fake timers: lease
+      // loss intentionally rejects the in-flight job as soon as the heartbeat
+      // fires, and Vitest must observe that rejection immediately.
+      const rejection = expect(execution).rejects.toMatchObject({
         code: "EXECUTION_COORDINATION_UNAVAILABLE",
         statusCode: 503,
       });
+      await vi.advanceTimersByTimeAsync(10000);
+      await rejection;
       expect(job).toHaveBeenCalledOnce();
       expect(release).toHaveBeenCalledWith(redis, "token-lease");
     } finally {
