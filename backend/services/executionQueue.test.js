@@ -16,7 +16,7 @@ vi.mock("./directExecutionQueue.js", () => ({
 }));
 
 import { getRedisClient } from "../config/redis.js";
-import { acquire, release, renew } from "./redisExecutionQueue.js";
+import { acquire, release } from "./redisExecutionQueue.js";
 import { enqueueExecution as directExecution } from "./directExecutionQueue.js";
 import { enqueueExecution } from "./executionQueue.js";
 
@@ -63,6 +63,33 @@ describe("enqueueExecution", () => {
     expect(acquire).toHaveBeenCalledWith(redis);
     expect(job).toHaveBeenCalledOnce();
     expect(release).toHaveBeenCalledWith(redis, "token-123");
+  });
+
+  it("aborts the running job if its distributed lease can no longer be renewed", async () => {
+    vi.useFakeTimers();
+    try {
+      const redis = { status: "ready" };
+      getRedisClient.mockResolvedValue(redis);
+      acquire.mockResolvedValue("token-lease");
+      const { renew } = await import("./redisExecutionQueue.js");
+      vi.mocked(renew).mockResolvedValueOnce(false);
+      const job = vi.fn(({ signal }) => new Promise((resolve, reject) => {
+        if (signal.aborted) return reject(signal.reason);
+        signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+      }));
+
+      const execution = enqueueExecution(job);
+      await vi.advanceTimersByTimeAsync(10000);
+
+      await expect(execution).rejects.toMatchObject({
+        code: "EXECUTION_COORDINATION_UNAVAILABLE",
+        statusCode: 503,
+      });
+      expect(job).toHaveBeenCalledOnce();
+      expect(release).toHaveBeenCalledWith(redis, "token-lease");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("still releases the slot if the job itself throws", async () => {
