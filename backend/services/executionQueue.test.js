@@ -10,6 +10,7 @@ vi.mock("./redisExecutionQueue.js", () => ({
   acquire: vi.fn(),
   release: vi.fn().mockResolvedValue(undefined),
   renew: vi.fn().mockResolvedValue(true),
+  LEASE_MS: 30000,
 }));
 vi.mock("./directExecutionQueue.js", () => ({
   enqueueExecution: vi.fn((job) => job()),
