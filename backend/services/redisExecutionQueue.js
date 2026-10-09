@@ -19,7 +19,11 @@ function positiveInt(value, fallback, name) {
 }
 
 export const MAX_CONCURRENT = positiveInt(process.env.JUDGE0_MAX_CONCURRENCY, 8, "JUDGE0_MAX_CONCURRENCY");
-export const LEASE_MS = positiveInt(process.env.JUDGE0_LEASE_MS, 30000, "JUDGE0_LEASE_MS");
+const configuredLeaseMs = positiveInt(process.env.JUDGE0_LEASE_MS, 30000, "JUDGE0_LEASE_MS");
+export const LEASE_MS = Math.max(3000, configuredLeaseMs);
+if (configuredLeaseMs < 3000) {
+  logger.warn({ configuredLeaseMs, minimumLeaseMs: 3000 }, "[Judge0Queue] Lease below safe minimum; clamping to 3000ms");
+}
 export const ACQUIRE_TIMEOUT_MS = positiveInt(process.env.JUDGE0_ACQUIRE_TIMEOUT_MS, 20000, "JUDGE0_ACQUIRE_TIMEOUT_MS");
 
 const POLL_INTERVAL_MS = 150;
