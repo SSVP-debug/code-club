@@ -38,12 +38,12 @@ describe("acquire", () => {
 
     await acquire(redis);
 
-    const [script, numKeys, key, now, leaseExpiry, max, token] = redis.eval.mock.calls[0];
-    expect(script).toEqual(expect.stringContaining("ZREMRANGEBYSCORE"));
+    const [script, numKeys, key, leaseMs, max, token] = redis.eval.mock.calls[0];
+    expect(script).toContain("ZREMRANGEBYSCORE");
+    expect(script).toContain('redis.call("TIME")');
     expect(numKeys).toBe(1);
-    expect(key).toBe("judge0:semaphore");
-    expect(typeof now).toBe("number");
-    expect(leaseExpiry).toBeGreaterThan(now);
+    expect(key).toBe(process.env.JUDGE0_SEMAPHORE_KEY || "judge0:semaphore");
+    expect(leaseMs).toBe(LEASE_MS);
     expect(max).toBe(MAX_CONCURRENT);
     expect(typeof token).toBe("string");
   });
@@ -96,15 +96,14 @@ describe("renew", () => {
 
     await expect(renew(redis, "live-token")).resolves.toBe(true);
 
-    const [script, numKeys, key, token, now, expiry] = redis.eval.mock.calls[0];
+    const [script, numKeys, key, token, leaseMs] = redis.eval.mock.calls[0];
     expect(script).toContain("ZSCORE");
+    expect(script).toContain('redis.call("TIME")');
     expect(script).toContain('"XX"');
     expect(numKeys).toBe(1);
-    expect(key).toBe("judge0:semaphore");
+    expect(key).toBe(process.env.JUDGE0_SEMAPHORE_KEY || "judge0:semaphore");
     expect(token).toBe("live-token");
-    expect(typeof now).toBe("number");
-    expect(expiry).toBeGreaterThan(now);
-    expect(expiry - now).toBe(LEASE_MS);
+    expect(leaseMs).toBe(LEASE_MS);
   });
 
   it("returns false when Redis reports that the lease no longer exists", async () => {
