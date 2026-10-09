@@ -1,57 +1,50 @@
 /**
  * Redis-backed distributed semaphore for Judge0 execution concurrency.
  *
- * directExecutionQueue.js's in-process semaphore only caps concurrency per
- * Node process. Railway can run N replicas of this backend, so the
- * *effective* global ceiling was "MAX_CONCURRENT × N" — not the number an
- * operator actually configured — flagged as a scalability finding in the
- * 2026-07 staff engineering review (§8), which also pointed out the Redis
- * client is already plumbed in for exactly this class of problem (see
- * utils/cache.js's near-identical multi-instance fix for caching).
- *
- * Implementation: a Redis sorted set (`judge0:semaphore`) where each held
- * slot is a random token scored by its lease-expiry timestamp (ms).
- * Acquiring a slot is a single Lua script, so "sweep expired holders,
- * count what's left, add mine if there's room" is one atomic round trip —
- * no instance can race another between the count-check and the write,
- * which a naive ZCARD-then-ZADD from application code would allow. Expired
- * leases (a slot whose holder crashed, or a Judge0 call that hung past its
- * own timeout) are swept on every acquire attempt, so a dead holder can't
- * wedge the semaphore forever — it just self-heals once the lease passes.
+ * Each slot is a random token in a sorted set scored by lease expiry. Acquire
+ * and renew are Lua-atomic so independent backend replicas share one cap.
+ * Execution workers renew their lease while running; if renewal fails, the
+ * caller aborts the Judge0 request instead of allowing a live job to outlast
+ * its distributed slot.
  */
 import { logger } from "../config/logger.js";
 
-export const MAX_CONCURRENT = parseInt(process.env.JUDGE0_MAX_CONCURRENCY || "8", 10);
+function positiveInt(value, fallback, name) {
+  const parsed = Number.parseInt(value ?? "", 10);
+  if (Number.isSafeInteger(parsed) && parsed > 0) return parsed;
+  if (value !== undefined && value !== "") {
+    logger.warn({ name, value, fallback }, "[Judge0Queue] Invalid positive integer setting; using default");
+  }
+  return fallback;
+}
 
-// How long a held slot stays valid before Redis treats it as abandoned and
-// lets someone else take it. Must comfortably exceed the slowest realistic
-// Judge0 round trip — see wallTimeLimit in config/executionLimits.js and
-// the retry loop in compilerController.js's fetchJudge0 — or a still-
-// running job could have its slot reclaimed out from under it.
-export const LEASE_MS = parseInt(process.env.JUDGE0_LEASE_MS || "30000", 10);
-
-// How long a caller keeps retrying to acquire a slot before giving up. A
-// burst of submissions should queue briefly, not pile up indefinitely and
-// time out the HTTP request anyway with no useful error.
-export const ACQUIRE_TIMEOUT_MS = parseInt(process.env.JUDGE0_ACQUIRE_TIMEOUT_MS || "20000", 10);
+export const MAX_CONCURRENT = positiveInt(process.env.JUDGE0_MAX_CONCURRENCY, 8, "JUDGE0_MAX_CONCURRENCY");
+export const LEASE_MS = positiveInt(process.env.JUDGE0_LEASE_MS, 30000, "JUDGE0_LEASE_MS");
+export const ACQUIRE_TIMEOUT_MS = positiveInt(process.env.JUDGE0_ACQUIRE_TIMEOUT_MS, 20000, "JUDGE0_ACQUIRE_TIMEOUT_MS");
 
 const POLL_INTERVAL_MS = 150;
 const SEMAPHORE_KEY = "judge0:semaphore";
 
-// KEYS[1] = semaphore key
-// ARGV[1] = now (ms) — anything scored at or below this is an expired lease
-// ARGV[2] = this attempt's lease expiry (ms), stored as the new entry's score
-// ARGV[3] = max concurrent slots
-// ARGV[4] = this attempt's token
-// Returns 1 if the slot was acquired, 0 if the semaphore is full.
 const ACQUIRE_SCRIPT = `
-  redis.call("ZREMRANGEBYSCORE", KEYS[1], "-inf", ARGV[1])
-  local count = redis.call("ZCARD", KEYS[1])
+  ZREMRANGEBYSCORE KEYS[1] -inf ARGV[1]
+  local count = ZCARD(KEYS[1])
   if count < tonumber(ARGV[3]) then
-    redis.call("ZADD", KEYS[1], ARGV[2], ARGV[4])
+    ZADD KEYS[1] ARGV[2] ARGV[4]
     return 1
   end
   return 0
+`;
+
+// A token can only be renewed while it still exists and its current lease
+// has not expired. This prevents a delayed heartbeat from resurrecting a slot
+// after another worker has already reclaimed it.
+const RENEW_SCRIPT = `
+  local expiry = redis.call("ZSCORE", KEYS[1], ARGV[1])
+  if not expiry or tonumber(expiry) <= tonumber(ARGV[2]) then
+    return 0
+  end
+  redis.call("ZADD", KEYS[1], "XX", ARGV[3], ARGV[1])
+  return 1
 `;
 
 function makeToken() {
@@ -62,12 +55,6 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/**
- * Attempts to acquire a globally-shared slot, polling until one frees up
- * or ACQUIRE_TIMEOUT_MS elapses. Returns the token to pass to release() on
- * success, or null on timeout (the semaphore is genuinely at capacity
- * across every instance — see executionQueue.js for how that's surfaced).
- */
 export async function acquire(redis) {
   const deadline = Date.now() + ACQUIRE_TIMEOUT_MS;
   const token = makeToken();
@@ -81,24 +68,37 @@ export async function acquire(redis) {
       now,
       now + LEASE_MS,
       MAX_CONCURRENT,
-      token
+      token,
     );
-    if (acquired === 1) return token;
+    if (Number(acquired) === 1) return token;
 
     if (Date.now() + POLL_INTERVAL_MS > deadline) return null;
     await sleep(POLL_INTERVAL_MS);
   }
 }
 
-/** Frees a slot early rather than waiting for its lease to expire. */
+export async function renew(redis, token) {
+  if (!token) return false;
+  const now = Date.now();
+  const renewed = await redis.eval(
+    RENEW_SCRIPT,
+    1,
+    SEMAPHORE_KEY,
+    token,
+    now,
+    now + LEASE_MS,
+  );
+  return Number(renewed) === 1;
+}
+
 export async function release(redis, token) {
   if (!token) return;
   try {
     await redis.zrem(SEMAPHORE_KEY, token);
   } catch (err) {
-    // Not fatal — the lease's own TTL (LEASE_MS) still bounds how long
-    // this slot can be held, so a failed explicit release just means it
-    // self-expires a little later instead of freeing up immediately.
-    logger.warn({ err }, "[Judge0Queue] Redis release failed — slot will self-expire via its lease");
+    // A failed release is bounded by the last successful lease renewal.
+    // The caller stops renewing as soon as the job finishes, so this slot
+    // self-expires without being granted to a second live job.
+    logger.warn({ err }, "[Judge0Queue] Redis release failed; slot will expire via lease");
   }
 }
