@@ -30,10 +30,12 @@ const POLL_INTERVAL_MS = 150;
 const SEMAPHORE_KEY = process.env.JUDGE0_SEMAPHORE_KEY || "judge0:semaphore";
 
 const ACQUIRE_SCRIPT = `
-  redis.call("ZREMRANGEBYSCORE", KEYS[1], "-inf", ARGV[1])
+  local time = redis.call("TIME")
+  local now = tonumber(time[1]) * 1000 + math.floor(tonumber(time[2]) / 1000)
+  redis.call("ZREMRANGEBYSCORE", KEYS[1], "-inf", now)
   local count = redis.call("ZCARD", KEYS[1])
-  if count < tonumber(ARGV[3]) then
-    redis.call("ZADD", KEYS[1], ARGV[2], ARGV[4])
+  if count < tonumber(ARGV[2]) then
+    redis.call("ZADD", KEYS[1], now + tonumber(ARGV[1]), ARGV[3])
     return 1
   end
   return 0
@@ -43,11 +45,13 @@ const ACQUIRE_SCRIPT = `
 // has not expired. This prevents a delayed heartbeat from resurrecting a slot
 // after another worker has already reclaimed it.
 const RENEW_SCRIPT = `
+  local time = redis.call("TIME")
+  local now = tonumber(time[1]) * 1000 + math.floor(tonumber(time[2]) / 1000)
   local expiry = redis.call("ZSCORE", KEYS[1], ARGV[1])
-  if not expiry or tonumber(expiry) <= tonumber(ARGV[2]) then
+  if not expiry or tonumber(expiry) <= now then
     return 0
   end
-  redis.call("ZADD", KEYS[1], "XX", ARGV[3], ARGV[1])
+  redis.call("ZADD", KEYS[1], "XX", now + tonumber(ARGV[2]), ARGV[1])
   return 1
 `;
 
@@ -64,13 +68,11 @@ export async function acquire(redis) {
   const token = makeToken();
 
   while (true) {
-    const now = Date.now();
     const acquired = await redis.eval(
       ACQUIRE_SCRIPT,
       1,
       SEMAPHORE_KEY,
-      now,
-      now + LEASE_MS,
+      LEASE_MS,
       MAX_CONCURRENT,
       token,
     );
@@ -83,14 +85,12 @@ export async function acquire(redis) {
 
 export async function renew(redis, token) {
   if (!token) return false;
-  const now = Date.now();
   const renewed = await redis.eval(
     RENEW_SCRIPT,
     1,
     SEMAPHORE_KEY,
     token,
-    now,
-    now + LEASE_MS,
+    LEASE_MS,
   );
   return Number(renewed) === 1;
 }
