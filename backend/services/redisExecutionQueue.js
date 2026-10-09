@@ -23,7 +23,7 @@ export const LEASE_MS = positiveInt(process.env.JUDGE0_LEASE_MS, 30000, "JUDGE0_
 export const ACQUIRE_TIMEOUT_MS = positiveInt(process.env.JUDGE0_ACQUIRE_TIMEOUT_MS, 20000, "JUDGE0_ACQUIRE_TIMEOUT_MS");
 
 const POLL_INTERVAL_MS = 150;
-const SEMAPHORE_KEY = "judge0:semaphore";
+const SEMAPHORE_KEY = process.env.JUDGE0_SEMAPHORE_KEY || "judge0:semaphore";
 
 const ACQUIRE_SCRIPT = `
   ZREMRANGEBYSCORE KEYS[1] -inf ARGV[1]
