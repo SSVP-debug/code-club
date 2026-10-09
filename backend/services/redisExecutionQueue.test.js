@@ -4,7 +4,7 @@ vi.mock("../config/logger.js", () => ({
   logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-import { acquire, release, MAX_CONCURRENT } from "./redisExecutionQueue.js";
+import { acquire, release, renew, MAX_CONCURRENT, LEASE_MS } from "./redisExecutionQueue.js";
 
 function fakeRedis() {
   return {
@@ -86,6 +86,38 @@ describe("acquire", () => {
 
     const [tokenA, tokenB] = await Promise.all([acquire(redis), acquire(redis)]);
     expect(tokenA).not.toBe(tokenB);
+  });
+});
+
+describe("renew", () => {
+  it("renews only the existing token with an atomic script", async () => {
+    const redis = fakeRedis();
+    redis.eval.mockResolvedValue(1);
+
+    await expect(renew(redis, "live-token")).resolves.toBe(true);
+
+    const [script, numKeys, key, token, now, expiry] = redis.eval.mock.calls[0];
+    expect(script).toContain("ZSCORE");
+    expect(script).toContain('"XX"');
+    expect(numKeys).toBe(1);
+    expect(key).toBe("judge0:semaphore");
+    expect(token).toBe("live-token");
+    expect(typeof now).toBe("number");
+    expect(expiry).toBeGreaterThan(now);
+    expect(expiry - now).toBe(LEASE_MS);
+  });
+
+  it("returns false when Redis reports that the lease no longer exists", async () => {
+    const redis = fakeRedis();
+    redis.eval.mockResolvedValue(0);
+
+    await expect(renew(redis, "expired-token")).resolves.toBe(false);
+  });
+
+  it("does not attempt renewal without a token", async () => {
+    const redis = fakeRedis();
+    await expect(renew(redis, null)).resolves.toBe(false);
+    expect(redis.eval).not.toHaveBeenCalled();
   });
 });
 
