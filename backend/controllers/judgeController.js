@@ -13,6 +13,20 @@ import { LANGUAGE_KEY_TO_ID } from "../config/languages.js";
  * Strips internal system paths, env variable names, and other runtime
  * internals that shouldn't be exposed in a browser console.
  */
+const EXECUTION_QUEUE_ERROR_CODES = new Set([
+  "EXECUTION_COORDINATION_UNAVAILABLE",
+  "EXECUTION_CAPACITY_EXCEEDED",
+]);
+
+function respondExecutionUnavailable(res, err) {
+  if (!EXECUTION_QUEUE_ERROR_CODES.has(err?.code)) return null;
+  res.setHeader?.("Retry-After", "2");
+  return res.status(503).json({
+    error: "Code execution is temporarily unavailable. Please retry shortly.",
+    code: err.code,
+  });
+}
+
 function sanitizeStderr(stderr) {
   if (!stderr) return null;
 
@@ -111,6 +125,8 @@ export async function runHandler(req, res) {
     });
 
     if (r.kind === "callError" || r.kind === "noResult") {
+      const unavailable = respondExecutionUnavailable(res, r.error);
+      if (unavailable) return unavailable;
       return res.json({ error: r.errorMessage, results, compileFailed: false });
     }
 
@@ -702,6 +718,11 @@ export async function submitHandler(req, res) {
     }
 
     if (failure) {
+      if (failure.kind === "callError") {
+        const unavailable = respondExecutionUnavailable(res, failure.error);
+        if (unavailable) return unavailable;
+      }
+
       req.log.debug(
         {
           problemSlug,
@@ -793,6 +814,8 @@ export async function submitHandler(req, res) {
     );
 
   } catch (err) {
+    const unavailable = respondExecutionUnavailable(res, err);
+    if (unavailable) return unavailable;
     req.log.error({ err, problemSlug }, "[Judge] Unhandled error during grading");
     return finish("Judge Error", {
       passed: passedCount,
