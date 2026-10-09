@@ -24,47 +24,47 @@ function localQueueExplicitlyEnabled() {
 async function executeWithLease(redis, token, job) {
   const controller = new AbortController();
   const renewEveryMs = Math.max(500, Math.floor(LEASE_MS / 3));
-  let renewalInFlight = false;
+  let renewalInFlight = null;
   let leaseError = null;
+  let jobError = null;
+  let result;
 
-  const heartbeat = setInterval(async () => {
+  const heartbeat = setInterval(() => {
     if (renewalInFlight || leaseError) return;
-    renewalInFlight = true;
-    try {
-      const renewed = await redisRenew(redis, token);
-      if (!renewed) {
+    renewalInFlight = (async () => {
+      try {
+        const renewed = await redisRenew(redis, token);
+        if (!renewed) {
+          leaseError = new ExecutionQueueError(
+            "Code execution lost its distributed capacity lease. Please retry.",
+          );
+          controller.abort(leaseError);
+          logger.error({ code: leaseError.code }, "[Judge0Queue] Lease renewal rejected; aborting execution");
+        }
+      } catch (err) {
         leaseError = new ExecutionQueueError(
-          "Code execution lost its distributed capacity lease. Please retry.",
+          "Code execution coordination is temporarily unavailable. Please retry.",
         );
         controller.abort(leaseError);
-        logger.error({ code: leaseError.code }, "[Judge0Queue] Lease renewal rejected; aborting execution");
+        logger.error({ err }, "[Judge0Queue] Lease renewal failed; aborting execution");
+      } finally {
+        renewalInFlight = null;
       }
-    } catch (err) {
-      leaseError = new ExecutionQueueError(
-        "Code execution coordination is temporarily unavailable. Please retry.",
-      );
-      controller.abort(leaseError);
-      logger.error({ err }, "[Judge0Queue] Lease renewal failed; aborting execution");
-    } finally {
-      renewalInFlight = false;
-    }
+    })();
   }, renewEveryMs);
 
   try {
-    const result = await job({ signal: controller.signal });
-    if (leaseError) throw leaseError;
-    return result;
+    result = await job({ signal: controller.signal });
   } catch (err) {
-    if (leaseError) throw leaseError;
-    throw err;
+    jobError = err;
   } finally {
     clearInterval(heartbeat);
-    // Do not release while an in-flight renewal is still able to touch the
-    // token. A failed renewal is already treated as a lost lease above.
-    while (renewalInFlight) {
-      await new Promise((resolve) => setTimeout(resolve, 10));
-    }
+    if (renewalInFlight) await renewalInFlight;
   }
+
+  if (leaseError) throw leaseError;
+  if (jobError) throw jobError;
+  return result;
 }
 
 export async function enqueueExecution(job) {
