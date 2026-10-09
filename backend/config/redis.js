@@ -11,6 +11,7 @@ import { logger } from "./logger.js";
 
 let client = null;
 let connectionPromise = null;
+let missingUrlWarned = false;
 
 export async function getRedisClient() {
   if (client) return client;
@@ -18,10 +19,13 @@ export async function getRedisClient() {
 
   const url = process.env.REDIS_URL;
   if (!url) {
-    logger.warn(
-      "[Redis] REDIS_URL is not configured; caching may use local memory, " +
-      "but distributed execution is unavailable unless JUDGE0_QUEUE_MODE=local is explicitly selected.",
-    );
+    if (!missingUrlWarned) {
+      logger.warn(
+        "[Redis] REDIS_URL is not configured; caching may use local memory, " +
+        "but distributed execution is unavailable unless JUDGE0_QUEUE_MODE=local is explicitly selected.",
+      );
+      missingUrlWarned = true;
+    }
     return null;
   }
 
