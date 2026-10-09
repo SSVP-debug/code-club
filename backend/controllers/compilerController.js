@@ -306,8 +306,18 @@ export async function runCode(req, res) {
     res.json(data);
   } catch (error) {
     req.log.error({ err: error }, "[Compiler] Judge0 proxy error");
-    res.status(502).json({
-      stderr: error.message || "Failed to reach Judge0",
+    if (
+      error?.code === "EXECUTION_COORDINATION_UNAVAILABLE" ||
+      error?.code === "EXECUTION_CAPACITY_EXCEEDED"
+    ) {
+      res.setHeader?.("Retry-After", "2");
+      return res.status(503).json({
+        error: "Code execution is temporarily unavailable. Please retry shortly.",
+        code: error.code,
+      });
+    }
+    return res.status(502).json({
+      stderr: "Failed to reach the code execution service.",
       status: { id: 13, description: "Internal Error" },
     });
   }
