@@ -9,20 +9,38 @@ vi.mock("../config/redis.js", () => ({
 vi.mock("./redisExecutionQueue.js", () => ({
   acquire: vi.fn(),
   release: vi.fn().mockResolvedValue(undefined),
+  renew: vi.fn().mockResolvedValue(true),
 }));
 vi.mock("./directExecutionQueue.js", () => ({
   enqueueExecution: vi.fn((job) => job()),
 }));
 
 import { getRedisClient } from "../config/redis.js";
-import { acquire, release } from "./redisExecutionQueue.js";
+import { acquire, release, renew } from "./redisExecutionQueue.js";
 import { enqueueExecution as directExecution } from "./directExecutionQueue.js";
 import { enqueueExecution } from "./executionQueue.js";
 
 describe("enqueueExecution", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    delete process.env.JUDGE0_QUEUE_MODE;
+  });
 
-  it("falls back to the in-process semaphore when Redis isn't configured", async () => {
+  it("fails closed when Redis isn't configured", async () => {
+    getRedisClient.mockResolvedValue(null);
+    const job = vi.fn().mockResolvedValue("result");
+
+    await expect(enqueueExecution(job)).rejects.toMatchObject({
+      code: "EXECUTION_COORDINATION_UNAVAILABLE",
+      statusCode: 503,
+    });
+    expect(job).not.toHaveBeenCalled();
+    expect(directExecution).not.toHaveBeenCalled();
+    expect(acquire).not.toHaveBeenCalled();
+  });
+
+  it("uses the local semaphore only when explicitly selected", async () => {
+    process.env.JUDGE0_QUEUE_MODE = "local";
     getRedisClient.mockResolvedValue(null);
     const job = vi.fn().mockResolvedValue("result");
 
@@ -67,14 +85,28 @@ describe("enqueueExecution", () => {
     expect(release).not.toHaveBeenCalled();
   });
 
-  it("falls back to the in-process semaphore for this job if the Redis acquire call itself errors", async () => {
-    getRedisClient.mockResolvedValue({});
+  it("fails closed if the Redis acquire call itself errors", async () => {
+    getRedisClient.mockResolvedValue({ status: "ready" });
     acquire.mockRejectedValue(new Error("ECONNRESET"));
     const job = vi.fn().mockResolvedValue("result");
 
-    const result = await enqueueExecution(job);
+    await expect(enqueueExecution(job)).rejects.toMatchObject({
+      code: "EXECUTION_COORDINATION_UNAVAILABLE",
+      statusCode: 503,
+    });
+    expect(job).not.toHaveBeenCalled();
+    expect(directExecution).not.toHaveBeenCalled();
+  });
 
-    expect(result).toBe("result");
-    expect(directExecution).toHaveBeenCalledWith(job);
+  it("reports capacity exhaustion with a stable error code", async () => {
+    getRedisClient.mockResolvedValue({ status: "ready" });
+    acquire.mockResolvedValue(null);
+    const job = vi.fn();
+
+    await expect(enqueueExecution(job)).rejects.toMatchObject({
+      code: "EXECUTION_CAPACITY_EXCEEDED",
+      statusCode: 503,
+    });
+    expect(job).not.toHaveBeenCalled();
   });
 });
