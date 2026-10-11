@@ -33,18 +33,18 @@ export function validateExamples(parsed) {
   if (parsed.length === 0) return ["examples.json must contain at least one example"];
 
   parsed.forEach((example, index) => {
-    const prefix = \`examples.json example \${index + 1}\`;
+    const prefix = `examples.json example ${index + 1}`;
     if (!example || typeof example !== "object" || Array.isArray(example)) {
-      errors.push(\`\${prefix} must be an object\`);
+      errors.push(`${prefix} must be an object`);
       return;
     }
     for (const field of ["input", "output"]) {
       if (!hasOwn(example, field) || typeof example[field] !== "string" || !example[field].trim()) {
-        errors.push(\`\${prefix} must include a non-empty string \${field}\`);
+        errors.push(`${prefix} must include a non-empty string ${field}`);
       }
     }
     if (hasOwn(example, "explanation") && typeof example.explanation !== "string") {
-      errors.push(\`\${prefix} explanation must be a string when provided\`);
+      errors.push(`${prefix} explanation must be a string when provided`);
     }
   });
 
@@ -57,7 +57,7 @@ export function validateConstraints(parsed) {
   const errors = [];
   parsed.forEach((constraint, index) => {
     if (typeof constraint !== "string" || !constraint.trim()) {
-      errors.push(\`constraints.json constraint \${index + 1} must be a non-empty string\`);
+      errors.push(`constraints.json constraint ${index + 1} must be a non-empty string`);
     }
   });
   return errors;
