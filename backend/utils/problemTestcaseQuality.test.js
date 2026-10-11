@@ -16,7 +16,7 @@ describe("problem testcase quality helpers", () => {
     expect(findConflictingTestcaseOutputs([{ input: { x: 1 }, expectedOutput: null }, { input: { x: 1 }, expectedOutput: null }])).toEqual([]);
   });
   it("ignores malformed records when checking conflicts", () => {
-    expect(findConflictingTestcaseOutputs([null, [], { input: { x: 1 }])).toEqual([]);
+    expect(findConflictingTestcaseOutputs([null, [], { input: { x: 1 } }])).toEqual([]);
   });
   it("counts visible-hidden overlap independent of object-key order", () => {
     expect(countTestcaseOverlaps([{ input: { a: 1, b: 2 }, expectedOutput: 3 }], [{ expectedOutput: 3, input: { b: 2, a: 1 } }])).toBe(1);
