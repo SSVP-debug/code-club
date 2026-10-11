@@ -93,6 +93,37 @@ describe("ProblemEditor — language selector sourced from useLanguages()", () =
     expect(screen.queryByRole("option", { name: "Java" })).not.toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "C++" })).not.toBeInTheDocument();
   });
+
+  it("hides enabled languages that have no starter template for this problem", async () => {
+    apiFetchOptional.mockResolvedValueOnce({
+      languages: [
+        { id: "python", name: "Python", extension: "py" },
+        { id: "javascript", name: "JavaScript", extension: "js" },
+        { id: "c", name: "C", extension: "c" },
+      ],
+    });
+
+    render(
+      <ProblemEditor
+        slug="add-two-numbers"
+        language="python"
+        availableLanguageIds={["python", "javascript", "java", "cpp", "typescript"]}
+        setLanguage={noop}
+        code=""
+        setCode={noop}
+        customInput=""
+        setCustomInput={noop}
+        onRun={noop}
+        onSubmit={noop}
+        onReset={noop}
+        running={false}
+        submitting={false}
+      />
+    );
+
+    await screen.findByRole("option", { name: "JavaScript" });
+    expect(screen.queryByRole("option", { name: "C" })).not.toBeInTheDocument();
+  });
 });
 
 describe("ProblemEditor — Monaco tabSize sourced from the registry's editorIndentSize (Phase 6 regression test)", () => {
