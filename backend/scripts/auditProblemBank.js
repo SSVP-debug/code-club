@@ -13,6 +13,7 @@ import {
   REQUIRED_STARTER_LANGUAGE_KEYS,
 } from "../config/languages.js";
 import { identifyOperationSequence } from "../utils/operationSequenceShape.js";
+import { countTestcaseOverlaps, findDuplicateTestcases } from "../utils/problemTestcaseQuality.js";
 
 const PROBLEMS_DIR = path.join(process.cwd(), "problems");
 const JSON_MODE = process.argv.includes("--json");
@@ -105,14 +106,23 @@ for (const problem of problems) {
     add(slug, "WARN", "hidden-testcases", `only ${hidden.length} hidden testcase(s); coverage may be weak`);
   }
 
-  const visibleSet = new Set(visible.map((testcase) => JSON.stringify(testcase)));
-  const overlap = hidden.filter((testcase) => visibleSet.has(JSON.stringify(testcase))).length;
+  const visibleDuplicates = findDuplicateTestcases(visible);
+  if (visibleDuplicates.length > 0) {
+    add(slug, "WARN", "duplicate-visible-testcases", `${visibleDuplicates.length} duplicate visible testcase(s) reduce coverage`);
+  }
+
+  const hiddenDuplicates = findDuplicateTestcases(hidden);
+  if (hiddenDuplicates.length > 0) {
+    add(slug, "WARN", "duplicate-hidden-testcases", `${hiddenDuplicates.length} duplicate hidden testcase(s) reduce coverage`);
+  }
+
+  const overlap = countTestcaseOverlaps(visible, hidden);
   if (overlap > 0) {
-    add(slug, "WARN", "testcase-overlap", `${overlap} hidden testcase(s) are identical to visible testcase(s)`);
+    add(slug, "WARN", "testcase-overlap", `${overlap} hidden testcase(s) duplicate visible testcase(s)`);
   }
 
   for (const [name, testcase] of [...visible, ...hidden].entries()) {
-    if (!testcase || typeof testcase !== "object") {
+    if (!testcase || typeof testcase !== "object" || Array.isArray(testcase)) {
       add(slug, "FAIL", "testcase-shape", `testcase ${name} is not an object`);
     } else {
       if (!("input" in testcase)) add(slug, "FAIL", "testcase-shape", `testcase ${name} is missing input`);
