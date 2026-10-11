@@ -47,22 +47,35 @@ export function useProblemSolver({ problem, slug, contestId, battleRoomId }) {
   const isSolved = solvedProblems.includes(slug);
   const { formatted: timerFormatted, stop: stopTimer } = useTimer();
 
+  // Only expose languages with a non-empty starter for this problem. The
+  // global registry says which languages can run in general; the canonical
+  // problem record determines which language templates this problem supports.
+  const availableLanguageKeys = useMemo(
+    () => Object.entries(problem.starterCode ?? {})
+      .filter(([, starter]) => typeof starter === "string" && starter.trim().length > 0)
+      .map(([key]) => key),
+    [problem.starterCode]
+  );
+
   // When the "start with blank editor" preference is on, the starter-code
   // template is simply never used as a fallback — loadSavedCode still takes
-  // priority in all three spots below, so an in-progress attempt is never
-  // discarded just because this preference is on.
+  // priority, so an in-progress attempt is never discarded because of this
+  // preference. Missing templates are excluded from the language selector.
   const starterFor = (lang) =>
     preferences.blankEditorByDefault ? "" : (problem.starterCode?.[lang] ?? "");
+  const resolveInitialLanguage = () => {
+    const savedLanguage = loadLanguage(slug);
+    if (availableLanguageKeys.includes(savedLanguage)) return savedLanguage;
+    return availableLanguageKeys.includes("python")
+      ? "python"
+      : availableLanguageKeys[0] ?? "python";
+  };
 
   const { editorHeight, setEditorHeight } = useVerticalResize();
-  const [language, setLanguage] = useState(() => loadLanguage(slug));
+  const [language, setLanguage] = useState(resolveInitialLanguage);
   const [code, setCode] = useState(() => {
-    const savedLanguage = loadLanguage(slug);
-    return loadSavedCode(
-      slug,
-      savedLanguage,
-      starterFor(savedLanguage)
-    );
+    const initialLanguage = resolveInitialLanguage();
+    return loadSavedCode(slug, initialLanguage, starterFor(initialLanguage));
   });
   const [customInput, setCustomInput] = useState("");
   const [running, setRunning] = useState(false);
@@ -93,8 +106,12 @@ export function useProblemSolver({ problem, slug, contestId, battleRoomId }) {
   }
 
   useEffect(() => { saveCode(slug, language, code); }, [slug, language, code]);
+  useEffect(() => {
+    if (loadLanguage(slug) !== language) saveLanguage(slug, language);
+  }, [slug, language]);
 
   const handleLanguageChange = (nextLanguage) => {
+    if (!availableLanguageKeys.includes(nextLanguage)) return;
     saveCode(slug, language, code);
     saveLanguage(slug, nextLanguage);
     setLanguage(nextLanguage);
@@ -274,6 +291,7 @@ export function useProblemSolver({ problem, slug, contestId, battleRoomId }) {
   return {
     isSolved,
     timerFormatted,
+    availableLanguageKeys,
     editorHeight,
     setEditorHeight,
     language,
