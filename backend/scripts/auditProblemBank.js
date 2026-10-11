@@ -13,7 +13,7 @@ import {
   REQUIRED_STARTER_LANGUAGE_KEYS,
 } from "../config/languages.js";
 import { identifyOperationSequence } from "../utils/operationSequenceShape.js";
-import { countTestcaseOverlaps, findDuplicateTestcases } from "../utils/problemTestcaseQuality.js";
+import { countTestcaseOverlaps, findConflictingTestcaseOutputs, findDuplicateTestcases } from "../utils/problemTestcaseQuality.js";
 
 const PROBLEMS_DIR = path.join(process.cwd(), "problems");
 const JSON_MODE = process.argv.includes("--json");
@@ -114,6 +114,13 @@ for (const problem of problems) {
   const hiddenDuplicates = findDuplicateTestcases(hidden);
   if (hiddenDuplicates.length > 0) {
     add(slug, "WARN", "duplicate-hidden-testcases", `${hiddenDuplicates.length} duplicate hidden testcase(s) reduce coverage`);
+  }
+
+  for (const [setName, testcases] of [["visible", visible], ["hidden", hidden]]) {
+    const conflicts = findConflictingTestcaseOutputs(testcases);
+    if (conflicts.length > 0) {
+      add(slug, "WARN", `conflicting-${setName}-testcase-outputs`, `${conflicts.length} input(s) have conflicting expected outputs in the ${setName} testcase set; verify the problem contract`);
+    }
   }
 
   const overlap = countTestcaseOverlaps(visible, hidden);
