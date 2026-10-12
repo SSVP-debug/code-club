@@ -28,7 +28,6 @@ const problemStatsSchema = new mongoose.Schema(
 
 // The acceptance-rate endpoint reads one small stats document per problem
 // instead of scanning the ever-growing Submission collection.
-problemStatsSchema.index({ problemSlug: 1 }, { unique: true });
 
 const ProblemStats = mongoose.model("ProblemStats", problemStatsSchema);
 
