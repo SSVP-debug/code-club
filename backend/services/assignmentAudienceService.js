@@ -25,13 +25,16 @@ import CohortMembership from "../models/CohortMembership.js";
  * See the identical note on GET /api/assignments/student and on
  * routes/tpo.js's resolveAssignmentAudience().
  */
-export async function getAssignmentAudience(assignment, selectFields = "_id solvedSlugs") {
+export async function getAssignmentAudience(assignment, selectFields = "_id") {
   if (assignment.cohortId) {
-    const studentIds = await CohortMembership.find({
+    const membershipRows = await CohortMembership.find({
       cohortId: assignment.cohortId,
       status: "active",
       studentId: { $ne: null },
-    }).distinct("studentId");
+    })
+      .select("studentId -_id")
+      .lean();
+    const studentIds = [...new Set(membershipRows.map((row) => String(row.studentId)))];
 
     return User.find({ _id: { $in: studentIds }, role: "student" })
       .select(selectFields)

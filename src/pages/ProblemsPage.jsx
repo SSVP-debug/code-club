@@ -44,6 +44,8 @@ function ProblemsPage() {
 
   const [activeView, setActiveView] = useState(() => readSessionString("cc_activeView", "browse"));
   const [browsePage, setBrowsePage] = useState(1);
+  const [browseCursor, setBrowseCursor] = useState(null);
+  const [browseCursorHistory, setBrowseCursorHistory] = useState([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => readSessionBoolean("cc_sidebarCollapsed"));
   const [rightRailCollapsed, setRightRailCollapsed] = useState(() => readSessionBoolean("cc_rightRailCollapsed"));
   const [searchTerm, setSearchTerm] = useState(() => readSessionString("cc_search"));
@@ -57,6 +59,7 @@ function ProblemsPage() {
     paginated: true,
     page: browsePage,
     limit: 30,
+    cursor: browseCursor,
     searchTerm,
     selectedDifficulty,
     selectedTopic,
@@ -99,7 +102,11 @@ function ProblemsPage() {
     try { sessionStorage.setItem("cc_topic", selectedTopic); } catch {}
   }, [selectedTopic]);
 
-  function resetBrowsePage() { setBrowsePage(1); }
+  function resetBrowsePage() {
+    setBrowsePage(1);
+    setBrowseCursor(null);
+    setBrowseCursorHistory([]);
+  }
   function handleSearchChange(value) { setSearchTerm(value); resetBrowsePage(); }
   function handleDifficultyChange(value) { setSelectedDifficulty(value); resetBrowsePage(); }
   function handleTopicChange(value) { setSelectedTopic(value); resetBrowsePage(); }
@@ -112,7 +119,7 @@ function ProblemsPage() {
   }
   function handleViewChange(view) {
     setActiveView(view);
-    if (view === "browse") setBrowsePage(1);
+    if (view === "browse") resetBrowsePage();
   }
   function handlePracticeTopic(topic) {
     handleTopicChange(topic);
@@ -174,8 +181,21 @@ function ProblemsPage() {
     hideSolved,
     toggleHideSolved,
     pagination,
-    onPreviousPage: () => setBrowsePage((page) => Math.max(1, page - 1)),
-    onNextPage: () => setBrowsePage((page) => page + 1),
+    onPreviousPage: () => {
+      setBrowseCursorHistory((history) => {
+        const nextHistory = [...history];
+        const previousCursor = nextHistory.pop() ?? null;
+        setBrowseCursor(previousCursor);
+        setBrowsePage((page) => Math.max(1, page - 1));
+        return nextHistory;
+      });
+    },
+    onNextPage: () => {
+      if (!pagination?.nextCursor) return;
+      setBrowseCursorHistory((history) => [...history, browseCursor]);
+      setBrowseCursor(pagination.nextCursor);
+      setBrowsePage((page) => page + 1);
+    },
   } : {};
 
   const patternsProps = activeView === "patterns" ? {

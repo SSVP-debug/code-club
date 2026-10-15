@@ -19,6 +19,7 @@ export function useProblems(options = {}) {
     paginated = false,
     page = 1,
     limit = 30,
+    cursor = null,
     searchTerm = "",
     selectedDifficulty = "All",
     selectedTopic = "All",
@@ -56,6 +57,7 @@ export function useProblems(options = {}) {
             page: String(page),
             limit: String(limit),
           });
+          if (cursor !== null && cursor !== undefined) params.set("cursor", String(cursor));
 
           const search = searchTerm.trim();
           if (search) params.set("search", search);
@@ -91,6 +93,9 @@ export function useProblems(options = {}) {
             page: data.page ?? page,
             limit: data.limit ?? limit,
             total: data.total ?? 0,
+            hasNext: Boolean(data.hasNext),
+            cursor: data.cursor ?? cursor,
+            nextCursor: data.nextCursor ?? null,
             hasNext: Boolean(data.hasNext),
             hasPrevious: Boolean(data.hasPrevious),
           });
@@ -191,7 +196,7 @@ export function useProblems(options = {}) {
 
     fetchProblems();
     return () => { cancelled = true; };
-  }, [enabled, paginated, page, limit, searchTerm, selectedDifficulty, selectedTopic, scope]);
+  }, [enabled, paginated, page, limit, cursor, searchTerm, selectedDifficulty, selectedTopic, scope]);
 
   return { problems, loading, error, pagination, topics };
 }

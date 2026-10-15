@@ -7,8 +7,8 @@ import connectDB from "../config/db.js";
 import Problem from "../models/Problem.js";
 import Submission from "../models/Submission.js";
 import Reflection from "../models/Reflection.js";
-import User from "../models/User.js";
-import Contest from "../models/Contest.js";
+import UserProblemProgress from "../models/UserProblemProgress.js";
+import ContestParticipant from "../models/ContestParticipant.js";
 import BattleRoom from "../models/BattleRoom.js";
 import SkillsTest from "../models/SkillsTest.js";
 
@@ -45,15 +45,16 @@ if (!dbBySlug.has(CANONICAL_SLUG)) addFailure("canonical-problem", `${CANONICAL_
 const checks = [
   [Submission, "problemSlug"],
   [Reflection, "problemSlug"],
-  [User, "solvedSlugs"],
+  [UserProblemProgress, "problemSlug"],
   [SkillsTest, "solvedSlugs"],
+  [ContestParticipant, "solvedSlugs"],
 ];
 for (const [Model, field] of checks) {
   const count = await Model.countDocuments({ [field]: RETIRED_SLUG });
   if (count > 0) addFailure("reference-consistency", `${Model.collection.name}: ${count} document(s) still reference ${RETIRED_SLUG}`);
 }
 
-for (const [Model, field] of [[Contest, "participants.solvedSlugs"], [BattleRoom, "teams.solvedSlugs"]]) {
+for (const [Model, field] of [[BattleRoom, "teams.solvedSlugs"]]) {
   const count = await Model.countDocuments({ [field]: RETIRED_SLUG });
   if (count > 0) addFailure("nested-reference-consistency", `${Model.collection.name}: ${count} document(s) still reference ${RETIRED_SLUG}`);
 }

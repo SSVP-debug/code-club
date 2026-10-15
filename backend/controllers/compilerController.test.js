@@ -21,6 +21,7 @@ vi.mock("../services/judge0Health.js", () => ({
 }));
 
 import { recordJudge0Success, recordJudge0Failure } from "../services/judge0Health.js";
+import { enqueueExecution } from "../services/executionQueue.js";
 import { callJudge0 } from "./compilerController.js";
 
 function b64(str) {
@@ -210,6 +211,27 @@ describe("compilerController — Judge0 Integration Hardening: outgoing request 
       expect(body.max_processes_and_or_threads).toBe(60);
       expect(body.max_file_size).toBe(1024);
     }
+  });
+
+  it("returns 503 for execution queue coordination errors without leaking infrastructure details", async () => {
+    enqueueExecution.mockRejectedValueOnce(Object.assign(new Error("Redis connection string detail"), {
+      code: "EXECUTION_COORDINATION_UNAVAILABLE",
+    }));
+    const { runCode } = await import("./compilerController.js");
+    const req = {
+      body: { source_code: "print(1)", language_id: 71 },
+      log: { debug: vi.fn(), error: vi.fn() },
+    };
+    const res = { json: vi.fn(), status: vi.fn().mockReturnThis() };
+
+    await runCode(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(503);
+    expect(res.json).toHaveBeenCalledWith({
+      error: "Code execution is temporarily unavailable. Please retry shortly.",
+      code: "EXECUTION_COORDINATION_UNAVAILABLE",
+    });
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 
   it("item 5 — runCode (the /api/compiler/run handler) also cannot have limits overridden via req.body, since fetchJudge0 only ever receives (sourceCode, languageId, stdin) as positional args", async () => {

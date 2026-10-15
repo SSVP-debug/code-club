@@ -69,7 +69,7 @@ export async function getCohortBreakdown({ collegeId, collegeDomains }) {
             $group: {
               _id: "$memberships.cohortId",
               memberCount: { $sum: 1 },
-              totalSolved: { $sum: { $size: { $ifNull: ["$solvedSlugs", []] } } },
+              totalSolved: { $sum: { $ifNull: ["$solvedCount", 0] } },
               easy: { $sum: { $ifNull: ["$solvedDifficulty.easy", 0] } },
               medium: { $sum: { $ifNull: ["$solvedDifficulty.medium", 0] } },
               hard: { $sum: { $ifNull: ["$solvedDifficulty.hard", 0] } },

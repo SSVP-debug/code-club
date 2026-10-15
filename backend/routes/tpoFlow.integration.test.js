@@ -288,7 +288,7 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
         email: "student-then-tpo@unrecognized-college.ac.in",
         totalXP: 500,
         currentStreak: 4,
-        solvedSlugs: ["two-sum", "valid-parentheses"],
+        solvedCount: 2,
       });
       expect(user.roles).toEqual(["student"]);
 
@@ -308,7 +308,7 @@ describe("TPO registration → pending → verification → TPO-only endpoint (r
       // coverage of that part).
       expect(reloaded.totalXP).toBe(500);
       expect(reloaded.currentStreak).toBe(4);
-      expect(reloaded.solvedSlugs).toEqual(["two-sum", "valid-parentheses"]);
+      expect(reloaded.solvedCount).toBe(2);
     }
   );
 

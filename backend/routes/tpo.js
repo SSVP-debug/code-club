@@ -18,6 +18,7 @@ import { createNotification, createNotificationBulk } from "../services/notifica
 import { isDomainAutoVerified, isConsumerEmailDomain } from "../utils/domainVerification.js";
 import { looksLikeEmailAddress } from "../utils/collegeNameHeuristics.js";
 import { getSettings } from "../services/settingsService.js";
+import { getSolvedSlugs, getSolvedSlugsForUsers } from "../services/problemProgressService.js";
 import {
   getCollegeForTpo,
   isPrimaryTpo,
@@ -1352,103 +1353,111 @@ router.post("/cohorts/:cohortId/import", requireRole("tpo", "admin"), requireVer
 // Mongo aggregation with $facet (one round-trip for both the page of data
 // and the total count), rather than pulling the whole collection into Node.
 const STUDENT_SORT_FIELDS = {
-  // Client sort key → { Mongo sort spec }. Explicit allowlist — req.query.sort
-  // is never passed into .sort()/$sort directly, so a client can't inject an
-  // arbitrary field or operator here. _id is always the tiebreaker so paging
-  // stays stable even when many students share the same primary sort value
-  // (e.g. many students with 0 XP) — without it, students could
-  // duplicate/skip across page boundaries as ties get ordered inconsistently
-  // between requests.
   xp: { totalXP: -1, _id: 1 },
   solved: { solvedCount: -1, _id: 1 },
   streak: { currentStreak: -1, _id: 1 },
   name: { displayName: 1, _id: 1 },
 };
 const STUDENTS_DEFAULT_PAGE_SIZE = 25;
-const STUDENTS_MAX_PAGE_SIZE = 50; // same cap as recruiter.js's /candidates
+const STUDENTS_MAX_PAGE_SIZE = 50;
 
 const COHORTS_DEFAULT_PAGE_SIZE = 25;
-const COHORTS_MAX_PAGE_SIZE = 50; // same cap as /students above
+const COHORTS_MAX_PAGE_SIZE = 50;
+
+function encodeStudentCursor(sortKey, value, id) {
+  return Buffer.from(JSON.stringify({ sortKey, value, id: String(id) })).toString("base64url");
+}
+function decodeStudentCursor(value, sortKey) {
+  if (!value) return null;
+  try {
+    const decoded = JSON.parse(Buffer.from(value, "base64url").toString("utf8"));
+    if (decoded.sortKey !== sortKey || !mongoose.Types.ObjectId.isValid(decoded.id)) return null;
+    if (sortKey === "name") {
+      if (typeof decoded.value !== "string") return null;
+    } else if (!Number.isFinite(Number(decoded.value))) {
+      return null;
+    }
+    return {
+      value: sortKey === "name" ? decoded.value : Number(decoded.value),
+      id: new mongoose.Types.ObjectId(decoded.id),
+    };
+  } catch {
+    return null;
+  }
+}
+function buildStudentCursorFilter(sortKey, cursor) {
+  if (!cursor) return null;
+  const field = sortKey === "name" ? "displayName" : sortKey === "solved" ? "solvedCount" : sortKey === "streak" ? "currentStreak" : "totalXP";
+  const operator = sortKey === "name" ? "$gt" : "$lt";
+  return {
+    $or: [
+      { [field]: { [operator]: cursor.value } },
+      { [field]: cursor.value, _id: { $gt: cursor.id } },
+    ],
+  };
+}
 
 router.get("/students", requireRole("tpo", "admin"),
   requireVerified, async (req, res) => {
     if (b2bGate(req, res)) return;
 
     try {
-
       const domain = req.userDoc.tpoProfile?.collegeDomain;
       if (!domain) return res.status(400).json({ error: "No college domain set on this TPO account." });
 
-      // Multi-domain college fix (TPO-1 closure): match every domain the
-      // college owns, not just this TPO's own literal collegeDomain — a
-      // teammate who joined via a different domain of the SAME
-      // multi-domain institution was previously invisible here. The cache
-      // key below intentionally stays keyed on this TPO's own literal
-      // `domain` (not the full set) — see invalidateTpoCache in
-      // controllers/tpoController.js, which now loops every domain of the
-      // college to invalidate every such per-domain cache entry, so this
-      // doesn't go stale.
       const collegeDomains = await resolveCollegeDomains(req.userDoc);
-
-      // Normalize page/limit — never trust these as-is. Invalid, missing,
-      // zero, or negative values all fall back to sane defaults rather
-      // than erroring or producing an inconsistent edge case, since a
-      // malformed query param here shouldn't break the page for a TPO.
-      const rawPage = parseInt(req.query.page, 10);
-      const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
       const rawLimit = parseInt(req.query.limit, 10);
       const limit = Math.min(
         STUDENTS_MAX_PAGE_SIZE,
         Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : STUDENTS_DEFAULT_PAGE_SIZE
       );
-      const skip = (page - 1) * limit;
 
-      // Sort: explicit allowlist only — see STUDENT_SORT_FIELDS above.
       const sortKey = STUDENT_SORT_FIELDS[req.query.sort] ? req.query.sort : "xp";
-      const sortSpec = STUDENT_SORT_FIELDS[sortKey];
+      const decodedCursor = decodeStudentCursor(req.query.cursor, sortKey);
+      if (req.query.cursor && !decodedCursor) {
+        return res.status(400).json({ error: "Invalid students cursor." });
+      }
 
-      // Search: college-scoped like everything else here — the $match
-      // below already restricts to this TPO's own emailDomain before any
-      // search term is applied, so `q` can never widen the result set
-      // outside the TPO's own institution. Same regex-escaping approach as
-      // recruiter.js's `college` filter, so a search term containing regex
-      // metacharacters (e.g. "a.b" or "(test)") is treated literally
-      // instead of as a pattern.
       const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+      const escapedQ = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const searchMatch = q
         ? {
           $or: [
-            { displayName: { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" } },
-            { email: { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" } },
+            { displayName: { $regex: escapedQ, $options: "i" } },
+            { email: { $regex: escapedQ, $options: "i" } },
           ],
         }
         : {};
 
-      const cacheKey = `${TPO_CACHE_PREFIX}students:${domain}:${JSON.stringify({ page, limit, sortKey, q })}`;
+      const cursorMatch = buildStudentCursorFilter(sortKey, decodedCursor);
+      const cacheKey = `${TPO_CACHE_PREFIX}students:${domain}:${JSON.stringify({ cursor: req.query.cursor || null, limit, sortKey, q })}`;
 
       const { value: payload, cacheStatus } = await getOrSetCache(
         cacheKey,
         TPO_CACHE_TTL_SECONDS,
         async () => {
+          const match = {
+            emailDomain: { $in: collegeDomains },
+            role: "student",
+            visibleToTpo: { $ne: false },
+            ...searchMatch,
+          };
+          if (cursorMatch) match.$and = [cursorMatch];
+
           const [aggResult] = await User.aggregate([
-            { $match: { emailDomain: { $in: collegeDomains }, role: "student", visibleToTpo: { $ne: false }, ...searchMatch } },
-            // solvedCount computed here, once, in Mongo — the raw
-            // `solvedSlugs` array itself is never selected/projected out
-            // below, so it never crosses into Node for this endpoint.
-            { $addFields: { solvedCount: { $size: { $ifNull: ["$solvedSlugs", []] } } } },
-            { $sort: sortSpec },
+            { $match: match },
+            { $sort: STUDENT_SORT_FIELDS[sortKey] },
             {
               $facet: {
                 data: [
-                  { $skip: skip },
-                  { $limit: limit },
+                  { $limit: limit + 1 },
                   {
                     $project: {
-                      _id: 0,
+                      _id: 1,
                       name: "$displayName",
                       email: 1,
                       totalXP: { $ifNull: ["$totalXP", 0] },
-                      solvedCount: 1,
+                      solvedCount: { $ifNull: ["$solvedCount", 0] },
                       currentStreak: { $ifNull: ["$currentStreak", 0] },
                       easy: { $ifNull: ["$solvedDifficulty.easy", 0] },
                       medium: { $ifNull: ["$solvedDifficulty.medium", 0] },
@@ -1457,14 +1466,26 @@ router.get("/students", requireRole("tpo", "admin"),
                     },
                   },
                 ],
-                totalCount: [{ $count: "count" }],
               },
             },
           ]);
 
+          const students = aggResult?.data ?? [];
+          const hasNext = students.length > limit;
+          const pageStudents = hasNext ? students.slice(0, limit) : students;
+          const last = pageStudents[pageStudents.length - 1];
+          const cursorValue = last
+            ? sortKey === "name" ? (last.name || "")
+              : sortKey === "solved" ? (last.solvedCount || 0)
+              : sortKey === "streak" ? (last.currentStreak || 0)
+              : (last.totalXP || 0)
+            : null;
+
           return {
-            students: aggResult?.data ?? [],
-            total: aggResult?.totalCount?.[0]?.count ?? 0,
+            students: pageStudents,
+            nextCursor: hasNext && last ? encodeStudentCursor(sortKey, cursorValue, last._id) : null,
+            hasNext,
+            limit,
           };
         }
       );
@@ -1473,18 +1494,13 @@ router.get("/students", requireRole("tpo", "admin"),
       return res.json({
         college: req.userDoc.tpoProfile?.collegeName,
         domain,
-        students: payload.students,
-        total: payload.total,
-        page,
-        limit,
+        ...payload,
       });
-
     } catch (err) {
       (req.log || logger).error({ err }, "[TPO] students error");
       return res.status(500).json({ error: "Failed to load students." });
     }
   });
-
 
 // ── GET /api/tpo/dashboard ──────────────────────────────────────────────────
 // Returns aggregated class-wide stats for the TPO dashboard view.
@@ -1535,12 +1551,12 @@ router.get("/dashboard", requireRole("tpo", "admin"),
         async () => {
           // Two facets in one round-trip against the same $match filter:
           // "summary" sums the per-student numeric fields directly (no
-          // need to pull solvedSlugs/solvedDifficulty into Node just to
+          // need to pull solvedCount/solvedDifficulty into Node just to
           // add them up), and "topicCoverage" unwinds each student's
           // topicStats array and sums counts per topic in Mongo. Both used
           // to be a single forEach over every student document pulled
           // into Node — fine at "hundreds of students," but transferring
-          // every student's full solvedSlugs/topicStats array over the
+          // every student's full solvedCount/topicStats array over the
           // wire just to add up numbers doesn't hold as a college's
           // student count grows.
           const [aggResult] = await User.aggregate([
@@ -1559,7 +1575,7 @@ router.get("/dashboard", requireRole("tpo", "admin"),
                     $group: {
                       _id: null,
                       totalStudents: { $sum: 1 },
-                      totalSolved: { $sum: { $size: { $ifNull: ["$solvedSlugs", []] } } },
+                      totalSolved: { $sum: { $ifNull: ["$solvedCount", 0] } },
                       totalEasy: { $sum: { $ifNull: ["$solvedDifficulty.easy", 0] } },
                       totalMedium: { $sum: { $ifNull: ["$solvedDifficulty.medium", 0] } },
                       totalHard: { $sum: { $ifNull: ["$solvedDifficulty.hard", 0] } },
@@ -1860,29 +1876,18 @@ router.get("/assignments", requireRole("tpo", "admin"), requireVerified, async (
     }
 
     const legacyStudents = collegeDomains.length
-      ? await User.find({ emailDomain: { $in: collegeDomains }, role: "student" })
-          .select("_id solvedSlugs")
-          .lean()
+      ? await User.find({ emailDomain: { $in: collegeDomains }, role: "student" }).select("_id").lean()
       : [];
 
     const cohortStudentIds = [...studentIdsByCohort.values()]
       .flatMap((ids) => [...ids]);
     const allStudentIds = [...new Set([
-      ...legacyStudents.map((s) => String(s._id)),
+      ...legacyStudents.map((student) => String(student._id)),
       ...cohortStudentIds,
     ])];
 
-    const cohortStudents = allStudentIds.length
-      ? await User.find({
-          _id: { $in: allStudentIds },
-          role: "student",
-        })
-          .select("_id solvedSlugs")
-          .lean()
-      : [];
-    const solvedByStudentId = new Map(
-      cohortStudents.map((student) => [String(student._id), student.solvedSlugs || []])
-    );
+    const problemSlugs = [...new Set(assignments.flatMap((assignment) => assignment.problemSlugs || []))];
+    const solvedByStudentId = await getSolvedSlugsForUsers(allStudentIds, problemSlugs);
 
     const legacyStudentIds = new Set(legacyStudents.map((s) => String(s._id)));
 
@@ -1901,8 +1906,8 @@ router.get("/assignments", requireRole("tpo", "admin"), requireVerified, async (
       const totalStudents = audienceIds.size;
       let completedCount = 0;
       for (const studentId of audienceIds) {
-        const solved = solvedByStudentId.get(studentId) || [];
-        if (assignment.problemSlugs.every((slug) => solved.includes(slug))) {
+        const solved = solvedByStudentId.get(studentId) || new Set();
+        if (assignment.problemSlugs.every((slug) => solved.has(slug))) {
           completedCount += 1;
         }
       }
@@ -1998,7 +2003,7 @@ router.post("/assignments/:id/archive", requireRole("tpo", "admin"), requireVeri
 // see the identical note on GET /api/assignments/student above. A student
 // who opted out of TPO analytics still receives and is nudged about
 // assignments they're a target of.
-async function resolveAssignmentAudience(req, res, selectFields = "_id solvedSlugs") {
+async function resolveAssignmentAudience(req, res, selectFields = "_id") {
   const domain = req.userDoc.tpoProfile?.collegeDomain?.toLowerCase();
   if (!domain && req.userDoc.role !== "admin") {
     res.status(400).json({ error: "No college domain set on this TPO account." });
@@ -2057,7 +2062,17 @@ async function resolveAssignmentAudience(req, res, selectFields = "_id solvedSlu
     }).select(selectFields).lean();
   }
 
-  return { assignment, students };
+  const solvedByStudentId = await getSolvedSlugsForUsers(
+    students.map((student) => student._id),
+    assignment.problemSlugs
+  );
+  return {
+    assignment,
+    students: students.map((student) => ({
+      ...student,
+      _solvedSlugs: solvedByStudentId.get(String(student._id)) || new Set(),
+    })),
+  };
 }
 
 // ── POST /api/tpo/assignments/:id/remind ────────────────────────────────────
@@ -2070,7 +2085,7 @@ export async function handleRemindAssignment(req, res) {
   if (b2bGate(req, res)) return;
 
   try {
-    const resolved = await resolveAssignmentAudience(req, res, "_id solvedSlugs");
+    const resolved = await resolveAssignmentAudience(req, res, "_id");
     if (!resolved) return;
     const { assignment, students } = resolved;
 
@@ -2079,7 +2094,7 @@ export async function handleRemindAssignment(req, res) {
     }
 
     const incomplete = students.filter(s =>
-      !assignment.problemSlugs.every(slug => (s.solvedSlugs || []).includes(slug))
+      !assignment.problemSlugs.every(slug => (s._solvedSlugs || new Set()).has(slug))
     );
 
     if (incomplete.length === 0) {
@@ -2121,14 +2136,14 @@ export async function handleAssignmentCompletion(req, res) {
   if (b2bGate(req, res)) return;
 
   try {
-    const resolved = await resolveAssignmentAudience(req, res, "_id displayName email solvedSlugs");
+    const resolved = await resolveAssignmentAudience(req, res, "_id displayName email");
     if (!resolved) return;
     const { assignment, students } = resolved;
 
     let completedCount = 0;
     const stragglers = [];
     for (const student of students) {
-      const solved = new Set(student.solvedSlugs || []);
+      const solved = student._solvedSlugs || new Set();
       const missingSlugs = assignment.problemSlugs.filter((slug) => !solved.has(slug));
       if (missingSlugs.length === 0) {
         completedCount += 1;
@@ -2224,7 +2239,7 @@ studentAssignmentsRouter.get("/", async (req, res) => {
       : [];
     const cohortById = new Map(cohorts.map((cohort) => [String(cohort._id), cohort]));
 
-    const solvedSet = new Set(req.userDoc.solvedSlugs || []);
+    const solvedSet = new Set(await getSolvedSlugs(req.userDoc._id));
 
     const enriched = assignments.map((assignment) => {
       const solvedCount = assignment.problemSlugs.filter((slug) => solvedSet.has(slug)).length;
@@ -2354,7 +2369,7 @@ router.get("/report/pdf", requireRole("tpo", "admin"),
           },
         ],
       })
-        .select("displayName totalXP solvedSlugs currentStreak")
+        .select("displayName totalXP solvedCount currentStreak")
         .sort({ totalXP: -1 })
         .lean();
 
@@ -2407,7 +2422,7 @@ router.get("/report/pdf", requireRole("tpo", "admin"),
         doc.fontSize(8).fillColor("#3f3f46").font("Helvetica");
         doc.text(String(i + 1), 50, ty);
         doc.text(student.displayName || "—", 90, ty, { width: 220 });
-        doc.text(String(student.solvedSlugs?.length ?? 0), 320, ty);
+        doc.text(String(student.solvedCount ?? 0), 320, ty);
         doc.text(String(student.currentStreak ?? 0), 380, ty);
         doc.text(String(student.totalXP ?? 0), 450, ty);
         ty += 16;

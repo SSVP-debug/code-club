@@ -3,6 +3,7 @@ import Problem from "../models/Problem.js";
 import { isUserPremium } from "./billing.js";
 import { requireRole } from "../middleware/roleGuard.js";
 import { canAccessContestProblem } from "../services/contestProblemAccess.js";
+import { getSolvedSlugs } from "../services/problemProgressService.js";
 
 const router = Router({ mergeParams: true });
 
@@ -25,7 +26,8 @@ router.get("/", async (req, res) => {
     }
 
     // Check if user has solved this problem (userDoc populated by requireAuth)
-    const solved   = req.userDoc?.solvedSlugs?.includes(slug) ?? false;
+    const solvedSlugs = req.userDoc?._id ? await getSolvedSlugs(req.userDoc._id) : [];
+    const solved = solvedSlugs.includes(slug);
     const isAdmin = req.userDoc?.role === "admin";
     // Premium users can read any editorial without solving first — see PREMIUM_FEATURES.EDITORIAL_ACCESS
     const premium  = isUserPremium(req.userDoc);

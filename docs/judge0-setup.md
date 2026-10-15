@@ -145,3 +145,62 @@ confirmed version in hand, not something to guess at here.
 - No circuit breaker / health-based fallback between a self-hosted instance
   and a backup — if the configured instance is down, requests fail (after
   retries) rather than failing over to a secondary URL.
+
+## Distributed execution safety (Phase 1)
+
+Run and Submit share one Redis-backed semaphore across backend replicas. The
+default global cap is `JUDGE0_MAX_CONCURRENCY=8`; it is a protective limit,
+not a measured capacity claim. The queue renews each slot's lease while the
+Judge0 request is active. If Redis coordination cannot be acquired or renewed,
+the request is aborted/failed with a retryable 503 rather than falling back to
+a per-process semaphore and multiplying the global limit.
+
+### Required production configuration
+
+- Configure `REDIS_URL` in the backend deployment before enabling Run/Submit.
+- Set `JUDGE0_MAX_CONCURRENCY`, `JUDGE0_LEASE_MS`, and
+  `JUDGE0_ACQUIRE_TIMEOUT_MS` according to measured Judge0 capacity and the
+  request timeout budget.
+- `JUDGE0_QUEUE_MODE=local` is an explicit single-instance development or
+  emergency mode only. Do not use it when multiple backend replicas can serve
+  requests; each process would have an independent limit.
+- The default Judge0 public endpoint remains rate-limited and is not a
+  production capacity guarantee. Use a dedicated/self-hosted or managed
+  instance and verify its limits separately.
+
+### Tests
+
+The normal backend suite includes unit tests for fail-closed admission, lease
+renewal, lease-loss cancellation, and retryable API responses:
+
+```sh
+cd backend
+npm test
+```
+
+A real-Redis integration test exercises the semaphore through two independent
+Redis clients. It is intentionally opt-in so the normal CI suite does not
+require production credentials or a Redis service:
+
+```sh
+cd backend
+REDIS_URL=redis://localhost:6379 \
+RUN_REDIS_INTEGRATION_TESTS=true \
+npx vitest run services/executionQueue.integration.test.js
+```
+
+The integration test uses a unique `JUDGE0_SEMAPHORE_KEY` for isolation. Run it
+only against a disposable test Redis instance, never the production Redis
+service.
+
+### Capacity acceptance gate
+
+For the current agreed target, run a staging load test with 1,000 connected
+clients, 100 active users, and a five-user Run/Submit burst while ordinary API
+traffic is active. Record p50/p95/p99 ordinary API latency, execution queue
+wait, Judge0 completion latency, error rate, and maximum observed global
+concurrency. Acceptance requires p95 ordinary API latency below two seconds
+and observed execution concurrency never exceeding the configured global cap.
+This repository change hardens admission and failure behavior; it does not by
+itself prove that the live infrastructure meets that load target.
+

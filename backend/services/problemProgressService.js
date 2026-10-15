@@ -1,4 +1,5 @@
 import UserProblemProgress from "../models/UserProblemProgress.js";
+import { getStudentDayKey } from "../utils/studentDay.js";
 
 /**
  * Record one server-verified submission in the scalable per-user/problem
@@ -21,6 +22,7 @@ export async function recordProblemProgress({
     inc.acceptedCount = 1;
     set.status = "solved";
     set.solvedAt = attemptedAt;
+    set.solvedDay = getStudentDayKey(attemptedAt);
   }
 
   if (Number.isFinite(Number(executionTime))) {
@@ -62,6 +64,7 @@ export async function syncSolvedProblemProgress(userId, slugs, solvedAt = new Da
           userId,
           problemSlug,
           firstAttemptAt: solvedAt,
+          solvedDay: getStudentDayKey(solvedAt),
           attemptCount: 1,
           acceptedCount: 1,
         },
@@ -78,4 +81,53 @@ export async function getSolvedSlugs(userId) {
     .select("problemSlug -_id")
     .lean();
   return rows.map((row) => row.problemSlug);
+}
+
+
+export async function getActivityDays(userId, days = 365) {
+  const safeDays = Math.min(Math.max(Number(days) || 365, 1), 365);
+  const cutoff = new Date();
+  cutoff.setUTCDate(cutoff.getUTCDate() - (safeDays - 1));
+  const cutoffDay = getStudentDayKey(cutoff);
+
+  const rows = await UserProblemProgress.aggregate([
+    {
+      $match: {
+        userId,
+        status: "solved",
+        solvedDay: { $gte: cutoffDay },
+      },
+    },
+    { $group: { _id: "$solvedDay" } },
+    { $sort: { _id: 1 } },
+    { $limit: safeDays },
+  ]);
+
+  return rows.map((row) => row._id);
+}
+
+
+export async function getSolvedSlugsForUsers(userIds, problemSlugs = null) {
+  const ids = [...new Set((userIds || []).map(String))];
+  if (!ids.length) return new Map();
+
+  const filter = {
+    userId: { $in: ids },
+    status: "solved",
+  };
+  if (Array.isArray(problemSlugs) && problemSlugs.length) {
+    filter.problemSlug = { $in: [...new Set(problemSlugs)] };
+  }
+
+  const rows = await UserProblemProgress.find(filter)
+    .select("userId problemSlug -_id")
+    .lean();
+
+  const result = new Map(ids.map((id) => [id, new Set()]));
+  for (const row of rows) {
+    const key = String(row.userId);
+    if (!result.has(key)) result.set(key, new Set());
+    result.get(key).add(row.problemSlug);
+  }
+  return result;
 }

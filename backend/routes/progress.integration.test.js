@@ -21,6 +21,7 @@ const { validateSlugs, verifyAgainstSubmissions } = await import("./progress.js"
 const { putProgress } = await import("../controllers/progressController.js");
 const { default: Submission } = await import("../models/Submission.js");
 const { default: User } = await import("../models/User.js");
+const { default: UserProblemProgress } = await import("../models/UserProblemProgress.js");
 const { seedProblem } = await import("../test/fixtures/problem.js");
 
 function mockRes() {
@@ -87,20 +88,20 @@ describe("Accepted Submission → Progress workflow (real Mongo)", () => {
     await stopTestMongo();
   });
 
-  it("credits solvedSlugs + XP for a slug that has a real Accepted Submission for this user", async () => {
+  it("credits solvedCount + XP for a slug that has a real Accepted Submission for this user", async () => {
     const problem = await seedProblem();
     const user = await seedUser();
     await Submission.create({ userId: user._id, problemSlug: "two-sum", language: "python", status: "Accepted" });
 
     const res = mockRes();
-    await runProgressChain(req(user, { solvedSlugs: ["two-sum"] }), res);
+    await runProgressChain(req(user, { problemSlug: "two-sum" }), res);
 
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ solvedSlugs: ["two-sum"], totalXP: 10 })
+      expect.objectContaining({ solvedSlugs: ["two-sum"], solvedCount: 1, totalXP: 10 })
     );
 
     const reloaded = await User.findById(user._id).lean();
-    expect(reloaded.solvedSlugs).toEqual(["two-sum"]);
+    expect(reloaded.solvedCount).toBe(1);
     expect(reloaded.totalXP).toBe(10);
   });
 
@@ -110,23 +111,30 @@ describe("Accepted Submission → Progress workflow (real Mongo)", () => {
     await Submission.create({ userId: user._id, problemSlug: "two-sum", language: "python", status: "Wrong Answer" });
 
     const res = mockRes();
-    await runProgressChain(req(user, { solvedSlugs: ["two-sum"] }), res);
+    await runProgressChain(req(user, { problemSlug: "two-sum" }), res);
 
     const reloaded = await User.findById(user._id).lean();
-    expect(reloaded.solvedSlugs).toEqual([]);
+    expect(reloaded.solvedCount).toBe(0);
     expect(reloaded.totalXP).toBe(0);
   });
 
   it("is idempotent: re-submitting an already-solved slug does not double-credit XP", async () => {
     const problem = await seedProblem();
-    const user = await seedUser({ solvedSlugs: ["two-sum"], totalXP: 10 });
+    const user = await seedUser({ solvedCount: 1, totalXP: 10 });
+    await UserProblemProgress.create({
+      userId: user._id,
+      problemSlug: "two-sum",
+      status: "solved",
+      solvedAt: new Date(),
+      solvedDay: "2026-10-07",
+    });
     await Submission.create({ userId: user._id, problemSlug: "two-sum", language: "python", status: "Accepted" });
 
     const res = mockRes();
-    await runProgressChain(req(user, { solvedSlugs: ["two-sum"] }), res);
+    await runProgressChain(req(user, { problemSlug: "two-sum" }), res);
 
     const reloaded = await User.findById(user._id).lean();
-    expect(reloaded.solvedSlugs).toEqual(["two-sum"]);
+    expect(reloaded.solvedCount).toBe(1);
     expect(reloaded.totalXP).toBe(10);
   });
 
@@ -138,10 +146,10 @@ describe("Accepted Submission → Progress workflow (real Mongo)", () => {
     await Submission.create({ userId: victim._id, problemSlug: "two-sum", language: "python", status: "Accepted" });
 
     const res = mockRes();
-    await runProgressChain(req(attacker, { solvedSlugs: ["two-sum"] }), res);
+    await runProgressChain(req(attacker, { problemSlug: "two-sum" }), res);
 
     const reloadedAttacker = await User.findById(attacker._id).lean();
-    expect(reloadedAttacker.solvedSlugs).toEqual([]);
+    expect(reloadedAttacker.solvedCount).toBe(0);
     expect(reloadedAttacker.totalXP).toBe(0);
   });
 
@@ -152,10 +160,10 @@ describe("Accepted Submission → Progress workflow (real Mongo)", () => {
     // middleware exists to prevent.
 
     const res = mockRes();
-    await runProgressChain(req(user, { solvedSlugs: ["two-sum"] }), res);
+    await runProgressChain(req(user, { problemSlug: "two-sum" }), res);
 
     const reloaded = await User.findById(user._id).lean();
-    expect(reloaded.solvedSlugs).toEqual([]);
+    expect(reloaded.solvedCount).toBe(0);
     expect(reloaded.totalXP).toBe(0);
   });
 });

@@ -1,45 +1,117 @@
 import { getRedisClient } from "../config/redis.js";
 import { logger } from "../config/logger.js";
-import { acquire as redisAcquire, release as redisRelease } from "./redisExecutionQueue.js";
+import {
+  acquire as redisAcquire,
+  release as redisRelease,
+  renew as redisRenew,
+  LEASE_MS,
+} from "./redisExecutionQueue.js";
 import { enqueueExecution as directExecution } from "./directExecutionQueue.js";
 
+export class ExecutionQueueError extends Error {
+  constructor(message, code = "EXECUTION_COORDINATION_UNAVAILABLE") {
+    super(message);
+    this.name = "ExecutionQueueError";
+    this.code = code;
+    this.statusCode = 503;
+  }
+}
+
+function localQueueExplicitlyEnabled() {
+  return process.env.JUDGE0_QUEUE_MODE === "local";
+}
+
+async function executeWithLease(redis, token, job) {
+  const controller = new AbortController();
+  const renewEveryMs = Math.max(500, Math.floor(LEASE_MS / 3));
+  let renewalInFlight = null;
+  let leaseError = null;
+  let jobError = null;
+  let result;
+
+  const heartbeat = setInterval(() => {
+    if (renewalInFlight || leaseError) return;
+    renewalInFlight = (async () => {
+      try {
+        const renewed = await redisRenew(redis, token);
+        if (!renewed) {
+          leaseError = new ExecutionQueueError(
+            "Code execution lost its distributed capacity lease. Please retry.",
+          );
+          controller.abort(leaseError);
+          logger.error({ code: leaseError.code }, "[Judge0Queue] Lease renewal rejected; aborting execution");
+        }
+      } catch (err) {
+        leaseError = new ExecutionQueueError(
+          "Code execution coordination is temporarily unavailable. Please retry.",
+        );
+        controller.abort(leaseError);
+        logger.error({ err }, "[Judge0Queue] Lease renewal failed; aborting execution");
+      } finally {
+        renewalInFlight = null;
+      }
+    })();
+  }, renewEveryMs);
+
+  try {
+    result = await job({ signal: controller.signal });
+  } catch (err) {
+    jobError = err;
+  } finally {
+    clearInterval(heartbeat);
+    if (renewalInFlight) await renewalInFlight;
+  }
+
+  if (leaseError) throw leaseError;
+  if (jobError) throw jobError;
+  return result;
+}
+
 export async function enqueueExecution(job) {
-  const redis = await getRedisClient();
+  let redis;
+  try {
+    redis = await getRedisClient();
+  } catch (err) {
+    logger.error({ err }, "[Judge0Queue] Could not obtain Redis client");
+    throw new ExecutionQueueError(
+      "Code execution coordination is temporarily unavailable. Please retry.",
+    );
+  }
+
+  // The local semaphore is safe only for a deliberately single-instance
+  // deployment. Never select it automatically when Redis is missing.
   if (!redis) {
-    return directExecution(job);
+    if (localQueueExplicitlyEnabled()) return directExecution(job);
+    throw new ExecutionQueueError(
+      "Code execution is temporarily unavailable because shared capacity coordination is not configured.",
+    );
+  }
+
+  if (redis.status && redis.status !== "ready") {
+    throw new ExecutionQueueError(
+      "Code execution coordination is temporarily unavailable. Please retry.",
+    );
   }
 
   let token;
   try {
     token = await redisAcquire(redis);
   } catch (err) {
-    // Redis was reachable when we connected, but this particular acquire
-    // call failed (a transient network blip, a Lua eval error, etc). Fail
-    // open to the in-process semaphore for this one job rather than
-    // blocking Judge0 execution entirely on a Redis hiccup — consistent
-    // with the "never let an optional dependency take down execution"
-    // pattern already used for Mongo/Redis/Sentry at boot.
-    logger.warn(
-      { err },
-      "[Judge0Queue] Redis acquire failed — falling back to in-process semaphore for this job"
+    logger.error({ err }, "[Judge0Queue] Redis acquire failed; refusing uncoordinated execution");
+    throw new ExecutionQueueError(
+      "Code execution coordination is temporarily unavailable. Please retry.",
     );
-    return directExecution(job);
   }
 
   if (!token) {
-    // Genuinely at capacity across every instance — surface this as an
-    // error rather than blocking forever, so the route handler can return
-    // a clear message instead of the request just timing out. (The old
-    // in-process semaphore had no timeout and would wait indefinitely;
-    // that was safe for one process, but waiting indefinitely on a
-    // cross-instance queue risks piling up requests with no visibility.)
-    throw new Error(
-      "Judge0 is at capacity across all instances right now — please try again in a moment."
+    throw new ExecutionQueueError(
+      "Code execution is at capacity right now. Please try again shortly.",
+      "EXECUTION_CAPACITY_EXCEEDED",
     );
   }
 
   try {
-    return await job();
+    return await executeWithLease(redis, token, job);
   } finally {
     await redisRelease(redis, token);
   }

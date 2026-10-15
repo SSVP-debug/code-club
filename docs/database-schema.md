@@ -24,9 +24,9 @@ The largest and most central model — one document per person, regardless of ro
 | `leetcodeUsername` | String | Predates the LeetCode-import feature; kept for backwards compatibility. |
 | `leetcodeStats` | `{ easySolved, mediumSolved, hardSolved, totalSolved, source: "manual"\|"api", lastSyncedAt }` | Populated manually or via `/api/leetcode/fetch`. **Not** fed into `totalXP`/`solvedSlugs` — LeetCode problems aren't part of Code Club's own catalog. |
 | `joinedDate` | Date, default now | |
-| `solvedSlugs` | `[String]` | **The single source of truth for XP.** Every derived stat (leaderboard rank, dashboard XP, certification eligibility) is computed from this array's length × difficulty weight at read time — never stored as a mutable counter the client can influence. |
+| `solvedCount` | `Number` | Scalar aggregate of server-verified Code Club solves. The per-problem source of truth is `UserProblemProgress`; XP is maintained incrementally server-side. |
 | `topicStats` | Map<String, Number> | Solve count per topic (e.g. "Dynamic Programming" → 12). |
-| `activityDates` | `[String]` | Used for streak + heatmap calculation. |
+| `activityDates` | — | Removed from `User`; activity days come from `UserProblemProgress.solvedDay`. |
 | `solvedDifficulty` | `{ easy, medium, hard }` (Numbers) | |
 | `currentStreak`, `longestStreak` | Number | |
 | `totalXP` | Number | **Computed server-side, never trusted from the client.** |
@@ -39,7 +39,7 @@ The largest and most central model — one document per person, regardless of ro
 | `referralCode` | String, unique, sparse | |
 | `referredBy` | String | Another user's `referralCode`. |
 | `referralRewardDays` | Number, default 0 | |
-| `dailyChallengeHistory` | `[{ date, slug }]` | |
+| `dailyChallengeHistory` | — | Removed from `User`; stored as indexed `DailyChallengeCompletion` rows. |
 | `emailPreferences.weeklyReview` | Boolean, default `true` | Opt-out (not opt-in) — existing users who predate this field are treated as opted-in. Read/write via `GET`/`PATCH /api/users/me`. |
 | `lastWeeklyReviewSentAt` | Date | Set by `scripts/sendWeeklyReviewEmails.js` after a successful send — a double-send guard, not a scheduler. |
 
@@ -118,7 +118,7 @@ The problem catalog.
 | `startsAt`, `endsAt` | Date, required | |
 | `durationMs` | Number | Auto-computed from start/end. |
 | `problemSlugs` | `[String]` | |
-| `participants` | `[{ userId, username, displayName, solvedSlugs[], score, rank, joinedAt }]` | Embedded, not a separate collection — fine at contest scale (hundreds, not millions, of participants per contest). |
+| `ContestParticipant` | Separate participant documents keyed by `{ contestId, userId }`; per-contest `solvedSlugs[]` is bounded by that contest's problem set. |
 
 Indexed on `{ status: 1, startsAt: 1 }` for the "upcoming/active contests" list query.
 
@@ -137,7 +137,7 @@ TPO-created problem sets for a college (`B2B_ENABLED` feature).
 | `dueDate` | Date, required | |
 | `createdAt` | Date, default now | |
 
-Completion percentage is computed at read time in `/api/tpo/assignments` by cross-referencing each matching student's `solvedSlugs` — not stored.
+Completion percentage is computed at read time from `UserProblemProgress`, scoped to the assignment's finite problem set — not from a growing `User` array.
 
 ---
 

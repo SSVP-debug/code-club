@@ -9,6 +9,7 @@ import "../config/env.js";
 import connectDB from "../config/db.js";
 import mongoose from "mongoose";
 import User from "../models/User.js";
+import { getSolvedSlugs } from "../services/problemProgressService.js";
 import Submission from "../models/Submission.js";
 import loadProblemsFromFolders from "./lib/loadProblemsFromFolders.js";
 import { logger } from "../config/logger.js";
@@ -102,7 +103,7 @@ async function run() {
         weekAttempted,
         acceptanceRate,
         topicsThisWeek,
-        totalSolved: user.solvedSlugs?.length ?? 0,
+        totalSolved: (await getSolvedSlugs(user._id)).length,
         currentStreak: user.currentStreak ?? 0,
       });
     } catch (err) {

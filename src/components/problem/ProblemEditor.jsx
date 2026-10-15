@@ -25,6 +25,7 @@ function ProblemEditor({
   onReset,
   running,
   submitting,
+  availableLanguageIds = null,
 }) {
   const [showAdvancedTesting, setShowAdvancedTesting] = useState(false);
   const [fontSize, setFontSize] = useState(loadFontSize);
@@ -124,12 +125,12 @@ function ProblemEditor({
             onChange={(e) => setLanguage(e.target.value)}
             className="bg-[var(--surface-elevated)] text-[var(--foreground)] text-sm border-none rounded-md px-2 py-1 outline-none hover:brightness-110 transition-colors cursor-pointer"
           >
-            {/* Content & Execution Architecture, Phase 2: sourced from
-                GET /api/languages (see useLanguages.js) instead of a
-                hardcoded list — a language disabled in
-                backend/config/languages.js disappears from here on the
-                next fetch, with no frontend code change required. */}
-            {languages.map((lang) => (
+            {/* The registry provides globally enabled languages; this
+                problem-specific list removes languages that have no
+                starter template for the current problem. */}
+            {languages
+              .filter((lang) => !availableLanguageIds || availableLanguageIds.includes(lang.id))
+              .map((lang) => (
               <option key={lang.id} value={lang.id}>
                 {lang.name}
               </option>

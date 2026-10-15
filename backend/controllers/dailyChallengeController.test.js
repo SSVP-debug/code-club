@@ -1,10 +1,14 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
-vi.mock("../services/userProgressService.js", () => ({
-  saveProgress: vi.fn().mockResolvedValue({ acknowledged: true }),
+vi.mock("../services/dailyChallengeService.js", () => ({
+  hasCompletedDailyChallenge: vi.fn().mockResolvedValue(false),
+  recordDailyChallengeCompletion: vi.fn().mockResolvedValue({}),
 }));
 
-import { saveProgress } from "../services/userProgressService.js";
+import {
+  hasCompletedDailyChallenge,
+  recordDailyChallengeCompletion,
+} from "../services/dailyChallengeService.js";
 import { completeDailyChallenge } from "./dailyChallengeController.js";
 import { getStudentDayKey } from "../utils/studentDay.js";
 
@@ -19,129 +23,104 @@ function mockReq(overrides = {}) {
   return {
     body: {},
     log: { error: vi.fn(), warn: vi.fn() },
-    userDoc: { _id: "u1", dailyChallengeHistory: [] },
+    userDoc: { _id: "u1" },
     ...overrides,
   };
 }
 
 describe("completeDailyChallenge", () => {
-  let res;
-
   beforeEach(() => {
     vi.clearAllMocks();
-    res = mockRes();
+    hasCompletedDailyChallenge.mockResolvedValue(false);
+    recordDailyChallengeCompletion.mockResolvedValue({});
   });
 
   it("400s if slug is missing", async () => {
+    const res = mockRes();
     await completeDailyChallenge(mockReq({ body: {} }), res);
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(saveProgress).not.toHaveBeenCalled();
+    expect(recordDailyChallengeCompletion).not.toHaveBeenCalled();
   });
 
-  it("appends today's entry and dual-writes via saveProgress", async () => {
-    const req = mockReq({ body: { slug: "two-sum" } });
+  it("records today's completion in the dedicated collection", async () => {
+    const res = mockRes();
+    await completeDailyChallenge(mockReq({ body: { slug: "two-sum" } }), res);
 
-    await completeDailyChallenge(req, res);
-
-    expect(req.userDoc.dailyChallengeHistory).toHaveLength(1);
-    expect(req.userDoc.dailyChallengeHistory[0]).toMatchObject({
-      slug: "two-sum",
-      completed: true,
-    });
-    expect(saveProgress).toHaveBeenCalledWith(
+    expect(recordDailyChallengeCompletion).toHaveBeenCalledWith(
       "u1",
-      { dailyChallengeHistory: req.userDoc.dailyChallengeHistory }
+      getStudentDayKey(),
+      "two-sum",
+      expect.any(Date)
     );
     expect(res.json).toHaveBeenCalledWith({ success: true, alreadyCompleted: false });
   });
 
-  it("is a no-op (and doesn't write) if today's challenge was already completed", async () => {
-    // Uses the same shared day-key the controller itself now uses
-    // (backend/utils/studentDay.js) instead of a hand-rolled UTC date —
-    // computing this independently used to work by coincidence outside
-    // the 00:00-05:29 IST window and would otherwise have been flaky.
-    const today = getStudentDayKey();
-    const req = mockReq({
-      body: { slug: "two-sum" },
-      userDoc: {
-        _id: "u1",
-        dailyChallengeHistory: [{ date: today, slug: "two-sum", completed: true }],
-      },
-    });
+  it("is a no-op if today's challenge was already completed", async () => {
+    hasCompletedDailyChallenge.mockResolvedValueOnce(true);
+    const res = mockRes();
 
-    await completeDailyChallenge(req, res);
+    await completeDailyChallenge(mockReq({ body: { slug: "two-sum" } }), res);
 
-    expect(saveProgress).not.toHaveBeenCalled();
+    expect(recordDailyChallengeCompletion).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({ success: true, alreadyCompleted: true });
   });
 
+  it("returns 500 if the completion write fails", async () => {
+    recordDailyChallengeCompletion.mockRejectedValueOnce(new Error("db down"));
+    const res = mockRes();
 
-  it("returns 500 if the dual-write fails", async () => {
-    saveProgress.mockRejectedValueOnce(new Error("db down"));
-    const req = mockReq({ body: { slug: "two-sum" } });
-
-    await completeDailyChallenge(req, res);
+    await completeDailyChallenge(mockReq({ body: { slug: "two-sum" } }), res);
 
     expect(res.status).toHaveBeenCalledWith(500);
   });
 
-  describe("IST day-boundary behavior (backend/utils/studentDay.js policy)", () => {
-    afterEach(() => {
-      vi.useRealTimers();
-    });
+  describe("IST day-boundary behavior", () => {
+    afterEach(() => vi.useRealTimers());
 
-    it("records the IST calendar day, not the raw UTC day, when they disagree", async () => {
-      // 2026-08-20T23:58:00.000Z UTC == 2026-08-21T05:28 IST — the entry
-      // must be dated "2026-08-21", not "2026-08-20".
+    it("uses the IST calendar day", async () => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date("2026-08-20T23:58:00.000Z"));
 
-      const req = mockReq({ body: { slug: "two-sum" } });
-      await completeDailyChallenge(req, res);
+      const res = mockRes();
+      await completeDailyChallenge(mockReq({ body: { slug: "two-sum" } }), res);
 
-      expect(req.userDoc.dailyChallengeHistory[0].date).toBe("2026-08-21");
+      expect(recordDailyChallengeCompletion).toHaveBeenCalledWith(
+        "u1",
+        "2026-08-21",
+        "two-sum",
+        expect.any(Date)
+      );
     });
 
-    it("a completion just before the IST rollover and a status check just after it do not collide", async () => {
+    it("does not collide across an IST day rollover", async () => {
       vi.useFakeTimers();
 
-      // Completed at 2026-08-20T18:00:00.000Z UTC == 2026-08-20T23:30 IST
-      // — still "Aug 20" in IST terms.
       vi.setSystemTime(new Date("2026-08-20T18:00:00.000Z"));
-      const req1 = mockReq({ body: { slug: "two-sum" } });
-      await completeDailyChallenge(req1, res);
-      expect(req1.userDoc.dailyChallengeHistory[0].date).toBe("2026-08-20");
+      const res1 = mockRes();
+      await completeDailyChallenge(mockReq({ body: { slug: "two-sum" } }), res1);
 
-      // A few hours later, 2026-08-20T19:00:00.000Z UTC == 2026-08-21T00:30
-      // IST — now genuinely "Aug 21," a new challenge is required.
       vi.setSystemTime(new Date("2026-08-20T19:00:00.000Z"));
       const res2 = mockRes();
-      const req2 = mockReq({
-        body: { slug: "three-sum" },
-        userDoc: { _id: "u1", dailyChallengeHistory: req1.userDoc.dailyChallengeHistory },
-      });
-      await completeDailyChallenge(req2, res2);
+      await completeDailyChallenge(mockReq({ body: { slug: "three-sum" } }), res2);
 
-      expect(req2.userDoc.dailyChallengeHistory).toHaveLength(2);
-      expect(req2.userDoc.dailyChallengeHistory[1].date).toBe("2026-08-21");
-      expect(res2.json).toHaveBeenCalledWith({ success: true, alreadyCompleted: false });
+      expect(recordDailyChallengeCompletion).toHaveBeenNthCalledWith(
+        1, "u1", "2026-08-20", "two-sum", expect.any(Date)
+      );
+      expect(recordDailyChallengeCompletion).toHaveBeenNthCalledWith(
+        2, "u1", "2026-08-21", "three-sum", expect.any(Date)
+      );
     });
 
-    it("multiple requests (simulating multiple tabs) in the same IST day agree and dual-write only once", async () => {
-      vi.useFakeTimers();
-      vi.setSystemTime(new Date("2026-08-21T05:00:00.000Z"));
+    it("relies on the unique completion key for repeated requests", async () => {
+      hasCompletedDailyChallenge
+        .mockResolvedValueOnce(false)
+        .mockResolvedValueOnce(true);
 
-      const userDoc = { _id: "u1", dailyChallengeHistory: [] };
+      const req = mockReq({ body: { slug: "two-sum" } });
+      await completeDailyChallenge(req, mockRes());
+      await completeDailyChallenge(req, mockRes());
 
-      const req1 = mockReq({ body: { slug: "two-sum" }, userDoc });
-      await completeDailyChallenge(req1, mockRes());
-
-      const req2 = mockReq({ body: { slug: "two-sum" }, userDoc });
-      const res2 = mockRes();
-      await completeDailyChallenge(req2, res2);
-
-      expect(saveProgress).toHaveBeenCalledTimes(1);
-      expect(res2.json).toHaveBeenCalledWith({ success: true, alreadyCompleted: true });
+      expect(recordDailyChallengeCompletion).toHaveBeenCalledTimes(1);
     });
   });
 });

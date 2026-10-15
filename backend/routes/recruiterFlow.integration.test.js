@@ -182,7 +182,7 @@ describe("Recruiter registration → pending → verification → recruiter-only
       const user = await seedStudent({
         email: "student-then-recruiter@unrecognized-corp.com",
         totalXP: 900,
-        solvedSlugs: ["two-sum"],
+        solvedCount: 1,
       });
       expect(user.roles).toEqual(["student"]);
 
@@ -195,7 +195,7 @@ describe("Recruiter registration → pending → verification → recruiter-only
       expect(reloaded.role).toBe("recruiter");
       expect(reloaded.roles).toEqual(["student", "recruiter"]);
       expect(reloaded.totalXP).toBe(900);
-      expect(reloaded.solvedSlugs).toEqual(["two-sum"]);
+      expect(reloaded.solvedCount).toBe(1);
     }
   );
 

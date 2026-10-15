@@ -6,6 +6,10 @@ vi.mock("../models/User.js", () => ({
 vi.mock("../models/Submission.js", () => ({
   default: { find: vi.fn() },
 }));
+vi.mock("../services/problemProgressService.js", () => ({
+  getSolvedSlugs: vi.fn().mockResolvedValue(["two-sum"]),
+  getActivityDays: vi.fn().mockResolvedValue([]),
+}));
 vi.mock("../utils/cache.js", () => ({
   // Bypass real caching entirely — just run the factory function and wrap
   // it the way getOrSetCache would on a cache MISS. This suite is about

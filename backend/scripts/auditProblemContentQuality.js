@@ -3,6 +3,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { LANGUAGES, REQUIRED_STARTER_LANGUAGE_KEYS } from "../config/languages.js";
+import {
+  inspectContent,
+  parseJsonContent,
+  validateConstraints,
+  validateExamples,
+} from "../utils/problemContentQuality.js";
 
 const PROBLEMS_DIR = path.join(process.cwd(), "problems");
 const JSON_MODE = process.argv.includes("--json");
@@ -17,21 +23,7 @@ const CONTENT_FILES = [
   "editorial.md",
 ];
 
-const parseJson = (content) => {
-  try {
-    return JSON.parse(content);
-  } catch {
-    return null;
-  }
-};
-
-const inspect = (name, content) => {
-  const trimmed = content.trim();
-  const todoCount = (content.match(/\b(?:TODO|TBD)\b/gi) || []).length;
-  const parsed = name.endsWith(".json") ? parseJson(content) : null;
-  const empty = trimmed.length === 0 || (Array.isArray(parsed) && parsed.length === 0);
-  return { name, exists: true, empty, todoCount, bytes: Buffer.byteLength(content, "utf8") };
-};
+const inspect = (name, content) => inspectContent(name, content);
 
 const listSlugs = async () => {
   const entries = await fs.readdir(PROBLEMS_DIR, { withFileTypes: true });
@@ -76,9 +68,21 @@ const auditProblem = async (slug) => {
   const todoFiles = checks.filter((item) => item.todoCount > 0).map((item) => ({ name: item.name, count: item.todoCount }));
   if (todoFiles.length) warnings.push("TODO/TBD markers remain");
   if (examples?.exists && !examples.empty) {
-    const parsed = parseJson(await fs.readFile(path.join(folder, "examples.json"), "utf8"));
-    if (Array.isArray(parsed) && parsed.some((example) => !example?.input || !example?.output)) {
-      warnings.push("one or more examples lack input/output");
+    const content = await fs.readFile(path.join(folder, "examples.json"), "utf8");
+    const { parsed, error } = parseJsonContent(content);
+    if (error) {
+      critical.push("examples.json contains invalid JSON");
+    } else {
+      critical.push(...validateExamples(parsed));
+    }
+  }
+  if (constraints?.exists && !constraints.empty) {
+    const content = await fs.readFile(path.join(folder, "constraints.json"), "utf8");
+    const { parsed, error } = parseJsonContent(content);
+    if (error) {
+      critical.push("constraints.json contains invalid JSON");
+    } else {
+      critical.push(...validateConstraints(parsed));
     }
   }
 

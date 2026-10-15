@@ -6,6 +6,10 @@ import { getStudentDayKey } from "../utils/studentDay.js";
 import { recordProblemProgress } from "../services/problemProgressService.js";
 import { recordProblemSubmissionStats } from "../services/problemStatsService.js";
 
+const DEFAULT_HISTORY_PAGE_SIZE = 50;
+const MAX_HISTORY_PAGE_SIZE = 100;
+const CURSOR_ID_PATTERN = /^[a-f\d]{24}$/i;
+
 export function toClientSubmission(doc) {
   return {
     id: doc._id.toString(),
@@ -25,6 +29,35 @@ export function toClientSubmission(doc) {
     date: getStudentDayKey(doc.createdAt),
     createdAt: doc.createdAt,
   };
+}
+
+export function encodeSubmissionCursor(doc) {
+  return Buffer.from(
+    JSON.stringify({ createdAt: new Date(doc.createdAt).toISOString(), id: doc._id.toString() })
+  ).toString("base64url");
+}
+
+export function decodeSubmissionCursor(cursor) {
+  try {
+    const decoded = JSON.parse(Buffer.from(String(cursor), "base64url").toString("utf8"));
+    const createdAt = new Date(decoded.createdAt);
+
+    if (!decoded?.id || !CURSOR_ID_PATTERN.test(String(decoded.id)) || Number.isNaN(createdAt.getTime())) {
+      return null;
+    }
+
+    return { createdAt, id: String(decoded.id) };
+  } catch {
+    return null;
+  }
+}
+
+function parseHistoryLimit(value) {
+  if (value === undefined) return DEFAULT_HISTORY_PAGE_SIZE;
+
+  const parsed = Number.parseInt(String(value), 10);
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > MAX_HISTORY_PAGE_SIZE) return null;
+  return parsed;
 }
 
 export async function recordVerifiedSubmission({
@@ -147,16 +180,52 @@ export async function listSubmissions(req, res) {
   }
 
   try {
-    const { problemSlug } = req.query;
+    const { problemSlug, cursor, limit: limitParam } = req.query;
+    const limit = parseHistoryLimit(limitParam);
+    const paginationRequested = cursor !== undefined || limitParam !== undefined;
+
+    if (!limit) {
+      return res.status(400).json({
+        error: `limit must be an integer between 1 and ${MAX_HISTORY_PAGE_SIZE}.`,
+      });
+    }
+
     const filter = { userId: req.userDoc._id };
     if (problemSlug) filter.problemSlug = problemSlug;
 
+    if (cursor !== undefined) {
+      const decodedCursor = decodeSubmissionCursor(cursor);
+      if (!decodedCursor) {
+        return res.status(400).json({ error: "Invalid submission cursor." });
+      }
+
+      filter.$or = [
+        { createdAt: { $lt: decodedCursor.createdAt } },
+        { createdAt: decodedCursor.createdAt, _id: { $lt: decodedCursor.id } },
+      ];
+    }
+
     const submissions = await Submission.find(filter)
-      .sort({ createdAt: -1 })
-      .limit(100)
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(limit + 1)
       .lean();
 
-    return res.json(submissions.map(toClientSubmission));
+    const hasMore = submissions.length > limit;
+    const page = hasMore ? submissions.slice(0, limit) : submissions;
+    const clientSubmissions = page.map(toClientSubmission);
+
+    // Keep the original array response for legacy callers. New callers opt
+    // into cursor pagination with `limit` and/or `cursor`, avoiding a breaking
+    // API migration while making unbounded history traversal possible.
+    if (!paginationRequested) {
+      return res.json(clientSubmissions);
+    }
+
+    return res.json({
+      submissions: clientSubmissions,
+      nextCursor: hasMore ? encodeSubmissionCursor(page[page.length - 1]) : null,
+      hasMore,
+    });
   } catch (err) {
     req.log.error({ err }, "[Submissions] listSubmissions failed");
     return res.status(500).json({ error: "Failed to fetch submissions. Try again." });

@@ -69,18 +69,18 @@ export async function getColleges(req, res) {
           User.countDocuments({ "education.collegeId": college._id, role: "student" }),
           User.countDocuments({ "education.collegeId": college._id, role: "student", status: "active" }),
           User.countDocuments({ "tpoProfile.collegeDomain": { $in: college.domains } }),
-          // solvedSlugs is the live array of solved problems — its length
+          // solvedCount is the live array of solved problems — its length
           // IS the accurate per-user solved count. profileSignature.solvedCount
           // was considered instead (it's already a Number field, cheaper to
           // sum) but rejected: it's an anti-tamper signing snapshot ("proves
           // data wasn't tampered", User.js's profileSignature comment), not
           // guaranteed to be live-synced with actual solves, so summing it
           // would understate active students' real totals. $size inside the
-          // aggregation avoids transferring each student's full solvedSlugs
+          // aggregation avoids transferring each student's full solvedCount
           // array over the wire — only the computed size per document.
           User.aggregate([
             { $match: { "education.collegeId": college._id, role: "student" } },
-            { $group: { _id: null, total: { $sum: { $size: { $ifNull: ["$solvedSlugs", []] } } } } },
+            { $group: { _id: null, total: { $sum: { $ifNull: ["$solvedCount", 0] } } } },
           ]),
         ]);
 

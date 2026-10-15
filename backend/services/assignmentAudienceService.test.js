@@ -15,7 +15,9 @@ describe("getAssignmentAudience", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("cohort-scoped assignment: resolves audience from active cohort membership only", async () => {
-    CohortMembership.find.mockReturnValue({ distinct: () => Promise.resolve(["s1", "s2"]) });
+    CohortMembership.find.mockReturnValue({
+      select: () => ({ lean: () => Promise.resolve([{ studentId: "s1" }, { studentId: "s2" }]) }),
+    });
     User.find.mockReturnValue(userChain([{ _id: "s1" }, { _id: "s2" }]));
 
     const result = await getAssignmentAudience({ cohortId: "cohort-1" });

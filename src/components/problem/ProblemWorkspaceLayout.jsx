@@ -76,6 +76,7 @@ function ProblemWorkspaceLayout({ problem, slug, solver, nextBestProblem, editio
     problemWidth,
     setProblemWidth,
     language,
+    availableLanguageKeys,
     code,
     setCode,
     customInput,
@@ -273,6 +274,7 @@ function ProblemWorkspaceLayout({ problem, slug, solver, nextBestProblem, editio
               >
                 <ProblemEditor
                   slug={slug}
+                  availableLanguageIds={availableLanguageKeys}
                   language={language}
                   setLanguage={handleLanguageChange}
                   code={code}

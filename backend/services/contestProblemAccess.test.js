@@ -3,13 +3,17 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 vi.mock("../models/Contest.js", () => ({
   default: { find: vi.fn() },
 }));
+vi.mock("../models/ContestParticipant.js", () => ({
+  default: { exists: vi.fn() },
+}));
 
 import Contest from "../models/Contest.js";
+import ContestParticipant from "../models/ContestParticipant.js";
 import { canAccessContestProblem } from "./contestProblemAccess.js";
 
 function mockContestQuery(contests) {
   Contest.find.mockReturnValue({
-    select: vi.fn().mockReturnThis(),
+    select() { return this; },
     lean: vi.fn().mockResolvedValue(contests),
   });
 }
@@ -17,95 +21,124 @@ function mockContestQuery(contests) {
 function makeContest(overrides = {}) {
   const now = Date.now();
   return {
+    _id: "contest1",
     startsAt: new Date(now - 60_000),
     endsAt: new Date(now + 60_000),
-    createdBy: { toString: () => "organizer1" },
-    participants: [{ userId: { toString: () => "participant1" } }],
+    createdBy: "organizer1",
     ...overrides,
   };
 }
 
 describe("canAccessContestProblem", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    ContestParticipant.exists.mockResolvedValue(false);
+  });
 
-  it("fails closed for a slug with no contest referencing it at all (orphaned/misconfigured)", async () => {
+  it("fails closed when no contest references the slug", async () => {
     mockContestQuery([]);
 
-    const allowed = await canAccessContestProblem("secret-slug", { _id: { toString: () => "anyone" } });
-
-    expect(allowed).toBe(false);
+    await expect(
+      canAccessContestProblem("secret-slug", { _id: "user1" })
+    ).resolves.toBe(false);
+    expect(ContestParticipant.exists).not.toHaveBeenCalled();
   });
 
-  it("denies an anonymous (no userDoc) caller for an active contest", async () => {
+  it("denies an anonymous caller during an active contest", async () => {
     mockContestQuery([makeContest()]);
 
-    const allowed = await canAccessContestProblem("secret-slug", null);
-
-    expect(allowed).toBe(false);
+    await expect(canAccessContestProblem("secret-slug", null)).resolves.toBe(false);
+    expect(ContestParticipant.exists).not.toHaveBeenCalled();
   });
 
-  it("denies an authenticated non-participant, non-organizer during an active contest", async () => {
+  it("denies an authenticated non-participant during an active contest", async () => {
     mockContestQuery([makeContest()]);
 
-    const allowed = await canAccessContestProblem("secret-slug", { _id: { toString: () => "random-user" } });
+    await expect(
+      canAccessContestProblem("secret-slug", { _id: "random-user" })
+    ).resolves.toBe(false);
 
-    expect(allowed).toBe(false);
+    expect(ContestParticipant.exists).toHaveBeenCalledWith({
+      contestId: { $in: ["contest1"] },
+      userId: "random-user",
+    });
   });
 
-  it("allows a joined participant once the contest is active", async () => {
+  it("allows a joined participant during an active contest", async () => {
     mockContestQuery([makeContest()]);
+    ContestParticipant.exists.mockResolvedValue(true);
 
-    const allowed = await canAccessContestProblem("secret-slug", { _id: { toString: () => "participant1" } });
-
-    expect(allowed).toBe(true);
+    await expect(
+      canAccessContestProblem("secret-slug", { _id: "participant1" })
+    ).resolves.toBe(true);
   });
 
-  it("denies a joined participant while the contest is still upcoming (has not started)", async () => {
+  it("denies a participant while the contest is upcoming", async () => {
     const now = Date.now();
     mockContestQuery([
-      makeContest({ startsAt: new Date(now + 60_000), endsAt: new Date(now + 120_000) }),
+      makeContest({
+        startsAt: new Date(now + 60_000),
+        endsAt: new Date(now + 120_000),
+      }),
     ]);
 
-    const allowed = await canAccessContestProblem("secret-slug", { _id: { toString: () => "participant1" } });
-
-    expect(allowed).toBe(false);
+    await expect(
+      canAccessContestProblem("secret-slug", { _id: "participant1" })
+    ).resolves.toBe(false);
+    expect(ContestParticipant.exists).not.toHaveBeenCalled();
   });
 
-  it("allows the organizer at any time, including before the contest has started", async () => {
+  it("allows the organizer before the contest starts", async () => {
     const now = Date.now();
     mockContestQuery([
-      makeContest({ startsAt: new Date(now + 60_000), endsAt: new Date(now + 120_000) }),
+      makeContest({
+        startsAt: new Date(now + 60_000),
+        endsAt: new Date(now + 120_000),
+      }),
     ]);
 
-    const allowed = await canAccessContestProblem("secret-slug", { _id: { toString: () => "organizer1" } });
-
-    expect(allowed).toBe(true);
+    await expect(
+      canAccessContestProblem("secret-slug", { _id: "organizer1" })
+    ).resolves.toBe(true);
+    expect(ContestParticipant.exists).not.toHaveBeenCalled();
   });
 
-  it("opens the problem up to EVERYONE once the contest has ended, per the documented post-contest policy", async () => {
+  it("opens the problem to everyone after the contest ends", async () => {
     const now = Date.now();
     mockContestQuery([
-      makeContest({ startsAt: new Date(now - 120_000), endsAt: new Date(now - 60_000) }),
+      makeContest({
+        startsAt: new Date(now - 120_000),
+        endsAt: new Date(now - 60_000),
+      }),
     ]);
 
-    const randomUser = await canAccessContestProblem("secret-slug", { _id: { toString: () => "random-user" } });
-    const anonymous = await canAccessContestProblem("secret-slug", null);
-
-    expect(randomUser).toBe(true);
-    expect(anonymous).toBe(true);
+    await expect(
+      canAccessContestProblem("secret-slug", { _id: "random-user" })
+    ).resolves.toBe(true);
+    await expect(canAccessContestProblem("secret-slug", null)).resolves.toBe(true);
+    expect(ContestParticipant.exists).not.toHaveBeenCalled();
   });
 
-  it("grants access if ANY contest referencing the slug currently justifies it, even if another doesn't", async () => {
+  it("allows access when any active contest grants participation access", async () => {
     const now = Date.now();
     mockContestQuery([
-      // Contest A: still upcoming — wouldn't grant access on its own.
-      makeContest({ startsAt: new Date(now + 60_000), endsAt: new Date(now + 120_000), createdBy: { toString: () => "other-organizer" } }),
-      // Contest B: active, and this caller is a participant in it.
-      makeContest(),
+      makeContest({
+        _id: "contest-upcoming",
+        startsAt: new Date(now + 60_000),
+        endsAt: new Date(now + 120_000),
+        createdBy: "other-organizer",
+      }),
+      makeContest({ _id: "contest-active" }),
     ]);
+    ContestParticipant.exists.mockResolvedValue(true);
 
-    const allowed = await canAccessContestProblem("secret-slug", { _id: { toString: () => "participant1" } });
+    await expect(
+      canAccessContestProblem("secret-slug", { _id: "participant1" })
+    ).resolves.toBe(true);
 
-    expect(allowed).toBe(true);
+    expect(ContestParticipant.exists).toHaveBeenCalledWith({
+      contestId: { $in: ["contest-active"] },
+      userId: "participant1",
+    });
   });
 });

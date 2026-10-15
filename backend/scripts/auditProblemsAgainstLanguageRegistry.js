@@ -28,13 +28,11 @@
  *     C and TypeScript are enabled but explicitly not required, per that
  *     file's own comments).
  * A problem missing starter code for an ENABLED-but-not-required language
- * is not a schema violation (scripts/exportProblemsToFolders.js's/
- * problemSchema.js's ProblemFolderSchema will accept it) — but it IS a
- * real, student-facing gap: src/hooks/useProblemSolver.js falls back to
- * an empty string (`problem.starterCode?.[lang] ?? ""`) with no error and
- * no signature guidance. This script reports that gap explicitly, flagged
- * as INFO (not FAIL) when the language isn't required, and as FAIL when
- * it is.
+ * is not a schema violation (ProblemFolderSchema accepts it). The editor
+ * must therefore filter the global language registry against each problem's
+ * non-empty starterCode map, and the solver must normalize stale saved
+ * language preferences. This script keeps the missing-template condition as
+ * INFO (not FAIL) when the language isn't required, and FAIL when it is.
  *
  * Usage:
  *   node backend/scripts/auditProblemsAgainstLanguageRegistry.js
@@ -171,7 +169,7 @@ function auditProblem(slug) {
       const required = REQUIRED_STARTER_LANGUAGE_KEYS.includes(key);
 
       if (!fs.existsSync(starterFile)) {
-        const message = `enabled language "${key}" has no starter/${key}.${lang.extension} — student selecting ${lang.name} gets a blank editor (useProblemSolver.js falls back to "")`;
+        const message = `enabled language "${key}" has no starter/${key}.${lang.extension} — it should be omitted from this problem's language selector until a starter/driver contract exists`;
         if (required) {
           fail("starter-code", message);
         } else {

@@ -1,4 +1,6 @@
 import Problem from "../models/Problem.js";
+import { listSavedProblems, saveProblemForUser, removeSavedProblemForUser } from "../services/userSavedProblemService.js";
+import { getSolvedSlugs } from "../services/problemProgressService.js";
 import { recordPlacementVisibilityChange } from "../services/placementVisibilityAuditLog.js";
 import { invalidateProfileCache } from "./publicProfileController.js";
 import {
@@ -32,7 +34,7 @@ function isValidGraduationYear(value) {
   return year >= CURRENT_YEAR - 5 && year <= CURRENT_YEAR + 8;
 }
 
-function serializeUser(userDoc) {
+function serializeUser(userDoc, savedProblems = []) {
   return {
     id: userDoc._id,
     firebaseUid: userDoc.firebaseUid,
@@ -67,7 +69,7 @@ function serializeUser(userDoc) {
 
     pinnedProblems: userDoc.pinnedProblems || [],
 
-    savedProblems: userDoc.savedProblems || [],
+    // Saved problems are stored as one document per user/problem. This serializer\n    // remains synchronous for existing callers; route handlers hydrate the list\n    // explicitly before returning their response.\n    savedProblems,
 
     developerProfile: {
       githubUrl: userDoc.developerProfile?.githubUrl ?? null,
@@ -81,7 +83,9 @@ function serializeUser(userDoc) {
 
 export async function getMe(req, res) {
   if (!req.userDoc) return res.status(503).json({ error: "Database unavailable." });
-  res.json(serializeUser(req.userDoc));
+  const user = serializeUser(req.userDoc);
+  user.savedProblems = await listSavedProblems(req.userDoc._id);
+  res.json(user);
 }
 
 export async function updateMe(req, res) {
@@ -299,7 +303,8 @@ export async function pinProblem(req, res) {
   // This also means we never need to worry about someone pinning a
   // problem before they've actually solved it and the display looking
   // hollow on their public profile.
-  if (!req.userDoc.solvedSlugs.includes(slug)) {
+  const solvedSlugs = await getSolvedSlugs(req.userDoc._id);
+  if (!solvedSlugs.includes(slug)) {
     return res.status(400).json({ error: "You can only pin problems you've solved" });
   }
 
@@ -360,33 +365,24 @@ export async function saveProblem(req, res) {
   if (!req.userDoc) return res.status(503).json({ error: "Database unavailable." });
 
   const { slug } = req.body;
-
   if (!slug || typeof slug !== "string") {
     return res.status(400).json({ error: "slug is required" });
   }
 
-  const already = req.userDoc.savedProblems.some((p) => p.slug === slug);
-  if (already) {
-    return res.json(serializeUser(req.userDoc));
-  }
-
-  req.userDoc.savedProblems.push({ slug, savedAt: new Date() });
-
-  await req.userDoc.save();
-
-  res.json(serializeUser(req.userDoc));
+  const savedProblems = await saveProblemForUser(req.userDoc._id, slug);
+  const user = serializeUser(req.userDoc);
+  user.savedProblems = savedProblems;
+  return res.json(user);
 }
 
 export async function unsaveProblem(req, res) {
   if (!req.userDoc) return res.status(503).json({ error: "Database unavailable." });
 
   const { slug } = req.params;
-
-  req.userDoc.savedProblems = req.userDoc.savedProblems.filter((p) => p.slug !== slug);
-
-  await req.userDoc.save();
-
-  res.json(serializeUser(req.userDoc));
+  const savedProblems = await removeSavedProblemForUser(req.userDoc._id, slug);
+  const user = serializeUser(req.userDoc);
+  user.savedProblems = savedProblems;
+  return res.json(user);
 }
 
 // ── POST /api/users/me/switch-role (role/profile isolation fix) ────────────

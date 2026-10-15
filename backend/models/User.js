@@ -72,7 +72,7 @@ const userSchema = new mongoose.Schema(
     // predates this and is already wired through progress.js/userController.js
     // — left untouched). Populated either by manual entry or by the
     // /api/leetcode/fetch proxy pre-filling the form for the student to
-    // confirm. Not fed into totalXP/solvedSlugs — LeetCode problems aren't
+    // confirm. Not fed into totalXP/solvedCount — LeetCode problems aren't
     // in this platform's own catalog, so there's nothing to map them to;
     // this exists purely as recruiter-facing supplementary proof of work
     // on the public profile.
@@ -91,18 +91,18 @@ const userSchema = new mongoose.Schema(
       default: Date.now,
     },
 
-    solvedSlugs: {
-      type: [String],
-      default: [],
-    },
     topicStats: {
       type: Map,
       of: Number,
       default: {},
     },
-    activityDates: {
-      type: [String],
-      default: [],
+    // Scalar solved count — replaces the unbounded solvedSlugs array on User.
+    // UserProblemProgress remains the per-problem source of truth.
+    solvedCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+      index: true,
     },
     solvedDifficulty: {
       easy: { type: Number, default: 0, min: 0 },
@@ -199,25 +199,6 @@ const userSchema = new mongoose.Schema(
       default: [],
     },
 
-    // ── Saved Problems (private "read later" bookmarks) ─────────────────
-    // Not to be confused with pinnedProblems above — that's a solved-only,
-    // capped, PUBLIC-profile showcase. This is a private, unlimited,
-    // any-status (solved or not) bookmark list, only ever shown to the
-    // owner inside the app (Saved view). No title/difficulty denormalized
-    // here on purpose — the frontend already has the full problem catalog
-    // loaded client-side (useProblems()) whenever this list is rendered,
-    // so there's no per-view join cost to avoid, unlike the public-profile
-    // case pinnedProblems was built for.
-    savedProblems: {
-      type: [
-        {
-          slug: String,
-          savedAt: { type: Date, default: Date.now },
-        },
-      ],
-      default: [],
-    },
-
     // ── Recruiter Snapshot (Phase 9C) ───────────────────────────────────
     // NOT to be confused with recruiterProfile above — that's for users
     // whose role IS "recruiter". This is what a STUDENT fills in so
@@ -274,8 +255,8 @@ const userSchema = new mongoose.Schema(
     // ever been a student — combined with /api/init unconditionally
     // returning progressToClient(req.userDoc) regardless of role, this
     // is what let a TPO session render leftover student XP/streak/solved
-    // data. The student-track fields on this schema (totalXP,
-    // currentStreak, solvedSlugs, etc.) were never moved into a separate
+    // data. The student-track aggregate fields on this schema (totalXP,
+    // currentStreak, solvedCount, etc.) were never moved into a separate
     // subdocument — doing so would touch dozens of call sites (judge
     // submission recording, leaderboard, public profile, XP utils...)
     // for a codebase this size. Instead, isolation is enforced at the
@@ -537,18 +518,6 @@ const userSchema = new mongoose.Schema(
       hideDifficultyLabels: { type: Boolean, default: false }, // hide Easy/Medium/Hard badge on problem pages
     },
 
-    dailyChallengeHistory: {
-      type: [
-        {
-          date: String,
-          slug: String,
-          completed: Boolean,
-          completedAt: Date,
-        },
-      ],
-      default: [],
-    },
-
     // ── Daily Quiz Gate (backend/controllers/dailyQuizController.js) ─────
     // Schema-drift fix: dailyQuizController.js has been reading/writing
     // `req.userDoc.dailyQuizCompletedDate` since the Daily Quiz Gate was
@@ -593,6 +562,7 @@ const userSchema = new mongoose.Schema(
 // more often per session than the old single unbounded fetch it replaced
 // — see docs/audits/ for the index-analysis writeup that preceded this.
 userSchema.index({ emailDomain: 1, role: 1 });
+userSchema.index({ emailDomain: 1, role: 1, visibleToTpo: 1, totalXP: -1 });
 
 // Keeps emailDomain derived from email on every save, not just at account
 // creation — see the emailDomain field comment above for why this exists
