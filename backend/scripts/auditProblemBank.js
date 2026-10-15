@@ -14,6 +14,7 @@ import {
 } from "../config/languages.js";
 import { identifyOperationSequence } from "../utils/operationSequenceShape.js";
 import { countTestcaseOverlaps, findConflictingTestcaseOutputs, findDuplicateTestcases } from "../utils/problemTestcaseQuality.js";
+import { summarizeProblemBankWarnings } from "../utils/problemBankAuditSummary.js";
 
 const PROBLEMS_DIR = path.join(process.cwd(), "problems");
 const JSON_MODE = process.argv.includes("--json");
@@ -170,6 +171,7 @@ function problemKeyFor(key) {
   return problemKeys.has(String(key)) ? key : null;
 }
 
+const warningBreakdown = summarizeProblemBankWarnings(findings);
 const counts = {
   problems: problems.length,
   fail: findings.filter((item) => item.level === "FAIL").length,
@@ -181,6 +183,7 @@ const report = {
   generatedAt: new Date().toISOString(),
   canonicalSource: "backend/problems",
   ...counts,
+  warningBreakdown,
   enabledLanguages: ENABLED_LANGUAGE_KEYS,
   requiredStarterLanguages: REQUIRED_STARTER_LANGUAGE_KEYS,
   findings,
@@ -197,7 +200,11 @@ if (JSON_MODE) {
     }
   }
   if (counts.warn > 0) {
-    console.error(`Warnings are non-blocking and represent known legacy/migration gaps.`);
+    console.error("WARN breakdown by check:");
+    for (const item of warningBreakdown) {
+      console.error(`- ${item.check}: ${item.count}`);
+    }
+    console.error("Use --json for the full per-problem findings.");
   }
 }
 
