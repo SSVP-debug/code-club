@@ -54,7 +54,7 @@ async function fetchPublishedOpportunities() {
 
   try {
     const response = await fetch(`${API_URL}/api/opportunities`, {
-      signal: AbortSignal.timeout(12_000),
+      signal: AbortSignal.timeout(35_000),
       headers: { accept: "application/json" },
     });
     if (!response.ok) {
@@ -91,7 +91,7 @@ async function fetchPublicProfiles() {
 
   try {
     const response = await fetch(`${API_URL}/api/public/sitemap-profiles`, {
-      signal: AbortSignal.timeout(12_000),
+      signal: AbortSignal.timeout(35_000),
       headers: { accept: "application/json" },
     });
     if (!response.ok) {
