@@ -6,8 +6,8 @@
  * build time. Private dashboards, auth flows, verification utilities, and
  * arbitrary route patterns are not sitemap URLs.
  *
- * Public profile URLs are not enumerated here yet: they need a privacy-aware
- * endpoint that returns only profiles whose owners opted into public visibility.
+ * Public profile URLs are included only when the owner has opted into public
+ * visibility, via the privacy-aware /api/public/sitemap-profiles endpoint.
  * Never add the literal /u/:username route to a sitemap.
  */
 import { writeFile } from "node:fs/promises";
@@ -86,7 +86,39 @@ async function fetchPublishedOpportunities() {
   }
 }
 
-const dynamicPages = await fetchPublishedOpportunities();
+async function fetchPublicProfiles() {
+  if (!API_URL) return [];
+
+  try {
+    const response = await fetch(`${API_URL}/api/public/sitemap-profiles`, {
+      signal: AbortSignal.timeout(12_000),
+      headers: { accept: "application/json" },
+    });
+    if (!response.ok) {
+      console.warn(`[sitemap] Public-profile API returned HTTP ${response.status}; skipping profile URLs.`);
+      return [];
+    }
+
+    const payload = await response.json();
+    const profiles = Array.isArray(payload?.profiles) ? payload.profiles : [];
+
+    return profiles
+      .filter((username) => typeof username === "string" && username.trim().length > 0)
+      .map((username) => ({
+        loc: `${SITE_URL}/u/${encodeURIComponent(username.trim())}`,
+        changefreq: "weekly",
+        priority: "0.6",
+      }));
+  } catch (error) {
+    console.warn(`[sitemap] Could not fetch public profiles (${error.message}); skipping profile URLs.`);
+    return [];
+  }
+}
+
+const [dynamicPages, publicProfiles] = await Promise.all([
+  fetchPublishedOpportunities(),
+  fetchPublicProfiles(),
+]);
 const entries = new Map();
 
 for (const page of STATIC_PAGES) {
@@ -94,9 +126,9 @@ for (const page of STATIC_PAGES) {
   entries.set(entry.loc, entry);
 }
 
-for (const page of dynamicPages) {
-  // The API only returns published, non-expired opportunities. Keep the map
-  // as a second line of defense against duplicate URLs in malformed data.
+for (const page of [...dynamicPages, ...publicProfiles]) {
+  // The APIs return only public, indexable content. Keep the map as a second
+  // line of defense against duplicate URLs in malformed data.
   if (!entries.has(page.loc)) entries.set(page.loc, page);
 }
 
@@ -109,4 +141,4 @@ const xml = [
 ].join("\n");
 
 await writeFile(OUTPUT, xml, "utf8");
-console.log(`[sitemap] Wrote ${entries.size} URLs to public/sitemap.xml (${dynamicPages.length} opportunity detail URLs).`);
+console.log(`[sitemap] Wrote ${entries.size} URLs to public/sitemap.xml (${dynamicPages.length} opportunity details, ${publicProfiles.length} public profiles).`);
