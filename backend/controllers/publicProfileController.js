@@ -21,6 +21,37 @@ export async function invalidateProfileCache(username) {
   await invalidateCache(profileCacheKey(username));
 }
 
+/**
+ * Public, privacy-aware sitemap source.
+ *
+ * Only usernames whose owners explicitly enabled public profile visibility
+ * are returned. No profile fields other than the public URL slug leave this
+ * endpoint. The frontend build uses this list to add /u/:username URLs to
+ * the sitemap without guessing usernames or indexing private profiles.
+ */
+export async function listPublicProfileUsernames(req, res) {
+  try {
+    const profiles = await User.find({
+      isProfilePublic: true,
+      username: { $type: "string", $ne: "" },
+    })
+      .select({ username: 1, _id: 0 })
+      .sort({ username: 1 })
+      .limit(50000)
+      .lean();
+
+    res.set("Cache-Control", "public, max-age=300");
+    return res.json({
+      profiles: profiles
+        .map((profile) => profile.username)
+        .filter((username) => typeof username === "string" && username.trim().length > 0),
+    });
+  } catch (err) {
+    req.log?.error?.({ err }, "[PublicProfile] listPublicProfileUsernames failed");
+    return res.status(500).json({ error: "Failed to list public profile URLs" });
+  }
+}
+
 export async function getPublicProfile(req, res) {
   try {
     const { username } = req.params;
