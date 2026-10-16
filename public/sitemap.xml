@@ -1,14 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Code Club — sitemap.xml
-
-  Only the routes registered WITHOUT <ProtectedRoute> in src/App.jsx are
-  listed here (verified against source, not guessed) — /pricing and
-  /ambassador look public by name but are both wrapped in ProtectedRoute,
-  so they're intentionally excluded.
-
-  Domain matches SITE_URL in src/config/site.js — update both together if
-  the deployment moves to a custom domain.
+  Code Club sitemap seed.
+  scripts/generateSitemap.js regenerates this file before production builds,
+  adding published opportunity detail URLs and profiles whose owners enabled
+  public visibility. Private/authenticated routes are intentionally excluded.
+  Keep the production host aligned with src/config/site.js.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
