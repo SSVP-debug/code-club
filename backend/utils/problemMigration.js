@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 
 import {
   computeProblemIdentityFingerprint,
@@ -8,6 +8,20 @@ import {
 export const RETIRED_PROBLEM_MIGRATIONS = Object.freeze({
   "minimum-stack": "min-stack",
 });
+
+const PROBLEM_KEY_NAMESPACE = Buffer.from("6ba7b8119dad11d180b400c04fd430c8", "hex");
+
+// Stable UUIDv5-style identifiers keep dry-run plans identical to later applies.
+export function stableProblemKey(slug) {
+  const hash = createHash("sha1")
+    .update(PROBLEM_KEY_NAMESPACE)
+    .update(`code-club/problem/${slug}`)
+    .digest();
+  hash[6] = (hash[6] & 0x0f) | 0x50;
+  hash[8] = (hash[8] & 0x3f) | 0x80;
+  const hex = hash.subarray(0, 16).toString("hex");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
 
 export function normalizeOperationSequenceTestcase(testcase) {
   const input = testcase?.input;
@@ -63,11 +77,12 @@ export function planCanonicalMigration(problems) {
   const canonical = bySlug.get("min-stack");
   if (!canonical) throw new Error("P6 requires canonical min-stack to exist");
 
-  const canonicalKey = canonical.problemKey || randomUUID();
+  const canonicalKey = canonical.problemKey || stableProblemKey("min-stack");
   const plan = [];
 
   for (const original of problems) {
     const problem = { ...original };
+    if (!problem.problemKey) problem.problemKey = stableProblemKey(problem.slug);
     if (problem.slug === "min-stack") problem.problemKey = canonicalKey;
     if (problem.slug === "minimum-stack") problem._canonicalProblemKey = canonicalKey;
 
