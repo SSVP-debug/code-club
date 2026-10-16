@@ -19,6 +19,8 @@ const OUTPUT = resolve(process.cwd(), "public/sitemap.xml");
 
 const STATIC_PAGES = [
   { path: "/", changefreq: "weekly", priority: "1.0" },
+  { path: "/portal", changefreq: "monthly", priority: "0.9" },
+  { path: "/login", changefreq: "monthly", priority: "0.5" },
   { path: "/opportunities", changefreq: "daily", priority: "0.9" },
   { path: "/terms", changefreq: "yearly", priority: "0.3" },
   { path: "/privacy", changefreq: "yearly", priority: "0.3" },
