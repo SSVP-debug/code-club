@@ -10,5 +10,11 @@
       "s": "{[]}"
     },
     "expectedOutput": true
+  },
+  {
+    "input": {
+      "s": "(([]){})"
+    },
+    "expectedOutput": true
   }
 ]
