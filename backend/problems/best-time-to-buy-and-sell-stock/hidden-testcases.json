@@ -1,22 +1,20 @@
 [
   {
     "input": {
-      "prices": [
-        2,
-        4,
-        1
-      ]
+      "prices": [2, 4, 1]
     },
     "expectedOutput": 2
   },
   {
     "input": {
-      "prices": [
-        1,
-        1,
-        1
-      ]
+      "prices": [1, 1, 1]
     },
     "expectedOutput": 0
+  },
+  {
+    "input": {
+      "prices": [7, 1, 5, 3, 6, 4]
+    },
+    "expectedOutput": 5
   }
 ]
