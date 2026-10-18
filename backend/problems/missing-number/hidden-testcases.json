@@ -14,5 +14,15 @@
       ]
     },
     "expectedOutput": 0
+  },
+  {
+    "input": {
+      "nums": [
+        3,
+        0,
+        1
+      ]
+    },
+    "expectedOutput": 2
   }
 ]

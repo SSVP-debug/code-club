@@ -18,5 +18,15 @@
       ]
     },
     "expectedOutput": 42
+  },
+  {
+    "input": {
+      "nums": [
+        -1,
+        -1,
+        -2
+      ]
+    },
+    "expectedOutput": -2
   }
 ]

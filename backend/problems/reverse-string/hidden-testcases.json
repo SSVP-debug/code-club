@@ -10,5 +10,11 @@
       "s": "racecar"
     },
     "expectedOutput": "racecar"
+  },
+  {
+    "input": {
+      "s": "hello world"
+    },
+    "expectedOutput": "dlrow olleh"
   }
 ]
