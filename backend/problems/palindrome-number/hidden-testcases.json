@@ -10,5 +10,11 @@
       "x": 1000021
     },
     "expectedOutput": false
+  },
+  {
+    "input": {
+      "x": 121
+    },
+    "expectedOutput": true
   }
 ]
