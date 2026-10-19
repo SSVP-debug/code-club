@@ -10,5 +10,11 @@
       "columnTitle": "AA"
     },
     "expectedOutput": 27
+  },
+  {
+    "input": {
+      "columnTitle": "AAA"
+    },
+    "expectedOutput": 703
   }
 ]
