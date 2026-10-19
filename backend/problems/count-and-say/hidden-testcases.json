@@ -10,5 +10,11 @@
       "n": 6
     },
     "expectedOutput": "312211"
+  },
+  {
+    "input": {
+      "n": 7
+    },
+    "expectedOutput": "13112221"
   }
 ]

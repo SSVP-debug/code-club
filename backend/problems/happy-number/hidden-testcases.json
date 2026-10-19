@@ -10,5 +10,11 @@
       "n": 4
     },
     "expectedOutput": false
+  },
+  {
+    "input": {
+      "n": 100
+    },
+    "expectedOutput": true
   }
 ]
