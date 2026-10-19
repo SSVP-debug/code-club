@@ -10,5 +10,11 @@
       "n": 10
     },
     "expectedOutput": 89
+  },
+  {
+    "input": {
+      "n": 8
+    },
+    "expectedOutput": 34
   }
 ]
