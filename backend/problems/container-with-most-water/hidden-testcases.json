@@ -22,5 +22,16 @@
       ]
     },
     "expectedOutput": 17
+  },
+  {
+    "input": {
+      "height": [
+        1,
+        2,
+        4,
+        3
+      ]
+    },
+    "expectedOutput": 4
   }
 ]

@@ -10,5 +10,11 @@
       "s": "IX"
     },
     "expectedOutput": 9
+  },
+  {
+    "input": {
+      "s": "MCMXLIV"
+    },
+    "expectedOutput": 1944
   }
 ]
