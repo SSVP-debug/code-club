@@ -16,5 +16,15 @@
       ]
     },
     "expectedOutput": "abc"
+  },
+  {
+    "input": {
+      "strs": [
+        "prefix",
+        "preach",
+        "prevent"
+      ]
+    },
+    "expectedOutput": "pre"
   }
 ]
