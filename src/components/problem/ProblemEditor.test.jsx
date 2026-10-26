@@ -126,6 +126,51 @@ describe("ProblemEditor — language selector sourced from useLanguages()", () =
   });
 });
 
+describe("ProblemEditor — execution status animation", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function renderWithExecutionState({ running = false, submitting = false } = {}) {
+    apiFetchOptional.mockResolvedValueOnce({
+      languages: [{ id: "python", name: "Python", extension: "py", editorIndentSize: 4 }],
+    });
+
+    return render(
+      <ProblemEditor
+        slug="two-sum"
+        language="python"
+        setLanguage={noop}
+        code="print(1)"
+        setCode={noop}
+        customInput=""
+        setCustomInput={noop}
+        onRun={noop}
+        onSubmit={noop}
+        onReset={noop}
+        running={running}
+        submitting={submitting}
+      />
+    );
+  }
+
+  it("shows the animated status indicator while running", () => {
+    renderWithExecutionState({ running: true });
+
+    expect(screen.getByRole("status")).toHaveTextContent("Running");
+    expect(screen.getByRole("button", { name: /Running/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Submit" })).toBeDisabled();
+  });
+
+  it("shows the animated status indicator while submitting", () => {
+    renderWithExecutionState({ submitting: true });
+
+    expect(screen.getByRole("status")).toHaveTextContent("Submitting");
+    expect(screen.getByTestId("submit-code-button")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Run" })).toBeDisabled();
+  });
+});
+
 describe("ProblemEditor — Monaco tabSize sourced from the registry's editorIndentSize (Phase 6 regression test)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
