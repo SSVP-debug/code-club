@@ -88,11 +88,12 @@ export function buildSubmitRequestBody({
   battleRoomId,
 }) {
   const body = {
-    // keep ALL your existing fields exactly as they are
     problemSlug: problem.slug,
     code,
     language,
-    testcases: problem.testcases,
+    // Submit's backend schema and submitHandler use this exact field name.
+    // Do not send the Run-mode "testcases" field here.
+    visibletestcases: Array.isArray(problem.testcases) ? problem.testcases : [],
   };
 
   if (battleRoomId !== undefined) {
