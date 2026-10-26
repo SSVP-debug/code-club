@@ -43,7 +43,7 @@ See `docs/architecture.md` for the full system diagram and `docs/api-contracts.m
 | AI | Anthropic Claude API — hints, insights, mock interviews |
 | Payments | Razorpay (feature-flagged off by default) |
 | Error monitoring | Sentry (no-op if unconfigured) |
-| Deployment | Vercel (frontend) + Railway (backend) |
+| Deployment | Vercel (frontend); verify the active backend API host in the deployment dashboard before publishing a specific provider here. |
 
 ---
 
