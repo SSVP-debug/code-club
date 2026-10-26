@@ -12,7 +12,7 @@
                     │                       │                        │
                     ▼                       ▼                        ▼
           ┌──────────────────┐    ┌──────────────────┐    ┌─────────────────────┐
-          │  Firebase Auth    │    │  Vercel           │    │  Backend host         │
+          │  Firebase Auth    │    │  Vercel           │    │  Render              │
           │  (Google sign-in) │    │  (static hosting, │    │  Node.js + Express     │
           │  issues ID tokens │    │  serves the SPA)  │    │  backend API           │
           └──────────────────┘    └──────────────────┘    └───────────┬─────────────┘
