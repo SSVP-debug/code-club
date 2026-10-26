@@ -4,6 +4,7 @@ import { useTheme } from "../../hooks/useTheme";
 import { useBWMode } from "../../hooks/useBWMode";
 import { useLanguages } from "../../hooks/useLanguages";
 import EditorMoreMenu from "./EditorMoreMenu";
+import ExecutionOrb from "./ExecutionOrb";
 import {
   saveCode,
   loadFontSize,
@@ -158,7 +159,7 @@ function ProblemEditor({
             className="px-5 py-2 rounded-xl text-sm font-semibold border border-[var(--border-strong)] text-[var(--foreground)] hover:bg-[var(--surface-elevated)] transition-all disabled:opacity-50"
             title="Run code (Ctrl+Enter)"
           >
-            {running ? theme.words.running : theme.words.run}
+            {running ? <ExecutionOrb label={theme.words.running} /> : theme.words.run}
           </button>
 
           <button
@@ -172,7 +173,7 @@ function ProblemEditor({
               }`}
             title="Submit solution (Ctrl+Shift+Enter)"
           >
-            {submitting ? theme.words.submitting : theme.words.submit}
+            {submitting ? <ExecutionOrb label={theme.words.submitting} /> : theme.words.submit}
           </button>
         </div>
       </div>
