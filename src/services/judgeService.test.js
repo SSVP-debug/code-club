@@ -40,6 +40,10 @@ describe("judgeSubmission", () => {
     expect(res.status).toBe("Accepted");
     expect(res.passed).toBe(4);
     expect(apiFetch).toHaveBeenCalled();
+
+    const requestBody = JSON.parse(apiFetch.mock.calls[0][1].body);
+    expect(requestBody.visibletestcases).toEqual(problem.testcases);
+    expect(requestBody.testcases).toBeUndefined();
   });
 
   it("returns Wrong Answer response from API", async () => {
