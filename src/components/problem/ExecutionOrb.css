@@ -1,0 +1,87 @@
+.execution-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.execution-orb {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: 0 0 1.25rem;
+  isolation: isolate;
+}
+
+.execution-orb__core {
+  width: 0.48rem;
+  height: 0.48rem;
+  border-radius: 9999px;
+  background: var(--theme-primary, #2dd4bf);
+  box-shadow: 0 0 0.35rem var(--theme-primary, #2dd4bf),
+    0 0 0.75rem color-mix(in srgb, var(--theme-primary, #2dd4bf) 55%, transparent);
+  animation: execution-orb-pulse 1.25s ease-in-out infinite;
+}
+
+.execution-orb__ring {
+  position: absolute;
+  inset: 0.1rem;
+  border: 1px solid var(--theme-primary, #2dd4bf);
+  border-radius: 9999px;
+  opacity: 0;
+  animation: execution-orb-ripple 1.8s ease-out infinite;
+}
+
+.execution-orb__ring--two {
+  animation-delay: 0.9s;
+}
+
+.execution-orb__spark {
+  position: absolute;
+  width: 0.2rem;
+  height: 0.2rem;
+  border-radius: 9999px;
+  background: var(--theme-primary, #2dd4bf);
+  opacity: 0.85;
+  animation: execution-orb-orbit 2.4s linear infinite;
+}
+
+.execution-orb__spark--two {
+  width: 0.14rem;
+  height: 0.14rem;
+  animation-delay: -1.2s;
+  animation-direction: reverse;
+  opacity: 0.65;
+}
+
+@keyframes execution-orb-pulse {
+  0%, 100% { transform: scale(0.82); opacity: 0.8; }
+  50% { transform: scale(1.12); opacity: 1; }
+}
+
+@keyframes execution-orb-ripple {
+  0% { transform: scale(0.35); opacity: 0; }
+  20% { opacity: 0.7; }
+  100% { transform: scale(1.1); opacity: 0; }
+}
+
+@keyframes execution-orb-orbit {
+  from { transform: rotate(0deg) translateX(0.48rem) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(0.48rem) rotate(-360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .execution-orb__core,
+  .execution-orb__ring,
+  .execution-orb__spark {
+    animation: none;
+  }
+
+  .execution-orb__ring {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+}
