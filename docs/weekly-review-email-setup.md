@@ -59,20 +59,28 @@ received one.
   against double-sending if the cron schedule ever fires twice in the same
   window — this is a safety net, not a real scheduling mechanism.
 
-## 4. Scheduling on Railway
+## 4. Scheduling the job
 
-Railway doesn't run cron inside your existing web service — you create a
-**separate Cron Job** service pointed at the same repo/backend directory:
+Run the script with a scheduler that can execute commands from this repository.
+The backend's Render Web Service does not automatically run this script on a
+schedule. If your Render plan supports a Cron Job service, configure one
+separately; otherwise use another trusted scheduler.
 
-1. Railway dashboard → New → Cron Job (not a Service)
-2. Root directory: `backend` (same as your main backend service)
-3. Start command: `npm run weekly-review`
-4. Schedule: `0 9 * * 1` (every Monday at 9am UTC — adjust for your
-   students' timezone; UTC 9am is roughly 2:30pm IST)
-5. Add the same environment variables as your main backend service
-   (`MONGODB_URI`, `ANTHROPIC_API_KEY`, `RESEND_API_KEY`,
-   `RESEND_FROM_EMAIL`, `FRONTEND_URL`) — cron jobs on Railway don't
-   automatically inherit env vars from your other services.
+Recommended command and settings:
+
+1. Use the same repository and set the working/root directory to `backend`.
+2. Start command: `npm run weekly-review`.
+3. Example schedule: `0 9 * * 1` (every Monday at 09:00 UTC; adjust to the
+   timezone that works for your students).
+4. Configure the required environment variables separately in the scheduled
+   job: `MONGODB_URI`, `ANTHROPIC_API_KEY`, `RESEND_API_KEY`,
+   `RESEND_FROM_EMAIL`, and `FRONTEND_URL`. Do not assume they are inherited
+   from the Render Web Service.
+5. Run `npm run weekly-review:dry-run` first and inspect the logs before
+   enabling real email sends.
+
+Check your hosting provider's current pricing and cron-job availability before
+creating a scheduled service. Never commit production secrets to the repository.
 
 ## 5. Cost awareness
 
