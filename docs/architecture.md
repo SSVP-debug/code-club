@@ -12,7 +12,7 @@
                     │                       │                        │
                     ▼                       ▼                        ▼
           ┌──────────────────┐    ┌──────────────────┐    ┌─────────────────────┐
-          │  Firebase Auth    │    │  Vercel           │    │  Railway              │
+          │  Firebase Auth    │    │  Vercel           │    │  Backend host         │
           │  (Google sign-in) │    │  (static hosting, │    │  Node.js + Express     │
           │  issues ID tokens │    │  serves the SPA)  │    │  backend API           │
           └──────────────────┘    └──────────────────┘    └───────────┬─────────────┘
@@ -40,7 +40,7 @@ Also called from the backend, not shown above for clarity:
 
 1. Browser loads the React SPA from Vercel (static build output of `vite build`).
 2. User signs in via Firebase Auth (Google provider). Firebase issues a short-lived ID token, refreshed client-side automatically.
-3. Every authenticated API call from the SPA attaches that ID token as a `Bearer` header. `backend/middleware/auth.js` (`requireAuth`) verifies it against Firebase Admin SDK, then loads/creates the matching MongoDB `User` document and attaches it to `req.userDoc` for the rest of the request. The user lookup itself is short-TTL cached in-process (`backend/utils/userAuthCache.js`, default 5s) rather than hitting Mongo on every call — a cache HIT hands back the live Mongoose document (safe for routes that mutate `req.userDoc` and `.save()` it), and staleness across Railway replicas is bounded by the TTL, same tradeoff as the Redis leaderboard/profile caches.
+3. Every authenticated API call from the SPA attaches that ID token as a `Bearer` header. `backend/middleware/auth.js` (`requireAuth`) verifies it against Firebase Admin SDK, then loads/creates the matching MongoDB `User` document and attaches it to `req.userDoc` for the rest of the request. The user lookup itself is short-TTL cached in-process (`backend/utils/userAuthCache.js`, default 5s) rather than hitting Mongo on every call — a cache HIT hands back the live Mongoose document (safe for routes that mutate `req.userDoc` and `.save()` it), and staleness across backend replicas is bounded by the TTL, same tradeoff as the Redis leaderboard/profile caches.
 4. The route handler runs, touching MongoDB (via Mongoose), Redis (if configured), Judge0 (for `/api/compiler` and `/api/judge`), or the Claude API (for `/api/hints`, `/api/insights`, `/api/interview`) as needed.
 5. Response returns as JSON. Every request/response is logged through Pino (`config/logger.js` + `httpLogger` middleware), tagged with `userId`, `route`, and `responseTime`.
 
@@ -51,9 +51,9 @@ Also called from the backend, not shown above for clarity:
 | Identity | Firebase Auth + Firebase Admin SDK | Backend never issues its own sessions/JWTs — it only verifies Firebase-issued tokens per request. |
 | Persistence | MongoDB Atlas (Mongoose) | Sole database. Firestore was used early on and has been fully migrated away from — no Firestore reads/writes remain in the backend. |
 | Code execution | Judge0 (self-hosted Docker or RapidAPI) | Fully decoupled behind `fetchJudge0()` in `backend/controllers/compilerController.js` — the call site doesn't know or care which Judge0 deployment it's talking to. See `docs/judge0-setup.md`. |
-| Caching | Redis (`ioredis`) with automatic in-memory fallback | Used for `/api/problems`, `/api/leaderboard`, `/api/public/:username`. A single Railway instance runs fine on the in-memory fallback; Redis becomes necessary once you scale to multiple backend instances that need to agree on cached data. |
+| Caching | Redis (`ioredis`) with automatic in-memory fallback | Used for `/api/problems`, `/api/leaderboard`, `/api/public/:username`. A single backend instance runs fine on the in-memory fallback; Redis becomes necessary once you scale to multiple backend instances that need to agree on cached data. |
 | AI features | Anthropic Claude API | Hint system (`/api/hints`), dashboard insights (`/api/insights`), interview mode (`/api/interview`), and the weekly review email script all call Claude directly from the backend — never from the browser, so the API key never reaches the client. |
-| Email | Resend | Weekly AI review email only (`scripts/sendWeeklyReviewEmails.js`, run via Railway Cron Job, not an HTTP route). No-op if `RESEND_API_KEY` is unset. See `docs/weekly-review-email-setup.md`. |
+| Email | Resend | Weekly AI review email only (`scripts/sendWeeklyReviewEmails.js`, run via the configured cron scheduler, not an HTTP route). No-op if `RESEND_API_KEY` is unset. See `docs/weekly-review-email-setup.md`. |
 | Payments | Razorpay | Behind the `MONETIZATION_ENABLED` feature flag (default `false`) — fully built, invisible to users until flipped on. |
 | Logging | Pino | Structured JSON logs with `userId`/`route`/`responseTime` on every request via `httpLogger`. A subset of Phase 5–7 route files still use `console.*` directly rather than the shared logger — tracked as a follow-up, not a correctness issue. |
 | Error monitoring | Sentry | No-op if `SENTRY_DSN` is unset — never blocks startup or crashes the process on a missing/invalid DSN. |
