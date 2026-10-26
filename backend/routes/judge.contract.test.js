@@ -122,7 +122,20 @@ describe("Judge execution contract: frontend request shape vs backend schema", (
       const body = buildSubmitRequestBody({ problem, code: "...", language: "python" });
       const result = submitSchema.safeParse(body);
 
+      expect(body.visibletestcases).toEqual(problem.testcases);
+      expect(body.testcases).toBeUndefined();
       expect(result.success).toBe(true);
+    });
+
+    it("maps visible testcases to the exact backend field and safely defaults missing problem testcases", () => {
+      const body = buildSubmitRequestBody({
+        problem: { slug: "two-sum" },
+        code: "def twoSum(nums, target): return [0, 1]",
+        language: "python",
+      });
+
+      expect(body.visibletestcases).toEqual([]);
+      expect(submitSchema.safeParse(body).success).toBe(true);
     });
 
     it("still accepts a Submit request even if functionName is entirely absent — submitHandler resolves it server-side from the problem, same as Run now does", () => {
