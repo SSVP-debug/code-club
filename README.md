@@ -43,7 +43,7 @@ See `docs/architecture.md` for the full system diagram and `docs/api-contracts.m
 | AI | Anthropic Claude API — hints, insights, mock interviews |
 | Payments | Razorpay (feature-flagged off by default) |
 | Error monitoring | Sentry (no-op if unconfigured) |
-| Deployment | Vercel (frontend); verify the active backend API host in the deployment dashboard before publishing a specific provider here. |
+| Deployment | Vercel (frontend) + Render (backend API) |
 
 ---
 
@@ -178,14 +178,16 @@ These checks operate on `backend/problems/` directly; there is no export-from-fr
 6. Add all `VITE_*` environment variables
 7. Set `VITE_API_URL` to your backend URL
 
-### Backend → Railway
+### Backend → Render
 
-1. Go to [railway.app](https://railway.app) and create a new project from GitHub
-2. In service settings, set **Root Directory** to `backend`
-3. Railway auto-detects `npm start` from `package.json`
-4. Add all environment variables from `backend/.env.example`
-5. Set `FRONTEND_URL` to your Vercel deployment URL
-6. Set `NODE_ENV=production`
+1. Create a Web Service in [Render](https://render.com) and connect this GitHub repository.
+2. Set **Root Directory** to `backend`.
+3. Set the build command to `npm install` and the start command to `npm start`.
+4. Add the required variables from `backend/.env.example` in Render's Environment settings.
+5. Set `FRONTEND_URL` to your Vercel frontend URL and `NODE_ENV=production`.
+6. Copy the deployed Render service URL into Vercel's `VITE_API_URL` setting, then redeploy the frontend.
+
+The backend previously ran on Railway; the production deployment moved to Render after the Railway free tier expired. Use the actual Render service URL from the dashboard rather than copying an example URL.
 
 After deploying both, update:
 - Vercel: `VITE_API_URL` → your backend URL
@@ -201,7 +203,7 @@ For Judge0 in production, see `docs/judge0-setup.md` — the public `ce.judge0.c
 - [`docs/api-contracts.md`](docs/api-contracts.md) — every mounted API route
 - [`docs/database-schema.md`](docs/database-schema.md) — all MongoDB models
 - [`docs/judge0-setup.md`](docs/judge0-setup.md) — self-hosted Docker vs. RapidAPI
-- [`docs/weekly-review-email-setup.md`](docs/weekly-review-email-setup.md) — Resend + Railway cron setup for the weekly AI review email
+- [`docs/weekly-review-email-setup.md`](docs/weekly-review-email-setup.md) — Resend + scheduled job setup for the weekly AI review email
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — contribution guide, commit conventions, GitHub secrets
 
 ---
