@@ -167,6 +167,15 @@ describe("Judge execution contract: frontend request shape vs backend schema", (
       expect(withoutRoom.battleRoomId).toBeUndefined();
       expect(submitSchema.safeParse(withoutRoom).success).toBe(true);
 
+      // UI state may explicitly provide null for ordinary practice submissions.
+      // The builder must omit it because Zod's optional string rejects null.
+      const nullRoom = buildSubmitRequestBody({
+        problem, code: "...", language: "python",
+        battleRoomId: null,
+      });
+      expect(nullRoom.battleRoomId).toBeUndefined();
+      expect(submitSchema.safeParse(nullRoom).success).toBe(true);
+
       const withRoom = buildSubmitRequestBody({
         problem, code: "...", language: "python",
         battleRoomId: "507f1f77bcf86cd799439011",
