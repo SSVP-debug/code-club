@@ -96,7 +96,10 @@ export function buildSubmitRequestBody({
     visibletestcases: Array.isArray(problem.testcases) ? problem.testcases : [],
   };
 
-  if (battleRoomId !== undefined) {
+  // Normal practice submissions often pass null from UI state. The backend
+  // schema accepts an omitted optional ID, not explicit null, so only send a
+  // real non-empty string when the user is submitting inside a Battle Room.
+  if (typeof battleRoomId === "string" && battleRoomId.length > 0) {
     body.battleRoomId = battleRoomId;
   }
 
