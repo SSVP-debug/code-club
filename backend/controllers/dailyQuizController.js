@@ -27,6 +27,14 @@ import { getStudentDayKey } from "../utils/studentDay.js";
  * security information through the status endpoint").
  */
 export function getDailyQuizStatus(req, res) {
+  // The check-in is a student engagement feature, not a global access gate.
+  // Returning roles are routed away from /dashboard once role hydration
+  // finishes; report "not required" here so the UI can decide in parallel
+  // with /api/init without briefly showing a student prompt to them.
+  if (req.userDoc.role !== "student") {
+    return res.json({ required: false, completed: true });
+  }
+
   const completed = req.userDoc.dailyQuizCompletedDate === getStudentDayKey();
 
   res.json({
