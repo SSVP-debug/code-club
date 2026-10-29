@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CheckCircle2, XCircle } from "lucide-react";
-import { selectDailyQuestions } from "../../utils/quizEngine";
+import { selectDailyQuestionForDay } from "../../utils/quizEngine";
+import { getStudentDayKey } from "../../utils/studentDay";
 
 /**
  * One-question daily check-in. Question content is bundled locally; answering
@@ -8,7 +9,7 @@ import { selectDailyQuestions } from "../../utils/quizEngine";
  * seen immediate feedback and chooses to continue.
  */
 export default function DailyQuickQuiz({ onComplete }) {
-  const [question] = useState(() => selectDailyQuestions(1)[0]);
+  const [question] = useState(() => selectDailyQuestionForDay(getStudentDayKey()));
   const [selectedOption, setSelectedOption] = useState(null);
 
   if (!question) {
