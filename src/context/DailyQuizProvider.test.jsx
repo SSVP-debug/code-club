@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import DailyQuizProvider from "./DailyQuizProvider";
 import { useDailyQuizStatus } from "../hooks/useDailyQuizStatus";
 
@@ -36,7 +37,7 @@ function Probe() {
 }
 
 function renderProvider() {
-  return render(<DailyQuizProvider><Probe /></DailyQuizProvider>);
+  return render(<MemoryRouter><DailyQuizProvider><Probe /></DailyQuizProvider></MemoryRouter>);
 }
 
 describe("DailyQuizProvider", () => {
