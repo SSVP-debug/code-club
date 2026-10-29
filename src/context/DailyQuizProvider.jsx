@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useAppContext } from "../hooks/useAppContext";
 import { getDailyQuizStatus, completeDailyQuiz } from "../services/dailyQuizService";
 import { hasLocalDailyCheckin, markLocalDailyCheckin } from "../utils/dailyQuizClientState";
+import { getStudentDayKey } from "../utils/studentDay";
 import { DailyQuizContext } from "./DailyQuizContextObject";
 
 /**
@@ -14,6 +16,10 @@ import { DailyQuizContext } from "./DailyQuizContextObject";
 export default function DailyQuizProvider({ children }) {
   const { user, loading: authLoading } = useAuth();
   const { role, isBackendReady } = useAppContext();
+  const location = useLocation();
+  // Re-evaluate the IST day when the route changes, so a tab left open
+  // across midnight can show the next day's check-in on the next Dashboard entry.
+  const todayKey = useMemo(() => getStudentDayKey(), [location.key]);
   const [status, setStatus] = useState("loading");
   const [statusUserId, setStatusUserId] = useState(null);
   const [retryToken, setRetryToken] = useState(0);
@@ -68,7 +74,7 @@ export default function DailyQuizProvider({ children }) {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, user?.uid, retryToken]);
+  }, [authLoading, user?.uid, retryToken, todayKey]);
 
   function completeQuiz() {
     const uid = user?.uid;
