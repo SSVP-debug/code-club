@@ -12,13 +12,13 @@ import DashboardSkeleton from "../components/dashboard/DashboardSkeleton";
  * boundary; failures never lock the application.
  */
 export default function DailyQuizGate({ children }) {
-  const { status, isBackendReady, completeQuiz } = useDailyQuizStatus();
+  const { status, completeQuiz } = useDailyQuizStatus();
   const [dismissedDay, setDismissedDay] = useState(null);
   const todayKey = getStudentDayKey();
 
   // DashboardRoleRedirect is the parent, so this component is only rendered
   // for the student dashboard after role hydration. Other roles redirect first.
-  const shouldShow = isBackendReady && status === "required" && dismissedDay !== todayKey;
+  const shouldShow = status === "required" && dismissedDay !== todayKey;
 
   function finishCheckin() {
     // Provider updates UI/local day state synchronously and persists in the
