@@ -15,12 +15,14 @@ function mockRes() {
 function mockReq(overrides = {}) {
   return {
     log: { error: vi.fn(), warn: vi.fn() },
+    ...overrides,
     userDoc: {
       _id: "u1",
+      role: "student",
       dailyQuizCompletedDate: null,
       save: vi.fn().mockResolvedValue(undefined),
+      ...(overrides.userDoc || {}),
     },
-    ...overrides,
   };
 }
 
@@ -64,6 +66,14 @@ describe("dailyQuizController", () => {
       getDailyQuizStatus(req, res);
 
       expect(res.json).toHaveBeenCalledWith({ required: true, completed: false });
+    });
+
+    it("does not require the student check-in for recruiter, TPO or admin roles", () => {
+      for (const role of ["recruiter", "tpo", "admin"]) {
+        const roleRes = mockRes();
+        getDailyQuizStatus(mockReq({ userDoc: { role, dailyQuizCompletedDate: null } }), roleRes);
+        expect(roleRes.json).toHaveBeenCalledWith({ required: false, completed: true });
+      }
     });
 
     it("does not leak anything beyond required/completed", () => {
