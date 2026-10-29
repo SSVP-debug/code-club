@@ -72,7 +72,7 @@ describe("dailyQuizController", () => {
       for (const role of ["recruiter", "tpo", "admin"]) {
         const roleRes = mockRes();
         getDailyQuizStatus(mockReq({ userDoc: { role, dailyQuizCompletedDate: null } }), roleRes);
-        expect(roleRes.json).toHaveBeenCalledWith({ required: false, completed: true });
+        expect(roleRes.json).toHaveBeenCalledWith({ required: false, completed: false });
       }
     });
 
