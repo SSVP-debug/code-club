@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CheckCircle2, Sparkles, X } from "lucide-react";
+import { Sparkles, X } from "lucide-react";
 import DailyQuickQuiz from "../components/onboarding/DailyQuickQuiz";
 import { useDailyQuizStatus } from "../hooks/useDailyQuizStatus";
 
