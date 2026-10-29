@@ -63,7 +63,7 @@ describe("DailyQuickQuiz", () => {
     render(<DailyQuickQuiz onComplete={vi.fn()} />);
 
     fireEvent.click(screen.getByText("O(n)"));
-    fireEvent.click(screen.getByText("O(1)"));
+    fireEvent.click(screen.getByRole("button", { name: "O(1)" }));
 
     expect(screen.getByText("Not quite")).toBeInTheDocument();
     expect(screen.getByText("Correct answer: O(1)")).toBeInTheDocument();
