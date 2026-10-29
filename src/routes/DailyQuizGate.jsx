@@ -1,111 +1,69 @@
-import { AlertTriangle, Sparkles } from "lucide-react";
-import Button from "../components/ui/Button";
+import { useState } from "react";
+import { CheckCircle2, Sparkles, X } from "lucide-react";
 import DailyQuickQuiz from "../components/onboarding/DailyQuickQuiz";
 import { useDailyQuizStatus } from "../hooks/useDailyQuizStatus";
 
 /**
- * DailyQuizGate — renders in place of a protected page's content until
- * today's quiz is confirmed complete by the server. Used exclusively by
- * `ProtectedRoute` (see that file), which is itself the codebase's single
- * existing place every genuinely protected page already routes through —
- * so this doesn't introduce a second, parallel "does this page need
- * gating" list to keep in sync, and it can't accidentally cover a public
- * route ProtectedRoute doesn't wrap.
- *
- * Because this only ever renders instead of `children` (never alongside
- * it), and the page's own layout — including Navbar, which every
- * protected page mounts itself via DashboardLayout — lives inside
- * `children`, the navbar/app shell genuinely never mounts while gated:
- * there's nothing above this component to render it.
- *
- * Status itself comes from `DailyQuizProvider` (mounted once above the
- * router — see App.jsx) via `useDailyQuizStatus`, not fetched here, so
- * navigating between two already-unlocked protected pages doesn't
- * re-trigger a status check or a loading flash.
- *
- * `DailyQuickQuiz` (the actual 5-question UI) is reused as-is — only what
- * happens on completion differs: `completeQuiz` (from context) persists
- * to the server before unlocking.
+ * Dashboard-only daily check-in. The Dashboard always mounts underneath it,
+ * so /api/init and the dashboard skeleton can progress while status/question
+ * UI is being resolved. This is an engagement prompt, not an access-control
+ * boundary; failures never lock the application.
  */
 export default function DailyQuizGate({ children }) {
-  const { status, isBackendReady, retry, completeQuiz, completing, completeError } =
-    useDailyQuizStatus();
+  const { status, isBackendReady, completeQuiz } = useDailyQuizStatus();
+  const [dismissedLocally, setDismissedLocally] = useState(false);
 
-  if (!isBackendReady || status === "loading") {
-    return <FullScreenSpinner />;
+  // DashboardRoleRedirect is the parent, so this component is only rendered
+  // for the student dashboard after role hydration. Other roles redirect first.
+  const shouldShow = isBackendReady && status === "required" && !dismissedLocally;
+
+  function finishCheckin() {
+    // Provider updates UI/local day state synchronously and persists in the
+    // background. Do not wait for the network before dismissing the overlay.
+    setDismissedLocally(true);
+    completeQuiz();
   }
 
-  if (status === "error") {
-    return (
-      <FullScreenMessage
-        icon={<AlertTriangle size={28} className="text-verdict-reject" />}
-        title="Couldn't load today's warm-up"
-        description="We couldn't reach the server to check your daily quiz status. Please check your connection and try again."
-      >
-        <Button variant="primary" size="lg" onClick={retry}>
-          Retry
-        </Button>
-      </FullScreenMessage>
-    );
-  }
-
-  if (status === "required") {
-    return (
-      <div className="min-h-screen bg-[var(--background)] px-4">
-        <DailyQuickQuiz onComplete={completeQuiz} />
-        {completeError && (
-          <div className="max-w-xl mx-auto mt-4">
-            <FullScreenMessage
-              icon={<AlertTriangle size={20} className="text-verdict-reject" />}
-              title="Couldn't save your result"
-              description={completeError}
-              compact
+  return (
+    <>
+      {children}
+      {shouldShow && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/65 px-4 py-6 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="daily-checkin-title"
+        >
+          <div className="relative w-full max-w-xl rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-2xl sm:p-7">
+            <button
+              type="button"
+              onClick={finishCheckin}
+              aria-label="Skip today's check-in"
+              className="absolute right-4 top-4 rounded-lg p-2 text-[var(--muted-foreground)] transition hover:bg-[var(--surface-elevated)] hover:text-[var(--foreground)]"
             >
-              <Button
-                variant="secondary"
-                size="md"
-                loading={completing}
-                onClick={completeQuiz}
-              >
-                Retry
-              </Button>
-            </FullScreenMessage>
+              <X size={18} />
+            </button>
+            <div className="mb-3 flex items-center gap-2 text-[var(--theme-primary,#2dd4bf)]">
+              <Sparkles size={18} />
+              <span className="text-xs font-semibold uppercase tracking-wider">Daily check-in · 1 question</span>
+            </div>
+            <h2 id="daily-checkin-title" className="mb-2 text-xl font-semibold text-[var(--foreground)] sm:text-2xl">
+              Warm up your problem-solving brain
+            </h2>
+            <p className="mb-6 text-sm text-[var(--muted-foreground)]">
+              One quick question. Your dashboard is already loading behind this.
+            </p>
+            <DailyQuickQuiz onComplete={finishCheckin} />
+            <button
+              type="button"
+              onClick={finishCheckin}
+              className="mt-4 w-full rounded-xl px-4 py-2.5 text-sm font-medium text-[var(--muted-foreground)] transition hover:bg-[var(--surface-elevated)] hover:text-[var(--foreground)]"
+            >
+              Skip for today
+            </button>
           </div>
-        )}
-      </div>
-    );
-  }
-
-  // status === "unlocked"
-  return children;
-}
-
-function FullScreenSpinner() {
-  return (
-    <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
-      <div className="flex flex-col items-center gap-3">
-        <Sparkles size={24} className="text-[var(--theme-primary,#2dd4bf)] animate-pulse" />
-        <div className="w-8 h-8 border-2 border-[var(--border-strong)] border-t-[var(--theme-primary,#2dd4bf)] rounded-full animate-spin" />
-      </div>
-    </div>
-  );
-}
-
-function FullScreenMessage({ icon, title, description, children, compact = false }) {
-  return (
-    <div
-      className={
-        compact
-          ? "border border-[var(--border)] rounded-2xl p-5 text-center bg-[var(--surface)]"
-          : "min-h-screen bg-[var(--background)] flex items-center justify-center px-4"
-      }
-    >
-      <div className={compact ? "" : "max-w-sm w-full text-center"}>
-        <div className="flex justify-center mb-3">{icon}</div>
-        <h2 className="text-[var(--foreground)] font-semibold mb-1">{title}</h2>
-        <p className="text-[var(--muted-foreground)] text-sm mb-5">{description}</p>
-        {children}
-      </div>
-    </div>
+        </div>
+      )}
+    </>
   );
 }
