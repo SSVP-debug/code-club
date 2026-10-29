@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Sparkles, X } from "lucide-react";
 import DailyQuickQuiz from "../components/onboarding/DailyQuickQuiz";
 import { useDailyQuizStatus } from "../hooks/useDailyQuizStatus";
+import { getStudentDayKey } from "../utils/studentDay";
 
 /**
  * Dashboard-only daily check-in. The Dashboard always mounts underneath it,
@@ -11,16 +12,17 @@ import { useDailyQuizStatus } from "../hooks/useDailyQuizStatus";
  */
 export default function DailyQuizGate({ children }) {
   const { status, isBackendReady, completeQuiz } = useDailyQuizStatus();
-  const [dismissedLocally, setDismissedLocally] = useState(false);
+  const [dismissedDay, setDismissedDay] = useState(null);
+  const todayKey = getStudentDayKey();
 
   // DashboardRoleRedirect is the parent, so this component is only rendered
   // for the student dashboard after role hydration. Other roles redirect first.
-  const shouldShow = isBackendReady && status === "required" && !dismissedLocally;
+  const shouldShow = isBackendReady && status === "required" && dismissedDay !== todayKey;
 
   function finishCheckin() {
     // Provider updates UI/local day state synchronously and persists in the
     // background. Do not wait for the network before dismissing the overlay.
-    setDismissedLocally(true);
+    setDismissedDay(todayKey);
     completeQuiz();
   }
 
