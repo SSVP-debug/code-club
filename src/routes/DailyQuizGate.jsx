@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { Sparkles, X } from "lucide-react";
 import DailyQuickQuiz from "../components/onboarding/DailyQuickQuiz";
 import { useDailyQuizStatus } from "../hooks/useDailyQuizStatus";
 import { getStudentDayKey } from "../utils/studentDay";
+import DashboardSkeleton from "../components/dashboard/DashboardSkeleton";
 
 /**
  * Dashboard-only daily check-in. The Dashboard always mounts underneath it,
@@ -28,7 +29,7 @@ export default function DailyQuizGate({ children }) {
 
   return (
     <>
-      {children}
+      <Suspense fallback={<DashboardSkeleton />}>{children}</Suspense>
       {shouldShow && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/65 px-4 py-6 backdrop-blur-sm"
