@@ -112,29 +112,25 @@ describe("ProtectedRoute", () => {
     expect(screen.getByText("Secret")).toBeInTheDocument();
   });
 
-  // Fix verified here: the Daily Quiz Gate must only ever appear in place
-  // of an actual protected page (reached through ProtectedRoute), never
-  // over a public route — this test is the authenticated+gated case,
-  // proving the quiz screen (not "Secret") is what renders when required.
-  it("renders the daily quiz — not the page's children — when today's quiz is required", () => {
+  it("renders protected content even when daily check-in is required (check-in is Dashboard-only)", () => {
     renderWithAuth(
       { user: { uid: "1" }, loading: false },
       ["/protected"],
       { ...unlockedQuizValue, status: "required" }
     );
 
-    expect(screen.getByText("finish quiz")).toBeInTheDocument();
-    expect(screen.queryByText("Secret")).not.toBeInTheDocument();
+    expect(screen.getByText("Secret")).toBeInTheDocument();
+    expect(screen.queryByText("finish quiz")).not.toBeInTheDocument();
   });
 
-  it("does not silently render children while the quiz status is still loading", () => {
+  it("does not block protected content while daily check-in status is loading", () => {
     renderWithAuth(
       { user: { uid: "1" }, loading: false },
       ["/protected"],
       { ...unlockedQuizValue, status: "loading" }
     );
 
-    expect(screen.queryByText("Secret")).not.toBeInTheDocument();
+    expect(screen.getByText("Secret")).toBeInTheDocument();
     expect(screen.queryByText("finish quiz")).not.toBeInTheDocument();
   });
 

@@ -1,4 +1,5 @@
 import Button from "../ui/Button";
+import { preloadDashboard } from "../../utils/preloadDashboard";
 import LandingVisual from "./LandingVisual";
 import LANDING_IMAGES from "./landingImages";
 
@@ -46,6 +47,8 @@ function HeroSection({ user, stats }) {
                 variant="theme"
                 size="lg"
                 className="shadow-lg shadow-verdict-accept/10"
+                onMouseEnter={user ? preloadDashboard : undefined}
+                onFocus={user ? preloadDashboard : undefined}
               >
                 {user ? "Go to Dashboard →" : "Start Coding →"}
               </Button>

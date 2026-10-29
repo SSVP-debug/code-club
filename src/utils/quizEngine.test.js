@@ -2,19 +2,17 @@ import { describe, expect, it } from "vitest";
 import { selectDailyQuestions, scoreQuizAttempt } from "./quizEngine";
 
 describe("selectDailyQuestions", () => {
-  it("returns 5 questions with 5 distinct topics when the bank supports it", () => {
-    const selected = selectDailyQuestions(5);
-    expect(selected).toHaveLength(5);
-
-    const topics = new Set(selected.map((q) => q.topic));
-    expect(topics.size).toBe(5);
+  it("returns one question by default", () => {
+    const selected = selectDailyQuestions();
+    expect(selected).toHaveLength(1);
+    expect(selected[0].id).toBeTruthy();
   });
 
-  it("returns different sets across repeated calls (not the same 5 every time)", () => {
+  it("can select different questions across repeated calls", () => {
     const results = new Set();
 
     for (let i = 0; i < 20; i += 1) {
-      const ids = selectDailyQuestions(5)
+      const ids = selectDailyQuestions(1)
         .map((q) => q.id)
         .sort()
         .join(",");

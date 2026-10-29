@@ -18,7 +18,7 @@ import quizQuestions, { QUIZ_TOPICS } from "../data/quizQuestions.js";
  * @param {Array} questions - question pool to select from (defaults to the full bank)
  * @returns {Array} the selected questions, in randomized order
  */
-export function selectDailyQuestions(count = 5, questions = quizQuestions) {
+export function selectDailyQuestions(count = 1, questions = quizQuestions) {
   const byTopic = new Map();
 
   for (const question of questions) {

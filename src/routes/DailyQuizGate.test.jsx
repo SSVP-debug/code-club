@@ -3,11 +3,9 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import DailyQuizGate from "./DailyQuizGate";
 import { DailyQuizContext } from "../context/DailyQuizContextObject";
 
-// DailyQuickQuiz owns the actual question UI and is covered by its own
-// tests — stub it down to a single button that calls onComplete.
 vi.mock("../components/onboarding/DailyQuickQuiz", () => ({
   default: ({ onComplete }) => (
-    <button onClick={() => onComplete({ score: 5 })}>finish quiz</button>
+    <button onClick={onComplete}>answer and continue</button>
   ),
 }));
 
@@ -15,7 +13,7 @@ function renderGate(value) {
   return render(
     <DailyQuizContext.Provider value={value}>
       <DailyQuizGate>
-        <div>protected content</div>
+        <div>dashboard content</div>
       </DailyQuizGate>
     </DailyQuizContext.Provider>
   );
@@ -24,68 +22,63 @@ function renderGate(value) {
 const base = {
   status: "unlocked",
   isBackendReady: true,
+  role: "student",
   retry: vi.fn(),
   completeQuiz: vi.fn(),
   completing: false,
   completeError: null,
 };
 
-describe("DailyQuizGate", () => {
-  it("renders children when unlocked", () => {
+describe("DailyQuizGate — dashboard-only non-blocking prompt", () => {
+  it("always mounts dashboard content when check-in is unlocked", () => {
     renderGate({ ...base, status: "unlocked" });
-
-    expect(screen.getByText("protected content")).toBeInTheDocument();
+    expect(screen.getByText("dashboard content")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("shows a loading state — not children, not the quiz — while backend isn't ready yet", () => {
-    renderGate({ ...base, isBackendReady: false, status: "loading" });
-
-    expect(screen.queryByText("protected content")).not.toBeInTheDocument();
-    expect(screen.queryByText("finish quiz")).not.toBeInTheDocument();
-  });
-
-  it("shows a loading state while status is still being checked", () => {
-    renderGate({ ...base, status: "loading" });
-
-    expect(screen.queryByText("protected content")).not.toBeInTheDocument();
-    expect(screen.queryByText("finish quiz")).not.toBeInTheDocument();
-  });
-
-  it("renders the quiz — not children — when required", () => {
+  it("keeps dashboard content mounted behind the check-in overlay", () => {
     renderGate({ ...base, status: "required" });
-
-    expect(screen.getByText("finish quiz")).toBeInTheDocument();
-    expect(screen.queryByText("protected content")).not.toBeInTheDocument();
+    expect(screen.getByText("dashboard content")).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
-  it("calls completeQuiz (context) when the quiz is finished, rather than unlocking locally", () => {
+  it("shows the student prompt while dashboard hydration is still running", () => {
+    renderGate({ ...base, isBackendReady: false, status: "required" });
+    expect(screen.getByText("dashboard content")).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("does not block dashboard while status is loading", () => {
+    renderGate({ ...base, status: "loading" });
+    expect(screen.getByText("dashboard content")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("does not block dashboard when status lookup fails", () => {
+    renderGate({ ...base, status: "error" });
+    expect(screen.getByText("dashboard content")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("dismisses immediately and starts completion persistence", () => {
     const completeQuiz = vi.fn();
     renderGate({ ...base, status: "required", completeQuiz });
 
-    fireEvent.click(screen.getByText("finish quiz"));
+    fireEvent.click(screen.getByText("answer and continue"));
 
-    expect(completeQuiz).toHaveBeenCalled();
+    expect(completeQuiz).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("dashboard content")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("shows a retry-able error state — not children — when the status check failed (fail closed)", () => {
-    const retry = vi.fn();
-    renderGate({ ...base, status: "error", retry });
+  it("lets the user skip without blocking the dashboard", () => {
+    const completeQuiz = vi.fn();
+    renderGate({ ...base, status: "required", completeQuiz });
 
-    expect(screen.getByText(/couldn't load today's warm-up/i)).toBeInTheDocument();
-    expect(screen.queryByText("protected content")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /skip for today/i }));
 
-    fireEvent.click(screen.getByText("Retry"));
-    expect(retry).toHaveBeenCalled();
-  });
-
-  it("shows a retry-able error under the quiz — and does not unlock — when completion failed", () => {
-    renderGate({
-      ...base,
-      status: "required",
-      completeError: "network down",
-    });
-
-    expect(screen.getByText(/couldn't save your result/i)).toBeInTheDocument();
-    expect(screen.queryByText("protected content")).not.toBeInTheDocument();
+    expect(completeQuiz).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("dashboard content")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

@@ -6,6 +6,7 @@ import { apiFetch } from "../services/api";
 import { getPostLoginDestination, VALID_PORTAL_ROLES } from "../utils/roleRedirect";
 import { getSafeNextPath } from "../utils/authRedirect";
 import { AUTH_GATE_MESSAGES } from "../utils/authGateMessages";
+import { preloadDashboard } from "../utils/preloadDashboard";
 import { GraduationCap, Briefcase, Building2, ShieldCheck } from "lucide-react";
 import LANDING_IMAGES from "../components/landing/landingImages";
 
@@ -168,11 +169,13 @@ function LoginPage() {
     setStatus("redirecting");
     await applyReferralIfPresent();
     if (nextPath) {
+      if (nextPath === "/dashboard") preloadDashboard();
       navigate(nextPath);
       return;
     }
 
     if (!roleIntent) {
+      preloadDashboard();
       navigate("/dashboard");
       return;
     }
@@ -183,6 +186,7 @@ function LoginPage() {
     } catch {
       // If /api/init fails (e.g. DB blip), fall back to the plain
       // dashboard rather than stranding the person mid-login.
+      preloadDashboard();
       navigate("/dashboard");
     }
   }

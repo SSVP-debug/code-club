@@ -6,6 +6,8 @@ import PremiumRoute from "./components/auth/PremiumRoute";
 import ThemeGate from "./routes/ThemeGate";
 import DailyQuizProvider from "./context/DailyQuizProvider";
 import DashboardRoleRedirect from "./routes/DashboardRoleRedirect";
+import DailyQuizGate from "./routes/DailyQuizGate";
+import { preloadDashboard } from "./utils/preloadDashboard";
 import { warmBackend } from "./services/api";
 
 // ── Eagerly loaded ─────────────────────────────────────────────────────────
@@ -28,7 +30,7 @@ import OfflineBanner from "./components/OfflineBanner";
 // Monaco Editor lives inside ProblemDetailsPage — the single biggest win here.
 // Before: Monaco downloaded on app init for every user (including those who never open a problem).
 // After:  Monaco only downloads when a user opens a problem page.
-const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Dashboard = lazy(() => preloadDashboard());
 const Analytics = lazy(() => import("./pages/Analytics"));
 const Profile = lazy(() => import("./pages/Profile"));
 const ProblemsPage = lazy(() => import("./pages/ProblemsPage"));
@@ -110,14 +112,9 @@ function App() {
 
   return (
     <Suspense fallback={<PageLoader />}>
-      {/* Daily Quiz Gate — DailyQuizProvider only fetches/caches status
-          here (once per session/day, shared across route changes); it
-          renders every route unconditionally, so public pages (landing,
-          /login, /portal, /theme-selection, etc.) are never affected.
-          The actual gating happens per-protected-page, inside
-          ProtectedRoute -> DailyQuizGate (see those files) — that's what
-          keeps the app shell/navbar from ever mounting on a genuinely
-          protected page while today's quiz is incomplete. */}
+      {/* Daily check-in status is fetched in parallel with /api/init.
+          The optional prompt is rendered only inside the student Dashboard
+          route and never blocks other routes or dashboard data hydration. */}
       <DailyQuizProvider>
       <OfflineBanner />
       <AnnouncementBanner />
@@ -141,7 +138,9 @@ function App() {
             <ProtectedRoute guestPortal="student">
               <ThemeGate>
                 <DashboardRoleRedirect>
-                  <Dashboard />
+                  <DailyQuizGate>
+                    <Dashboard />
+                  </DailyQuizGate>
                 </DashboardRoleRedirect>
               </ThemeGate>
             </ProtectedRoute>
