@@ -56,12 +56,8 @@ export default function DailyQuizProvider({ children }) {
       try {
         const data = await getDailyQuizStatus();
         if (cancelled) return;
-        if (data.completed || !data.required) {
-          markLocalDailyCheckin(uid);
-          setStatus("unlocked");
-        } else {
-          setStatus("required");
-        }
+        if (data.completed) markLocalDailyCheckin(uid);
+        setStatus(data.required ? "required" : "unlocked");
       } catch (error) {
         // This is an optional engagement prompt. A failed request must never
         // prevent the user from using the app or loading dashboard data.
@@ -74,7 +70,7 @@ export default function DailyQuizProvider({ children }) {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, user?.uid, retryToken, todayKey]);
+  }, [authLoading, user?.uid, role, retryToken, todayKey]);
 
   function completeQuiz() {
     const uid = user?.uid;
