@@ -13,16 +13,17 @@ function mockRes() {
 }
 
 function mockReq(overrides = {}) {
+  const userDoc = overrides.userDoc || {
+    _id: "u1",
+    dailyQuizCompletedDate: null,
+    save: vi.fn().mockResolvedValue(undefined),
+  };
+  if (!userDoc.role) userDoc.role = "student";
+
   return {
     log: { error: vi.fn(), warn: vi.fn() },
     ...overrides,
-    userDoc: {
-      _id: "u1",
-      role: "student",
-      dailyQuizCompletedDate: null,
-      save: vi.fn().mockResolvedValue(undefined),
-      ...(overrides.userDoc || {}),
-    },
+    userDoc,
   };
 }
 
