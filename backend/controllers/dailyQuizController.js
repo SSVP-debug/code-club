@@ -32,7 +32,7 @@ export function getDailyQuizStatus(req, res) {
   // finishes; report "not required" here so the UI can decide in parallel
   // with /api/init without briefly showing a student prompt to them.
   if (req.userDoc.role !== "student") {
-    return res.json({ required: false, completed: true });
+    return res.json({ required: false, completed: false });
   }
 
   const completed = req.userDoc.dailyQuizCompletedDate === getStudentDayKey();
