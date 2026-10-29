@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { selectDailyQuestions, scoreQuizAttempt } from "./quizEngine";
+import { selectDailyQuestions, selectDailyQuestionForDay, scoreQuizAttempt } from "./quizEngine";
 
 describe("selectDailyQuestions", () => {
   it("returns one question by default", () => {
@@ -34,6 +34,28 @@ describe("selectDailyQuestions", () => {
 
     const ids = selected.map((q) => q.id).sort();
     expect(ids).toEqual(["a-1", "a-2", "b-1"]);
+  });
+});
+
+describe("selectDailyQuestionForDay", () => {
+  it("returns the same question for repeated renders on the same IST day", () => {
+    const pool = [
+      { id: "a", topic: "Arrays" },
+      { id: "b", topic: "Strings" },
+      { id: "c", topic: "Trees" },
+    ];
+    expect(selectDailyQuestionForDay("2026-10-29", pool))
+      .toEqual(selectDailyQuestionForDay("2026-10-29", pool));
+  });
+
+  it("rotates deterministically when the IST day changes", () => {
+    const pool = Array.from({ length: 50 }, (_, index) => ({ id: String(index) }));
+    expect(selectDailyQuestionForDay("2026-10-29", pool).id)
+      .not.toBe(selectDailyQuestionForDay("2026-10-30", pool).id);
+  });
+
+  it("returns undefined for an empty question pool", () => {
+    expect(selectDailyQuestionForDay("2026-10-29", [])).toBeUndefined();
   });
 });
 

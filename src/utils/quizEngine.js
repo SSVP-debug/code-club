@@ -55,6 +55,24 @@ export function selectDailyQuestions(count = 1, questions = quizQuestions) {
 }
 
 /**
+ * Select one stable question for an IST day. The same day key and question
+ * bank always produce the same question, including after a page refresh.
+ * A new IST day naturally rotates the selection.
+ *
+ * @param {string} dayKey - YYYY-MM-DD from getStudentDayKey()
+ * @param {Array} questions - question pool
+ * @returns {Object|undefined}
+ */
+export function selectDailyQuestionForDay(dayKey, questions = quizQuestions) {
+  if (!questions.length) return undefined;
+  let hash = 2167;
+  for (const character of String(dayKey)) {
+    hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+  }
+  return questions[hash % questions.length];
+}
+
+/**
  * Scores a completed quiz attempt.
  * @param {Array<{id: string, topic: string, correctIndex: number}>} questions - the
  *   questions that were shown, in order
