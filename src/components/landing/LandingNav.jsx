@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import Button from "../ui/Button";
+import { preloadDashboard } from "../../utils/preloadDashboard";
 import BWModeToggle from "../common/BWModeToggle";
 
 function LandingNav({ user }) {
@@ -25,7 +26,13 @@ function LandingNav({ user }) {
           <BWModeToggle />
         </div>
 
-        <Button to={user ? "/dashboard" : "/portal"} variant="theme" size="sm">
+        <Button
+          to={user ? "/dashboard" : "/portal"}
+          variant="theme"
+          size="sm"
+          onMouseEnter={user ? preloadDashboard : undefined}
+          onFocus={user ? preloadDashboard : undefined}
+        >
           {user ? "Dashboard →" : "Get Started"}
         </Button>
       </div>
