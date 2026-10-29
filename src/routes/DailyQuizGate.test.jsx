@@ -42,10 +42,10 @@ describe("DailyQuizGate — dashboard-only non-blocking prompt", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
-  it("does not show the prompt before backend role hydration, but does not block dashboard", () => {
+  it("shows the student prompt while dashboard hydration is still running", () => {
     renderGate({ ...base, isBackendReady: false, status: "required" });
     expect(screen.getByText("dashboard content")).toBeInTheDocument();
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
   it("does not block dashboard while status is loading", () => {
