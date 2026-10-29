@@ -21,7 +21,7 @@ const fixedQuestions = [
 
 vi.mock("../../utils/quizEngine", async () => {
   const actual = await vi.importActual("../../utils/quizEngine");
-  return { ...actual, selectDailyQuestions: () => fixedQuestions };
+  return { ...actual, selectDailyQuestionForDay: () => fixedQuestions[0] };
 });
 
 describe("DailyQuickQuiz", () => {
