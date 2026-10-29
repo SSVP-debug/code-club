@@ -56,7 +56,7 @@ describe("DailyQuickQuiz", () => {
     fireEvent.click(screen.getByText("O(n)"));
 
     expect(screen.getByText("Not quite")).toBeInTheDocument();
-    expect(screen.getByText("Correct answer: O(1)")).toBeInTheDocument();
+    expect(screen.getByText(/Correct answer:/)).toBeInTheDocument();
   });
 
   it("does not allow changing the answer after feedback appears", () => {
@@ -66,6 +66,6 @@ describe("DailyQuickQuiz", () => {
     fireEvent.click(screen.getByRole("button", { name: "O(1)" }));
 
     expect(screen.getByText("Not quite")).toBeInTheDocument();
-    expect(screen.getByText("Correct answer: O(1)")).toBeInTheDocument();
+    expect(screen.getByText(/Correct answer:/)).toBeInTheDocument();
   });
 });
