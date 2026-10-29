@@ -7,6 +7,7 @@ import ThemeGate from "./routes/ThemeGate";
 import DailyQuizProvider from "./context/DailyQuizProvider";
 import DashboardRoleRedirect from "./routes/DashboardRoleRedirect";
 import DailyQuizGate from "./routes/DailyQuizGate";
+import { preloadDashboard } from "./utils/preloadDashboard";
 import { warmBackend } from "./services/api";
 
 // ── Eagerly loaded ─────────────────────────────────────────────────────────
@@ -29,13 +30,6 @@ import OfflineBanner from "./components/OfflineBanner";
 // Monaco Editor lives inside ProblemDetailsPage — the single biggest win here.
 // Before: Monaco downloaded on app init for every user (including those who never open a problem).
 // After:  Monaco only downloads when a user opens a problem page.
-let dashboardImportPromise;
-function preloadDashboard() {
-  if (!dashboardImportPromise) {
-    dashboardImportPromise = import("./pages/Dashboard");
-  }
-  return dashboardImportPromise;
-}
 const Dashboard = lazy(() => preloadDashboard());
 const Analytics = lazy(() => import("./pages/Analytics"));
 const Profile = lazy(() => import("./pages/Profile"));
